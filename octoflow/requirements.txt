@@ -1,0 +1,9 @@
+torch
+fastapi
+gunicorn
+pdfminer.six
+uvicorn
+pydantic
+fastapi-pagination
+python-multipart
+python-dotenv

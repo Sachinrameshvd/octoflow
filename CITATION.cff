@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software or reference this architecture in your research, please cite it as below."
+title: "octopus-brain: An Event-Triggered Modular Neural Architecture with Sparse Central Coalition Consolidation"
+version: 0.1.0
+date-released: 2026-09-27
+license: MIT
+authors:
+  - name: "octopus-brain contributors"
+abstract: >-
+  An open-source research architecture inspired by cephalopod neuroanatomy,
+  designed to investigate two specific hypotheses: (1) event-triggered asynchronous
+  local-to-central communication with no global clock, and (2) dynamic, temporary coalition
+  binding among peripheral processing modules that dissolves after execution.
+keywords:
+  - modular neural networks
+  - distributed control
+  - event-triggered communication
+  - coalition attention
+  - neuromorphic computing
+  - multi-agent reinforcement learning

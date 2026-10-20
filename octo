@@ -1,0 +1,18 @@
+#!/bin/bash
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+export PYTHONPATH="$DIR:$PYTHONPATH"
+if [ -f "$DIR/.venv/bin/octoflow" ]; then
+  exec "$DIR/.venv/bin/octoflow" "$@"
+elif [ -f "$DIR/.venv/bin/python3" ]; then
+  exec "$DIR/.venv/bin/python3" -m octoflow.cli "$@"
+elif command -v python3 >/dev/null 2>&1; then
+  exec python3 -m octoflow.cli "$@"
+else
+  exec python -m octoflow.cli "$@"
+fi

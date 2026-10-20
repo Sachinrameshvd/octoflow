@@ -1,0 +1,15 @@
+{
+  "name": "ai-resume-analyzer",
+  "version": "1.0.0",
+  "description": "AI Resume Analyzer with FastAPI backend, PDF resume parser, ATS scoring algorithm, and web dashboard",
+  "scripts": {
+    "start": "uvicorn octoflow.main:app --reload",
+    "test": "pytest tests/"
+  },
+  "dependencies": {
+    "fastapi": "^0.70.0",
+    "uvicorn": "^0.14.0",
+    "pdfminer.six": "^20201018",
+    "python-ats-scorer": "^1.0.0"
+  }
+}

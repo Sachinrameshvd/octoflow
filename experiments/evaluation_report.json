@@ -1,0 +1,58 @@
+{
+  "status": "Trained",
+  "checkpoint": "checkpoints/best_octopus_brain.pt",
+  "reach_and_avoid": {
+    "mean_reward": -3.0099975913763046,
+    "std_reward": 15.985083256089835,
+    "comm_rate_pct": 26.675863899290565,
+    "bandwidth_reduction_pct": 73.32413610070944,
+    "single_targets_per_ep": 8.7,
+    "joint_targets_per_ep": 2.6,
+    "hazard_collisions_per_ep": 17.5
+  },
+  "cooperative_hunting": {
+    "mean_reward": -1.224997343122959,
+    "std_reward": 18.749616160852792,
+    "solitary_captures_per_ep": 11.9,
+    "coop_encirclement_captures_per_ep": 2.3,
+    "hazard_collisions_per_ep": 20.0
+  },
+  "fault_tolerance": {
+    "0": {
+      "mean_reward": -0.9666644856333733,
+      "std_reward": 12.977693851432718,
+      "delta_reward": 0.0,
+      "resilience_score": 100.0
+    },
+    "1": {
+      "mean_reward": 2.9250017864008746,
+      "std_reward": 11.285028275826265,
+      "delta_reward": 3.891666272034248,
+      "resilience_score": 100.0
+    },
+    "2": {
+      "mean_reward": 4.691668255254626,
+      "std_reward": 10.908593827723736,
+      "delta_reward": 5.6583327408879995,
+      "resilience_score": 100.0
+    },
+    "3": {
+      "mean_reward": 6.441668123006821,
+      "std_reward": 12.966138515404605,
+      "delta_reward": 7.408332608640194,
+      "resilience_score": 100.0
+    },
+    "4": {
+      "mean_reward": 8.091667955120405,
+      "std_reward": 11.689414934107104,
+      "delta_reward": 9.058332440753778,
+      "resilience_score": 100.0
+    }
+  },
+  "memory_asymmetry": {
+    "full_system_reactive_reward": -1.7599973499774932,
+    "full_system_delayed_cue_retention": 1.9,
+    "central_ablated_cue_retention": 2.5,
+    "pure_reactive_cue_retention": 0.7
+  }
+}

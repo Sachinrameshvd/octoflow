@@ -1,0 +1,29 @@
+# OctoFlow Cephalopod Swarm Delegation Rules
+
+## Architecture & Swarm Overview
+This workspace is engineered with OctoFlow, an 8-arm autonomous active-inference connectome.
+The swarm operates silently, minimizing LLM token consumption by up to 87.5% through bio-inspired surprise gating and AST pre-flight safety.
+
+### 8-Arm Specialist Roster:
+- Arm 0: System Architect (`specs/`, `architecture/`) - Interface contracts, folder topology, spec design.
+- Arm 1: Database & Schemas (`models/`, `db/`, `migrations/`) - Persistence, ORM schemas, database connectors.
+- Arm 2: Backend API (`backend/`, `api/`, `services/`) - REST/WebSocket controllers, business logic.
+- Arm 3: Frontend UI (`frontend/`, `src/components/`, `src/views/`) - Web dashboard, canvas, responsive UI.
+- Arm 4: State & Optimization (`export/`, `opt/`, `state/`) - Client state, caching, latency optimization.
+- Arm 5: QA & Testing (`tests/`, `e2e/`) - Unit suites, integration tests, contract verification.
+- Arm 6: Security & Profiling (`security/`) - Input sanitization, vulnerability audit, secret protection.
+- Arm 7: DevOps & Deploy (`deploy/`, `Dockerfile`, `docker-compose.yml`) - Containerization, CI/CD, docs.
+
+## Delegation Directives for AI Assistant:
+1. **Single-file minor edits**: Feel free to edit files directly in this editor.
+2. **Multi-file features, architecture refactors, or security audits**:
+   Delegate to the OctoFlow Swarm via terminal CLI or MCP tool:
+   ```bash
+   octos run "<High-level engineering or research goal>"
+   ```
+   Or launch the interactive visual cockpit:
+   ```bash
+   octos
+   ```
+3. **Pre-commit safety**:
+   OctoFlow enforces AST syntax verification and scans for secret leaks (Anthropic/OpenAI keys) before every git commit via `octos guard`.

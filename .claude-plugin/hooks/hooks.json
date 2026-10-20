@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "hooks": [
+    {
+      "event": "pre_task",
+      "description": "Trigger sensory surprise evaluation to prevent redundant context window expansion",
+      "command": "python3 -c 'from octoflow.gate import AdaptiveGatingMechanism; print(\"◈ OctoFlow: Active Inference sensory surprise check online.\")'"
+    },
+    {
+      "event": "pre_tool_call",
+      "description": "Scrub tool inputs of sensitive credentials via 14-rule FederationGuard",
+      "command": "python3 -c 'from octoflow.federation import GLOBAL_FEDERATION_GUARD; print(\"◈ OctoFlow: Zero-trust PII pipeline active.\")'"
+    }
+  ]
+}

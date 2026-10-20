@@ -1,0 +1,7591 @@
+{
+  "metadata": {
+    "species": "Octopus vulgaris (Computational Micro-Connectome)",
+    "framework": "Google Connectomics / FlyWire Inspired Pipeline",
+    "summary": {
+      "total_neurons": 208,
+      "total_synaptic_edges": 492,
+      "mean_synapses_per_neuron": 2.37,
+      "neurotransmitter_counts": {
+        "acetylcholine": 177,
+        "gaba": 31
+      },
+      "neuron_category_counts": {
+        "interneuron_relay": 52,
+        "interneuron_amacrine": 36,
+        "motor_subesophageal_command": 16,
+        "interneuron_brachial_ring": 8,
+        "sensory_chemotactile": 32,
+        "sensory_mechanoreceptor": 32,
+        "motor_brachial_axial": 32
+      },
+      "regions": [
+        "superior_frontal_lobe",
+        "vertical_lobe",
+        "subvertical_lobe",
+        "subesophageal_mass",
+        "interbrachial_nerve_ring",
+        "brachial_arm_0",
+        "brachial_arm_1",
+        "brachial_arm_2",
+        "brachial_arm_3",
+        "brachial_arm_4",
+        "brachial_arm_5",
+        "brachial_arm_6",
+        "brachial_arm_7"
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": 0,
+      "label": "SFL_Afferent_0",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.19868566120449307,
+        2.4585207096486448,
+        0.9943065614302078
+      ]
+    },
+    {
+      "id": 1,
+      "label": "SFL_Afferent_1",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.6092119425632102,
+        2.429753987582999,
+        0.7297589129152459
+      ]
+    },
+    {
+      "id": 2,
+      "label": "SFL_Afferent_2",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.6316851262029566,
+        2.730230418745873,
+        0.6591576842195144
+      ]
+    },
+    {
+      "id": 3,
+      "label": "SFL_Afferent_3",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.21702401743438587,
+        2.3609746921562613,
+        0.660281073928923
+      ]
+    },
+    {
+      "id": 4,
+      "label": "SFL_Afferent_4",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.09678490862641365,
+        1.9260159266026606,
+        0.28252465024609025
+      ]
+    },
+    {
+      "id": 5,
+      "label": "SFL_Afferent_5",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.22491501169638908,
+        2.196150663899673,
+        0.8942741997785822
+      ]
+    },
+    {
+      "id": 6,
+      "label": "SFL_Afferent_6",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.36320963020848446,
+        2.0763088895994124,
+        1.2396946306764662
+      ]
+    },
+    {
+      "id": 7,
+      "label": "SFL_Afferent_7",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.09031052019461427,
+        2.520258461406377,
+        0.372575544135963
+      ]
+    },
+    {
+      "id": 8,
+      "label": "SFL_Afferent_8",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.21775308981007307,
+        2.5332767769129596,
+        0.45470192677330923
+      ]
+    },
+    {
+      "id": 9,
+      "label": "SFL_Afferent_9",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.1502792073382688,
+        2.3198083930243585,
+        0.712491875062017
+      ]
+    },
+    {
+      "id": 10,
+      "label": "SFL_Afferent_10",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.24068264489175878,
+        3.0556834553526815,
+        0.7959508325786199
+      ]
+    },
+    {
+      "id": 11,
+      "label": "SFL_Afferent_11",
+      "region": "superior_frontal_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.42308437158236,
+        2.7467634736309567,
+        0.4337469050086934
+      ]
+    },
+    {
+      "id": 12,
+      "label": "VL_Amacrine_0",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.12531815700285323,
+        2.41613195044809,
+        0.6687255804406277
+      ]
+    },
+    {
+      "id": 13,
+      "label": "VL_Amacrine_1",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.11811674152147411,
+        3.4953866319981644,
+        1.268547312475988
+      ]
+    },
+    {
+      "id": 14,
+      "label": "VL_Amacrine_2",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.06938896943294431,
+        3.0795585217642847,
+        0.608591203853029
+      ]
+    },
+    {
+      "id": 15,
+      "label": "VL_Amacrine_3",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.4319065250368252,
+        3.0157444916160854,
+        1.6228488904875662
+      ]
+    },
+    {
+      "id": 16,
+      "label": "VL_Amacrine_4",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.20617097374107685,
+        2.4947839378549066,
+        1.329633587757918
+      ]
+    },
+    {
+      "id": 17,
+      "label": "VL_Amacrine_5",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.23104936824978992,
+        2.929231199877617,
+        1.444670515536347
+      ]
+    },
+    {
+      "id": 18,
+      "label": "VL_Amacrine_6",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.6185997134975706,
+        3.57251204764648,
+        0.8643129907109445
+      ]
+    },
+    {
+      "id": 19,
+      "label": "VL_Amacrine_7",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.18552742551072873,
+        3.332505372561426,
+        1.5902180508489436
+      ]
+    },
+    {
+      "id": 20,
+      "label": "VL_Amacrine_8",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.28750454270717396,
+        3.1257364093344733,
+        0.7574660103975887
+      ]
+    },
+    {
+      "id": 21,
+      "label": "VL_Amacrine_9",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.7177239744484024,
+        3.5250103289576793,
+        1.7424960114283292
+      ]
+    },
+    {
+      "id": 22,
+      "label": "VL_Amacrine_10",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.04320607294820031,
+        3.60141315915681,
+        1.3446544100190536
+      ]
+    },
+    {
+      "id": 23,
+      "label": "VL_Amacrine_11",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.38707185276307454,
+        3.344558242203366,
+        1.8152146265863878
+      ]
+    },
+    {
+      "id": 24,
+      "label": "VL_Amacrine_12",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.021495623465970917,
+        3.8258574623256028,
+        0.15210195836410215
+      ]
+    },
+    {
+      "id": 25,
+      "label": "VL_Amacrine_13",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.4931415026251343,
+        3.234818827295269,
+        1.0803970598136527
+      ]
+    },
+    {
+      "id": 26,
+      "label": "VL_Amacrine_14",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.055056465921301374,
+        2.4049724341596432,
+        1.1121312448649951
+      ]
+    },
+    {
+      "id": 27,
+      "label": "VL_Amacrine_15",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.21426754290704783,
+        3.7911576178966064,
+        0.992691912690541
+      ]
+    },
+    {
+      "id": 28,
+      "label": "VL_Amacrine_16",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.4850961617359125,
+        2.9992971825661856,
+        1.5661608470808297
+      ]
+    },
+    {
+      "id": 29,
+      "label": "VL_Amacrine_17",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.19725066579581066,
+        2.9880959184931846,
+        1.4053069732453425
+      ]
+    },
+    {
+      "id": 30,
+      "label": "VL_Amacrine_18",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.05824652960882423,
+        3.587457996213156,
+        0.9191787624490589
+      ]
+    },
+    {
+      "id": 31,
+      "label": "VL_Amacrine_19",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.1965972879586609,
+        3.043156738747137,
+        0.6145940207471525
+      ]
+    },
+    {
+      "id": 32,
+      "label": "VL_Amacrine_20",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.17767216623874563,
+        3.304422108871956,
+        1.2020453826569844
+      ]
+    },
+    {
+      "id": 33,
+      "label": "VL_Amacrine_21",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.14075228002508844,
+        2.6338517031798343,
+        1.0317418708938564
+      ]
+    },
+    {
+      "id": 34,
+      "label": "VL_Amacrine_22",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.2056287099160617,
+        2.879089092311353,
+        1.1354857153335962
+      ]
+    },
+    {
+      "id": 35,
+      "label": "VL_Amacrine_23",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.24243051408872301,
+        3.954474360484212,
+        1.2698311251327354
+      ]
+    },
+    {
+      "id": 36,
+      "label": "VL_Amacrine_24",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.15453023443365838,
+        3.1702216336935334,
+        0.4324915138803833
+      ]
+    },
+    {
+      "id": 37,
+      "label": "VL_Amacrine_25",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.015908325269530125,
+        3.224092083976411,
+        2.1852968449941144
+      ]
+    },
+    {
+      "id": 38,
+      "label": "VL_Amacrine_26",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.11541657886867351,
+        3.320618936933445,
+        1.1861152921179026
+      ]
+    },
+    {
+      "id": 39,
+      "label": "VL_Amacrine_27",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.7012068225717192,
+        3.6571291258060086,
+        1.5007732130747096
+      ]
+    },
+    {
+      "id": 40,
+      "label": "VL_Amacrine_28",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.4746191682258281,
+        2.8362450180821046,
+        1.7611177243744396
+      ]
+    },
+    {
+      "id": 41,
+      "label": "VL_Amacrine_29",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.8411106376753685,
+        3.4347428375201083,
+        2.0761822503239915
+      ]
+    },
+    {
+      "id": 42,
+      "label": "VL_Amacrine_30",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.594321795078413,
+        2.9734809081588915,
+        1.2398605460350565
+      ]
+    },
+    {
+      "id": 43,
+      "label": "VL_Amacrine_31",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.3020853924697195,
+        2.579734627573547,
+        1.227425189922411
+      ]
+    },
+    {
+      "id": 44,
+      "label": "VL_Amacrine_32",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.6373822282356629,
+        3.3894369722540727,
+        0.8322303063064785
+      ]
+    },
+    {
+      "id": 45,
+      "label": "VL_Amacrine_33",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.9299606430105238,
+        2.8866986830655055,
+        1.0711753935177297
+      ]
+    },
+    {
+      "id": 46,
+      "label": "VL_Amacrine_34",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.48811033042180185,
+        2.707654273426418,
+        1.2909839738416518
+      ]
+    },
+    {
+      "id": 47,
+      "label": "VL_Amacrine_35",
+      "region": "vertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_amacrine",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.7842856525694568,
+        2.557006706175509,
+        1.2738535434129217
+      ]
+    },
+    {
+      "id": 48,
+      "label": "VL_LargeEfferent_0",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.12994139712421174,
+        2.234546861533193,
+        0.12891478673657542
+      ]
+    },
+    {
+      "id": 49,
+      "label": "VL_LargeEfferent_1",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.6602283065421382,
+        2.1565824696850693,
+        0.5890954019699558
+      ]
+    },
+    {
+      "id": 50,
+      "label": "VL_LargeEfferent_2",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.12524642517293832,
+        2.1039344628490926,
+        0.29599258352645275
+      ]
+    },
+    {
+      "id": 51,
+      "label": "VL_LargeEfferent_3",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.11612684858050178,
+        2.0879217419896046,
+        0.2856945745920897
+      ]
+    },
+    {
+      "id": 52,
+      "label": "VL_LargeEfferent_4",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.9328872555723783,
+        2.1421498762735363,
+        0.14260895083920544
+      ]
+    },
+    {
+      "id": 53,
+      "label": "VL_LargeEfferent_5",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.32827680431691486,
+        1.7075954989318036,
+        0.7361253811227356
+      ]
+    },
+    {
+      "id": 54,
+      "label": "VL_LargeEfferent_6",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.579297789503702,
+        1.753795304494487,
+        0.7890128387732965
+      ]
+    },
+    {
+      "id": 55,
+      "label": "VL_LargeEfferent_7",
+      "region": "subvertical_lobe",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.20639046346824916,
+        2.246618047998347,
+        1.0690378947961843
+      ]
+    },
+    {
+      "id": 56,
+      "label": "Subesoph_MotorCmd_0",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.877393420287617,
+        0.45044240850377637,
+        -0.9927832502984086
+      ]
+    },
+    {
+      "id": 57,
+      "label": "Subesoph_MotorCmd_1",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.0726133885646735,
+        0.5943999026709323,
+        -0.40692945683448223
+      ]
+    },
+    {
+      "id": 58,
+      "label": "Subesoph_MotorCmd_2",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.24006129489814668,
+        1.4193875446939335,
+        -1.0072086046572273
+      ]
+    },
+    {
+      "id": 59,
+      "label": "Subesoph_MotorCmd_3",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.6645729135807581,
+        1.161991350294634,
+        -0.7817116522359573
+      ]
+    },
+    {
+      "id": 60,
+      "label": "Subesoph_MotorCmd_4",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.47234534376821513,
+        1.421164759089245,
+        -0.1057109132705745
+      ]
+    },
+    {
+      "id": 61,
+      "label": "Subesoph_MotorCmd_5",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.29723227406911096,
+        0.5870031622774244,
+        0.2783485139310736
+      ]
+    },
+    {
+      "id": 62,
+      "label": "Subesoph_MotorCmd_6",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.34581034047543374,
+        1.0144593820425771,
+        -0.17807872850647788
+      ]
+    },
+    {
+      "id": 63,
+      "label": "Subesoph_MotorCmd_7",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.46512667297677057,
+        0.5158966783641709,
+        -0.4954606084095123
+      ]
+    },
+    {
+      "id": 64,
+      "label": "Subesoph_MotorCmd_8",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.13352519267422686,
+        0.7937811229801203,
+        -0.6133261263330454
+      ]
+    },
+    {
+      "id": 65,
+      "label": "Subesoph_MotorCmd_9",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.06102696725150239,
+        0.3758617536176058,
+        -0.4537260712021883
+      ]
+    },
+    {
+      "id": 66,
+      "label": "Subesoph_MotorCmd_10",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.6254981654909235,
+        1.5423909867838075,
+        -0.7931760475115505
+      ]
+    },
+    {
+      "id": 67,
+      "label": "Subesoph_MotorCmd_11",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.18073036237971557,
+        0.172294242578079,
+        -0.25371650033418397
+      ]
+    },
+    {
+      "id": 68,
+      "label": "Subesoph_MotorCmd_12",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -0.09800131562116562,
+        0.11447699596111269,
+        -0.2372466535102629
+      ]
+    },
+    {
+      "id": 69,
+      "label": "Subesoph_MotorCmd_13",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.39582457396139553,
+        0.47324947020909325,
+        -0.7654503805528307
+      ]
+    },
+    {
+      "id": 70,
+      "label": "Subesoph_MotorCmd_14",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.0955330027798587,
+        0.6360270522100924,
+        -1.0096275939813295
+      ]
+    },
+    {
+      "id": 71,
+      "label": "Subesoph_MotorCmd_15",
+      "region": "subesophageal_mass",
+      "arm_index": -1,
+      "segment_index": -1,
+      "category": "motor_subesophageal_command",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        0.7070202305013841,
+        0.1576901002349715,
+        0.5967513361079667
+      ]
+    },
+    {
+      "id": 72,
+      "label": "Interbrachial_Ring_Arm_0",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 0,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.0,
+        -0.016711808031685437,
+        0.0
+      ]
+    },
+    {
+      "id": 73,
+      "label": "Interbrachial_Ring_Arm_1",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 1,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.4142135623730951,
+        0.014671368643332284,
+        1.414213562373095
+      ]
+    },
+    {
+      "id": 74,
+      "label": "Interbrachial_Ring_Arm_2",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 2,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.2246467991473532e-16,
+        0.12065089665083568,
+        2.0
+      ]
+    },
+    {
+      "id": 75,
+      "label": "Interbrachial_Ring_Arm_3",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 3,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.414213562373095,
+        -0.08169356709872361,
+        1.4142135623730951
+      ]
+    },
+    {
+      "id": 76,
+      "label": "Interbrachial_Ring_Arm_4",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 4,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.0,
+        0.03686733088729012,
+        2.4492935982947064e-16
+      ]
+    },
+    {
+      "id": 77,
+      "label": "Interbrachial_Ring_Arm_5",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 5,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.4142135623730954,
+        -0.03933388123273607,
+        -1.414213562373095
+      ]
+    },
+    {
+      "id": 78,
+      "label": "Interbrachial_Ring_Arm_6",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 6,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.6739403974420594e-16,
+        0.0028744822934817487,
+        -2.0
+      ]
+    },
+    {
+      "id": 79,
+      "label": "Interbrachial_Ring_Arm_7",
+      "region": "interbrachial_nerve_ring",
+      "arm_index": 7,
+      "segment_index": -1,
+      "category": "interneuron_brachial_ring",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.4142135623730947,
+        0.12784518626072988,
+        -1.4142135623730954
+      ]
+    },
+    {
+      "id": 80,
+      "label": "Arm_0_Seg_0_ChemoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.7,
+        -0.24464336145505283,
+        0.2
+      ]
+    },
+    {
+      "id": 81,
+      "label": "Arm_0_Seg_0_MechanoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.3,
+        -0.04464336145505283,
+        -0.2
+      ]
+    },
+    {
+      "id": 82,
+      "label": "Arm_0_Seg_0_Interganglion",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.5,
+        0.05535663854494718,
+        0.0
+      ]
+    },
+    {
+      "id": 83,
+      "label": "Arm_0_Seg_0_AxialMotor",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.5,
+        -0.14464336145505283,
+        0.0
+      ]
+    },
+    {
+      "id": 84,
+      "label": "Arm_0_Seg_1_ChemoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.2,
+        -0.5805910007101693,
+        0.2
+      ]
+    },
+    {
+      "id": 85,
+      "label": "Arm_0_Seg_1_MechanoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.8,
+        -0.38059100071016927,
+        -0.2
+      ]
+    },
+    {
+      "id": 86,
+      "label": "Arm_0_Seg_1_Interganglion",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        4.0,
+        -0.2805910007101693,
+        0.0
+      ]
+    },
+    {
+      "id": 87,
+      "label": "Arm_0_Seg_1_AxialMotor",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.0,
+        -0.48059100071016925,
+        0.0
+      ]
+    },
+    {
+      "id": 88,
+      "label": "Arm_0_Seg_2_ChemoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        5.7,
+        -0.8863395228295441,
+        0.2
+      ]
+    },
+    {
+      "id": 89,
+      "label": "Arm_0_Seg_2_MechanoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        5.3,
+        -0.686339522829544,
+        -0.2
+      ]
+    },
+    {
+      "id": 90,
+      "label": "Arm_0_Seg_2_Interganglion",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        5.5,
+        -0.586339522829544,
+        0.0
+      ]
+    },
+    {
+      "id": 91,
+      "label": "Arm_0_Seg_2_AxialMotor",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        5.5,
+        -0.786339522829544,
+        0.0
+      ]
+    },
+    {
+      "id": 92,
+      "label": "Arm_0_Seg_3_ChemoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        7.2,
+        -1.4456967323577425,
+        0.2
+      ]
+    },
+    {
+      "id": 93,
+      "label": "Arm_0_Seg_3_MechanoSens",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        6.8,
+        -1.2456967323577426,
+        -0.2
+      ]
+    },
+    {
+      "id": 94,
+      "label": "Arm_0_Seg_3_Interganglion",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        7.0,
+        -1.1456967323577425,
+        0.0
+      ]
+    },
+    {
+      "id": 95,
+      "label": "Arm_0_Seg_3_AxialMotor",
+      "region": "brachial_arm_0",
+      "arm_index": 0,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        7.0,
+        -1.3456967323577427,
+        0.0
+      ]
+    },
+    {
+      "id": 96,
+      "label": "Arm_1_Seg_0_ChemoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.9677669529663688,
+        -0.38467724344714016,
+        1.9677669529663686
+      ]
+    },
+    {
+      "id": 97,
+      "label": "Arm_1_Seg_0_MechanoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.567766952966369,
+        -0.18467724344714018,
+        1.5677669529663687
+      ]
+    },
+    {
+      "id": 98,
+      "label": "Arm_1_Seg_0_Interganglion",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.7677669529663689,
+        -0.08467724344714017,
+        1.7677669529663687
+      ]
+    },
+    {
+      "id": 99,
+      "label": "Arm_1_Seg_0_AxialMotor",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.7677669529663689,
+        -0.2846772434471402,
+        1.7677669529663687
+      ]
+    },
+    {
+      "id": 100,
+      "label": "Arm_1_Seg_1_ChemoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.0284271247461905,
+        -0.6566669412510107,
+        3.02842712474619
+      ]
+    },
+    {
+      "id": 101,
+      "label": "Arm_1_Seg_1_MechanoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.62842712474619,
+        -0.4566669412510106,
+        2.6284271247461897
+      ]
+    },
+    {
+      "id": 102,
+      "label": "Arm_1_Seg_1_Interganglion",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        2.8284271247461903,
+        -0.3566669412510106,
+        2.82842712474619
+      ]
+    },
+    {
+      "id": 103,
+      "label": "Arm_1_Seg_1_AxialMotor",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.8284271247461903,
+        -0.5566669412510106,
+        2.82842712474619
+      ]
+    },
+    {
+      "id": 104,
+      "label": "Arm_1_Seg_2_ChemoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.089087296526012,
+        -1.0944368777543052,
+        4.089087296526011
+      ]
+    },
+    {
+      "id": 105,
+      "label": "Arm_1_Seg_2_MechanoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.6890872965260115,
+        -0.8944368777543052,
+        3.6890872965260106
+      ]
+    },
+    {
+      "id": 106,
+      "label": "Arm_1_Seg_2_Interganglion",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.8890872965260117,
+        -0.7944368777543053,
+        3.889087296526011
+      ]
+    },
+    {
+      "id": 107,
+      "label": "Arm_1_Seg_2_AxialMotor",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.8890872965260117,
+        -0.9944368777543052,
+        3.889087296526011
+      ]
+    },
+    {
+      "id": 108,
+      "label": "Arm_1_Seg_3_ChemoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        5.149747468305833,
+        -1.3676754237091022,
+        5.149747468305832
+      ]
+    },
+    {
+      "id": 109,
+      "label": "Arm_1_Seg_3_MechanoSens",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.7497474683058325,
+        -1.1676754237091023,
+        4.749747468305832
+      ]
+    },
+    {
+      "id": 110,
+      "label": "Arm_1_Seg_3_Interganglion",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        4.949747468305833,
+        -1.0676754237091022,
+        4.949747468305832
+      ]
+    },
+    {
+      "id": 111,
+      "label": "Arm_1_Seg_3_AxialMotor",
+      "region": "brachial_arm_1",
+      "arm_index": 1,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.949747468305833,
+        -1.2676754237091024,
+        4.949747468305832
+      ]
+    },
+    {
+      "id": 112,
+      "label": "Arm_2_Seg_0_ChemoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.20000000000000018,
+        -0.22768988397963782,
+        2.7
+      ]
+    },
+    {
+      "id": 113,
+      "label": "Arm_2_Seg_0_MechanoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.19999999999999984,
+        -0.027689883979637814,
+        2.3
+      ]
+    },
+    {
+      "id": 114,
+      "label": "Arm_2_Seg_0_Interganglion",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.5308084989341916e-16,
+        0.07231011602036219,
+        2.5
+      ]
+    },
+    {
+      "id": 115,
+      "label": "Arm_2_Seg_0_AxialMotor",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.5308084989341916e-16,
+        -0.12768988397963782,
+        2.5
+      ]
+    },
+    {
+      "id": 116,
+      "label": "Arm_2_Seg_1_ChemoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.20000000000000026,
+        -0.6025389046384487,
+        4.2
+      ]
+    },
+    {
+      "id": 117,
+      "label": "Arm_2_Seg_1_MechanoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.19999999999999976,
+        -0.4025389046384487,
+        3.8
+      ]
+    },
+    {
+      "id": 118,
+      "label": "Arm_2_Seg_1_Interganglion",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        2.4492935982947064e-16,
+        -0.3025389046384487,
+        4.0
+      ]
+    },
+    {
+      "id": 119,
+      "label": "Arm_2_Seg_1_AxialMotor",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.4492935982947064e-16,
+        -0.5025389046384487,
+        4.0
+      ]
+    },
+    {
+      "id": 120,
+      "label": "Arm_2_Seg_2_ChemoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.20000000000000034,
+        -0.947511122133605,
+        5.7
+      ]
+    },
+    {
+      "id": 121,
+      "label": "Arm_2_Seg_2_MechanoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.19999999999999968,
+        -0.747511122133605,
+        5.3
+      ]
+    },
+    {
+      "id": 122,
+      "label": "Arm_2_Seg_2_Interganglion",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.3677786976552215e-16,
+        -0.6475111221336051,
+        5.5
+      ]
+    },
+    {
+      "id": 123,
+      "label": "Arm_2_Seg_2_AxialMotor",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.3677786976552215e-16,
+        -0.847511122133605,
+        5.5
+      ]
+    },
+    {
+      "id": 124,
+      "label": "Arm_2_Seg_3_ChemoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.20000000000000043,
+        -1.2218374909574634,
+        7.2
+      ]
+    },
+    {
+      "id": 125,
+      "label": "Arm_2_Seg_3_MechanoSens",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.1999999999999996,
+        -1.0218374909574635,
+        6.8
+      ]
+    },
+    {
+      "id": 126,
+      "label": "Arm_2_Seg_3_Interganglion",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        4.286263797015736e-16,
+        -0.9218374909574635,
+        7.0
+      ]
+    },
+    {
+      "id": 127,
+      "label": "Arm_2_Seg_3_AxialMotor",
+      "region": "brachial_arm_2",
+      "arm_index": 2,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.286263797015736e-16,
+        -1.1218374909574635,
+        7.0
+      ]
+    },
+    {
+      "id": 128,
+      "label": "Arm_3_Seg_0_ChemoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.5677669529663687,
+        -0.01880198758651286,
+        1.9677669529663688
+      ]
+    },
+    {
+      "id": 129,
+      "label": "Arm_3_Seg_0_MechanoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.9677669529663686,
+        0.18119801241348715,
+        1.567766952966369
+      ]
+    },
+    {
+      "id": 130,
+      "label": "Arm_3_Seg_0_Interganglion",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.7677669529663687,
+        0.2811980124134872,
+        1.7677669529663689
+      ]
+    },
+    {
+      "id": 131,
+      "label": "Arm_3_Seg_0_AxialMotor",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.7677669529663687,
+        0.08119801241348715,
+        1.7677669529663689
+      ]
+    },
+    {
+      "id": 132,
+      "label": "Arm_3_Seg_1_ChemoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.6284271247461897,
+        -0.5642074271308232,
+        3.0284271247461905
+      ]
+    },
+    {
+      "id": 133,
+      "label": "Arm_3_Seg_1_MechanoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.02842712474619,
+        -0.36420742713082316,
+        2.62842712474619
+      ]
+    },
+    {
+      "id": 134,
+      "label": "Arm_3_Seg_1_Interganglion",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -2.82842712474619,
+        -0.2642074271308231,
+        2.8284271247461903
+      ]
+    },
+    {
+      "id": 135,
+      "label": "Arm_3_Seg_1_AxialMotor",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.82842712474619,
+        -0.4642074271308232,
+        2.8284271247461903
+      ]
+    },
+    {
+      "id": 136,
+      "label": "Arm_3_Seg_2_ChemoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.6890872965260106,
+        -1.0651418003614448,
+        4.089087296526012
+      ]
+    },
+    {
+      "id": 137,
+      "label": "Arm_3_Seg_2_MechanoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.089087296526011,
+        -0.8651418003614448,
+        3.6890872965260115
+      ]
+    },
+    {
+      "id": 138,
+      "label": "Arm_3_Seg_2_Interganglion",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.889087296526011,
+        -0.7651418003614449,
+        3.8890872965260117
+      ]
+    },
+    {
+      "id": 139,
+      "label": "Arm_3_Seg_2_AxialMotor",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.889087296526011,
+        -0.9651418003614448,
+        3.8890872965260117
+      ]
+    },
+    {
+      "id": 140,
+      "label": "Arm_3_Seg_3_ChemoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.749747468305832,
+        -1.4483885834054322,
+        5.149747468305833
+      ]
+    },
+    {
+      "id": 141,
+      "label": "Arm_3_Seg_3_MechanoSens",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -5.149747468305832,
+        -1.2483885834054322,
+        4.7497474683058325
+      ]
+    },
+    {
+      "id": 142,
+      "label": "Arm_3_Seg_3_Interganglion",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -4.949747468305832,
+        -1.1483885834054322,
+        4.949747468305833
+      ]
+    },
+    {
+      "id": 143,
+      "label": "Arm_3_Seg_3_AxialMotor",
+      "region": "brachial_arm_3",
+      "arm_index": 3,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.949747468305832,
+        -1.3483885834054323,
+        4.949747468305833
+      ]
+    },
+    {
+      "id": 144,
+      "label": "Arm_4_Seg_0_ChemoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.3,
+        -0.22573765374233454,
+        0.20000000000000032
+      ]
+    },
+    {
+      "id": 145,
+      "label": "Arm_4_Seg_0_MechanoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.7,
+        -0.025737653742334516,
+        -0.1999999999999997
+      ]
+    },
+    {
+      "id": 146,
+      "label": "Arm_4_Seg_0_Interganglion",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.5,
+        0.07426234625766549,
+        3.061616997868383e-16
+      ]
+    },
+    {
+      "id": 147,
+      "label": "Arm_4_Seg_0_AxialMotor",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.5,
+        -0.12573765374233453,
+        3.061616997868383e-16
+      ]
+    },
+    {
+      "id": 148,
+      "label": "Arm_4_Seg_1_ChemoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.8,
+        -0.7668584073877591,
+        0.2000000000000005
+      ]
+    },
+    {
+      "id": 149,
+      "label": "Arm_4_Seg_1_MechanoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.2,
+        -0.5668584073877591,
+        -0.1999999999999995
+      ]
+    },
+    {
+      "id": 150,
+      "label": "Arm_4_Seg_1_Interganglion",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -4.0,
+        -0.4668584073877591,
+        4.898587196589413e-16
+      ]
+    },
+    {
+      "id": 151,
+      "label": "Arm_4_Seg_1_AxialMotor",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.0,
+        -0.666858407387759,
+        4.898587196589413e-16
+      ]
+    },
+    {
+      "id": 152,
+      "label": "Arm_4_Seg_2_ChemoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -5.3,
+        -1.0888210755447247,
+        0.20000000000000068
+      ]
+    },
+    {
+      "id": 153,
+      "label": "Arm_4_Seg_2_MechanoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -5.7,
+        -0.8888210755447248,
+        -0.19999999999999934
+      ]
+    },
+    {
+      "id": 154,
+      "label": "Arm_4_Seg_2_Interganglion",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -5.5,
+        -0.7888210755447248,
+        6.735557395310443e-16
+      ]
+    },
+    {
+      "id": 155,
+      "label": "Arm_4_Seg_2_AxialMotor",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -5.5,
+        -0.9888210755447248,
+        6.735557395310443e-16
+      ]
+    },
+    {
+      "id": 156,
+      "label": "Arm_4_Seg_3_ChemoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -6.8,
+        -1.5363039658551123,
+        0.20000000000000087
+      ]
+    },
+    {
+      "id": 157,
+      "label": "Arm_4_Seg_3_MechanoSens",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -7.2,
+        -1.3363039658551124,
+        -0.19999999999999915
+      ]
+    },
+    {
+      "id": 158,
+      "label": "Arm_4_Seg_3_Interganglion",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -7.0,
+        -1.2363039658551123,
+        8.572527594031472e-16
+      ]
+    },
+    {
+      "id": 159,
+      "label": "Arm_4_Seg_3_AxialMotor",
+      "region": "brachial_arm_4",
+      "arm_index": 4,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -7.0,
+        -1.4363039658551124,
+        8.572527594031472e-16
+      ]
+    },
+    {
+      "id": 160,
+      "label": "Arm_5_Seg_0_ChemoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.5677669529663694,
+        -0.018830794388097344,
+        -1.5677669529663687
+      ]
+    },
+    {
+      "id": 161,
+      "label": "Arm_5_Seg_0_MechanoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.9677669529663693,
+        0.18116920561190267,
+        -1.9677669529663686
+      ]
+    },
+    {
+      "id": 162,
+      "label": "Arm_5_Seg_0_Interganglion",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.7677669529663693,
+        0.2811692056119027,
+        -1.7677669529663687
+      ]
+    },
+    {
+      "id": 163,
+      "label": "Arm_5_Seg_0_AxialMotor",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.7677669529663693,
+        0.08116920561190266,
+        -1.7677669529663687
+      ]
+    },
+    {
+      "id": 164,
+      "label": "Arm_5_Seg_1_ChemoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.6284271247461906,
+        -0.5115273578245862,
+        -2.6284271247461897
+      ]
+    },
+    {
+      "id": 165,
+      "label": "Arm_5_Seg_1_MechanoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.028427124746191,
+        -0.3115273578245863,
+        -3.02842712474619
+      ]
+    },
+    {
+      "id": 166,
+      "label": "Arm_5_Seg_1_Interganglion",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -2.8284271247461907,
+        -0.2115273578245863,
+        -2.82842712474619
+      ]
+    },
+    {
+      "id": 167,
+      "label": "Arm_5_Seg_1_AxialMotor",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -2.8284271247461907,
+        -0.41152735782458627,
+        -2.82842712474619
+      ]
+    },
+    {
+      "id": 168,
+      "label": "Arm_5_Seg_2_ChemoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.689087296526012,
+        -1.0886998060729534,
+        -3.6890872965260106
+      ]
+    },
+    {
+      "id": 169,
+      "label": "Arm_5_Seg_2_MechanoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.089087296526012,
+        -0.8886998060729534,
+        -4.089087296526011
+      ]
+    },
+    {
+      "id": 170,
+      "label": "Arm_5_Seg_2_Interganglion",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.889087296526012,
+        -0.7886998060729534,
+        -3.889087296526011
+      ]
+    },
+    {
+      "id": 171,
+      "label": "Arm_5_Seg_2_AxialMotor",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -3.889087296526012,
+        -0.9886998060729534,
+        -3.889087296526011
+      ]
+    },
+    {
+      "id": 172,
+      "label": "Arm_5_Seg_3_ChemoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.749747468305833,
+        -1.357585958092101,
+        -4.749747468305832
+      ]
+    },
+    {
+      "id": 173,
+      "label": "Arm_5_Seg_3_MechanoSens",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -5.149747468305834,
+        -1.157585958092101,
+        -5.149747468305832
+      ]
+    },
+    {
+      "id": 174,
+      "label": "Arm_5_Seg_3_Interganglion",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -4.949747468305834,
+        -1.057585958092101,
+        -4.949747468305832
+      ]
+    },
+    {
+      "id": 175,
+      "label": "Arm_5_Seg_3_AxialMotor",
+      "region": "brachial_arm_5",
+      "arm_index": 5,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.949747468305834,
+        -1.2575859580921012,
+        -4.949747468305832
+      ]
+    },
+    {
+      "id": 176,
+      "label": "Arm_6_Seg_0_ChemoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.19999999999999954,
+        -0.32373416454470466,
+        -2.3
+      ]
+    },
+    {
+      "id": 177,
+      "label": "Arm_6_Seg_0_MechanoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.20000000000000048,
+        -0.12373416454470464,
+        -2.7
+      ]
+    },
+    {
+      "id": 178,
+      "label": "Arm_6_Seg_0_Interganglion",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.592425496802574e-16,
+        -0.02373416454470463,
+        -2.5
+      ]
+    },
+    {
+      "id": 179,
+      "label": "Arm_6_Seg_0_AxialMotor",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -4.592425496802574e-16,
+        -0.22373416454470463,
+        -2.5
+      ]
+    },
+    {
+      "id": 180,
+      "label": "Arm_6_Seg_1_ChemoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.1999999999999993,
+        -0.5370751028106415,
+        -3.8
+      ]
+    },
+    {
+      "id": 181,
+      "label": "Arm_6_Seg_1_MechanoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.20000000000000073,
+        -0.3370751028106415,
+        -4.2
+      ]
+    },
+    {
+      "id": 182,
+      "label": "Arm_6_Seg_1_Interganglion",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -7.347880794884119e-16,
+        -0.2370751028106415,
+        -4.0
+      ]
+    },
+    {
+      "id": 183,
+      "label": "Arm_6_Seg_1_AxialMotor",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -7.347880794884119e-16,
+        -0.43707510281064155,
+        -4.0
+      ]
+    },
+    {
+      "id": 184,
+      "label": "Arm_6_Seg_2_ChemoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.199999999999999,
+        -1.1065563724865026,
+        -5.3
+      ]
+    },
+    {
+      "id": 185,
+      "label": "Arm_6_Seg_2_MechanoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.200000000000001,
+        -0.9065563724865027,
+        -5.7
+      ]
+    },
+    {
+      "id": 186,
+      "label": "Arm_6_Seg_2_Interganglion",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.0103336092965664e-15,
+        -0.8065563724865027,
+        -5.5
+      ]
+    },
+    {
+      "id": 187,
+      "label": "Arm_6_Seg_2_AxialMotor",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.0103336092965664e-15,
+        -1.0065563724865028,
+        -5.5
+      ]
+    },
+    {
+      "id": 188,
+      "label": "Arm_6_Seg_3_ChemoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        0.19999999999999873,
+        -1.3908194225419328,
+        -6.8
+      ]
+    },
+    {
+      "id": 189,
+      "label": "Arm_6_Seg_3_MechanoSens",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -0.2000000000000013,
+        -1.1908194225419328,
+        -7.2
+      ]
+    },
+    {
+      "id": 190,
+      "label": "Arm_6_Seg_3_Interganglion",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        -1.2858791391047208e-15,
+        -1.0908194225419328,
+        -7.0
+      ]
+    },
+    {
+      "id": 191,
+      "label": "Arm_6_Seg_3_AxialMotor",
+      "region": "brachial_arm_6",
+      "arm_index": 6,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        -1.2858791391047208e-15,
+        -1.290819422541933,
+        -7.0
+      ]
+    },
+    {
+      "id": 192,
+      "label": "Arm_7_Seg_0_ChemoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 0,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.9677669529663684,
+        -0.18162288653769582,
+        -1.5677669529663694
+      ]
+    },
+    {
+      "id": 193,
+      "label": "Arm_7_Seg_0_MechanoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 0,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.5677669529663685,
+        0.018377113462304206,
+        -1.9677669529663693
+      ]
+    },
+    {
+      "id": 194,
+      "label": "Arm_7_Seg_0_Interganglion",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 0,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.7677669529663684,
+        0.11837711346230421,
+        -1.7677669529663693
+      ]
+    },
+    {
+      "id": 195,
+      "label": "Arm_7_Seg_0_AxialMotor",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 0,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        1.7677669529663684,
+        -0.0816228865376958,
+        -1.7677669529663693
+      ]
+    },
+    {
+      "id": 196,
+      "label": "Arm_7_Seg_1_ChemoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 1,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.0284271247461896,
+        -0.5833230380403482,
+        -2.6284271247461906
+      ]
+    },
+    {
+      "id": 197,
+      "label": "Arm_7_Seg_1_MechanoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 1,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.6284271247461892,
+        -0.38332303804034823,
+        -3.028427124746191
+      ]
+    },
+    {
+      "id": 198,
+      "label": "Arm_7_Seg_1_Interganglion",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 1,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        2.8284271247461894,
+        -0.2833230380403482,
+        -2.8284271247461907
+      ]
+    },
+    {
+      "id": 199,
+      "label": "Arm_7_Seg_1_AxialMotor",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 1,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        2.8284271247461894,
+        -0.48332303804034826,
+        -2.8284271247461907
+      ]
+    },
+    {
+      "id": 200,
+      "label": "Arm_7_Seg_2_ChemoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 2,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.08908729652601,
+        -0.9659399980900143,
+        -3.689087296526012
+      ]
+    },
+    {
+      "id": 201,
+      "label": "Arm_7_Seg_2_MechanoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 2,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.68908729652601,
+        -0.7659399980900142,
+        -4.089087296526012
+      ]
+    },
+    {
+      "id": 202,
+      "label": "Arm_7_Seg_2_Interganglion",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 2,
+      "category": "interneuron_relay",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.8890872965260104,
+        -0.6659399980900143,
+        -3.889087296526012
+      ]
+    },
+    {
+      "id": 203,
+      "label": "Arm_7_Seg_2_AxialMotor",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 2,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        3.8890872965260104,
+        -0.8659399980900142,
+        -3.889087296526012
+      ]
+    },
+    {
+      "id": 204,
+      "label": "Arm_7_Seg_3_ChemoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 3,
+      "category": "sensory_chemotactile",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        5.149747468305832,
+        -1.256481845080995,
+        -4.749747468305833
+      ]
+    },
+    {
+      "id": 205,
+      "label": "Arm_7_Seg_3_MechanoSens",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 3,
+      "category": "sensory_mechanoreceptor",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.749747468305832,
+        -1.056481845080995,
+        -5.149747468305834
+      ]
+    },
+    {
+      "id": 206,
+      "label": "Arm_7_Seg_3_Interganglion",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 3,
+      "category": "interneuron_relay",
+      "neurotransmitter": "gaba",
+      "sign": -1.0,
+      "position": [
+        4.949747468305832,
+        -0.956481845080995,
+        -4.949747468305834
+      ]
+    },
+    {
+      "id": 207,
+      "label": "Arm_7_Seg_3_AxialMotor",
+      "region": "brachial_arm_7",
+      "arm_index": 7,
+      "segment_index": 3,
+      "category": "motor_brachial_axial",
+      "neurotransmitter": "acetylcholine",
+      "sign": 1.0,
+      "position": [
+        4.949747468305832,
+        -1.156481845080995,
+        -4.949747468305834
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": 0,
+      "target": 20,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4272399541785057
+    },
+    {
+      "source": 0,
+      "target": 38,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6506925120122564
+    },
+    {
+      "source": 0,
+      "target": 37,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2701954572038505
+    },
+    {
+      "source": 0,
+      "target": 18,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0369497137803136
+    },
+    {
+      "source": 0,
+      "target": 21,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.838985493372185
+    },
+    {
+      "source": 0,
+      "target": 22,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2893829336189444
+    },
+    {
+      "source": 0,
+      "target": 25,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.892059593349946
+    },
+    {
+      "source": 0,
+      "target": 29,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6408322616990878
+    },
+    {
+      "source": 1,
+      "target": 40,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6577297910151174
+    },
+    {
+      "source": 1,
+      "target": 26,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.656560281992348
+    },
+    {
+      "source": 1,
+      "target": 16,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1563053349494639
+    },
+    {
+      "source": 1,
+      "target": 29,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5852892694151532
+    },
+    {
+      "source": 1,
+      "target": 45,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1778670041387267
+    },
+    {
+      "source": 1,
+      "target": 25,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5610004998780989
+    },
+    {
+      "source": 1,
+      "target": 17,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5776694688588464
+    },
+    {
+      "source": 1,
+      "target": 47,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2203812828225258
+    },
+    {
+      "source": 2,
+      "target": 35,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6087081050228014
+    },
+    {
+      "source": 2,
+      "target": 39,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.960078633123637
+    },
+    {
+      "source": 2,
+      "target": 47,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9954619790023149
+    },
+    {
+      "source": 2,
+      "target": 18,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8172928952849821
+    },
+    {
+      "source": 2,
+      "target": 36,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5287869772595117
+    },
+    {
+      "source": 2,
+      "target": 40,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6835981316268838
+    },
+    {
+      "source": 2,
+      "target": 22,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5814576046379403
+    },
+    {
+      "source": 2,
+      "target": 37,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4590210572430173
+    },
+    {
+      "source": 3,
+      "target": 42,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1412789514879105
+    },
+    {
+      "source": 3,
+      "target": 17,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2722052756015485
+    },
+    {
+      "source": 3,
+      "target": 28,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.802969543715576
+    },
+    {
+      "source": 3,
+      "target": 22,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8915822695785929
+    },
+    {
+      "source": 3,
+      "target": 20,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9291782394167483
+    },
+    {
+      "source": 3,
+      "target": 14,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5364436513030995
+    },
+    {
+      "source": 3,
+      "target": 46,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7365077686757857
+    },
+    {
+      "source": 3,
+      "target": 30,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.642377296920458
+    },
+    {
+      "source": 4,
+      "target": 33,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.979817520894749
+    },
+    {
+      "source": 4,
+      "target": 34,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7062477376718652
+    },
+    {
+      "source": 4,
+      "target": 46,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5686549470611268
+    },
+    {
+      "source": 4,
+      "target": 23,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1529149322154835
+    },
+    {
+      "source": 4,
+      "target": 35,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0952703490186217
+    },
+    {
+      "source": 4,
+      "target": 17,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2784033574683262
+    },
+    {
+      "source": 4,
+      "target": 28,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.417082993766397
+    },
+    {
+      "source": 4,
+      "target": 27,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6825733535722671
+    },
+    {
+      "source": 5,
+      "target": 33,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7364361266325221
+    },
+    {
+      "source": 5,
+      "target": 19,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.17696152752797
+    },
+    {
+      "source": 5,
+      "target": 12,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.90193826291824
+    },
+    {
+      "source": 5,
+      "target": 17,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2933032039085037
+    },
+    {
+      "source": 5,
+      "target": 13,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9124844543129924
+    },
+    {
+      "source": 5,
+      "target": 20,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5266523373847858
+    },
+    {
+      "source": 5,
+      "target": 34,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.473279157002351
+    },
+    {
+      "source": 5,
+      "target": 22,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2262770439780075
+    },
+    {
+      "source": 6,
+      "target": 27,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.439757653415278
+    },
+    {
+      "source": 6,
+      "target": 22,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1453727765551673
+    },
+    {
+      "source": 6,
+      "target": 41,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5554022181725997
+    },
+    {
+      "source": 6,
+      "target": 13,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.338231430557319
+    },
+    {
+      "source": 6,
+      "target": 16,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6077085688026416
+    },
+    {
+      "source": 6,
+      "target": 40,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6508690941795385
+    },
+    {
+      "source": 6,
+      "target": 46,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.758797276270525
+    },
+    {
+      "source": 6,
+      "target": 34,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0889878936788597
+    },
+    {
+      "source": 7,
+      "target": 18,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.399599826583848
+    },
+    {
+      "source": 7,
+      "target": 26,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6623252423616526
+    },
+    {
+      "source": 7,
+      "target": 46,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3364860725812377
+    },
+    {
+      "source": 7,
+      "target": 13,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2533229718515857
+    },
+    {
+      "source": 7,
+      "target": 25,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5904373402123788
+    },
+    {
+      "source": 7,
+      "target": 31,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3225102331707381
+    },
+    {
+      "source": 7,
+      "target": 43,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.121106661563666
+    },
+    {
+      "source": 7,
+      "target": 40,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4705721013310087
+    },
+    {
+      "source": 8,
+      "target": 15,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.71234926890176
+    },
+    {
+      "source": 8,
+      "target": 44,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2564413349583843
+    },
+    {
+      "source": 8,
+      "target": 39,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7362564809157917
+    },
+    {
+      "source": 8,
+      "target": 45,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0373449640506147
+    },
+    {
+      "source": 8,
+      "target": 19,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8431463911855992
+    },
+    {
+      "source": 8,
+      "target": 43,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4524213935780284
+    },
+    {
+      "source": 8,
+      "target": 21,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5403270022239868
+    },
+    {
+      "source": 8,
+      "target": 34,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1327714704261247
+    },
+    {
+      "source": 9,
+      "target": 38,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7941469618580759
+    },
+    {
+      "source": 9,
+      "target": 21,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.184182830037419
+    },
+    {
+      "source": 9,
+      "target": 19,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0164887765979167
+    },
+    {
+      "source": 9,
+      "target": 24,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5917225328092659
+    },
+    {
+      "source": 9,
+      "target": 23,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4852361879857392
+    },
+    {
+      "source": 9,
+      "target": 39,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9182615821570284
+    },
+    {
+      "source": 9,
+      "target": 37,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9802912375563861
+    },
+    {
+      "source": 9,
+      "target": 12,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5745268334281401
+    },
+    {
+      "source": 10,
+      "target": 38,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4622907881125864
+    },
+    {
+      "source": 10,
+      "target": 18,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6635180638977438
+    },
+    {
+      "source": 10,
+      "target": 39,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8139553654323874
+    },
+    {
+      "source": 10,
+      "target": 47,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6221559197097275
+    },
+    {
+      "source": 10,
+      "target": 44,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2366022140711737
+    },
+    {
+      "source": 10,
+      "target": 28,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9965193807673167
+    },
+    {
+      "source": 10,
+      "target": 45,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4725139917336305
+    },
+    {
+      "source": 10,
+      "target": 23,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.240944205582764
+    },
+    {
+      "source": 11,
+      "target": 36,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7395242636385024
+    },
+    {
+      "source": 11,
+      "target": 19,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1858537285565205
+    },
+    {
+      "source": 11,
+      "target": 29,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8582046382889792
+    },
+    {
+      "source": 11,
+      "target": 23,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.797645680583152
+    },
+    {
+      "source": 11,
+      "target": 31,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6738405761748474
+    },
+    {
+      "source": 11,
+      "target": 12,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9736449507898257
+    },
+    {
+      "source": 11,
+      "target": 27,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.99087894836866
+    },
+    {
+      "source": 11,
+      "target": 15,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6289170850452825
+    },
+    {
+      "source": 12,
+      "target": 50,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.4964953956978804
+    },
+    {
+      "source": 12,
+      "target": 54,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.7115496387137743
+    },
+    {
+      "source": 12,
+      "target": 53,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.5150687262681495
+    },
+    {
+      "source": 13,
+      "target": 48,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1117297734822866
+    },
+    {
+      "source": 13,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2935308492528503
+    },
+    {
+      "source": 13,
+      "target": 50,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6032709557490257
+    },
+    {
+      "source": 14,
+      "target": 48,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1341441418985596
+    },
+    {
+      "source": 14,
+      "target": 55,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.481497558517569
+    },
+    {
+      "source": 14,
+      "target": 50,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.837286439848862
+    },
+    {
+      "source": 15,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8740874971150467
+    },
+    {
+      "source": 15,
+      "target": 52,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9219049576734966
+    },
+    {
+      "source": 15,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.51522075736891
+    },
+    {
+      "source": 16,
+      "target": 50,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.8087254305484046
+    },
+    {
+      "source": 16,
+      "target": 53,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.1412843843190286
+    },
+    {
+      "source": 16,
+      "target": 54,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.6036470736448538
+    },
+    {
+      "source": 17,
+      "target": 50,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1197488917092695
+    },
+    {
+      "source": 17,
+      "target": 48,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7776495468840408
+    },
+    {
+      "source": 17,
+      "target": 53,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.020455719779373
+    },
+    {
+      "source": 18,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1612388155754583
+    },
+    {
+      "source": 18,
+      "target": 48,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3170365858718338
+    },
+    {
+      "source": 18,
+      "target": 52,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9617349504072885
+    },
+    {
+      "source": 19,
+      "target": 53,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6489462263598238
+    },
+    {
+      "source": 19,
+      "target": 54,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0630289635028296
+    },
+    {
+      "source": 19,
+      "target": 55,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0905346237197806
+    },
+    {
+      "source": 20,
+      "target": 49,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.8303944413924003
+    },
+    {
+      "source": 20,
+      "target": 52,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.315732260925032
+    },
+    {
+      "source": 20,
+      "target": 54,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.2544010816262166
+    },
+    {
+      "source": 21,
+      "target": 52,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3774893507766781
+    },
+    {
+      "source": 21,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9644253902936346
+    },
+    {
+      "source": 21,
+      "target": 54,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2829642204030038
+    },
+    {
+      "source": 22,
+      "target": 48,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1656315718249686
+    },
+    {
+      "source": 22,
+      "target": 55,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1698112293141723
+    },
+    {
+      "source": 22,
+      "target": 51,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8334615199867663
+    },
+    {
+      "source": 23,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4953852318476866
+    },
+    {
+      "source": 23,
+      "target": 53,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1234441355910965
+    },
+    {
+      "source": 23,
+      "target": 50,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.057143878101502
+    },
+    {
+      "source": 24,
+      "target": 54,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.184163497431815
+    },
+    {
+      "source": 24,
+      "target": 50,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.5729627029691895
+    },
+    {
+      "source": 24,
+      "target": 55,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.192904583469036
+    },
+    {
+      "source": 25,
+      "target": 54,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.04376396119649
+    },
+    {
+      "source": 25,
+      "target": 49,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7822952657705946
+    },
+    {
+      "source": 25,
+      "target": 50,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6310166946459477
+    },
+    {
+      "source": 26,
+      "target": 48,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1850485143570868
+    },
+    {
+      "source": 26,
+      "target": 55,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3017028335272798
+    },
+    {
+      "source": 26,
+      "target": 53,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0758592329514522
+    },
+    {
+      "source": 27,
+      "target": 48,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0120310637073244
+    },
+    {
+      "source": 27,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.244247817888303
+    },
+    {
+      "source": 27,
+      "target": 53,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7044253284503992
+    },
+    {
+      "source": 28,
+      "target": 48,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.6525767203336263
+    },
+    {
+      "source": 28,
+      "target": 49,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.6378430787344376
+    },
+    {
+      "source": 28,
+      "target": 50,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.9728884712494457
+    },
+    {
+      "source": 29,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.469682397924669
+    },
+    {
+      "source": 29,
+      "target": 49,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8726417589882414
+    },
+    {
+      "source": 29,
+      "target": 54,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.3416837652347446
+    },
+    {
+      "source": 30,
+      "target": 49,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.911159616751275
+    },
+    {
+      "source": 30,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5092640460092057
+    },
+    {
+      "source": 30,
+      "target": 48,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7285346001113755
+    },
+    {
+      "source": 31,
+      "target": 52,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.461673956178147
+    },
+    {
+      "source": 31,
+      "target": 54,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4044358817796143
+    },
+    {
+      "source": 31,
+      "target": 55,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5656933404868767
+    },
+    {
+      "source": 32,
+      "target": 51,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.1229463422655148
+    },
+    {
+      "source": 32,
+      "target": 52,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.661176700556087
+    },
+    {
+      "source": 32,
+      "target": 49,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.9401944281621941
+    },
+    {
+      "source": 33,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3292482474540475
+    },
+    {
+      "source": 33,
+      "target": 50,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5701394378673172
+    },
+    {
+      "source": 33,
+      "target": 54,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5043900206624852
+    },
+    {
+      "source": 34,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4364636568827587
+    },
+    {
+      "source": 34,
+      "target": 49,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5730993356961898
+    },
+    {
+      "source": 34,
+      "target": 51,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.173129626584666
+    },
+    {
+      "source": 35,
+      "target": 53,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3815254938764563
+    },
+    {
+      "source": 35,
+      "target": 51,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.494023897642498
+    },
+    {
+      "source": 35,
+      "target": 54,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.810480491861425
+    },
+    {
+      "source": 36,
+      "target": 55,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.3174683421961928
+    },
+    {
+      "source": 36,
+      "target": 51,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.4578628712319226
+    },
+    {
+      "source": 36,
+      "target": 53,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.931944457694795
+    },
+    {
+      "source": 37,
+      "target": 49,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5394210755087283
+    },
+    {
+      "source": 37,
+      "target": 53,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.178542491792382
+    },
+    {
+      "source": 37,
+      "target": 55,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8570893241086672
+    },
+    {
+      "source": 38,
+      "target": 55,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1137002979251722
+    },
+    {
+      "source": 38,
+      "target": 52,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2943670592369096
+    },
+    {
+      "source": 38,
+      "target": 53,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7821636975554271
+    },
+    {
+      "source": 39,
+      "target": 52,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5530644077476394
+    },
+    {
+      "source": 39,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2528881517505877
+    },
+    {
+      "source": 39,
+      "target": 48,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.342849101184996
+    },
+    {
+      "source": 40,
+      "target": 53,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.226118424390181
+    },
+    {
+      "source": 40,
+      "target": 54,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.0361272816457525
+    },
+    {
+      "source": 40,
+      "target": 55,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.1903842897625512
+    },
+    {
+      "source": 41,
+      "target": 51,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0272115883195214
+    },
+    {
+      "source": 41,
+      "target": 52,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7284758518407937
+    },
+    {
+      "source": 41,
+      "target": 50,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4748623964990273
+    },
+    {
+      "source": 42,
+      "target": 51,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5832684293217338
+    },
+    {
+      "source": 42,
+      "target": 52,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.305100087193961
+    },
+    {
+      "source": 42,
+      "target": 55,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7787121481456483
+    },
+    {
+      "source": 43,
+      "target": 54,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.044614653038738
+    },
+    {
+      "source": 43,
+      "target": 55,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.145167751823348
+    },
+    {
+      "source": 43,
+      "target": 48,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7355021657802823
+    },
+    {
+      "source": 44,
+      "target": 52,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.159483607414403
+    },
+    {
+      "source": 44,
+      "target": 50,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.7131574602573487
+    },
+    {
+      "source": 44,
+      "target": 55,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.7737712601376145
+    },
+    {
+      "source": 45,
+      "target": 55,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.830073349092511
+    },
+    {
+      "source": 45,
+      "target": 52,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6465887563588013
+    },
+    {
+      "source": 45,
+      "target": 49,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3375410497841462
+    },
+    {
+      "source": 46,
+      "target": 50,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6655973358502529
+    },
+    {
+      "source": 46,
+      "target": 48,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.041971851070957
+    },
+    {
+      "source": 46,
+      "target": 52,
+      "synapse_count": 1,
+      "conductance_ns": 2.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.278591228083953
+    },
+    {
+      "source": 47,
+      "target": 52,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.398613594115531
+    },
+    {
+      "source": 47,
+      "target": 49,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8273423307252963
+    },
+    {
+      "source": 47,
+      "target": 53,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7700025548424139
+    },
+    {
+      "source": 48,
+      "target": 61,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5403362197574637
+    },
+    {
+      "source": 48,
+      "target": 71,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7317263763646091
+    },
+    {
+      "source": 48,
+      "target": 68,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.548801563113076
+    },
+    {
+      "source": 48,
+      "target": 57,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.480682626683554
+    },
+    {
+      "source": 49,
+      "target": 71,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6615144144546554
+    },
+    {
+      "source": 49,
+      "target": 64,
+      "synapse_count": 6,
+      "conductance_ns": 15.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.46816693839859
+    },
+    {
+      "source": 49,
+      "target": 65,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6833986702228603
+    },
+    {
+      "source": 49,
+      "target": 67,
+      "synapse_count": 6,
+      "conductance_ns": 15.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.975164603177783
+    },
+    {
+      "source": 50,
+      "target": 71,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7189351973582303
+    },
+    {
+      "source": 50,
+      "target": 65,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8592945653861397
+    },
+    {
+      "source": 50,
+      "target": 64,
+      "synapse_count": 6,
+      "conductance_ns": 15.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4128313951188503
+    },
+    {
+      "source": 50,
+      "target": 62,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0726900288311043
+    },
+    {
+      "source": 51,
+      "target": 65,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1612850355012494
+    },
+    {
+      "source": 51,
+      "target": 60,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.593890714295626
+    },
+    {
+      "source": 51,
+      "target": 56,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9409724181403507
+    },
+    {
+      "source": 51,
+      "target": 69,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4145405259666513
+    },
+    {
+      "source": 52,
+      "target": 66,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0164769514081824
+    },
+    {
+      "source": 52,
+      "target": 67,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8077918126797101
+    },
+    {
+      "source": 52,
+      "target": 71,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9488811436733213
+    },
+    {
+      "source": 52,
+      "target": 68,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5739488457868271
+    },
+    {
+      "source": 53,
+      "target": 67,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2242552345309012
+    },
+    {
+      "source": 53,
+      "target": 61,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.158102730739742
+    },
+    {
+      "source": 53,
+      "target": 62,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6017147412182786
+    },
+    {
+      "source": 53,
+      "target": 56,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0627819211550535
+    },
+    {
+      "source": 54,
+      "target": 64,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6230340524784701
+    },
+    {
+      "source": 54,
+      "target": 58,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.461173154653296
+    },
+    {
+      "source": 54,
+      "target": 56,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.31302743888916
+    },
+    {
+      "source": 54,
+      "target": 68,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.195618415804386
+    },
+    {
+      "source": 55,
+      "target": 71,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.977380062602035
+    },
+    {
+      "source": 55,
+      "target": 62,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8602815435206008
+    },
+    {
+      "source": 55,
+      "target": 69,
+      "synapse_count": 5,
+      "conductance_ns": 12.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0054332791152825
+    },
+    {
+      "source": 55,
+      "target": 60,
+      "synapse_count": 7,
+      "conductance_ns": 17.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.261741518397857
+    },
+    {
+      "source": 72,
+      "target": 79,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5127717434336672
+    },
+    {
+      "source": 72,
+      "target": 73,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0740762663498256
+    },
+    {
+      "source": 73,
+      "target": 72,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7338538367514844
+    },
+    {
+      "source": 73,
+      "target": 74,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.462372356054847
+    },
+    {
+      "source": 74,
+      "target": 73,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7636270540333367
+    },
+    {
+      "source": 74,
+      "target": 75,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0196071621283196
+    },
+    {
+      "source": 75,
+      "target": 74,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7680114061992227
+    },
+    {
+      "source": 75,
+      "target": 76,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.579970759431711
+    },
+    {
+      "source": 76,
+      "target": 75,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0596907903022874
+    },
+    {
+      "source": 76,
+      "target": 77,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7139612776539168
+    },
+    {
+      "source": 77,
+      "target": 76,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0220558050040562
+    },
+    {
+      "source": 77,
+      "target": 78,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5825331573522206
+    },
+    {
+      "source": 78,
+      "target": 77,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4259840077179895
+    },
+    {
+      "source": 78,
+      "target": 79,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1837443320773722
+    },
+    {
+      "source": 79,
+      "target": 78,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7652437862678962
+    },
+    {
+      "source": 79,
+      "target": 72,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.364056211020035
+    },
+    {
+      "source": 80,
+      "target": 82,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1019271338936325
+    },
+    {
+      "source": 81,
+      "target": 82,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9163441772905632
+    },
+    {
+      "source": 82,
+      "target": 83,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6347012029375434
+    },
+    {
+      "source": 81,
+      "target": 83,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6643409203525465
+    },
+    {
+      "source": 83,
+      "target": 72,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1917661139059135
+    },
+    {
+      "source": 72,
+      "target": 83,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7418310355349542
+    },
+    {
+      "source": 80,
+      "target": 10,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2048293183972953
+    },
+    {
+      "source": 84,
+      "target": 86,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.480296745501294
+    },
+    {
+      "source": 85,
+      "target": 86,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8521045143735089
+    },
+    {
+      "source": 86,
+      "target": 87,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.391916614020643
+    },
+    {
+      "source": 85,
+      "target": 87,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7951472868038152
+    },
+    {
+      "source": 83,
+      "target": 87,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6887917184570906
+    },
+    {
+      "source": 87,
+      "target": 83,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2672245208112436
+    },
+    {
+      "source": 84,
+      "target": 10,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.143025894814882
+    },
+    {
+      "source": 88,
+      "target": 90,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0050174993767644
+    },
+    {
+      "source": 89,
+      "target": 90,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5020589596912668
+    },
+    {
+      "source": 90,
+      "target": 91,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.817876566553513
+    },
+    {
+      "source": 89,
+      "target": 91,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4370788335371687
+    },
+    {
+      "source": 87,
+      "target": 91,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.38860726991566
+    },
+    {
+      "source": 91,
+      "target": 87,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.704387239387438
+    },
+    {
+      "source": 92,
+      "target": 94,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.208419548923132
+    },
+    {
+      "source": 93,
+      "target": 94,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5540481924237242
+    },
+    {
+      "source": 94,
+      "target": 95,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.151841531599793
+    },
+    {
+      "source": 93,
+      "target": 95,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0967488619799852
+    },
+    {
+      "source": 91,
+      "target": 95,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1798943293449438
+    },
+    {
+      "source": 95,
+      "target": 91,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.045645560033609
+    },
+    {
+      "source": 56,
+      "target": 83,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.9601073660628678
+    },
+    {
+      "source": 57,
+      "target": 83,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7626702528187561
+    },
+    {
+      "source": 58,
+      "target": 83,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2361086450645855
+    },
+    {
+      "source": 59,
+      "target": 83,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.426473306880264
+    },
+    {
+      "source": 96,
+      "target": 98,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.141485480876255
+    },
+    {
+      "source": 97,
+      "target": 98,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.948845345228234
+    },
+    {
+      "source": 98,
+      "target": 99,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9916740240619286
+    },
+    {
+      "source": 97,
+      "target": 99,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9007182870974253
+    },
+    {
+      "source": 99,
+      "target": 73,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.236245626981062
+    },
+    {
+      "source": 73,
+      "target": 99,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9298480804044953
+    },
+    {
+      "source": 96,
+      "target": 1,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2287164996792743
+    },
+    {
+      "source": 100,
+      "target": 102,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4464198133831143
+    },
+    {
+      "source": 101,
+      "target": 102,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4363868558294435
+    },
+    {
+      "source": 102,
+      "target": 103,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.8710510314062423
+    },
+    {
+      "source": 101,
+      "target": 103,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2372463359112214
+    },
+    {
+      "source": 99,
+      "target": 103,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0531937055834835
+    },
+    {
+      "source": 103,
+      "target": 99,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.041843689288104
+    },
+    {
+      "source": 100,
+      "target": 1,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.022047981885998
+    },
+    {
+      "source": 104,
+      "target": 106,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5650523589825038
+    },
+    {
+      "source": 105,
+      "target": 106,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.3416956956313735
+    },
+    {
+      "source": 106,
+      "target": 107,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.733300629041476
+    },
+    {
+      "source": 105,
+      "target": 107,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0930745819523526
+    },
+    {
+      "source": 103,
+      "target": 107,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4630447030251001
+    },
+    {
+      "source": 107,
+      "target": 103,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.734616377924789
+    },
+    {
+      "source": 108,
+      "target": 110,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7503715844051009
+    },
+    {
+      "source": 109,
+      "target": 110,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8711305744579427
+    },
+    {
+      "source": 110,
+      "target": 111,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.3606117897989254
+    },
+    {
+      "source": 109,
+      "target": 111,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9010494534006734
+    },
+    {
+      "source": 107,
+      "target": 111,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4831890934828738
+    },
+    {
+      "source": 111,
+      "target": 107,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6284178741502682
+    },
+    {
+      "source": 56,
+      "target": 99,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.6639428038287976
+    },
+    {
+      "source": 57,
+      "target": 99,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0379868088701953
+    },
+    {
+      "source": 58,
+      "target": 99,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.095118201274376
+    },
+    {
+      "source": 59,
+      "target": 99,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.1207239178471475
+    },
+    {
+      "source": 112,
+      "target": 114,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6448937755891178
+    },
+    {
+      "source": 113,
+      "target": 114,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2849871128133696
+    },
+    {
+      "source": 114,
+      "target": 115,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.459877669434247
+    },
+    {
+      "source": 113,
+      "target": 115,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7000410962386074
+    },
+    {
+      "source": 115,
+      "target": 74,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0833251574186065
+    },
+    {
+      "source": 74,
+      "target": 115,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.889963772253085
+    },
+    {
+      "source": 112,
+      "target": 0,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.405297276077434
+    },
+    {
+      "source": 116,
+      "target": 118,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.3156373059692803
+    },
+    {
+      "source": 117,
+      "target": 118,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9485706162528238
+    },
+    {
+      "source": 118,
+      "target": 119,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.9983232782025662
+    },
+    {
+      "source": 117,
+      "target": 119,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7918441480702909
+    },
+    {
+      "source": 115,
+      "target": 119,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7055848089853314
+    },
+    {
+      "source": 119,
+      "target": 115,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6418090036883286
+    },
+    {
+      "source": 116,
+      "target": 5,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7363114686362382
+    },
+    {
+      "source": 120,
+      "target": 122,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5195416948383673
+    },
+    {
+      "source": 121,
+      "target": 122,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1529226164879838
+    },
+    {
+      "source": 122,
+      "target": 123,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5354232867694229
+    },
+    {
+      "source": 121,
+      "target": 123,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6757329982896667
+    },
+    {
+      "source": 119,
+      "target": 123,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2012538624183615
+    },
+    {
+      "source": 123,
+      "target": 119,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5664062175827331
+    },
+    {
+      "source": 124,
+      "target": 126,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6571569943100415
+    },
+    {
+      "source": 125,
+      "target": 126,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2938465524031921
+    },
+    {
+      "source": 126,
+      "target": 127,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.7654315080861207
+    },
+    {
+      "source": 125,
+      "target": 127,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6350816965231163
+    },
+    {
+      "source": 123,
+      "target": 127,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8789299382745315
+    },
+    {
+      "source": 127,
+      "target": 123,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1011733982181657
+    },
+    {
+      "source": 56,
+      "target": 115,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.9003004884896202
+    },
+    {
+      "source": 57,
+      "target": 115,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8349651645181395
+    },
+    {
+      "source": 58,
+      "target": 115,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7091356806688005
+    },
+    {
+      "source": 59,
+      "target": 115,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.7728604990872734
+    },
+    {
+      "source": 128,
+      "target": 130,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.241938247492171
+    },
+    {
+      "source": 129,
+      "target": 130,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9281738642648556
+    },
+    {
+      "source": 130,
+      "target": 131,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1034561661395834
+    },
+    {
+      "source": 129,
+      "target": 131,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1789003850856121
+    },
+    {
+      "source": 131,
+      "target": 75,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1296502274930242
+    },
+    {
+      "source": 75,
+      "target": 131,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6602296927693503
+    },
+    {
+      "source": 128,
+      "target": 3,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6060029051839169
+    },
+    {
+      "source": 132,
+      "target": 134,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6949517252638602
+    },
+    {
+      "source": 133,
+      "target": 134,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.067665106837724
+    },
+    {
+      "source": 134,
+      "target": 135,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.4618076628979697
+    },
+    {
+      "source": 133,
+      "target": 135,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5815082121849455
+    },
+    {
+      "source": 131,
+      "target": 135,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8279989619789945
+    },
+    {
+      "source": 135,
+      "target": 131,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3772144329790768
+    },
+    {
+      "source": 132,
+      "target": 1,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6207041679811276
+    },
+    {
+      "source": 136,
+      "target": 138,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2435671331844036
+    },
+    {
+      "source": 137,
+      "target": 138,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9384279747160886
+    },
+    {
+      "source": 138,
+      "target": 139,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.451730511638263
+    },
+    {
+      "source": 137,
+      "target": 139,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1737915835422137
+    },
+    {
+      "source": 135,
+      "target": 139,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8642358313773986
+    },
+    {
+      "source": 139,
+      "target": 135,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0793970142849583
+    },
+    {
+      "source": 140,
+      "target": 142,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8174155510017522
+    },
+    {
+      "source": 141,
+      "target": 142,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.496391432906278
+    },
+    {
+      "source": 142,
+      "target": 143,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.6107271018752625
+    },
+    {
+      "source": 141,
+      "target": 143,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9384035565445277
+    },
+    {
+      "source": 139,
+      "target": 143,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9569094826625975
+    },
+    {
+      "source": 143,
+      "target": 139,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.492667832113484
+    },
+    {
+      "source": 56,
+      "target": 131,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.4495863242935663
+    },
+    {
+      "source": 57,
+      "target": 131,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8006513726938738
+    },
+    {
+      "source": 58,
+      "target": 131,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8990849018582903
+    },
+    {
+      "source": 59,
+      "target": 131,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.8604564848625826
+    },
+    {
+      "source": 144,
+      "target": 146,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2365450108167613
+    },
+    {
+      "source": 145,
+      "target": 146,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.954338139532616
+    },
+    {
+      "source": 146,
+      "target": 147,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.985413042399962
+    },
+    {
+      "source": 145,
+      "target": 147,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3509866688961507
+    },
+    {
+      "source": 147,
+      "target": 76,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1918699850939258
+    },
+    {
+      "source": 76,
+      "target": 147,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2420775259692054
+    },
+    {
+      "source": 144,
+      "target": 3,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5096897637860356
+    },
+    {
+      "source": 148,
+      "target": 150,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5866010467265768
+    },
+    {
+      "source": 149,
+      "target": 150,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.52799173561745
+    },
+    {
+      "source": 150,
+      "target": 151,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.6761167561801584
+    },
+    {
+      "source": 149,
+      "target": 151,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5587888915130146
+    },
+    {
+      "source": 147,
+      "target": 151,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2910303396980305
+    },
+    {
+      "source": 151,
+      "target": 147,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.712377427122343
+    },
+    {
+      "source": 148,
+      "target": 1,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.085912189211263
+    },
+    {
+      "source": 152,
+      "target": 154,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2676943037355926
+    },
+    {
+      "source": 153,
+      "target": 154,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.431625614040497
+    },
+    {
+      "source": 154,
+      "target": 155,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.171996127562419
+    },
+    {
+      "source": 153,
+      "target": 155,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9715841879184197
+    },
+    {
+      "source": 151,
+      "target": 155,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.052000414070859
+    },
+    {
+      "source": 155,
+      "target": 151,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3106203661714868
+    },
+    {
+      "source": 156,
+      "target": 158,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.703710767324017
+    },
+    {
+      "source": 157,
+      "target": 158,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7650810664526122
+    },
+    {
+      "source": 158,
+      "target": 159,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.245697274377869
+    },
+    {
+      "source": 157,
+      "target": 159,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5252304104116103
+    },
+    {
+      "source": 155,
+      "target": 159,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.326062349295394
+    },
+    {
+      "source": 159,
+      "target": 155,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6382655723732389
+    },
+    {
+      "source": 56,
+      "target": 147,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.374330777633653
+    },
+    {
+      "source": 57,
+      "target": 147,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6947867851071043
+    },
+    {
+      "source": 58,
+      "target": 147,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.310041598160643
+    },
+    {
+      "source": 59,
+      "target": 147,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.6858367996635637
+    },
+    {
+      "source": 160,
+      "target": 162,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6905230159092526
+    },
+    {
+      "source": 161,
+      "target": 162,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8042464910608758
+    },
+    {
+      "source": 162,
+      "target": 163,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1242961133928941
+    },
+    {
+      "source": 161,
+      "target": 163,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2980918922742222
+    },
+    {
+      "source": 163,
+      "target": 77,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2159725078454118
+    },
+    {
+      "source": 77,
+      "target": 163,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5180608082591005
+    },
+    {
+      "source": 160,
+      "target": 0,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0469462513732015
+    },
+    {
+      "source": 164,
+      "target": 166,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7617473214366997
+    },
+    {
+      "source": 165,
+      "target": 166,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4396420901570894
+    },
+    {
+      "source": 166,
+      "target": 167,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.4075790827672785
+    },
+    {
+      "source": 165,
+      "target": 167,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.9721009266929279
+    },
+    {
+      "source": 163,
+      "target": 167,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6469934946600253
+    },
+    {
+      "source": 167,
+      "target": 163,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8395158101750815
+    },
+    {
+      "source": 164,
+      "target": 9,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.397555147662806
+    },
+    {
+      "source": 168,
+      "target": 170,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3988676704274754
+    },
+    {
+      "source": 169,
+      "target": 170,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6757687422207739
+    },
+    {
+      "source": 170,
+      "target": 171,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.3971667097028675
+    },
+    {
+      "source": 169,
+      "target": 171,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0050555641508385
+    },
+    {
+      "source": 167,
+      "target": 171,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2185014958324911
+    },
+    {
+      "source": 171,
+      "target": 167,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2587171798448475
+    },
+    {
+      "source": 172,
+      "target": 174,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7110763152897657
+    },
+    {
+      "source": 173,
+      "target": 174,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2134641060800033
+    },
+    {
+      "source": 174,
+      "target": 175,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.5670238505993912
+    },
+    {
+      "source": 173,
+      "target": 175,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.063580659690059
+    },
+    {
+      "source": 171,
+      "target": 175,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9107711882244072
+    },
+    {
+      "source": 175,
+      "target": 171,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.3927372930251711
+    },
+    {
+      "source": 56,
+      "target": 163,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.228432355348338
+    },
+    {
+      "source": 57,
+      "target": 163,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6162804991877258
+    },
+    {
+      "source": 58,
+      "target": 163,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.579811679004425
+    },
+    {
+      "source": 59,
+      "target": 163,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.5683755318783164
+    },
+    {
+      "source": 176,
+      "target": 178,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.860020874945447
+    },
+    {
+      "source": 177,
+      "target": 178,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.6771111684464828
+    },
+    {
+      "source": 178,
+      "target": 179,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7066179142480313
+    },
+    {
+      "source": 177,
+      "target": 179,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6693414008851775
+    },
+    {
+      "source": 179,
+      "target": 78,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8764157317331909
+    },
+    {
+      "source": 78,
+      "target": 179,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.294757976928802
+    },
+    {
+      "source": 176,
+      "target": 1,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.4302373928720913
+    },
+    {
+      "source": 180,
+      "target": 182,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5098799618688192
+    },
+    {
+      "source": 181,
+      "target": 182,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.403623570846478
+    },
+    {
+      "source": 182,
+      "target": 183,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.7782398756310007
+    },
+    {
+      "source": 181,
+      "target": 183,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2358365890400442
+    },
+    {
+      "source": 179,
+      "target": 183,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.4094797112677182
+    },
+    {
+      "source": 183,
+      "target": 179,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.5311920571585005
+    },
+    {
+      "source": 180,
+      "target": 1,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1853069762418307
+    },
+    {
+      "source": 184,
+      "target": 186,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7654293076385548
+    },
+    {
+      "source": 185,
+      "target": 186,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7870847240787857
+    },
+    {
+      "source": 186,
+      "target": 187,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.3796395838536837
+    },
+    {
+      "source": 185,
+      "target": 187,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9657978366826836
+    },
+    {
+      "source": 183,
+      "target": 187,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8247637893246418
+    },
+    {
+      "source": 187,
+      "target": 183,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8766981675312029
+    },
+    {
+      "source": 188,
+      "target": 190,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.9616589497417527
+    },
+    {
+      "source": 189,
+      "target": 190,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.8123276895843479
+    },
+    {
+      "source": 190,
+      "target": 191,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.9691225866696573
+    },
+    {
+      "source": 189,
+      "target": 191,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.426693665640798
+    },
+    {
+      "source": 187,
+      "target": 191,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.0106130494568637
+    },
+    {
+      "source": 191,
+      "target": 187,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8232647007422935
+    },
+    {
+      "source": 56,
+      "target": 179,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 2.457262574801061
+    },
+    {
+      "source": 57,
+      "target": 179,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2485935342795853
+    },
+    {
+      "source": 58,
+      "target": 179,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.5350319817241245
+    },
+    {
+      "source": 59,
+      "target": 179,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.9882945808447485
+    },
+    {
+      "source": 192,
+      "target": 194,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.037038729047582
+    },
+    {
+      "source": 193,
+      "target": 194,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.726219638153146
+    },
+    {
+      "source": 194,
+      "target": 195,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0910207433928063
+    },
+    {
+      "source": 193,
+      "target": 195,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.3373555939870085
+    },
+    {
+      "source": 195,
+      "target": 79,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7012190850924722
+    },
+    {
+      "source": 79,
+      "target": 195,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.38175071267613
+    },
+    {
+      "source": 192,
+      "target": 4,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8339430339818146
+    },
+    {
+      "source": 196,
+      "target": 198,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.6543704734234963
+    },
+    {
+      "source": 197,
+      "target": 198,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.197147334483941
+    },
+    {
+      "source": 198,
+      "target": 199,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.8185748904856103
+    },
+    {
+      "source": 197,
+      "target": 199,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.7099078453810816
+    },
+    {
+      "source": 195,
+      "target": 199,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.136223107236239
+    },
+    {
+      "source": 199,
+      "target": 195,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.232877335055291
+    },
+    {
+      "source": 196,
+      "target": 8,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2415069006745183
+    },
+    {
+      "source": 200,
+      "target": 202,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.976898418502653
+    },
+    {
+      "source": 201,
+      "target": 202,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.2570311226026956
+    },
+    {
+      "source": 202,
+      "target": 203,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.308280643302066
+    },
+    {
+      "source": 201,
+      "target": 203,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1540663231264774
+    },
+    {
+      "source": 199,
+      "target": 203,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.8351867711271694
+    },
+    {
+      "source": 203,
+      "target": 199,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1156918838825174
+    },
+    {
+      "source": 204,
+      "target": 206,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.0245702695532315
+    },
+    {
+      "source": 205,
+      "target": 206,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.095627297717269
+    },
+    {
+      "source": 206,
+      "target": 207,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.371166629625866
+    },
+    {
+      "source": 205,
+      "target": 207,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 2.1356684323500432
+    },
+    {
+      "source": 203,
+      "target": 207,
+      "synapse_count": 3,
+      "conductance_ns": 7.5,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 0.7404181107412169
+    },
+    {
+      "source": 207,
+      "target": 203,
+      "synapse_count": 2,
+      "conductance_ns": 5.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.588978195921699
+    },
+    {
+      "source": 56,
+      "target": 195,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 0.5115173209962431
+    },
+    {
+      "source": 57,
+      "target": 195,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.1491716598005406
+    },
+    {
+      "source": 58,
+      "target": 195,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": 1.0,
+      "type": "chemical",
+      "delay_ms": 1.2329230697427958
+    },
+    {
+      "source": 59,
+      "target": 195,
+      "synapse_count": 4,
+      "conductance_ns": 10.0,
+      "sign": -1.0,
+      "type": "chemical",
+      "delay_ms": 1.2923453832185108
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Octopus Neural Connectome 3D | Scientific Distributed Brain Explorer</title>
+    <meta
+      name="description"
+      content="Interactive 3D scientific neural connectome visualization of the octopus nervous system with live signal tracing, 8-arm distributed networks, and real neuroanatomy."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app-container">
+      <!-- 3D Canvas WebGL Container -->
+      <div id="canvas-container"></div>
+
+      <!-- Top Header & Breadcrumbs -->
+      <div id="top-header">
+        <div class="brand-badge glass-panel">
+          <span class="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph">
+              <path d="M12 2C7.5 2 4 5.5 4 10C4 13.2 5.8 15.8 8.5 17.2V20C8.5 20.8 9.2 21.5 10 21.5C10.8 21.5 11.5 20.8 11.5 20V18.5H12.5V20C12.5 20.8 13.2 21.5 14 21.5C14.8 21.5 15.5 20.8 15.5 20V17.2C18.2 15.8 20 13.2 20 10C20 5.5 16.5 2 12 2Z" stroke="#38bdf8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="rgba(56, 189, 248, 0.15)"/>
+              <circle cx="9" cy="9.5" r="1.5" fill="#ffffff"/>
+              <circle cx="15" cy="9.5" r="1.5" fill="#ffffff"/>
+              <path d="M10 13.5C11 14.5 13 14.5 14 13.5" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round"/>
+              <circle cx="12" cy="6" r="1" fill="#38bdf8"/>
+            </svg>
+          </span>
+          <div>
+            <div class="brand-title">OCTOSFLOW CONSTELLATION 3D</div>
+            <div class="brand-sub">Multi-Cephalopod Swarm Architecture</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; pointer-events: auto;">
+          <button id="btn-view-constellation" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(168, 85, 247, 0.25)); border-color: #00f0ff; color: #ffffff;" title="Reset camera to orbital ring showing all 8 connected octopuses">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <circle cx="12" cy="12" r="3" fill="#00f0ff"/>
+              <circle cx="12" cy="3" r="2" fill="#a855f7"/>
+              <circle cx="20" cy="8" r="2" fill="#3b82f6"/>
+              <circle cx="20" cy="16" r="2" fill="#ec4899"/>
+              <circle cx="12" cy="21" r="2" fill="#10b981"/>
+              <circle cx="4" cy="16" r="2" fill="#ef4444"/>
+              <circle cx="4" cy="8" r="2" fill="#f59e0b"/>
+            </svg>
+            <span>8-OCTOPUS CONSTELLATION</span>
+          </button>
+
+          <button id="btn-open-manual" title="Open Cephalopod Master Manual & Developer Guide (Press ? or M)" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.25)); border-color: #f59e0b; color: #ffffff;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6.5 2H20V22H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2Z" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>📖 MANUAL (?)</span>
+          </button>
+
+          <button id="btn-start-tour-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <circle cx="12" cy="12" r="9" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.8"/>
+              <path d="M10 8.5L16 12L10 15.5V8.5Z" fill="#ffffff"/>
+            </svg>
+            <span>HOW THE BRAIN WORKS</span>
+          </button>
+
+          <button id="btn-toggle-cognitive" title="Open Real-time Cognitive Flow & Problem Solving Pipeline">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <path d="M12 2C8 2 5 5 5 9C5 12 7 14 9 15V18C9 18.6 9.4 19 10 19H14C14.6 19 15 18.6 15 18V15C17 14 19 12 19 9C19 5 16 2 12 2Z" stroke="#a6e3a1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10 22H14" stroke="#a6e3a1" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span>LIVE PROBLEM SOLVER</span>
+          </button>
+
+          <button id="btn-toggle-voice" class="btn-voice-toggle" title="Toggle octopus voice transmissions (speech synthesis)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" id="icon-voice-state">
+              <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15.54 8.46C16.48 9.4 17 10.65 17 12C17 13.35 16.48 14.6 15.54 15.54" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M19.07 4.93C20.94 6.8 22 9.35 22 12C22 14.65 20.94 17.2 19.07 19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span id="label-voice-state">VOICE: ON</span>
+          </button>
+
+          <button id="btn-toggle-domain-mode" class="btn-domain-toggle" title="Switch domain view: DUAL (SW+AI) / SOFTWARE DEV / AI-ML RESEARCH">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" id="icon-domain-mode">
+              <path d="M4 7H14M14 7L11 4M14 7L11 10" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 17H10M10 17L13 14M10 17L13 20" stroke="#a6e3a1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span id="label-domain-mode">MODE: DUAL (SW + AI/ML)</span>
+          </button>
+
+          <button id="btn-live-preview" class="btn-live-preview" style="display: none;" title="Test and interact with live running application / model">
+            <span class="live-pulse-dot"></span>
+            <span id="label-live-preview">LIVE APP: READY</span>
+          </button>
+
+          <button id="btn-reset-layout" title="Reset all floating windows to default positions and sizes">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <path d="M4 4V9H9" stroke="#74c7ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 20V15H15" stroke="#74c7ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 9A9 9 0 005.6 5.6L4 9" stroke="#74c7ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 15A9 9 0 0018.4 18.4L20 15" stroke="#74c7ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>RESET WORKSPACE</span>
+          </button>
+        </div>
+
+        <div id="hierarchy-breadcrumbs"></div>
+      </div>
+
+      <!-- Left Interaction & Optical Parameter Controls -->
+      <div id="control-panel" class="glass-panel"></div>
+
+      <!-- Right Scientific Neuroanatomy Inspector -->
+      <div id="inspector-panel" class="glass-panel hidden"></div>
+
+      <!-- Center-Right Cognitive Pipeline & Problem Solver -->
+      <div id="cognitive-inspector"></div>
+
+      <!-- Bottom Live Signal Stimulus & Pathway Trigger Bar -->
+      <div id="signal-trigger-panel" class="glass-panel"></div>
+
+      <!-- Live Application / Model Sandbox Modal -->
+      <div id="live-sandbox-window" class="floating-window glass-panel hidden" style="position: absolute; right: 24px; top: 72px; width: 560px; height: 580px; z-index: 120; display: none; flex-direction: column; overflow: hidden; pointer-events: auto; border: 1px solid rgba(56, 189, 248, 0.45); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.25);">
+        <div class="window-titlebar" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(11, 15, 25, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.08); cursor: move;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="live-pulse-dot"></span>
+            <span id="sandbox-title" style="font-weight: 700; font-size: 11px; letter-spacing: 0.04em; color: #38bdf8; font-family: 'Roboto Mono', monospace;">LIVE APPLICATION SANDBOX</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <a id="btn-sandbox-open-external" href="#" target="_blank" class="window-btn" title="Open in new browser tab" style="display: flex; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.06); color: #cbd5e1; text-decoration: none; font-size: 10px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+              <span>NEW TAB</span>
+            </a>
+            <button id="btn-sandbox-reload" class="window-btn" title="Reload app preview" style="padding: 3px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.06); color: #cbd5e1; border: none; cursor: pointer; font-size: 10px; display: flex; align-items: center;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
+            <button id="btn-sandbox-close" class="window-btn" title="Close preview" style="padding: 2px 7px; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); cursor: pointer; font-weight: 700; font-size: 12px;">×</button>
+          </div>
+        </div>
+        <div style="flex: 1; position: relative; background: #000000; overflow: hidden;">
+          <iframe id="live-sandbox-iframe" src="about:blank" sandbox="allow-scripts allow-forms allow-popups" style="width: 100%; height: 100%; border: none; background: #0b0f19;"></iframe>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: rgba(11, 15, 25, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.08); font-family: 'Roboto Mono', monospace; font-size: 10px;">
+          <span id="sandbox-url-display" style="color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px;">http://localhost:5173</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="sandbox-service-type" style="padding: 1px 6px; border-radius: 3px; font-weight: 700; font-size: 9px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">WEB APP</span>
+            <a id="sandbox-api-link" href="#" target="_blank" style="display: none; padding: 1px 6px; border-radius: 3px; font-weight: 700; font-size: 9px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); text-decoration: none;">API DOCS</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hover Tooltip -->
+      <div id="hover-tooltip" class="hidden"></div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

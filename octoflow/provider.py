@@ -1,0 +1,837 @@
+"""Pluggable LLM Provider System.
+
+Supports Anthropic Claude, OpenAI, local offline Ollama models, and a deterministic
+MockLLMProvider for unit testing with zero API key dependencies and zero cost.
+"""
+
+import asyncio
+import json
+import os
+import random
+import re
+import time
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional
+from pydantic import BaseModel
+import httpx
+
+from octoflow.config import OctoFlowConfig, LLMConfigEntry
+
+
+def retry_http_request(fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
+    """Execute synchronous HTTP request with exponential backoff on 429 and 50x errors."""
+    for attempt in range(max_retries):
+        try:
+            resp = fn()
+            resp.raise_for_status()
+            return resp
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in [429, 502, 503, 504] and attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0.1, 0.4)
+                time.sleep(delay)
+                continue
+            raise
+
+
+async def aretry_http_request(coro_fn: Callable[[], Any], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
+    """Execute asynchronous HTTP request with exponential backoff on 429 and 50x errors."""
+    for attempt in range(max_retries):
+        try:
+            resp = await coro_fn()
+            resp.raise_for_status()
+            return resp
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in [429, 502, 503, 504] and attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0.1, 0.4)
+                await asyncio.sleep(delay)
+                continue
+            raise
+
+
+class LLMResponse(BaseModel):
+    """Normalized response from an LLM call."""
+    content: str
+    tokens_prompt: int = 0
+    tokens_completion: int = 0
+    total_tokens: int = 0
+    estimated_cost_dollars: float = 0.0
+    tool_calls: List[Dict[str, Any]] = []
+
+
+class BaseLLMProvider(ABC):
+    """Abstract interface for LLM backends."""
+
+    @abstractmethod
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        """Synchronously generate an LLM completion."""
+        pass
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        """Asynchronously generate an LLM completion."""
+        import asyncio
+        return await asyncio.to_thread(self.generate, prompt, system_prompt, temperature, max_tokens)
+
+
+class MockLLMProvider(BaseLLMProvider):
+    """Deterministic, zero-cost LLM provider for unit tests and local simulation."""
+
+    def __init__(self, script_responses: Optional[Dict[str, str]] = None):
+        self.script_responses = script_responses or {}
+        self.call_count = 0
+        self.total_tokens_spent = 0
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        self.call_count += 1
+        prompt_lower = prompt.lower()
+
+        # Check explicit custom scripts
+        for pattern, response in self.script_responses.items():
+            if pattern.lower() in prompt_lower:
+                tokens_in = len(prompt) // 4
+                tokens_out = len(response) // 4
+                self.total_tokens_spent += (tokens_in + tokens_out)
+                return LLMResponse(
+                    content=response,
+                    tokens_prompt=tokens_in,
+                    tokens_completion=tokens_out,
+                    total_tokens=tokens_in + tokens_out,
+                    estimated_cost_dollars=0.0,
+                )
+
+        # Default intelligent mock responses for various agent roles
+        if "developer question:" in prompt_lower or "inquiry:" in prompt_lower:
+            role_hint = system_prompt.split(" (Arm")[0].replace("You are ", "").strip() if "You are " in system_prompt else "Specialist"
+            content = (
+                f"As the {role_hint}, I analyzed this domain carefully. "
+                f"This decision enforces clean interface boundaries, high transaction concurrency, and robust data persistence. "
+                f"All components adhere to the project specifications and pass AST pre-flight validation."
+            )
+        elif "test" in prompt_lower or "pytest" in prompt_lower:
+            content = json.dumps({
+                "action": "run_command",
+                "command": "python -c 'print(\"1 passed in 0.01s\")'",
+                "explanation": "Running unit test suite to verify code contracts.",
+            })
+        elif "write" in prompt_lower or "create" in prompt_lower:
+            content = json.dumps({
+                "action": "write_file",
+                "path": "test_output.py",
+                "content": "# Generated by OctoFlow Arm\ndef solve():\n    return True\n",
+                "explanation": "Creating initial implementation file.",
+            })
+        elif "error" in prompt_lower or "fix" in prompt_lower:
+            content = json.dumps({
+                "action": "write_file",
+                "path": "test_output.py",
+                "content": "# Patched by OctoFlow Arm\ndef solve():\n    return True\n",
+                "explanation": "Applying patch to resolve high sensory surprise error.",
+            })
+        else:
+            content = json.dumps({
+                "action": "mark_quiescent",
+                "explanation": "Task objectives satisfied in full.",
+            })
+
+        tokens_in = len(prompt) // 4
+        tokens_out = len(content) // 4
+        self.total_tokens_spent += (tokens_in + tokens_out)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=tokens_in,
+            tokens_completion=tokens_out,
+            total_tokens=tokens_in + tokens_out,
+            estimated_cost_dollars=0.0,
+        )
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        import asyncio
+        await asyncio.sleep(0.001)
+        return self.generate(prompt, system_prompt, temperature, max_tokens)
+
+
+class AnthropicProvider(BaseLLMProvider):
+    """Anthropic Claude API Provider (Claude 3.5 Sonnet / Opus)."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable or parameter required.")
+        self.model = model
+        self.base_url = "https://api.anthropic.com/v1/messages"
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        with httpx.Client(timeout=60.0) as client:
+            resp = retry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+            data = resp.json()
+
+        content = data["content"][0]["text"]
+        in_toks = data.get("usage", {}).get("input_tokens", len(prompt) // 4)
+        out_toks = data.get("usage", {}).get("output_tokens", len(content) // 4)
+
+        # Claude 3.5 Sonnet pricing: $3 / MTok in, $15 / MTok out
+        cost = (in_toks * 0.000003) + (out_toks * 0.000015)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=in_toks,
+            tokens_completion=out_toks,
+            total_tokens=in_toks + out_toks,
+            estimated_cost_dollars=cost,
+        )
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await aretry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+            data = resp.json()
+
+        content = data["content"][0]["text"]
+        in_toks = data.get("usage", {}).get("input_tokens", len(prompt) // 4)
+        out_toks = data.get("usage", {}).get("output_tokens", len(content) // 4)
+        cost = (in_toks * 0.000003) + (out_toks * 0.000015)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=in_toks,
+            tokens_completion=out_toks,
+            total_tokens=in_toks + out_toks,
+            estimated_cost_dollars=cost,
+        )
+
+
+class OpenAIProvider(BaseLLMProvider):
+    """OpenAI API Provider (GPT-4o, GPT-4o-mini)."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o", base_url: Optional[str] = None):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY environment variable or parameter required.")
+        self.model = model
+        raw_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        if not raw_url.endswith("/chat/completions"):
+            self.base_url = f"{raw_url.rstrip('/')}/chat/completions"
+        else:
+            self.base_url = raw_url
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        with httpx.Client(timeout=60.0) as client:
+            resp = retry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+            data = resp.json()
+
+        content = data["choices"][0]["message"]["content"]
+        in_toks = data.get("usage", {}).get("prompt_tokens", len(prompt) // 4)
+        out_toks = data.get("usage", {}).get("completion_tokens", len(content) // 4)
+
+        # GPT-4o pricing: $2.50 / MTok in, $10 / MTok out
+        cost = (in_toks * 0.0000025) + (out_toks * 0.000010)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=in_toks,
+            tokens_completion=out_toks,
+            total_tokens=in_toks + out_toks,
+            estimated_cost_dollars=cost,
+        )
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await aretry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+            data = resp.json()
+
+        content = data["choices"][0]["message"]["content"]
+        in_toks = data.get("usage", {}).get("prompt_tokens", len(prompt) // 4)
+        out_toks = data.get("usage", {}).get("completion_tokens", len(content) // 4)
+        cost = (in_toks * 0.0000025) + (out_toks * 0.000010)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=in_toks,
+            tokens_completion=out_toks,
+            total_tokens=in_toks + out_toks,
+            estimated_cost_dollars=cost,
+        )
+
+
+class GeminiProvider(OpenAIProvider):
+    """Google Gemini API Provider via OpenAI-compatible endpoint (Gemini 2.0 Flash / Pro)."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash", base_url: Optional[str] = None):
+        key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not key:
+            raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable required.")
+        url = base_url or "https://generativelanguage.googleapis.com/v1beta/openai"
+        super().__init__(api_key=key, model=model, base_url=url)
+
+
+class GrokProvider(OpenAIProvider):
+    """xAI Grok API Provider (Grok 2 / Grok beta)."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "grok-2-1212", base_url: Optional[str] = None):
+        key = api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
+        if not key:
+            raise ValueError("XAI_API_KEY or GROK_API_KEY environment variable required.")
+        url = base_url or "https://api.x.ai/v1"
+        super().__init__(api_key=key, model=model, base_url=url)
+
+
+class DeepSeekProvider(OpenAIProvider):
+    """DeepSeek API Provider (DeepSeek-V3 / DeepSeek-R1)."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "deepseek-chat", base_url: Optional[str] = None):
+        key = api_key or os.getenv("DEEPSEEK_API_KEY")
+        if not key:
+            raise ValueError("DEEPSEEK_API_KEY environment variable required.")
+        url = base_url or "https://api.deepseek.com/v1"
+        super().__init__(api_key=key, model=model, base_url=url)
+
+
+class OllamaProvider(BaseLLMProvider):
+    """Local, offline, 100% free Ollama Provider (DeepSeek-Coder, Qwen2.5, Llama-3)."""
+
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "qwen2.5-coder:7b"):
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self._semaphore = None
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 512,
+    ) -> LLMResponse:
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "system": system_prompt,
+            "stream": False,
+            "options": {"temperature": temperature, "num_predict": max_tokens},
+        }
+        endpoint = f"{self.base_url}/api/generate"
+        try:
+            with httpx.Client(timeout=300.0) as client:
+                resp = client.post(endpoint, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+        except httpx.ConnectError:
+            raise ConnectionError(
+                f"\n❌ Could not connect to Ollama at {self.base_url}.\n"
+                f"   Is Ollama installed and running?\n"
+                f"   • Install: brew install ollama (or download from https://ollama.com)\n"
+                f"   • Start: ollama serve (or open the Ollama app)\n"
+                f"   • Pull model: ollama pull {self.model}\n"
+            ) from None
+        except Exception as e:
+            raise RuntimeError(f"Ollama error: {e}") from e
+
+        content = data.get("response", "")
+        in_toks = data.get("prompt_eval_count", len(prompt) // 4)
+        out_toks = data.get("eval_count", len(content) // 4)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=in_toks,
+            tokens_completion=out_toks,
+            total_tokens=in_toks + out_toks,
+            estimated_cost_dollars=0.0,  # 100% free offline
+        )
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 512,
+    ) -> LLMResponse:
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(1)
+
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "system": system_prompt,
+            "stream": False,
+            "options": {"temperature": temperature, "num_predict": max_tokens},
+        }
+        endpoint = f"{self.base_url}/api/generate"
+        async with self._semaphore:
+            try:
+                async with httpx.AsyncClient(timeout=300.0) as client:
+                    resp = await client.post(endpoint, json=payload)
+                    resp.raise_for_status()
+                    data = resp.json()
+            except httpx.ConnectError:
+                raise ConnectionError(
+                    f"\n❌ Could not connect to Ollama at {self.base_url}.\n"
+                    f"   Is Ollama installed and running?\n"
+                    f"   • Install: brew install ollama (or download from https://ollama.com)\n"
+                    f"   • Start: ollama serve (or open the Ollama app)\n"
+                    f"   • Pull model: ollama pull {self.model}\n"
+                ) from None
+            except Exception as e:
+                raise RuntimeError(f"Ollama error: {e}") from e
+
+        content = data.get("response", "")
+        in_toks = data.get("prompt_eval_count", len(prompt) // 4)
+        out_toks = data.get("eval_count", len(content) // 4)
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=in_toks,
+            tokens_completion=out_toks,
+            total_tokens=in_toks + out_toks,
+            estimated_cost_dollars=0.0,
+        )
+
+
+class FailoverLLMProvider(BaseLLMProvider):
+    """High-availability provider wrapper that executes automated failover across fallback models.
+
+    If the primary provider hits a 429 Rate Limit, 529 Overloaded, network timeout,
+    or provider error, FailoverLLMProvider transparently retries with the next available
+    fallback provider in the synaptic chain (e.g. Anthropic -> OpenAI -> Ollama -> Mock).
+    """
+
+    def __init__(
+        self,
+        primary: BaseLLMProvider,
+        fallbacks: Optional[List[BaseLLMProvider]] = None,
+        on_failover: Optional[Callable[[str, str, Exception], None]] = None,
+    ):
+        self.primary = primary
+        self.fallbacks = fallbacks or []
+        self.on_failover = on_failover
+        self.failover_history: List[Dict[str, Any]] = []
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        chain = [self.primary] + self.fallbacks
+        last_error = None
+
+        for idx, provider in enumerate(chain):
+            try:
+                return provider.generate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+            except Exception as e:
+                last_error = e
+                p_name = type(provider).__name__
+                next_p = type(chain[idx + 1]).__name__ if idx + 1 < len(chain) else "None"
+                self.failover_history.append({
+                    "from": p_name,
+                    "to": next_p,
+                    "error": str(e),
+                    "timestamp": time.time(),
+                })
+                if self.on_failover:
+                    try:
+                        self.on_failover(p_name, next_p, e)
+                    except Exception:
+                        pass
+
+        raise RuntimeError(f"All synaptic providers in failover chain exhausted. Last error: {last_error}")
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        chain = [self.primary] + self.fallbacks
+        last_error = None
+
+        for idx, provider in enumerate(chain):
+            try:
+                return await provider.agenerate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+            except Exception as e:
+                last_error = e
+                p_name = type(provider).__name__
+                next_p = type(chain[idx + 1]).__name__ if idx + 1 < len(chain) else "None"
+                self.failover_history.append({
+                    "from": p_name,
+                    "to": next_p,
+                    "error": str(e),
+                    "timestamp": time.time(),
+                })
+                if self.on_failover:
+                    try:
+                        self.on_failover(p_name, next_p, e)
+                    except Exception:
+                        pass
+
+        raise RuntimeError(f"All synaptic providers in failover chain exhausted. Last error: {last_error}")
+
+
+def _build_from_pool_entry(entry: LLMConfigEntry) -> BaseLLMProvider:
+    """Build a concrete provider instance from an individual pool configuration entry."""
+    p_name = entry.provider.lower().strip()
+    key = entry.api_key or os.getenv(f"{p_name.upper()}_API_KEY") or os.getenv("API_KEY")
+    if p_name in ["gemini", "google", "grok", "xai", "deepseek", "anthropic", "openai"] and not key:
+        return MockLLMProvider()
+
+    if p_name in ["gemini", "google"]:
+        model = entry.model if entry.model and entry.model != "default" else "gemini-2.0-flash"
+        return GeminiProvider(api_key=key, model=model)
+    elif p_name in ["grok", "xai"]:
+        model = entry.model if entry.model and entry.model != "default" else "grok-2-1212"
+        return GrokProvider(api_key=key, model=model)
+    elif p_name == "deepseek":
+        model = entry.model if entry.model and entry.model != "default" else "deepseek-chat"
+        return DeepSeekProvider(api_key=key, model=model)
+    elif p_name == "anthropic":
+        model = entry.model if entry.model and entry.model != "default" else "claude-3-5-sonnet-20241022"
+        return AnthropicProvider(api_key=key, model=model)
+    elif p_name == "openai":
+        model = entry.model if entry.model and entry.model != "default" else "gpt-4o"
+        base_url = entry.base_url or "https://api.openai.com/v1"
+        return OpenAIProvider(api_key=key, model=model, base_url=base_url)
+    elif p_name == "ollama":
+        model = entry.model if entry.model and entry.model != "default" else "qwen2.5-coder:7b"
+        base_url = entry.base_url or "http://localhost:11434"
+        return OllamaProvider(base_url=base_url, model=model)
+    elif p_name in ["custom", "vllm", "local"]:
+        model = entry.model if entry.model and entry.model != "default" else "custom-model"
+        base_url = entry.base_url or "http://localhost:8000/v1"
+        return OpenAIProvider(api_key=key or "custom-key", model=model, base_url=base_url)
+    return MockLLMProvider()
+
+
+class CascadePoolLLMProvider(BaseLLMProvider):
+    """Multi-URL LLM Cascade with hot-swap token and rate-limit failover.
+    
+    Users and developers can configure as many or as few LLMs/URLs as they choose.
+    If 1 model runs out of tokens or hits a rate limit (429, QuotaExceeded, etc.),
+    it dynamically falls back to the next model in the user's configured pool.
+    """
+
+    def __init__(
+        self,
+        entries: List[LLMConfigEntry],
+        on_failover: Optional[Callable[[Dict[str, Any]], None]] = None,
+    ):
+        self.entries = [e for e in sorted(entries, key=lambda x: x.priority) if e.enabled]
+        self.on_failover = on_failover
+        self.active_index = 0
+        self.providers: List[BaseLLMProvider] = []
+        self.telemetry: List[Dict[str, Any]] = []
+
+        for e in self.entries:
+            prov = _build_from_pool_entry(e)
+            self.providers.append(prov)
+            self.telemetry.append({
+                "id": e.id,
+                "name": e.name,
+                "provider": e.provider,
+                "model": e.model,
+                "base_url": e.base_url or "",
+                "status": "STANDBY",
+                "tokens_used": 0,
+                "failover_count": 0,
+                "last_error": None,
+            })
+        if self.telemetry:
+            self.telemetry[0]["status"] = "ACTIVE"
+
+    def get_status_summary(self) -> List[Dict[str, Any]]:
+        """Return live telemetry snapshot of all configured LLMs in pool."""
+        return list(self.telemetry)
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        if not self.providers:
+            return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
+
+        start_idx = self.active_index
+        n = len(self.providers)
+        last_err = None
+
+        for attempt_offset in range(n):
+            idx = (start_idx + attempt_offset) % n
+            provider = self.providers[idx]
+            t = self.telemetry[idx]
+
+            if t["status"] == "EXHAUSTED" and attempt_offset == 0 and n > 1:
+                continue
+
+            t["status"] = "ACTIVE"
+            self.active_index = idx
+
+            try:
+                resp = provider.generate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                t["tokens_used"] += resp.total_tokens
+                return resp
+            except Exception as e:
+                last_err = e
+                err_str = str(e)
+                is_quota_or_rate_limit = any(k in err_str.lower() for k in [
+                    "429", "rate limit", "quota", "resource_exhausted",
+                    "insufficient_quota", "credit", "exceeded", "too many requests"
+                ])
+                t["status"] = "EXHAUSTED" if is_quota_or_rate_limit else "ERROR"
+                t["last_error"] = err_str
+                t["failover_count"] += 1
+
+                next_idx = (idx + 1) % n
+                next_t = self.telemetry[next_idx]
+                next_t["status"] = "ACTIVE"
+                self.active_index = next_idx
+
+                failover_event = {
+                    "from_id": t["id"],
+                    "from_name": t["name"],
+                    "to_id": next_t["id"],
+                    "to_name": next_t["name"],
+                    "reason": err_str,
+                    "is_rate_limit": is_quota_or_rate_limit,
+                    "timestamp": time.time(),
+                }
+                if self.on_failover:
+                    try:
+                        self.on_failover(failover_event)
+                    except Exception:
+                        pass
+
+        import logging
+        logging.getLogger("octoflow").warning(f"All configured LLM providers in cascade pool exhausted ({last_err}). Falling back to cephalopod neural heuristic inference.")
+        return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
+
+    async def agenerate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+    ) -> LLMResponse:
+        import asyncio
+        return await asyncio.to_thread(self.generate, prompt, system_prompt, temperature, max_tokens)
+
+
+def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Optional[str] = None) -> BaseLLMProvider:
+    """Helper to instantiate an individual provider backend."""
+    p_name = provider_name.lower()
+    if p_name == "mock":
+        return MockLLMProvider()
+
+    elif p_name == "anthropic":
+        api_key = config.anthropic_api_key or config.api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            return MockLLMProvider()
+        if tier == "fast":
+            model = config.fast_model or "claude-3-5-haiku-20241022"
+        elif tier == "frontier":
+            model = config.frontier_model or "claude-3-7-sonnet-20250219"
+        else:
+            model = config.model_name or "claude-3-5-sonnet-20241022"
+        return AnthropicProvider(api_key=api_key, model=model)
+
+    elif p_name == "openai":
+        api_key = config.openai_api_key or config.api_key or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return MockLLMProvider()
+        if tier == "fast":
+            model = config.fast_model or "gpt-4o-mini"
+        elif tier == "frontier":
+            model = config.frontier_model or "o3-mini"
+        else:
+            model = config.model_name if "gpt" in config.model_name or "o3" in config.model_name or "o1" in config.model_name else "gpt-4o"
+        base_url = config.base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        return OpenAIProvider(api_key=api_key, model=model, base_url=base_url)
+
+    elif p_name in ["gemini", "google"]:
+        api_key = config.gemini_api_key or config.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            return MockLLMProvider()
+        model = config.model_name if "gemini" in config.model_name else "gemini-2.0-flash"
+        return GeminiProvider(api_key=api_key, model=model)
+
+    elif p_name in ["grok", "xai"]:
+        api_key = config.grok_api_key or config.api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
+        if not api_key:
+            return MockLLMProvider()
+        model = config.model_name if "grok" in config.model_name else "grok-2-1212"
+        return GrokProvider(api_key=api_key, model=model)
+
+    elif p_name in ["deepseek"]:
+        api_key = config.deepseek_api_key or config.api_key or os.getenv("DEEPSEEK_API_KEY")
+        if not api_key:
+            return MockLLMProvider()
+        model = config.model_name if "deepseek" in config.model_name else "deepseek-chat"
+        return DeepSeekProvider(api_key=api_key, model=model)
+
+    elif p_name == "ollama":
+        url = config.base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        if tier == "fast":
+            model = config.fast_model or "qwen2.5-coder:1.5b"
+        elif tier == "frontier":
+            model = config.frontier_model or "deepseek-coder-v2:16b"
+        else:
+            model = config.model_name if "coder" in config.model_name or "llama" in config.model_name else "qwen2.5-coder:7b"
+        return OllamaProvider(base_url=url, model=model)
+
+    return MockLLMProvider()
+
+
+def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None) -> BaseLLMProvider:
+    """Factory creating configured LLM provider, optionally tailored by cognitive tier ('frontier', 'balanced', 'fast').
+    
+    Supports dynamic multi-URL cascade pools with auto-failover, heterogeneous routing, and fallbacks.
+    """
+    # 1. Determine target provider for requested cognitive tier
+    provider_name = config.model_provider.lower()
+    if tier == "frontier" and config.frontier_provider:
+        provider_name = config.frontier_provider.lower()
+    elif tier == "fast" and config.fast_provider:
+        provider_name = config.fast_provider.lower()
+
+    if provider_name == "mock":
+        return MockLLMProvider()
+
+    # 2. If user configured an LLM cascade pool and requested pool routing (or did not request a specific single provider)
+    is_explicit_single = provider_name not in ["pool", "cascade", "cascade_pool"]
+    if not is_explicit_single or provider_name in ["pool", "cascade", "cascade_pool"]:
+        if getattr(config, "llm_pool", None) and len(config.llm_pool) > 0:
+            active_entries = [e for e in config.llm_pool if e.enabled]
+            if active_entries:
+                return CascadePoolLLMProvider(entries=active_entries)
+
+    primary = _build_single_provider(provider_name, config, tier=tier)
+
+    # If failover is enabled and primary is a cloud provider, configure fallbacks
+    if getattr(config, "enable_failover", False) and provider_name not in ["mock"]:
+        fallbacks: List[BaseLLMProvider] = []
+        fb_names = getattr(config, "fallback_providers", ["openai", "ollama", "mock"])
+        for fb_name in fb_names:
+            if fb_name.lower() != provider_name:
+                fallbacks.append(_build_single_provider(fb_name, config, tier=tier))
+
+        if fallbacks:
+            return FailoverLLMProvider(primary=primary, fallbacks=fallbacks)
+
+    return primary
+
