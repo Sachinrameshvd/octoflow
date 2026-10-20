@@ -18,9 +18,11 @@ def test_characterization_prompt_prefixes():
     assert route.kind == RouteKind.SHELL_SIMPLE
     assert route.command == "ls -la"
 
+    # CHANGED IN P1.3: Lines prefixed with '$' or '!' are now SHELL_EXPLICIT and require confirmation
     route_dollar = classify_input("$ ls -la")
-    assert route_dollar.kind == RouteKind.SHELL_SIMPLE
+    assert route_dollar.kind == RouteKind.SHELL_EXPLICIT
     assert route_dollar.command == "ls -la"
+    assert route_dollar.needs_confirmation is True
 
 
 def test_characterization_explicit_shell_prefixes():

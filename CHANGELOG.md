@@ -34,3 +34,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Standardized provider timeouts: connect 5s, read 120s (cloud), read 300s (Ollama).
   - Enforced zero secret leaks with `redact_secrets` redacting Anthropic keys, OpenAI keys, Google AI keys, and Bearer tokens in all exception strings and logs.
   - Added `docs/TROUBLESHOOTING.md` reference guide.
+- **Cockpit Shell-Router Safety & Non-Blocking Confirmation (P1.3)**:
+  - Extracted pure input router into `octoflow/router.py` with `classify_input(line: str) -> Route` and deterministic `RouteKind` evaluation (`SWARM_GOAL`, `SHELL_SIMPLE`, `SHELL_EXPLICIT`, `SLASH_COMMAND`, `EMPTY`).
+  - Implemented safe pass-through execution for `SHELL_SIMPLE` using `subprocess.run(argv, shell=False, cwd=workspace, timeout=60)` with 64 KB captured output truncation.
+  - Added prose-versus-argument heuristic disambiguating natural language goals (e.g. `make a resume analyzer`, `list the requirements.txt issues`, `touch the code up`) to `SWARM_GOAL`.
+  - Added non-blocking 20 FPS confirmation loop (`confirm_live_cockpit`) in the terminal cockpit preserving runner and banner animations during `y/N` prompts (defaulting to No).
+  - Enforced destructive command safety gates for `rm`, `rmdir`, `mv`, `cp -r`, `chmod -R`, `chown`, `dd`, `mkfs`, `sudo`, destructive git operations (`reset --hard`, `clean`, `push --force`, `checkout .`, `branch -D`), directory traversal (`..`), and out-of-workspace absolute paths.
+  - Enforced explicit command confirmation for lines prefixed with `!` or `$` before running with `shell=True`.
+  - Hardened bracketed paste handling: pasted text is placed into the input buffer for review without auto-submitting; multi-line paste displays line count badges and routes to `SWARM_GOAL` unless prefixed with `!`.
+  - Handled directory navigation (`cd`) in-process by updating the active workspace variable after verifying target directory exists, without calling global `os.chdir()`.
+  - Implemented session command history logging in memory and persisted to `~/.octoflow/history` with restricted permissions `0600`.
+  - Added deprecated escape hatch `OCTOFLOW_LEGACY_ROUTER=1`.
+  - Added 95+ table-driven, characterization, and PTY simulation tests in `tests/test_router.py`.

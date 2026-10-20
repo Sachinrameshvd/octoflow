@@ -52,7 +52,13 @@ from octoflow.themes import (
     list_themes,
     render_octoflow_3d_banner,
 )
-from octoflow.router import classify_input, RouteKind, Route
+from octoflow.router import (
+    classify_input,
+    RouteKind,
+    Route,
+    execute_shell_route,
+    log_command_history,
+)
 
 app = typer.Typer(help="◈ OctoFlow: Decentralized Cephalopod Multi-Agent Swarm with Sensory Surprise Gating")
 octos_app = typer.Typer(help="◈ OctosFlow: Multi-Cephalopod Swarm Consortium (3 to 8 Octopuses • 24 to 64 Arms)")
@@ -2186,16 +2192,27 @@ def interactive_cockpit():
     readline.set_completer(completer)
     readline.parse_and_bind("tab: complete")
 
-    def get_live_cockpit_input() -> str:
+    class CockpitInput(str):
+        paste_line_count: int = 1
+        is_pasted: bool = False
+
+    def get_live_cockpit_input() -> CockpitInput:
         """
         Renders the continuous animated cockpit with 3D banner, HUD, topology,
         runner, and interactive prompt. Never stops animating while waiting for input.
         """
         if not (sys.stdin.isatty() and sys.stdout.isatty()):
             try:
-                return console.input(f"[{theme.rich_primary}]octos ❯[/{theme.rich_primary}] ").strip()
+                raw_line = sys.stdin.readline()
+                if not raw_line:
+                    return CockpitInput("/exit")
+                cleaned = raw_line.strip()
+                res = CockpitInput(cleaned)
+                res.paste_line_count = len(raw_line.splitlines()) if "\n" in raw_line else 1
+                res.is_pasted = (res.paste_line_count > 1)
+                return res
             except (KeyboardInterrupt, EOFError):
-                return "/exit"
+                return CockpitInput("/exit")
 
         import termios
         import tty
@@ -2210,7 +2227,15 @@ def interactive_cockpit():
             old_settings = termios.tcgetattr(fd)
             tty.setcbreak(fd)
         except Exception:
-            return console.input(f"[{theme.rich_primary}]octos ❯[/{theme.rich_primary}] ").strip()
+            try:
+                raw_line = sys.stdin.readline()
+                if not raw_line:
+                    return CockpitInput("/exit")
+                res = CockpitInput(raw_line.strip())
+                res.paste_line_count = len(raw_line.splitlines()) if "\n" in raw_line else 1
+                return res
+            except (KeyboardInterrupt, EOFError):
+                return CockpitInput("/exit")
 
         git_branch = "no git"
         try:
@@ -2255,6 +2280,7 @@ def interactive_cockpit():
         octo_dx = 1.2
         octo_y = 0
         jump_phase = 0.0
+        pasted_line_count = 1
 
         def build_grid() -> Table:
             banner = get_banner_loop_frame(theme, tick=tick)
@@ -2270,11 +2296,15 @@ def interactive_cockpit():
 
             prompt_text = Text()
             prompt_text.append("\n")
+            effective_lines = pasted_line_count if pasted_line_count > 1 else (len(buffer.splitlines()) if "\n" in buffer else 1)
+            if effective_lines > 1:
+                prompt_text.append(f"[{effective_lines} lines pasted] ", style="italic cyan")
             prompt_text.append("octos ❯ ", style=theme.rich_primary)
-            prompt_text.append(buffer[:cursor_pos], style="bold white")
+            display_buf = buffer.replace("\r\n", " ↵ ").replace("\n", " ↵ ")
+            prompt_text.append(display_buf[:cursor_pos], style="bold white")
             cursor_char = "█" if (tick // 6) % 2 == 0 else " "
             prompt_text.append(cursor_char, style=f"bold {theme.rich_primary}")
-            prompt_text.append(buffer[cursor_pos:], style="bold white")
+            prompt_text.append(display_buf[cursor_pos:], style="bold white")
             prompt_text.append("\n")
 
             grid = Table.grid(expand=True)
@@ -2305,7 +2335,10 @@ def interactive_cockpit():
                         raw_chunk = raw_chunk.replace("\x1b[200~", "").replace("\x1b[201~", "")
 
                         if is_pasted:
-                            clean_paste = "".join(c for c in raw_chunk if c >= " ")
+                            p_lines = raw_chunk.splitlines()
+                            if len(p_lines) > 1:
+                                pasted_line_count = max(pasted_line_count, len(p_lines))
+                            clean_paste = raw_chunk.replace("\r\n", "\n").replace("\r", "\n")
                             buffer = buffer[:cursor_pos] + clean_paste + buffer[cursor_pos:]
                             cursor_pos += len(clean_paste)
                             continue
@@ -2380,19 +2413,151 @@ def interactive_cockpit():
                 except Exception:
                     pass
 
-        return buffer.strip()
+        res = CockpitInput(buffer.strip())
+        res.paste_line_count = pasted_line_count if pasted_line_count > 1 else (len(buffer.splitlines()) if "\n" in buffer else 1)
+        res.is_pasted = (pasted_line_count > 1 or "\n" in buffer)
+        return res
+
+    def confirm_live_cockpit(route: Route) -> bool:
+        """Non-blocking cockpit confirmation prompt maintaining the 20 FPS runner animation.
+
+        Prompts user with 'y/N', defaulting to No on Enter or any non-'y' key.
+        Never calls blocking input() or console.input().
+        """
+        if not (sys.stdin.isatty() and sys.stdout.isatty()):
+            try:
+                console.print(f"[{theme.rich_warning}]⚠ Confirm execution:[/{theme.rich_warning}] [bold]{route.command}[/bold] ({route.reason}) [y/N]: ", end="")
+                ans = sys.stdin.readline().strip().lower()
+                return ans in ["y", "yes"]
+            except Exception:
+                return False
+
+        import termios
+        import tty
+        import select
+        from rich.live import Live
+        from octoflow.themes import get_banner_loop_frame
+        from octoflow.runner import render_runner_frame
+
+        fd = sys.stdin.fileno()
+        old_settings = None
+        try:
+            old_settings = termios.tcgetattr(fd)
+            tty.setcbreak(fd)
+        except Exception:
+            try:
+                console.print(f"[{theme.rich_warning}]⚠ Confirm execution:[/{theme.rich_warning}] [bold]{route.command}[/bold] ({route.reason}) [y/N]: ", end="")
+                ans = sys.stdin.readline().strip().lower()
+                return ans in ["y", "yes"]
+            except Exception:
+                return False
+
+        tick = 0
+        octo_x = 0.0
+        octo_dx = 1.2
+        octo_y = 0
+        jump_phase = 0.0
+
+        def build_confirm_grid() -> Table:
+            banner = get_banner_loop_frame(theme, tick=tick)
+            is_jump = (octo_y > 0)
+            runner_frame = render_runner_frame(
+                theme,
+                octo_x=int(octo_x),
+                octo_y=octo_y,
+                is_jumping=is_jump,
+                stride_alt=(int(octo_x // 3) % 2 == 1),
+                seabed_offset=int(octo_x),
+            )
+
+            prompt_text = Text()
+            prompt_text.append("\n")
+            prompt_text.append("⚠ Confirm execution: ", style=f"bold {theme.rich_warning}")
+            prompt_text.append(f"{route.command}", style="bold white")
+            if route.reason:
+                prompt_text.append(f"  [dim]({route.reason})[/dim]")
+            prompt_text.append(" [y/N]: ", style=f"bold {theme.rich_primary}")
+            prompt_text.append("\n")
+
+            grid = Table.grid(expand=True)
+            grid.add_row(banner)
+            grid.add_row(cockpit_panel)
+            grid.add_row(topology_text)
+            grid.add_row(runner_frame)
+            grid.add_row(prompt_text)
+            return grid
+
+        try:
+            with Live(build_confirm_grid(), console=console, refresh_per_second=20, transient=True) as live:
+                while True:
+                    rlist, _, _ = select.select([sys.stdin], [], [], 0.045)
+                    if rlist:
+                        import os
+                        try:
+                            raw_chunk = os.read(fd, 1024).decode("utf-8", errors="ignore")
+                        except Exception:
+                            raw_chunk = sys.stdin.read(1)
+
+                        if not raw_chunk:
+                            continue
+
+                        if "\x03" in raw_chunk:
+                            return False
+
+                        first_char = raw_chunk[0].lower()
+                        # Strict confirmation: only 'y' confirms, everything else (n, Enter, Esc, etc.) defaults to No
+                        if first_char == "y":
+                            return True
+                        return False
+
+                    tick += 1
+                    octo_x += octo_dx
+                    if octo_x >= 45.0:
+                        octo_x = 45.0
+                        octo_dx = -1.2
+                    elif octo_x <= 0.0:
+                        octo_x = 0.0
+                        octo_dx = 1.2
+
+                    jump_phase += 0.16
+                    if math.sin(jump_phase) > 0.25:
+                        octo_y = 1
+                    else:
+                        octo_y = 0
+
+                    live.update(build_confirm_grid())
+        finally:
+            if old_settings is not None:
+                try:
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                except Exception:
+                    pass
 
     def print_welcome(animate: bool = False):
         console.clear()
         banner_text = render_octoflow_3d_banner(theme)
         console.print(banner_text)
 
+    previous_workspace = workspace
+
     while True:
         try:
-            user_input = get_live_cockpit_input()
-            route = classify_input(user_input, workspace=workspace)
+            raw_input_obj = get_live_cockpit_input()
+            paste_count = getattr(raw_input_obj, "paste_line_count", 1)
+            route = classify_input(
+                str(raw_input_obj),
+                workspace=workspace,
+                paste_line_count=paste_count,
+            )
             if route.kind == RouteKind.EMPTY:
                 continue
+
+            # Non-blocking confirmation gate for destructive or explicit commands
+            if route.needs_confirmation:
+                confirmed = confirm_live_cockpit(route)
+                if not confirmed:
+                    console.print(f"[{theme.rich_danger}]✖ Execution aborted by user.[/{theme.rich_danger}]\n")
+                    continue
 
             user_input = route.command
 
@@ -2401,22 +2566,46 @@ def interactive_cockpit():
                 shell_cmd = route.command
                 parts = shell_cmd.split(maxsplit=1)
                 cmd_head = parts[0].lower() if parts else ""
+
+                # In-process workspace navigation (cd) without global os.chdir()
                 if cmd_head == "cd":
                     target_arg = parts[1].strip() if len(parts) > 1 else "~"
-                    target_path = Path(os.path.expanduser(target_arg)).resolve()
-                    target_path.mkdir(parents=True, exist_ok=True)
+                    if target_arg == "-":
+                        target_path = previous_workspace
+                    else:
+                        target_path = Path(os.path.expanduser(target_arg)).resolve()
+
+                    if not target_path.exists():
+                        console.print(f"[{theme.rich_danger}]cd: no such file or directory: {target_arg}[/{theme.rich_danger}]\n")
+                        log_command_history(shell_cmd, workspace=workspace, success=False, kind="CD")
+                        continue
+                    if not target_path.is_dir():
+                        console.print(f"[{theme.rich_danger}]cd: not a directory: {target_arg}[/{theme.rich_danger}]\n")
+                        log_command_history(shell_cmd, workspace=workspace, success=False, kind="CD")
+                        continue
+
+                    previous_workspace = workspace
                     workspace = target_path
+                    log_command_history(shell_cmd, workspace=workspace, success=True, kind="CD")
                     console.print(f"[{theme.rich_success}]✔ Active workspace switched to:[/{theme.rich_success}] [bold]{workspace}[/bold]\n")
                     continue
 
                 console.print(f"[{theme.rich_primary}]⚡ Shell:[/{theme.rich_primary}] [dim]{shell_cmd}[/dim]")
-                res = subprocess.run(shell_cmd, shell=True, cwd=str(workspace), capture_output=True, text=True)
-                if res.stdout:
-                    console.print(res.stdout.rstrip())
-                if res.stderr:
-                    console.print(f"[{theme.rich_danger}]{res.stderr.rstrip()}[/{theme.rich_danger}]")
-                if res.returncode == 0 and not res.stdout:
-                    console.print(f"[{theme.rich_success}]✔ Command executed successfully.[/{theme.rich_success}]")
+                try:
+                    returncode, stdout, stderr = execute_shell_route(route, workspace=workspace, timeout=60)
+                    if stdout:
+                        console.print(stdout.rstrip())
+                    if stderr:
+                        console.print(f"[{theme.rich_danger}]{stderr.rstrip()}[/{theme.rich_danger}]")
+                    if returncode == 0 and not stdout:
+                        console.print(f"[{theme.rich_success}]✔ Command executed successfully.[/{theme.rich_success}]")
+                except subprocess.TimeoutExpired:
+                    console.print(f"[{theme.rich_danger}]✖ Command timed out after 60 seconds.[/{theme.rich_danger}]")
+                    log_command_history(shell_cmd, workspace=workspace, success=False, kind=route.kind.value)
+                except Exception as ex:
+                    console.print(f"[{theme.rich_danger}]✖ Command execution error: {ex}[/{theme.rich_danger}]")
+                    log_command_history(shell_cmd, workspace=workspace, success=False, kind=route.kind.value)
+
                 console.print()
                 continue
 

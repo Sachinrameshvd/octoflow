@@ -14,6 +14,7 @@ Welcome to the official developer manual for **OctoFlow** (OctopusBrain) — the
 6. [Zero-Trust Federation & 14-Rule PII Redaction](#6-zero-trust-federation--14-rule-pii-redaction)
 7. [Claude Code, Cursor & MCP Server Integration](#7-claude-code-cursor--mcp-server-integration)
 8. [Keyboard Shortcuts Cheatsheet](#8-keyboard-shortcuts-cheatsheet)
+9. [Cockpit Shell Pass-Through & Command Routing Safety](#9-cockpit-shell-pass-through--command-routing-safety)
 
 ---
 
@@ -144,7 +145,7 @@ OctoFlow automatically scrubs sensitive credentials from all inter-arm, inter-oc
 | `sk_live_...` | `STRIPE_KEY` | `[REDACTED_STRIPE_KEY]` |
 | `xoxb-...` | `SLACK_TOKEN` | `[REDACTED_SLACK_TOKEN]` |
 | `eyJ...` | `JWT_TOKEN` | `[REDACTED_JWT_TOKEN]` |
-| `-----BEGIN PRIVATE KEY-----` | `PRIVATE_KEY` | `[REDACTED_PRIVATE_KEY_BLOCK]` |
+| `BEGIN PRIVATE KEY (header)` | `PRIVATE_KEY` | `[REDACTED_PRIVATE_KEY_BLOCK]` |
 | `password=...` | `GENERIC_PASSWORD` | `[REDACTED_SECRET]` |
 | Email Addresses | `EMAIL_ADDRESS` | `[REDACTED_EMAIL]` |
 | IPv4 Addresses | `IPV4_ADDRESS` | `[REDACTED_IP]` |
@@ -197,3 +198,54 @@ Add to your `claude_desktop_config.json` or `.mcp.json`:
 * `/help`: Display quick command cheat table
 * `k` / `j`: Next / Previous theme in interactive palette picker
 * `q` or `/exit`: Exit cleanly
+
+---
+
+## 9. Cockpit Shell Pass-Through & Command Routing Safety
+
+The OctoFlow interactive cockpit combines direct shell convenience with strict safety guardrails, protecting against accidental or malicious execution of pasted or misrouted commands without blocking the 20 FPS runner animation.
+
+### 9.1 Input Classification Matrix
+
+All cockpit input is parsed through `octoflow.router.classify_input()` into one of five deterministic route kinds:
+
+| Route Kind | Trigger Criteria | Execution Mode | Confirmation |
+| :--- | :--- | :--- | :--- |
+| **`SWARM_GOAL`** | Natural language prose, goals starting with non-shell words, or prose arguments (e.g. `make a resume analyzer`, `list the requirements.txt issues`, `touch the code up`) | Dispatched to 8-arm multi-agent swarm conductor | None |
+| **`SHELL_SIMPLE`** | Matches allowed shell commands (`mkdir`, `touch`, `ls`, `pwd`, `cat`, `grep`, `which`, `find`, `curl`, `chmod`, `kill`, `ps`, `git`, `cd`, `cp`, `mv`, `rm`, `rmdir`) with non-prose path/flag arguments and no compound operators | `subprocess.run(argv, shell=False, cwd=workspace, timeout=60)` with 64 KB captured output truncation | `y/N` if destructive; none if safe |
+| **`SHELL_EXPLICIT`** | Prefixed with `!` or `$` (e.g. `!pytest -q`, `$ ls -l`), `/sh`, `/bash`, or compound commands containing `;`, `&&`, `\|\|`, `\|`, redirects, or subshells | `subprocess.run(command, shell=True, cwd=workspace, timeout=60)` | **Always requires `y/N` confirmation** displaying exact command |
+| **`SLASH_COMMAND`** | Prefixed with `/` or matching known cockpit directives (`/help`, `/theme`, `/model`, `screensaver`, `manual`, `clear`, etc.) | In-process cockpit dispatch | None |
+| **`EMPTY`** | Blank line or whitespace | No-op, re-prompts | None |
+
+### 9.2 Destructive Command Guardrails (`y/N`)
+
+Destructive commands always trigger a non-blocking confirmation prompt (`⚠ Confirm execution: <cmd> [y/N]: `), defaulting to **No**:
+- `rm`, `rmdir`, `mv`
+- `cp -r` / `cp -R` / `cp --recursive`
+- `chmod -R` / `chmod --recursive`, `chown`, `dd`, `mkfs`
+- `sudo` (any command elevated with sudo)
+- Destructive Git operations: `git reset --hard`, `git clean`, `git push --force` (`-f`), `git checkout -- .`, `git restore .`, `git branch -D`
+- Path traversal containing `..` or absolute paths targeting outside the active workspace
+
+### 9.3 Non-Blocking 20 FPS Confirmation Loop
+
+Confirmation prompts are rendered dynamically in the cockpit using non-blocking key inspection (`select.select` with raw cbreak mode).
+- The 20 FPS benthic octopus runner and extruded banner animation continue cycling smoothly without interruption.
+- The prompt never invokes blocking `input()` or `console.input()`.
+- Striking `y` or `Y` confirms execution. Striking `n`, `N`, `Enter`, `Escape`, or any other key immediately aborts.
+
+### 9.4 Bracketed Paste Protection
+
+- Pasted chunks wrapped in bracketed-paste escape sequences (`\x1b[200~ ... \x1b[201~`) are cleanly inserted into the input buffer for interactive review and are **never auto-submitted**.
+- Multi-line pastes display a line count indicator (`[X lines pasted]`) and are treated as a single `SWARM_GOAL` unless explicitly prefixed with `!`.
+- Trailing newlines inside pasted blocks do not trigger execution.
+
+### 9.5 In-Process Workspace Navigation (`cd`)
+
+`cd` is handled entirely in-process by mutating the active `workspace` variable after verifying the target path exists and is a directory. The host process `os.chdir()` is never called, strictly isolating cockpit navigation from the runtime environment.
+
+### 9.6 Session History & Deprecated Legacy Escape Hatch
+
+- Executed commands are logged in memory and appended to `~/.octoflow/history` with restricted permissions `0600`.
+- **Legacy Fallback:** Setting `OCTOFLOW_LEGACY_ROUTER=1` activates the pre-P1.3 unhardened router. This escape hatch is deprecated and will be removed in a future release.
+
