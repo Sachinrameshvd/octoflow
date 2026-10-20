@@ -5,6 +5,7 @@ MockLLMProvider for unit testing with zero API key dependencies and zero cost.
 """
 
 import asyncio
+import inspect
 import json
 import os
 import random
@@ -12,7 +13,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 from pydantic import BaseModel
 import httpx
 
@@ -20,15 +21,278 @@ from octoflow.config import OctoFlowConfig, LLMConfigEntry
 from octoflow.outcome import ProviderExhaustedError, OctoFlowError
 
 
-def _sanitize_secret_text(text: str) -> str:
-    """Strip API keys and sensitive tokens from error messages."""
+def redact_secrets(text: str) -> str:
+    """Sanitize secrets, API keys, and Bearer tokens from text, exceptions, and logs."""
     if not text:
         return ""
+    # Authorization header with Bearer token (e.g. Authorization: Bearer <token>)
+    text = re.sub(r'Authorization:\s*Bearer\s+\S+', 'Authorization: Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    # Standalone Bearer tokens (e.g. Bearer <token>)
+    text = re.sub(r'(?<!Authorization:\s)(?<!Authorization:)\bBearer\s+[a-zA-Z0-9_\-\.]{10,}', 'Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    # Non-bearer Authorization header values (e.g. Basic, Token, etc.)
+    text = re.sub(r'Authorization:\s*(?!\s*Bearer\s+\[REDACTED_TOKEN\])[^\r\n]+', 'Authorization: [REDACTED]', text, flags=re.IGNORECASE)
+    # API keys: Anthropic, OpenAI, Grok, etc. (sk-...)
     text = re.sub(r'sk-[a-zA-Z0-9_\-]{16,}', '[REDACTED_KEY]', text)
+    # Google AI keys (AIza...)
     text = re.sub(r'AIza[0-9A-Za-z\-_]{30,}', '[REDACTED_KEY]', text)
-    text = re.sub(r'(key|token|secret|password)=([^\s&]+)', r'\1=[REDACTED]', text, flags=re.IGNORECASE)
+    # GitHub personal access tokens
+    text = re.sub(r'(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}', '[REDACTED_GITHUB_TOKEN]', text)
+    # Key-value query/header assignments
+    text = re.sub(r'(api_key|apikey|key|token|secret|password)=([^\s&"\']+)', r'\1=[REDACTED]', text, flags=re.IGNORECASE)
     return text
 
+
+_sanitize_secret_text = redact_secrets
+
+
+# ==============================================================================
+# Provider Error Taxonomy (Task 1)
+# ==============================================================================
+class ProviderError(OctoFlowError):
+    """Base error for all provider-related failures.
+
+    Attributes:
+        provider: Identifier of the provider ('anthropic', 'openai', 'ollama', etc.)
+        status: HTTP status code, if applicable (e.g. 401, 429, 503)
+        hint: Actionable guidance instructing the user what to do next
+    """
+
+    def __init__(
+        self,
+        message: str,
+        provider: str = "unknown",
+        status: Optional[int] = None,
+        hint: str = "",
+    ):
+        self.provider = provider
+        self.status = status
+        self.hint = redact_secrets(hint)
+        self.raw_message = message
+        clean_msg = redact_secrets(message)
+        full_msg = f"[{provider}]"
+        if status is not None:
+            full_msg += f" (HTTP {status})"
+        full_msg += f" {clean_msg}"
+        if self.hint:
+            full_msg += f" -> Hint: {self.hint}"
+        super().__init__(full_msg)
+
+
+class ProviderAuthError(ProviderError):
+    """Authentication or authorization failure: 401, 403, or 400 with invalid-key signature."""
+    pass
+
+
+class ProviderRateLimitError(ProviderError):
+    """Rate limit or quota exhaustion: 429 error honoring Retry-After headers."""
+
+    def __init__(
+        self,
+        message: str,
+        provider: str = "unknown",
+        status: Optional[int] = 429,
+        hint: str = "",
+        retry_after: Optional[float] = None,
+    ):
+        self.retry_after = retry_after
+        super().__init__(message, provider=provider, status=status, hint=hint)
+
+
+class ProviderTransientError(ProviderError):
+    """Transient service disruptions: 5xx errors, timeouts, and network connection drops."""
+    pass
+
+
+class ProviderRequestError(ProviderError):
+    """Client request errors: other 4xx errors, bad payloads, and context-length violations."""
+    pass
+
+
+class ProviderUnavailableError(ProviderError):
+    """Service or daemon unavailable: Ollama daemon stopped or model not pulled."""
+    pass
+
+
+# ==============================================================================
+# Error Classifier (Task 2 & 4)
+# ==============================================================================
+def classify_http_error(
+    error_or_status: Any,
+    provider: str = "unknown",
+    response: Optional[httpx.Response] = None,
+    body: Optional[str] = None,
+    headers: Optional[Dict[str, str]] = None,
+    model: Optional[str] = None,
+) -> ProviderError:
+    """Classifies an HTTP status code, response, or exception into the ProviderError taxonomy."""
+    p_name = provider.lower().strip()
+    status_code: Optional[int] = None
+    response_text: str = body or ""
+    resp_headers: Dict[str, str] = dict(headers or {})
+
+    if isinstance(error_or_status, httpx.HTTPStatusError):
+        response = error_or_status.response
+
+    if response is not None:
+        status_code = response.status_code
+        if not response_text:
+            try:
+                response_text = response.text
+            except Exception:
+                response_text = ""
+        if not resp_headers:
+            resp_headers = {k.lower(): v for k, v in response.headers.items()}
+    elif isinstance(error_or_status, int):
+        status_code = error_or_status
+    elif isinstance(error_or_status, ProviderError):
+        return error_or_status
+    elif isinstance(error_or_status, Exception):
+        if hasattr(error_or_status, "status_code"):
+            status_code = getattr(error_or_status, "status_code")
+        elif hasattr(error_or_status, "status"):
+            status_code = getattr(error_or_status, "status")
+        if status_code is None:
+            m = re.search(r'\b(4\d\d|5\d\d)\b', str(error_or_status))
+            if m:
+                status_code = int(m.group(1))
+        if not response_text:
+            response_text = str(error_or_status)
+
+    norm_headers = {k.lower(): v for k, v in resp_headers.items()}
+
+    # Check connection and timeout errors
+    if isinstance(error_or_status, httpx.TimeoutException):
+        return ProviderTransientError(
+            "Request timed out",
+            provider=provider,
+            status=408,
+            hint=f"Request to {provider} timed out. Consider checking network latency.",
+        )
+
+    if isinstance(error_or_status, (httpx.ConnectError, ConnectionError)):
+        if p_name == "ollama":
+            return ProviderUnavailableError(
+                "Could not connect to Ollama daemon",
+                provider=provider,
+                status=None,
+                hint="start the daemon: ollama serve",
+            )
+        return ProviderTransientError(
+            f"Connection to {provider} failed",
+            provider=provider,
+            status=None,
+            hint=f"Could not connect to {provider}. Check network connection or endpoint availability.",
+        )
+
+    clean_text = redact_secrets(response_text)
+    msg = clean_text or (str(error_or_status) if not isinstance(error_or_status, int) else f"HTTP {status_code}")
+    clean_msg = redact_secrets(msg)
+
+    # 1. Ollama specific handling
+    if p_name == "ollama":
+        if status_code == 404 or "not found" in clean_text.lower():
+            m = model or "model"
+            return ProviderUnavailableError(
+                f"Model '{m}' not found in Ollama",
+                provider=provider,
+                status=404,
+                hint=f"run: ollama pull {m}",
+            )
+
+    # 2. Status 401 or 403 -> ProviderAuthError
+    if status_code in (401, 403):
+        return ProviderAuthError(
+            clean_msg,
+            provider=provider,
+            status=status_code,
+            hint=f"Check or update your {provider.upper()}_API_KEY credentials.",
+        )
+
+    # 3. Status 400 with invalid-key signature -> ProviderAuthError
+    if status_code == 400:
+        lower_body = clean_text.lower()
+        is_key_error = any(phrase in lower_body for phrase in [
+            "invalid_api_key", "invalid api key", "authentication_error",
+            "invalid_x_api_key", "api_key_invalid", "unauthorized",
+            "api key not valid", "incorrect api key", "key not found"
+        ])
+        if is_key_error:
+            return ProviderAuthError(
+                clean_msg,
+                provider=provider,
+                status=400,
+                hint=f"Invalid API key signature for {provider}. Verify your {provider.upper()}_API_KEY.",
+            )
+        return ProviderRequestError(
+            clean_msg,
+            provider=provider,
+            status=400,
+            hint=f"Bad request sent to {provider}. Check prompt format, parameters, or context length.",
+        )
+
+    # 4. Status 429 -> ProviderRateLimitError (with Retry-After extraction)
+    is_rate_limit = (
+        status_code == 429
+        or any(k in clean_text.lower() or k in clean_msg.lower() for k in [
+            "429", "rate limit", "rate_limit", "quota", "resource_exhausted",
+            "insufficient_quota", "credit", "exceeded", "too many requests"
+        ])
+    )
+    if is_rate_limit:
+        retry_after: Optional[float] = None
+        if "retry-after" in norm_headers:
+            try:
+                retry_after = float(norm_headers["retry-after"])
+            except (ValueError, TypeError):
+                pass
+        if retry_after is None and clean_text:
+            try:
+                parsed = json.loads(clean_text)
+                if isinstance(parsed, dict):
+                    ra = parsed.get("retry_after") or parsed.get("error", {}).get("retry_after")
+                    if ra:
+                        retry_after = float(ra)
+            except Exception:
+                pass
+
+        return ProviderRateLimitError(
+            clean_msg,
+            provider=provider,
+            status=429,
+            hint=f"Rate limit reached for {provider}. Reduce concurrency or check account quotas.",
+            retry_after=retry_after,
+        )
+
+    # 5. Status 5xx / 529 -> ProviderTransientError
+    if status_code and (status_code >= 500 or status_code == 529):
+        return ProviderTransientError(
+            clean_msg,
+            provider=provider,
+            status=status_code,
+            hint=f"Transient server error from {provider} (HTTP {status_code}). Service may be temporarily overloaded.",
+        )
+
+    # 6. Other 4xx -> ProviderRequestError
+    if status_code and 400 <= status_code < 500:
+        return ProviderRequestError(
+            clean_msg,
+            provider=provider,
+            status=status_code,
+            hint=f"Client request error from {provider} (HTTP {status_code}). Check request parameters.",
+        )
+
+    if isinstance(error_or_status, Exception):
+        return ProviderTransientError(
+            clean_msg,
+            provider=provider,
+            status=status_code,
+            hint=f"Unexpected error communicating with {provider}.",
+        )
+
+    return ProviderError(clean_msg, provider=provider, status=status_code, hint="")
+
+
+# ==============================================================================
 
 
 def retry_http_request(fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:

@@ -29,7 +29,20 @@ from octoflow.bus import InterBrachialBus, BrachialMessage
 from octoflow.memory import VerticalLobeMemory
 from octoflow.encoder import CodeSensoryEncoder
 from octoflow.tools import WorkspaceSandbox, ToolResult
-from octoflow.provider import BaseLLMProvider, MockLLMProvider, get_llm_provider
+from octoflow.provider import (
+    BaseLLMProvider,
+    MockLLMProvider,
+    FailoverLLMProvider,
+    get_llm_provider,
+    ProviderError,
+    ProviderAuthError,
+    ProviderRateLimitError,
+    ProviderTransientError,
+    ProviderRequestError,
+    ProviderUnavailableError,
+    classify_http_error,
+    redact_secrets,
+)
 from octoflow.mcp import OctoFlowMCPServer, MCPRegistry, MCPToolSchema, MCPToolCallResult
 from octoflow.consortium import (
     OctosConsortium,
@@ -42,7 +55,6 @@ from octoflow.report import generate_html_audit_report, collect_mission_audit_da
 from octoflow.healing import self_heal_workspace
 from octoflow.triage import triage_workspace_diffs
 from octoflow.notify import send_mission_notification
-from octoflow.provider import FailoverLLMProvider
 from octoflow.bench import run_swarm_benchmark_suite
 from octoflow.monorepo import scan_monorepo_topology
 from octoflow.recorder import TerminalRecorder
@@ -69,6 +81,14 @@ __all__ = [
     "MockLLMProvider",
     "get_llm_provider",
     "FailoverLLMProvider",
+    "ProviderError",
+    "ProviderAuthError",
+    "ProviderRateLimitError",
+    "ProviderTransientError",
+    "ProviderRequestError",
+    "ProviderUnavailableError",
+    "classify_http_error",
+    "redact_secrets",
     "OctoFlowMCPServer",
     "MCPRegistry",
     "MCPToolSchema",
