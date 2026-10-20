@@ -314,6 +314,7 @@ class OctoFlowConfig(BaseModel):
 
     # Workspace & Execution Settings
     workspace_dir: str = "."
+    dry_run: bool = False
     max_budget_dollars: float = 5.00
     max_steps_per_arm: int = 15
     surprise_threshold: float = 0.50

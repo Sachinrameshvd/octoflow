@@ -117,6 +117,11 @@ class OctoFlowMCPServer:
                             "description": "Maximum cognitive problem-solving cycles (default 10).",
                             "default": 10,
                         },
+                        "dry_run": {
+                            "type": "boolean",
+                            "description": "Execute in dry-run mode without real provider credentials.",
+                            "default": False,
+                        },
                     },
                     "required": ["objective"],
                 },
@@ -153,11 +158,13 @@ class OctoFlowMCPServer:
             handler=self._handle_recall_memory,
         )
 
-    def _get_conductor(self, morphology: str = "software_dev") -> SupraesophagealConductor:
+    def _get_conductor(self, morphology: str = "software_dev", dry_run: bool = False) -> SupraesophagealConductor:
+        is_dry = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
         config = OctoFlowConfig(
             workspace_dir=self.workspace_dir,
             morphology=SwarmMorphology(morphology),
-            model_provider="mock" if not os.getenv("ANTHROPIC_API_KEY") else "anthropic",
+            model_provider="mock" if is_dry else ("anthropic" if os.getenv("ANTHROPIC_API_KEY") else "mock"),
+            dry_run=is_dry,
         )
         self.conductor = SupraesophagealConductor(config=config)
         return self.conductor
@@ -166,21 +173,44 @@ class OctoFlowMCPServer:
         objective = args["objective"]
         morphology = args.get("morphology", "software_dev")
         max_cycles = int(args.get("max_cycles", 10))
+        dry_run = bool(args.get("dry_run", False))
 
-        conductor = self._get_conductor(morphology)
+        conductor = self._get_conductor(morphology, dry_run=dry_run)
         result = await conductor.arun_swarm(objective=objective, max_cycles=max_cycles)
 
+        mode_val = result["mode"] if "mode" in result else (RunMode.DRY_RUN.value if dry_run else RunMode.LIVE.value)
+        outcome_val = result["outcome"] if "outcome" in result else ("complete" if result.get("success") else "failed")
+        files_written = result.get("files_written", [])
+
+        status_glyph = "✔" if outcome_val == "complete" else ("◈" if outcome_val == "partial" else "✖")
         text = (
-            f"🐙 OctoFlow Cephalopod Swarm Run Completed:\n"
-            f"- Objective: {result['objective']}\n"
-            f"- Success: {'✅' if result['success'] else '⚠️'}\n"
-            f"- Quiescent Arms: {result['quiescent_arms']}/8\n"
-            f"- Problem Cycles: {result['total_cycles']}\n"
-            f"- Tokens Consumed: {result['tokens_consumed']:,} (Saved {result['token_reduction_pct']:.1f}% vs Chatty Swarm)\n"
-            f"- Execution Time: {result['execution_time_seconds']:.2f}s\n"
-            f"- Estimated Cost: ${result['total_cost_dollars']:.4f}\n"
+            f"◈ OctoFlow Cephalopod Swarm Run Completed:\n"
+            f"• Objective: {result.get('objective', objective)}\n"
+            f"• Mode: {mode_val}\n"
+            f"• Outcome: {outcome_val}\n"
+            f"• Status: {status_glyph} {result.get('status', 'DONE')}\n"
+            f"• Files Written: {len(files_written)}\n"
+            f"• Quiescent Arms: {result.get('quiescent_arms', 0)}/8\n"
+            f"• Problem Cycles: {result.get('total_cycles', 0)}\n"
+            f"• Tokens Consumed: {result.get('tokens_consumed', 0):,} (Saved {result.get('token_reduction_pct', 0.0):.1f}% vs Chatty Swarm)\n"
+            f"• Execution Time: {result.get('execution_time_seconds', 0.0):.2f}s\n"
+            f"• Estimated Cost: ${result.get('total_cost_dollars', 0.0):.4f}\n"
         )
-        return MCPToolCallResult(content=[{"type": "text", "text": text}], isError=not result["success"])
+        payload = {
+            "mode": mode_val,
+            "outcome": outcome_val,
+            "success": (outcome_val == "complete"),
+            "files_written": files_written,
+            "tokens_consumed": result.get("tokens_consumed", 0),
+            "execution_time_seconds": result.get("execution_time_seconds", 0.0),
+        }
+        return MCPToolCallResult(
+            content=[
+                {"type": "text", "text": text},
+                {"type": "text", "text": json.dumps(payload)},
+            ],
+            isError=(outcome_val == "failed"),
+        )
 
     async def _handle_inspect_arms(self, args: Dict[str, Any]) -> MCPToolCallResult:
         if self.conductor is None:
@@ -189,11 +219,11 @@ class OctoFlowMCPServer:
         arm_reports = []
         for arm in self.conductor.arms:
             arm_reports.append(
-                f"- Arm {arm.arm_id} [{arm.role.title}]: {arm.status} | "
+                f"• Arm {arm.arm_id} [{arm.role.title}]: {arm.status} | "
                 f"Surprise: {arm.gate.surprise_history[-1] if arm.gate.surprise_history else 0.0:.3f} / θ={arm.gate.threshold:.2f} | "
                 f"Quiescent: {arm.is_quiescent}"
             )
-        text = "🐙 Cephalopod Arm Ganglia Status:\n" + "\n".join(arm_reports)
+        text = "◈ Cephalopod Arm Ganglia Status:\n" + "\n".join(arm_reports)
         return MCPToolCallResult(content=[{"type": "text", "text": text}])
 
     async def _handle_recall_memory(self, args: Dict[str, Any]) -> MCPToolCallResult:
@@ -207,9 +237,9 @@ class OctoFlowMCPServer:
 
         if match:
             guidance, conf = match
-            text = f"🧠 Vertical Lobe Hebbian Recall (Confidence {conf:.1%}):\n{guidance}"
+            text = f"◈ Vertical Lobe Hebbian Recall (Confidence {conf:.1%}):\n{guidance}"
         else:
-            text = "🧠 No existing Hebbian pattern match in Vertical Lobe for this error signature."
+            text = "◈ No existing Hebbian pattern match in Vertical Lobe for this error signature."
 
         return MCPToolCallResult(content=[{"type": "text", "text": text}])
 

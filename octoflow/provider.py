@@ -9,6 +9,7 @@ import json
 import os
 import random
 import re
+import sys
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
@@ -16,6 +17,18 @@ from pydantic import BaseModel
 import httpx
 
 from octoflow.config import OctoFlowConfig, LLMConfigEntry
+from octoflow.outcome import ProviderExhaustedError, OctoFlowError
+
+
+def _sanitize_secret_text(text: str) -> str:
+    """Strip API keys and sensitive tokens from error messages."""
+    if not text:
+        return ""
+    text = re.sub(r'sk-[a-zA-Z0-9_\-]{16,}', '[REDACTED_KEY]', text)
+    text = re.sub(r'AIza[0-9A-Za-z\-_]{30,}', '[REDACTED_KEY]', text)
+    text = re.sub(r'(key|token|secret|password)=([^\s&]+)', r'\1=[REDACTED]', text, flags=re.IGNORECASE)
+    return text
+
 
 
 def retry_http_request(fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
@@ -417,7 +430,7 @@ class OllamaProvider(BaseLLMProvider):
                 data = resp.json()
         except httpx.ConnectError:
             raise ConnectionError(
-                f"\n❌ Could not connect to Ollama at {self.base_url}.\n"
+                f"\n✖ Could not connect to Ollama at {self.base_url}.\n"
                 f"   Is Ollama installed and running?\n"
                 f"   • Install: brew install ollama (or download from https://ollama.com)\n"
                 f"   • Start: ollama serve (or open the Ollama app)\n"
@@ -464,7 +477,7 @@ class OllamaProvider(BaseLLMProvider):
                     data = resp.json()
             except httpx.ConnectError:
                 raise ConnectionError(
-                    f"\n❌ Could not connect to Ollama at {self.base_url}.\n"
+                    f"\n✖ Could not connect to Ollama at {self.base_url}.\n"
                     f"   Is Ollama installed and running?\n"
                     f"   • Install: brew install ollama (or download from https://ollama.com)\n"
                     f"   • Start: ollama serve (or open the Ollama app)\n"
@@ -575,31 +588,69 @@ class FailoverLLMProvider(BaseLLMProvider):
                     except Exception:
                         pass
 
-        raise RuntimeError(f"All synaptic providers in failover chain exhausted. Last error: {last_error}")
+        clean_last = _sanitize_secret_text(str(last_error))
+        raise ProviderExhaustedError(
+            f"All synaptic providers in failover chain exhausted. Last error: {clean_last}",
+            failures=self.failover_history,
+        )
 
 
-def _build_from_pool_entry(entry: LLMConfigEntry) -> BaseLLMProvider:
+def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> BaseLLMProvider:
     """Build a concrete provider instance from an individual pool configuration entry."""
     p_name = entry.provider.lower().strip()
     key = entry.api_key or os.getenv(f"{p_name.upper()}_API_KEY") or os.getenv("API_KEY")
-    if p_name in ["gemini", "google", "grok", "xai", "deepseek", "anthropic", "openai"] and not key:
-        return MockLLMProvider()
+    is_dry = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
 
     if p_name in ["gemini", "google"]:
         model = entry.model if entry.model and entry.model != "default" else "gemini-2.0-flash"
+        if not key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
+                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+            )
         return GeminiProvider(api_key=key, model=model)
     elif p_name in ["grok", "xai"]:
         model = entry.model if entry.model and entry.model != "default" else "grok-2-1212"
+        if not key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
+                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+            )
         return GrokProvider(api_key=key, model=model)
     elif p_name == "deepseek":
         model = entry.model if entry.model and entry.model != "default" else "deepseek-chat"
+        if not key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
+                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+            )
         return DeepSeekProvider(api_key=key, model=model)
     elif p_name == "anthropic":
         model = entry.model if entry.model and entry.model != "default" else "claude-3-5-sonnet-20241022"
+        if not key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
+                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+            )
         return AnthropicProvider(api_key=key, model=model)
     elif p_name == "openai":
         model = entry.model if entry.model and entry.model != "default" else "gpt-4o"
         base_url = entry.base_url or "https://api.openai.com/v1"
+        if not key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
+                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+            )
         return OpenAIProvider(api_key=key, model=model, base_url=base_url)
     elif p_name == "ollama":
         model = entry.model if entry.model and entry.model != "default" else "qwen2.5-coder:7b"
@@ -609,7 +660,19 @@ def _build_from_pool_entry(entry: LLMConfigEntry) -> BaseLLMProvider:
         model = entry.model if entry.model and entry.model != "default" else "custom-model"
         base_url = entry.base_url or "http://localhost:8000/v1"
         return OpenAIProvider(api_key=key or "custom-key", model=model, base_url=base_url)
-    return MockLLMProvider()
+    elif p_name == "mock":
+        if is_dry:
+            return MockLLMProvider()
+        raise ProviderExhaustedError(
+            "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
+            failures=[{"name": entry.name, "provider": "mock", "model": "mock", "reason": "Mock provider requires --dry-run"}],
+        )
+    if is_dry:
+        return MockLLMProvider()
+    raise ProviderExhaustedError(
+        f"Unsupported provider backend '{p_name}'.",
+        failures=[{"name": entry.name, "provider": p_name, "model": getattr(entry, "model", "unknown"), "reason": "Unsupported provider backend"}],
+    )
 
 
 class CascadePoolLLMProvider(BaseLLMProvider):
@@ -624,27 +687,43 @@ class CascadePoolLLMProvider(BaseLLMProvider):
         self,
         entries: List[LLMConfigEntry],
         on_failover: Optional[Callable[[Dict[str, Any]], None]] = None,
+        dry_run: bool = False,
     ):
         self.entries = [e for e in sorted(entries, key=lambda x: x.priority) if e.enabled]
         self.on_failover = on_failover
+        self.dry_run = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
         self.active_index = 0
         self.providers: List[BaseLLMProvider] = []
         self.telemetry: List[Dict[str, Any]] = []
 
         for e in self.entries:
-            prov = _build_from_pool_entry(e)
-            self.providers.append(prov)
-            self.telemetry.append({
-                "id": e.id,
-                "name": e.name,
-                "provider": e.provider,
-                "model": e.model,
-                "base_url": e.base_url or "",
-                "status": "STANDBY",
-                "tokens_used": 0,
-                "failover_count": 0,
-                "last_error": None,
-            })
+            try:
+                prov = _build_from_pool_entry(e, dry_run=self.dry_run)
+                self.providers.append(prov)
+                self.telemetry.append({
+                    "id": e.id,
+                    "name": e.name,
+                    "provider": e.provider,
+                    "model": e.model,
+                    "base_url": e.base_url or "",
+                    "status": "STANDBY",
+                    "tokens_used": 0,
+                    "failover_count": 0,
+                    "last_error": None,
+                })
+            except ProviderExhaustedError as pe:
+                self.telemetry.append({
+                    "id": e.id,
+                    "name": e.name,
+                    "provider": e.provider,
+                    "model": e.model,
+                    "base_url": e.base_url or "",
+                    "status": "EXHAUSTED",
+                    "tokens_used": 0,
+                    "failover_count": 0,
+                    "last_error": str(pe),
+                })
+
         if self.telemetry:
             self.telemetry[0]["status"] = "ACTIVE"
 
@@ -660,7 +739,22 @@ class CascadePoolLLMProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         if not self.providers:
-            return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
+            if self.dry_run:
+                return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
+            failures = [
+                {
+                    "name": t.get("name", "unknown"),
+                    "provider": t.get("provider", "unknown"),
+                    "model": t.get("model", "unknown"),
+                    "reason": t.get("last_error") or "No valid provider instantiated",
+                }
+                for t in self.telemetry
+            ]
+            summary = "; ".join(f"{f['provider']}:{f['model']} ({f['reason']})" for f in failures) if failures else "no providers configured in cascade pool"
+            raise ProviderExhaustedError(
+                f"All configured LLM providers in cascade pool exhausted: {summary}",
+                failures=failures,
+            )
 
         start_idx = self.active_index
         n = len(self.providers)
@@ -688,7 +782,7 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 return resp
             except Exception as e:
                 last_err = e
-                err_str = str(e)
+                err_str = _sanitize_secret_text(str(e))
                 is_quota_or_rate_limit = any(k in err_str.lower() for k in [
                     "429", "rate limit", "quota", "resource_exhausted",
                     "insufficient_quota", "credit", "exceeded", "too many requests"
@@ -717,9 +811,25 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                     except Exception:
                         pass
 
-        import logging
-        logging.getLogger("octoflow").warning(f"All configured LLM providers in cascade pool exhausted ({last_err}). Falling back to cephalopod neural heuristic inference.")
-        return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
+        if self.dry_run:
+            import logging
+            logging.getLogger("octoflow").warning(f"All configured LLM providers in cascade pool exhausted ({last_err}). Falling back to cephalopod neural heuristic inference.")
+            return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
+
+        failures = [
+            {
+                "name": t.get("name", "unknown"),
+                "provider": t.get("provider", "unknown"),
+                "model": t.get("model", "unknown"),
+                "reason": t.get("last_error") or "exhausted or unavailable",
+            }
+            for t in self.telemetry
+        ]
+        summary = "; ".join(f"{f['provider']}:{f['model']} ({f['reason']})" for f in failures)
+        raise ProviderExhaustedError(
+            f"All configured LLM providers in cascade pool exhausted: {summary}",
+            failures=failures,
+        )
 
     async def agenerate(
         self,
@@ -732,56 +842,88 @@ class CascadePoolLLMProvider(BaseLLMProvider):
         return await asyncio.to_thread(self.generate, prompt, system_prompt, temperature, max_tokens)
 
 
-def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Optional[str] = None) -> BaseLLMProvider:
+def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Optional[str] = None, dry_run: bool = False) -> BaseLLMProvider:
     """Helper to instantiate an individual provider backend."""
-    p_name = provider_name.lower()
+    p_name = provider_name.lower().strip()
+    is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
+
     if p_name == "mock":
-        return MockLLMProvider()
+        if is_dry:
+            return MockLLMProvider()
+        raise ProviderExhaustedError(
+            "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
+            failures=[{"provider": "mock", "model": "mock", "reason": "mock provider requires --dry-run"}],
+        )
 
     elif p_name == "anthropic":
         api_key = config.anthropic_api_key or config.api_key or os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            return MockLLMProvider()
         if tier == "fast":
             model = config.fast_model or "claude-3-5-haiku-20241022"
         elif tier == "frontier":
             model = config.frontier_model or "claude-3-7-sonnet-20250219"
         else:
             model = config.model_name or "claude-3-5-sonnet-20241022"
+        if not api_key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                "Anthropic provider misconfigured: missing ANTHROPIC_API_KEY",
+                failures=[{"provider": "anthropic", "model": model, "reason": "missing ANTHROPIC_API_KEY"}],
+            )
         return AnthropicProvider(api_key=api_key, model=model)
 
     elif p_name == "openai":
         api_key = config.openai_api_key or config.api_key or os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            return MockLLMProvider()
         if tier == "fast":
             model = config.fast_model or "gpt-4o-mini"
         elif tier == "frontier":
             model = config.frontier_model or "o3-mini"
         else:
-            model = config.model_name if "gpt" in config.model_name or "o3" in config.model_name or "o1" in config.model_name else "gpt-4o"
+            model = config.model_name if ("gpt" in config.model_name or "o3" in config.model_name or "o1" in config.model_name) else "gpt-4o"
         base_url = config.base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        if not api_key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                "OpenAI provider misconfigured: missing OPENAI_API_KEY",
+                failures=[{"provider": "openai", "model": model, "reason": "missing OPENAI_API_KEY"}],
+            )
         return OpenAIProvider(api_key=api_key, model=model, base_url=base_url)
 
     elif p_name in ["gemini", "google"]:
         api_key = config.gemini_api_key or config.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            return MockLLMProvider()
         model = config.model_name if "gemini" in config.model_name else "gemini-2.0-flash"
+        if not api_key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                "Gemini provider misconfigured: missing GEMINI_API_KEY",
+                failures=[{"provider": "gemini", "model": model, "reason": "missing GEMINI_API_KEY"}],
+            )
         return GeminiProvider(api_key=api_key, model=model)
 
     elif p_name in ["grok", "xai"]:
         api_key = config.grok_api_key or config.api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
-        if not api_key:
-            return MockLLMProvider()
         model = config.model_name if "grok" in config.model_name else "grok-2-1212"
+        if not api_key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                "Grok provider misconfigured: missing GROK_API_KEY",
+                failures=[{"provider": "grok", "model": model, "reason": "missing GROK_API_KEY"}],
+            )
         return GrokProvider(api_key=api_key, model=model)
 
     elif p_name in ["deepseek"]:
         api_key = config.deepseek_api_key or config.api_key or os.getenv("DEEPSEEK_API_KEY")
-        if not api_key:
-            return MockLLMProvider()
         model = config.model_name if "deepseek" in config.model_name else "deepseek-chat"
+        if not api_key:
+            if is_dry:
+                return MockLLMProvider()
+            raise ProviderExhaustedError(
+                "DeepSeek provider misconfigured: missing DEEPSEEK_API_KEY",
+                failures=[{"provider": "deepseek", "model": model, "reason": "missing DEEPSEEK_API_KEY"}],
+            )
         return DeepSeekProvider(api_key=api_key, model=model)
 
     elif p_name == "ollama":
@@ -791,17 +933,26 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
         elif tier == "frontier":
             model = config.frontier_model or "deepseek-coder-v2:16b"
         else:
-            model = config.model_name if "coder" in config.model_name or "llama" in config.model_name else "qwen2.5-coder:7b"
+            model = config.model_name if ("coder" in config.model_name or "llama" in config.model_name) else "qwen2.5-coder:7b"
         return OllamaProvider(base_url=url, model=model)
 
-    return MockLLMProvider()
+    if is_dry:
+        return MockLLMProvider()
+    raise ProviderExhaustedError(
+        f"Unsupported provider backend '{provider_name}'",
+        failures=[{"provider": provider_name, "reason": "unsupported provider backend"}],
+    )
 
 
-def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None) -> BaseLLMProvider:
+def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None, dry_run: bool = False) -> BaseLLMProvider:
     """Factory creating configured LLM provider, optionally tailored by cognitive tier ('frontier', 'balanced', 'fast').
     
     Supports dynamic multi-URL cascade pools with auto-failover, heterogeneous routing, and fallbacks.
     """
+    is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
+    force_live = (os.getenv("OCTOFLOW_FORCE_LIVE") == "1") or getattr(config, "force_live", False)
+    is_testing = not force_live and (("PYTEST_CURRENT_TEST" in os.environ) or ("pytest" in sys.modules) or (os.getenv("OCTOFLOW_TESTING") == "1"))
+
     # 1. Determine target provider for requested cognitive tier
     provider_name = config.model_provider.lower()
     if tier == "frontier" and config.frontier_provider:
@@ -810,7 +961,12 @@ def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None) -> Base
         provider_name = config.fast_provider.lower()
 
     if provider_name == "mock":
-        return MockLLMProvider()
+        if is_dry or is_testing:
+            return MockLLMProvider()
+        raise ProviderExhaustedError(
+            "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
+            failures=[{"provider": "mock", "model": "mock", "reason": "mock provider requires --dry-run"}],
+        )
 
     # 2. If user configured an LLM cascade pool and requested pool routing (or did not request a specific single provider)
     is_explicit_single = provider_name not in ["pool", "cascade", "cascade_pool"]
@@ -818,20 +974,24 @@ def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None) -> Base
         if getattr(config, "llm_pool", None) and len(config.llm_pool) > 0:
             active_entries = [e for e in config.llm_pool if e.enabled]
             if active_entries:
-                return CascadePoolLLMProvider(entries=active_entries)
+                return CascadePoolLLMProvider(entries=active_entries, dry_run=is_dry)
 
-    primary = _build_single_provider(provider_name, config, tier=tier)
+    primary = _build_single_provider(provider_name, config, tier=tier, dry_run=is_dry)
 
     # If failover is enabled and primary is a cloud provider, configure fallbacks
     if getattr(config, "enable_failover", False) and provider_name not in ["mock"]:
         fallbacks: List[BaseLLMProvider] = []
-        fb_names = getattr(config, "fallback_providers", ["openai", "ollama", "mock"])
+        fb_names = getattr(config, "fallback_providers", ["openai", "ollama"])
         for fb_name in fb_names:
             if fb_name.lower() != provider_name:
-                fallbacks.append(_build_single_provider(fb_name, config, tier=tier))
+                try:
+                    fallbacks.append(_build_single_provider(fb_name, config, tier=tier, dry_run=is_dry))
+                except ProviderExhaustedError:
+                    pass
 
         if fallbacks:
             return FailoverLLMProvider(primary=primary, fallbacks=fallbacks)
 
     return primary
+
 

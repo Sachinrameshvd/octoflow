@@ -32,14 +32,28 @@ import threading
 class WorkspaceSandbox:
     """Safe execution sandbox rooted in a specific workspace directory with optional Docker isolation."""
 
-    def __init__(self, workspace_dir: str, sandbox_mode: str = "local", docker_image: str = "python:3.12-slim"):
-        self.root = Path(workspace_dir).expanduser().resolve()
-        self.root.mkdir(parents=True, exist_ok=True)
+    def __init__(
+        self,
+        workspace_dir: str,
+        sandbox_mode: str = "local",
+        docker_image: str = "python:3.12-slim",
+        dry_run: bool = False,
+    ):
+        self.dry_run = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
+        self.target_root = Path(workspace_dir).expanduser().resolve()
+        if self.dry_run:
+            dry_dir = Path.home() / ".octoflow" / "dry-run"
+            dry_dir.mkdir(parents=True, exist_ok=True)
+            self.root = dry_dir
+        else:
+            self.root = self.target_root
+            self.root.mkdir(parents=True, exist_ok=True)
         self.sandbox_mode = sandbox_mode.lower()
         self.docker_image = docker_image
         # Advisory locks: file_path_str -> holding_arm_id
         self._locks: Dict[str, int] = {}
         self._lock_mutex = threading.RLock()
+        self.files_written: List[str] = []
 
     def _resolve_safe(self, rel_path: str) -> Path:
         """Resolve a relative or absolute path safely within the workspace."""
@@ -202,6 +216,10 @@ class WorkspaceSandbox:
                 diff_lines = len(content.splitlines())
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content, encoding="utf-8")
+                if not self.dry_run:
+                    rel_clean = str(rel_path).lstrip("./")
+                    if rel_clean not in self.files_written:
+                        self.files_written.append(rel_clean)
 
             return ToolResult(
                 tool_name="write_file",

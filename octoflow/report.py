@@ -27,6 +27,8 @@ def collect_mission_audit_data(
     objective: str = "Mission Execution",
     telemetry_events: Optional[List[dict]] = None,
     duration_seconds: float = 18.4,
+    mode: str = "live",
+    outcome: str = "complete",
 ) -> Dict[str, Any]:
     """Collect git state, AST validation, diffs, and token metrics for audit export."""
     ws = Path(workspace).resolve()
@@ -173,6 +175,8 @@ def collect_mission_audit_data(
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
         "duration_seconds": round(duration_seconds, 1),
         "verdict": "BLOCKED" if hard_block else "PASSED",
+        "mode": mode,
+        "outcome": outcome,
         "hard_block": hard_block,
         "branch": branch,
         "commit": commit_hash,

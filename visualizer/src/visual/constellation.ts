@@ -812,6 +812,31 @@ export class CephalopodConstellationManager {
       }
     }
 
+    if (evt.mode === 'dry_run' || evt.mode === 'DRY_RUN') {
+      let badge = document.getElementById('dry-run-indicator-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.id = 'dry-run-indicator-badge';
+        badge.textContent = 'DRY-RUN';
+        badge.style.position = 'fixed';
+        badge.style.top = '14px';
+        badge.style.left = '50%';
+        badge.style.transform = 'translateX(-50%)';
+        badge.style.background = 'rgba(234, 179, 8, 0.18)';
+        badge.style.color = '#FACC15';
+        badge.style.border = '1px solid #EAB308';
+        badge.style.borderRadius = '4px';
+        badge.style.padding = '3px 10px';
+        badge.style.fontSize = '11px';
+        badge.style.fontWeight = '700';
+        badge.style.letterSpacing = '1px';
+        badge.style.zIndex = '99999';
+        badge.style.pointerEvents = 'none';
+        badge.style.fontFamily = 'monospace';
+        document.body.appendChild(badge);
+      }
+    }
+
     const octId = evt.octopus_id ?? 0;
     const entry = this.octopuses.get(octId);
     if (!entry) return;

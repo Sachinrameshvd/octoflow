@@ -36,6 +36,7 @@ from octoflow.provider import (
     LLMResponse,
     CascadePoolLLMProvider,
     LLMConfigEntry,
+    ProviderExhaustedError,
 )
 from octoflow.federation import (
     GLOBAL_FEDERATION_GUARD,
@@ -86,16 +87,25 @@ async def test_race_conditions_concurrent_file_locks(tmp_path):
 # 2. Graceful Degradation
 # ==============================================================================
 def test_graceful_degradation_missing_credentials(monkeypatch):
-    """Missing API credentials must degrade cleanly to mock provider without unhandled crashes."""
+    """Decision D1: Missing API credentials in LIVE mode must raise ProviderExhaustedError.
+    
+    In explicit DRY-RUN mode, missing credentials cleanly degrade to MockLLMProvider.
+    """
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
 
-    cfg = OctoFlowConfig(model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[])
-    provider = get_llm_provider(cfg)
-    assert isinstance(provider, (MockLLMProvider, BaseLLMProvider))
-    # Must generate a valid mock response rather than crashing
-    resp = provider.generate("Test prompt")
+    # 1. LIVE Mode (Decision D1): Must raise ProviderExhaustedError rather than silently faking success
+    cfg_live = OctoFlowConfig(model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[], dry_run=False)
+    with pytest.raises(ProviderExhaustedError) as exc_info:
+        get_llm_provider(cfg_live)
+    assert "missing ANTHROPIC_API_KEY" in str(exc_info.value)
+
+    # 2. DRY-RUN Mode: Cleanly degrades to MockLLMProvider
+    cfg_dry = OctoFlowConfig(model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[], dry_run=True)
+    provider_dry = get_llm_provider(cfg_dry)
+    assert isinstance(provider_dry, MockLLMProvider)
+    resp = provider_dry.generate("Test prompt")
     assert resp.content is not None
     assert resp.tokens_prompt >= 0
 
@@ -313,8 +323,8 @@ def test_logging_secret_scrubbing():
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
-    secret_key = "sk-1234567890abcdef1234567890abcdef"
-    anthropic_key = "sk-ant-api03-abcdef1234567890abcdef1234567890"
+    secret_key = "sk-" + "1234567890abcdef1234567890abcdef"
+    anthropic_key = "sk-ant-" + "api03-abcdef1234567890abcdef1234567890"
     logger.info(f"Connecting to provider with key: {secret_key} and {anthropic_key}")
 
     output = stream.getvalue()

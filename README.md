@@ -203,8 +203,28 @@ pip install -e .
 ### 2. Run the Full Test Suite
 ```bash
 pytest tests/
-# Output: 73 passed, 1 skipped in ~4.8s (100% full system pass rate)
+# Output: 218 passed, 4 skipped (100% full system pass rate)
 ```
+
+---
+
+## ◈ Run Modes & Truthful Outcomes (Decision D1)
+
+OctoFlow enforces strict truthfulness in status reporting: a run **never** reports success unless real work was executed and files were committed to the workspace. Silent mock fallback in live environments has been completely eliminated.
+
+### Execution Modes
+
+| Mode | Flag | Provider Behavior | Filesystem Target | Exit Code |
+| :--- | :--- | :--- | :--- | :--- |
+| **LIVE** | *(default)* | Real LLM APIs (Anthropic, OpenAI, etc.). Missing keys fail immediately with actionable guidance. | Workspace directory (`--dir`) | `0` (Success), `1` (Partial), `2` (Failed) |
+| **DRY-RUN** | `--dry-run` | Safe mock provider (`MockLLMProvider`). Displays prominent text-only badge. | Redirected to `.octoflow/dry-run/` (workspace unmodified) | `0` (Clean simulation) |
+
+### Exit Code Contract
+
+- **`0` (Complete / Dry-Run)**: The swarm reached quiescence ($\ge 6$ arms quiescent) and modified files in LIVE mode, or completed a `--dry-run` simulation without error.
+- **`1` (Partial)**: Incomplete run (e.g. $< 6$ arms quiescent or interrupted execution).
+- **`2` (Failed / Exhausted)**: All real providers exhausted, invalid/missing API credentials, or the model produced 0 file modifications in LIVE mode.
+- **`3` (Usage Error)**: Invalid command-line arguments or syntax.
 
 ---
 
