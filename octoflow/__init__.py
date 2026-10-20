@@ -42,6 +42,8 @@ from octoflow.provider import (
     ProviderUnavailableError,
     classify_http_error,
     redact_secrets,
+    set_sleep_functions,
+    reset_sleep_functions,
 )
 from octoflow.mcp import OctoFlowMCPServer, MCPRegistry, MCPToolSchema, MCPToolCallResult
 from octoflow.consortium import (
@@ -89,6 +91,8 @@ __all__ = [
     "ProviderUnavailableError",
     "classify_http_error",
     "redact_secrets",
+    "set_sleep_functions",
+    "reset_sleep_functions",
     "OctoFlowMCPServer",
     "MCPRegistry",
     "MCPToolSchema",

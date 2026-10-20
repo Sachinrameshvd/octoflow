@@ -293,36 +293,181 @@ def classify_http_error(
 
 
 # ==============================================================================
+# Injectable Sleep Functions & Timeouts (Task 3 & 5)
+# ==============================================================================
+_DEFAULT_SLEEP_FN: Callable[[float], None] = time.sleep
+_DEFAULT_ASYNC_SLEEP_FN: Callable[[float], Any] = asyncio.sleep
+
+DEFAULT_CLOUD_TIMEOUT = httpx.Timeout(connect=5.0, read=120.0, write=30.0, pool=10.0)
+DEFAULT_OLLAMA_TIMEOUT = httpx.Timeout(connect=5.0, read=300.0, write=30.0, pool=10.0)
 
 
-def retry_http_request(fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
-    """Execute synchronous HTTP request with exponential backoff on 429 and 50x errors."""
-    for attempt in range(max_retries):
+def set_sleep_functions(
+    sync_sleep: Optional[Callable[[float], None]] = None,
+    async_sleep: Optional[Callable[[float], Any]] = None,
+):
+    """Inject global sleep functions for testing backoff and retries without real-time delays."""
+    global _DEFAULT_SLEEP_FN, _DEFAULT_ASYNC_SLEEP_FN
+    if sync_sleep is not None:
+        _DEFAULT_SLEEP_FN = sync_sleep
+    if async_sleep is not None:
+        _DEFAULT_ASYNC_SLEEP_FN = async_sleep
+
+
+def reset_sleep_functions():
+    """Reset sleep functions to standard time.sleep and asyncio.sleep."""
+    global _DEFAULT_SLEEP_FN, _DEFAULT_ASYNC_SLEEP_FN
+    _DEFAULT_SLEEP_FN = time.sleep
+    _DEFAULT_ASYNC_SLEEP_FN = asyncio.sleep
+
+
+# ==============================================================================
+# Retry Policy Engine (Task 3)
+# ==============================================================================
+def execute_with_retry(
+    fn: Callable[[], httpx.Response],
+    provider: Any = "unknown",
+    model: Optional[str] = None,
+    sleep_fn: Optional[Callable[[float], None]] = None,
+) -> httpx.Response:
+    """Executes an HTTP request honoring OctoFlow retry and backoff policy.
+
+    - Auth errors: 0 retries; marks provider disabled for session, raises ProviderAuthError.
+    - Rate limits: retries at most twice, honoring Retry-After or exponential backoff with jitter capped at 30s.
+    - Transient errors: retries at most twice, using 0.5s and 1.5s delays plus jitter.
+    - Request/Unavailable errors: 0 retries, raises immediately.
+    """
+    provider_name = getattr(provider, "provider_name", str(provider)) if not isinstance(provider, str) else provider
+    model_name = model or getattr(provider, "model", None)
+
+    if isinstance(provider, BaseLLMProvider) and getattr(provider, "is_disabled", False):
+        raise ProviderAuthError(
+            f"Provider '{provider_name}' is disabled for the session due to authentication failure",
+            provider=provider_name,
+            status=401,
+            hint=f"Provider disabled for session. Re-enable with valid {provider_name.upper()}_API_KEY.",
+        )
+
+    rate_limit_retries = 0
+    transient_retries = 0
+    actual_sleep = sleep_fn or getattr(provider, "sleep_fn", None) or _DEFAULT_SLEEP_FN
+
+    while True:
         try:
             resp = fn()
             resp.raise_for_status()
             return resp
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code in [429, 502, 503, 504] and attempt < max_retries - 1:
-                delay = base_delay * (2 ** attempt) + random.uniform(0.1, 0.4)
-                time.sleep(delay)
-                continue
-            raise
+        except Exception as raw_e:
+            err = classify_http_error(raw_e, provider=provider_name, model=model_name)
+
+            if isinstance(err, ProviderAuthError):
+                if isinstance(provider, BaseLLMProvider):
+                    provider.is_disabled = True
+                    provider.disabled_reason = str(err)
+                raise err
+
+            elif isinstance(err, ProviderRateLimitError):
+                if rate_limit_retries < 2:
+                    rate_limit_retries += 1
+                    if err.retry_after is not None and err.retry_after > 0:
+                        delay = min(err.retry_after, 30.0)
+                    else:
+                        delay = min(1.0 * (2 ** (rate_limit_retries - 1)) + random.uniform(0.1, 0.4), 30.0)
+                    actual_sleep(delay)
+                    continue
+                raise err
+
+            elif isinstance(err, ProviderTransientError):
+                if transient_retries < 2:
+                    transient_retries += 1
+                    base_delay = 0.5 if transient_retries == 1 else 1.5
+                    delay = base_delay + random.uniform(0.05, 0.2)
+                    actual_sleep(delay)
+                    continue
+                raise err
+
+            else:
+                raise err
 
 
-async def aretry_http_request(coro_fn: Callable[[], Any], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
-    """Execute asynchronous HTTP request with exponential backoff on 429 and 50x errors."""
-    for attempt in range(max_retries):
+async def aexecute_with_retry(
+    coro_fn: Callable[[], Any],
+    provider: Any = "unknown",
+    model: Optional[str] = None,
+    asleep_fn: Optional[Callable[[float], Any]] = None,
+) -> httpx.Response:
+    """Asynchronously executes an HTTP request honoring OctoFlow retry and backoff policy."""
+    provider_name = getattr(provider, "provider_name", str(provider)) if not isinstance(provider, str) else provider
+    model_name = model or getattr(provider, "model", None)
+
+    if isinstance(provider, BaseLLMProvider) and getattr(provider, "is_disabled", False):
+        raise ProviderAuthError(
+            f"Provider '{provider_name}' is disabled for the session due to authentication failure",
+            provider=provider_name,
+            status=401,
+            hint=f"Provider disabled for session. Re-enable with valid {provider_name.upper()}_API_KEY.",
+        )
+
+    rate_limit_retries = 0
+    transient_retries = 0
+    actual_asleep = asleep_fn or getattr(provider, "asleep_fn", None) or _DEFAULT_ASYNC_SLEEP_FN
+
+    async def _do_sleep(d: float):
+        if inspect.iscoroutinefunction(actual_asleep):
+            await actual_asleep(d)
+        else:
+            res = actual_asleep(d)
+            if asyncio.iscoroutine(res):
+                await res
+
+    while True:
         try:
             resp = await coro_fn()
             resp.raise_for_status()
             return resp
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code in [429, 502, 503, 504] and attempt < max_retries - 1:
-                delay = base_delay * (2 ** attempt) + random.uniform(0.1, 0.4)
-                await asyncio.sleep(delay)
-                continue
-            raise
+        except Exception as raw_e:
+            err = classify_http_error(raw_e, provider=provider_name, model=model_name)
+
+            if isinstance(err, ProviderAuthError):
+                if isinstance(provider, BaseLLMProvider):
+                    provider.is_disabled = True
+                    provider.disabled_reason = str(err)
+                raise err
+
+            elif isinstance(err, ProviderRateLimitError):
+                if rate_limit_retries < 2:
+                    rate_limit_retries += 1
+                    if err.retry_after is not None and err.retry_after > 0:
+                        delay = min(err.retry_after, 30.0)
+                    else:
+                        delay = min(1.0 * (2 ** (rate_limit_retries - 1)) + random.uniform(0.1, 0.4), 30.0)
+                    await _do_sleep(delay)
+                    continue
+                raise err
+
+            elif isinstance(err, ProviderTransientError):
+                if transient_retries < 2:
+                    transient_retries += 1
+                    base_delay = 0.5 if transient_retries == 1 else 1.5
+                    delay = base_delay + random.uniform(0.05, 0.2)
+                    await _do_sleep(delay)
+                    continue
+                raise err
+
+            else:
+                raise err
+
+
+def retry_http_request(fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
+    """Legacy helper: delegates to execute_with_retry."""
+    return execute_with_retry(fn, provider="unknown")
+
+
+async def aretry_http_request(coro_fn: Callable[[], Any], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
+    """Legacy helper: delegates to aexecute_with_retry."""
+    return await aexecute_with_retry(coro_fn, provider="unknown")
+
+
 
 
 class LLMResponse(BaseModel):
