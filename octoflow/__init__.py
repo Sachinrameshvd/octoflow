@@ -45,6 +45,7 @@ from octoflow.provider import (
     set_sleep_functions,
     reset_sleep_functions,
 )
+from octoflow.router import Route, RouteKind, classify_input
 from octoflow.mcp import OctoFlowMCPServer, MCPRegistry, MCPToolSchema, MCPToolCallResult
 from octoflow.consortium import (
     OctosConsortium,
@@ -93,6 +94,9 @@ __all__ = [
     "redact_secrets",
     "set_sleep_functions",
     "reset_sleep_functions",
+    "Route",
+    "RouteKind",
+    "classify_input",
     "OctoFlowMCPServer",
     "MCPRegistry",
     "MCPToolSchema",

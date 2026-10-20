@@ -52,6 +52,7 @@ from octoflow.themes import (
     list_themes,
     render_octoflow_3d_banner,
 )
+from octoflow.router import classify_input, RouteKind, Route
 
 app = typer.Typer(help="◈ OctoFlow: Decentralized Cephalopod Multi-Agent Swarm with Sensory Surprise Gating")
 octos_app = typer.Typer(help="◈ OctosFlow: Multi-Cephalopod Swarm Consortium (3 to 8 Octopuses • 24 to 64 Arms)")
@@ -2389,46 +2390,17 @@ def interactive_cockpit():
     while True:
         try:
             user_input = get_live_cockpit_input()
-            if not user_input:
+            route = classify_input(user_input, workspace=workspace)
+            if route.kind == RouteKind.EMPTY:
                 continue
 
-            # Strip any accidental copy-pasted prompt prefixes (e.g. 'octos ❯', './octos ', 'octos ')
-            while True:
-                prev_len = len(user_input)
-                for prefix in [
-                    "octos ❯", "octos >", "octos:", "octo ❯", "octo >", "❯", ">", "$", "#",
-                    "./octos ", "./octo ", "octos ", "octo ",
-                ]:
-                    if user_input.startswith(prefix):
-                        user_input = user_input[len(prefix):].strip()
-                if len(user_input) == prev_len:
-                    break
+            user_input = route.command
 
-            if not user_input:
-                continue
-
-            # Direct Shell Pass-Through (like Ruflo / Claude Code / Aider)
-            is_shell_cmd = False
-            shell_cmd = ""
-            if user_input.startswith("!") or user_input.startswith("$"):
-                is_shell_cmd = True
-                shell_cmd = user_input[1:].strip()
-            elif user_input.startswith("/sh ") or user_input.startswith("/bash "):
-                is_shell_cmd = True
-                shell_cmd = user_input.split(maxsplit=1)[1].strip()
-            else:
-                first_tok = user_input.split()[0].lower() if user_input.split() else ""
-                SHELL_PASSTHROUGH = {
-                    "mkdir", "touch", "ls", "pwd", "cat", "open", "rm", "cp", "mv",
-                    "echo", "which", "find", "grep", "curl", "chmod", "kill", "ps", "cd"
-                }
-                if first_tok in SHELL_PASSTHROUGH:
-                    is_shell_cmd = True
-                    shell_cmd = user_input
-
-            if is_shell_cmd and shell_cmd:
+            # Direct Shell Pass-Through
+            if route.kind in [RouteKind.SHELL_SIMPLE, RouteKind.SHELL_EXPLICIT]:
+                shell_cmd = route.command
                 parts = shell_cmd.split(maxsplit=1)
-                cmd_head = parts[0].lower()
+                cmd_head = parts[0].lower() if parts else ""
                 if cmd_head == "cd":
                     target_arg = parts[1].strip() if len(parts) > 1 else "~"
                     target_path = Path(os.path.expanduser(target_arg)).resolve()
