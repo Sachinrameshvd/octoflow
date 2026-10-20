@@ -2,7 +2,7 @@
 
 > **Document Type:** Full Project Context, Architecture, and State-of-the-Repo Briefing  
 > **Target Audience:** Incoming Autonomous AI Coding Agents & Human Contributors  
-> **Repository:** `/Users/sachinrk/Desktop/Octoflow`  
+> **Repository:** `octoflow`  
 > **Specification Standard:** Strict factual traceability with mandatory evidence tags:  
 > `[VERIFIED IN CODE]`, `[FROM CONVERSATION]`, `[INFERRED]`, `[UNKNOWN]`
 
@@ -216,7 +216,7 @@ The system can scale up to an entire **8-Octopus Consortium** (known as **The Oc
 
 ### Annotated Directory Tree
 ```text
-/Users/sachinrk/Desktop/Octoflow/
+. (repository root)/
 ├── pyproject.toml              # Build backend, package metadata, dependencies, CLI entry points
 ├── README.md                   # Complete architectural guide, manual, and usage docs
 ├── octo                        # Shell launcher script resolving Python venv and executing octoflow
@@ -446,13 +446,13 @@ pip install -e .
 > 4. To build user applications into a specific directory, run `./octo run "<goal>" --dir <path> --model ollama` or use `cd <path>` inside the cockpit.
 
 ### Top 10 Files to Read First
-1. [octoflow/conductor.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/conductor.py) — Central brain logic, active inference cycle, and mission decomposition.
-2. [octoflow/arm.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/arm.py) — The 8 peripheral arm ganglia implementations, roles, and tool calling loops.
-3. [octoflow/gate.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/gate.py) — Mathematical surprise calculations ($\Delta S$) and token savings tracker.
-4. [octoflow/consortium.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/consortium.py) — Multi-octopus orchestration (Triad and Octopolis 64-arm engines).
-5. [octoflow/cli.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/cli.py) — Terminal cockpit, non-blocking 20 FPS loop, and shell pass-through router.
-6. [octoflow/provider.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/provider.py) — LLM cascade pool, Ollama connector, and failover fallbacks.
-7. [octoflow/ignition.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/ignition.py) — Phase 4 Live Ignition engine auto-detecting and launching servers.
-8. [octoflow/runner.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/runner.py) — Benthic dot runner animation engine and interactive arrow-key game.
-9. [octoflow/server.py](file:///Users/sachinrk/Desktop/Octoflow/octoflow/server.py) — FastAPI/WebSocket server streaming telemetry to the 3D visualizer.
-10. [visualizer/src/main.ts](file:///Users/sachinrk/Desktop/Octoflow/visualizer/src/main.ts) — 3D WebGL connectome frontend and neural particle visualization.
+1. [octoflow/conductor.py](octoflow/conductor.py) — Central brain logic, active inference cycle, and mission decomposition.
+2. [octoflow/arm.py](octoflow/arm.py) — The 8 peripheral arm ganglia implementations, roles, and tool calling loops.
+3. [octoflow/gate.py](octoflow/gate.py) — Mathematical surprise calculations ($\Delta S$) and token savings tracker.
+4. [octoflow/consortium.py](octoflow/consortium.py) — Multi-octopus orchestration (Triad and Octopolis 64-arm engines).
+5. [octoflow/cli.py](octoflow/cli.py) — Terminal cockpit, non-blocking 20 FPS loop, and shell pass-through router.
+6. [octoflow/provider.py](octoflow/provider.py) — LLM cascade pool, Ollama connector, and failover fallbacks.
+7. [octoflow/ignition.py](octoflow/ignition.py) — Phase 4 Live Ignition engine auto-detecting and launching servers.
+8. [octoflow/runner.py](octoflow/runner.py) — Benthic dot runner animation engine and interactive arrow-key game.
+9. [octoflow/server.py](octoflow/server.py) — FastAPI/WebSocket server streaming telemetry to the 3D visualizer.
+10. [visualizer/src/main.ts](visualizer/src/main.ts) — 3D WebGL connectome frontend and neural particle visualization.
