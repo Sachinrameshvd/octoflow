@@ -468,8 +468,6 @@ async def aretry_http_request(coro_fn: Callable[[], Any], max_retries: int = 3, 
     return await aexecute_with_retry(coro_fn, provider="unknown")
 
 
-
-
 class LLMResponse(BaseModel):
     """Normalized response from an LLM call."""
     content: str
@@ -482,6 +480,13 @@ class LLMResponse(BaseModel):
 
 class BaseLLMProvider(ABC):
     """Abstract interface for LLM backends."""
+    provider_name: str = "base"
+    model: str = "default"
+    is_disabled: bool = False
+    disabled_reason: Optional[str] = None
+    sleep_fn: Optional[Callable[[float], None]] = None
+    asleep_fn: Optional[Callable[[float], Any]] = None
+    timeout: Optional[httpx.Timeout] = None
 
     @abstractmethod
     def generate(
@@ -508,6 +513,8 @@ class BaseLLMProvider(ABC):
 
 class MockLLMProvider(BaseLLMProvider):
     """Deterministic, zero-cost LLM provider for unit tests and local simulation."""
+    provider_name = "mock"
+    model = "mock"
 
     def __init__(self, script_responses: Optional[Dict[str, str]] = None):
         self.script_responses = script_responses or {}
@@ -598,13 +605,24 @@ class MockLLMProvider(BaseLLMProvider):
 
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude API Provider (Claude 3.5 Sonnet / Opus)."""
+    provider_name = "anthropic"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "claude-3-5-sonnet-20241022",
+        timeout: Optional[httpx.Timeout] = None,
+        sleep_fn: Optional[Callable[[float], None]] = None,
+        asleep_fn: Optional[Callable[[float], Any]] = None,
+    ):
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable or parameter required.")
         self.model = model
         self.base_url = "https://api.anthropic.com/v1/messages"
+        self.timeout = timeout or DEFAULT_CLOUD_TIMEOUT
+        self.sleep_fn = sleep_fn
+        self.asleep_fn = asleep_fn
 
     def generate(
         self,
@@ -625,8 +643,12 @@ class AnthropicProvider(BaseLLMProvider):
             "system": system_prompt,
             "messages": [{"role": "user", "content": prompt}],
         }
-        with httpx.Client(timeout=60.0) as client:
-            resp = retry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+        with httpx.Client(timeout=self.timeout) as client:
+            resp = execute_with_retry(
+                lambda: client.post(self.base_url, headers=headers, json=payload),
+                provider=self,
+                sleep_fn=self.sleep_fn,
+            )
             data = resp.json()
 
         content = data["content"][0]["text"]
@@ -663,8 +685,12 @@ class AnthropicProvider(BaseLLMProvider):
             "system": system_prompt,
             "messages": [{"role": "user", "content": prompt}],
         }
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await aretry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await aexecute_with_retry(
+                lambda: client.post(self.base_url, headers=headers, json=payload),
+                provider=self,
+                asleep_fn=self.asleep_fn,
+            )
             data = resp.json()
 
         content = data["content"][0]["text"]
@@ -683,8 +709,17 @@ class AnthropicProvider(BaseLLMProvider):
 
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI API Provider (GPT-4o, GPT-4o-mini)."""
+    provider_name = "openai"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o", base_url: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "gpt-4o",
+        base_url: Optional[str] = None,
+        timeout: Optional[httpx.Timeout] = None,
+        sleep_fn: Optional[Callable[[float], None]] = None,
+        asleep_fn: Optional[Callable[[float], Any]] = None,
+    ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable or parameter required.")
@@ -694,6 +729,9 @@ class OpenAIProvider(BaseLLMProvider):
             self.base_url = f"{raw_url.rstrip('/')}/chat/completions"
         else:
             self.base_url = raw_url
+        self.timeout = timeout or DEFAULT_CLOUD_TIMEOUT
+        self.sleep_fn = sleep_fn
+        self.asleep_fn = asleep_fn
 
     def generate(
         self,
@@ -717,8 +755,12 @@ class OpenAIProvider(BaseLLMProvider):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        with httpx.Client(timeout=60.0) as client:
-            resp = retry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+        with httpx.Client(timeout=self.timeout) as client:
+            resp = execute_with_retry(
+                lambda: client.post(self.base_url, headers=headers, json=payload),
+                provider=self,
+                sleep_fn=self.sleep_fn,
+            )
             data = resp.json()
 
         content = data["choices"][0]["message"]["content"]
@@ -758,8 +800,12 @@ class OpenAIProvider(BaseLLMProvider):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await aretry_http_request(lambda: client.post(self.base_url, headers=headers, json=payload))
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await aexecute_with_retry(
+                lambda: client.post(self.base_url, headers=headers, json=payload),
+                provider=self,
+                asleep_fn=self.asleep_fn,
+            )
             data = resp.json()
 
         content = data["choices"][0]["message"]["content"]
@@ -778,43 +824,57 @@ class OpenAIProvider(BaseLLMProvider):
 
 class GeminiProvider(OpenAIProvider):
     """Google Gemini API Provider via OpenAI-compatible endpoint (Gemini 2.0 Flash / Pro)."""
+    provider_name = "gemini"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash", base_url: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash", base_url: Optional[str] = None, **kwargs):
         key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable required.")
         url = base_url or "https://generativelanguage.googleapis.com/v1beta/openai"
-        super().__init__(api_key=key, model=model, base_url=url)
+        super().__init__(api_key=key, model=model, base_url=url, **kwargs)
 
 
 class GrokProvider(OpenAIProvider):
     """xAI Grok API Provider (Grok 2 / Grok beta)."""
+    provider_name = "grok"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "grok-2-1212", base_url: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model: str = "grok-2-1212", base_url: Optional[str] = None, **kwargs):
         key = api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
         if not key:
             raise ValueError("XAI_API_KEY or GROK_API_KEY environment variable required.")
         url = base_url or "https://api.x.ai/v1"
-        super().__init__(api_key=key, model=model, base_url=url)
+        super().__init__(api_key=key, model=model, base_url=url, **kwargs)
 
 
 class DeepSeekProvider(OpenAIProvider):
     """DeepSeek API Provider (DeepSeek-V3 / DeepSeek-R1)."""
+    provider_name = "deepseek"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "deepseek-chat", base_url: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model: str = "deepseek-chat", base_url: Optional[str] = None, **kwargs):
         key = api_key or os.getenv("DEEPSEEK_API_KEY")
         if not key:
             raise ValueError("DEEPSEEK_API_KEY environment variable required.")
         url = base_url or "https://api.deepseek.com/v1"
-        super().__init__(api_key=key, model=model, base_url=url)
+        super().__init__(api_key=key, model=model, base_url=url, **kwargs)
 
 
 class OllamaProvider(BaseLLMProvider):
     """Local, offline, 100% free Ollama Provider (DeepSeek-Coder, Qwen2.5, Llama-3)."""
+    provider_name = "ollama"
 
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "qwen2.5-coder:7b"):
+    def __init__(
+        self,
+        base_url: str = "http://localhost:11434",
+        model: str = "qwen2.5-coder:7b",
+        timeout: Optional[httpx.Timeout] = None,
+        sleep_fn: Optional[Callable[[float], None]] = None,
+        asleep_fn: Optional[Callable[[float], Any]] = None,
+    ):
         self.base_url = base_url.rstrip("/")
         self.model = model
+        self.timeout = timeout or DEFAULT_OLLAMA_TIMEOUT
+        self.sleep_fn = sleep_fn
+        self.asleep_fn = asleep_fn
         self._semaphore = None
 
     def generate(
@@ -832,21 +892,13 @@ class OllamaProvider(BaseLLMProvider):
             "options": {"temperature": temperature, "num_predict": max_tokens},
         }
         endpoint = f"{self.base_url}/api/generate"
-        try:
-            with httpx.Client(timeout=300.0) as client:
-                resp = client.post(endpoint, json=payload)
-                resp.raise_for_status()
-                data = resp.json()
-        except httpx.ConnectError:
-            raise ConnectionError(
-                f"\n✖ Could not connect to Ollama at {self.base_url}.\n"
-                f"   Is Ollama installed and running?\n"
-                f"   • Install: brew install ollama (or download from https://ollama.com)\n"
-                f"   • Start: ollama serve (or open the Ollama app)\n"
-                f"   • Pull model: ollama pull {self.model}\n"
-            ) from None
-        except Exception as e:
-            raise RuntimeError(f"Ollama error: {e}") from e
+        with httpx.Client(timeout=self.timeout) as client:
+            resp = execute_with_retry(
+                lambda: client.post(endpoint, json=payload),
+                provider=self,
+                sleep_fn=self.sleep_fn,
+            )
+            data = resp.json()
 
         content = data.get("response", "")
         in_toks = data.get("prompt_eval_count", len(prompt) // 4)
@@ -879,21 +931,13 @@ class OllamaProvider(BaseLLMProvider):
         }
         endpoint = f"{self.base_url}/api/generate"
         async with self._semaphore:
-            try:
-                async with httpx.AsyncClient(timeout=300.0) as client:
-                    resp = await client.post(endpoint, json=payload)
-                    resp.raise_for_status()
-                    data = resp.json()
-            except httpx.ConnectError:
-                raise ConnectionError(
-                    f"\n✖ Could not connect to Ollama at {self.base_url}.\n"
-                    f"   Is Ollama installed and running?\n"
-                    f"   • Install: brew install ollama (or download from https://ollama.com)\n"
-                    f"   • Start: ollama serve (or open the Ollama app)\n"
-                    f"   • Pull model: ollama pull {self.model}\n"
-                ) from None
-            except Exception as e:
-                raise RuntimeError(f"Ollama error: {e}") from e
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await aexecute_with_retry(
+                    lambda: client.post(endpoint, json=payload),
+                    provider=self,
+                    asleep_fn=self.asleep_fn,
+                )
+                data = resp.json()
 
         content = data.get("response", "")
         in_toks = data.get("prompt_eval_count", len(prompt) // 4)
@@ -936,8 +980,16 @@ class FailoverLLMProvider(BaseLLMProvider):
     ) -> LLMResponse:
         chain = [self.primary] + self.fallbacks
         last_error = None
+        failures = []
 
         for idx, provider in enumerate(chain):
+            if getattr(provider, "is_disabled", False):
+                continue
+            p_name = type(provider).__name__
+            next_p = type(chain[idx + 1]).__name__ if idx + 1 < len(chain) else "None"
+            prov_tag = getattr(provider, "provider_name", "")
+            if not prov_tag or prov_tag == "base":
+                prov_tag = p_name
             try:
                 return provider.generate(
                     prompt=prompt,
@@ -946,22 +998,45 @@ class FailoverLLMProvider(BaseLLMProvider):
                     max_tokens=max_tokens,
                 )
             except Exception as e:
-                last_error = e
-                p_name = type(provider).__name__
-                next_p = type(chain[idx + 1]).__name__ if idx + 1 < len(chain) else "None"
+                err = classify_http_error(e, provider=prov_tag, model=getattr(provider, "model", None))
+                if isinstance(err, ProviderAuthError):
+                    provider.is_disabled = True
+                    provider.disabled_reason = str(err)
+                last_error = err
+                fail_record = {
+                    "provider": p_name,
+                    "model": getattr(provider, "model", "unknown"),
+                    "error_class": type(err).__name__,
+                    "status": getattr(err, "status", None),
+                    "hint": getattr(err, "hint", ""),
+                    "reason": redact_secrets(str(err)),
+                }
+                failures.append(fail_record)
                 self.failover_history.append({
                     "from": p_name,
                     "to": next_p,
-                    "error": str(e),
+                    "error_class": type(err).__name__,
+                    "hint": getattr(err, "hint", ""),
+                    "error": redact_secrets(str(err)),
                     "timestamp": time.time(),
                 })
                 if self.on_failover:
                     try:
-                        self.on_failover(p_name, next_p, e)
+                        self.on_failover(p_name, next_p, err)
                     except Exception:
                         pass
 
-        raise RuntimeError(f"All synaptic providers in failover chain exhausted. Last error: {last_error}")
+        summary_items = []
+        for f in failures:
+            item = f"{f['provider']} [{f.get('error_class', 'Error')}]: {f.get('reason', 'Failed')}"
+            if f.get("hint"):
+                item += f" -> Hint: {f['hint']}"
+            summary_items.append(item)
+        summary = " | ".join(summary_items) if summary_items else str(last_error)
+        raise ProviderExhaustedError(
+            f"All synaptic providers in failover chain exhausted: {summary}",
+            failures=failures,
+        )
 
     async def agenerate(
         self,
@@ -972,8 +1047,16 @@ class FailoverLLMProvider(BaseLLMProvider):
     ) -> LLMResponse:
         chain = [self.primary] + self.fallbacks
         last_error = None
+        failures = []
 
         for idx, provider in enumerate(chain):
+            if getattr(provider, "is_disabled", False):
+                continue
+            p_name = type(provider).__name__
+            next_p = type(chain[idx + 1]).__name__ if idx + 1 < len(chain) else "None"
+            prov_tag = getattr(provider, "provider_name", "")
+            if not prov_tag or prov_tag == "base":
+                prov_tag = p_name
             try:
                 return await provider.agenerate(
                     prompt=prompt,
@@ -982,25 +1065,44 @@ class FailoverLLMProvider(BaseLLMProvider):
                     max_tokens=max_tokens,
                 )
             except Exception as e:
-                last_error = e
-                p_name = type(provider).__name__
-                next_p = type(chain[idx + 1]).__name__ if idx + 1 < len(chain) else "None"
+                err = classify_http_error(e, provider=prov_tag, model=getattr(provider, "model", None))
+                if isinstance(err, ProviderAuthError):
+                    provider.is_disabled = True
+                    provider.disabled_reason = str(err)
+                last_error = err
+                fail_record = {
+                    "provider": p_name,
+                    "model": getattr(provider, "model", "unknown"),
+                    "error_class": type(err).__name__,
+                    "status": getattr(err, "status", None),
+                    "hint": getattr(err, "hint", ""),
+                    "reason": redact_secrets(str(err)),
+                }
+                failures.append(fail_record)
                 self.failover_history.append({
                     "from": p_name,
                     "to": next_p,
-                    "error": str(e),
+                    "error_class": type(err).__name__,
+                    "hint": getattr(err, "hint", ""),
+                    "error": redact_secrets(str(err)),
                     "timestamp": time.time(),
                 })
                 if self.on_failover:
                     try:
-                        self.on_failover(p_name, next_p, e)
+                        self.on_failover(p_name, next_p, err)
                     except Exception:
                         pass
 
-        clean_last = _sanitize_secret_text(str(last_error))
+        summary_items = []
+        for f in failures:
+            item = f"{f['provider']} [{f.get('error_class', 'Error')}]: {f.get('reason', 'Failed')}"
+            if f.get("hint"):
+                item += f" -> Hint: {f['hint']}"
+            summary_items.append(item)
+        summary = " | ".join(summary_items) if summary_items else str(last_error)
         raise ProviderExhaustedError(
-            f"All synaptic providers in failover chain exhausted. Last error: {clean_last}",
-            failures=self.failover_history,
+            f"All synaptic providers in failover chain exhausted: {summary}",
+            failures=failures,
         )
 
 
@@ -1174,7 +1276,7 @@ class CascadePoolLLMProvider(BaseLLMProvider):
             provider = self.providers[idx]
             t = self.telemetry[idx]
 
-            if t["status"] == "EXHAUSTED" and attempt_offset == 0 and n > 1:
+            if (getattr(provider, "is_disabled", False) or t["status"] in ["DISABLED", "EXHAUSTED"]) and attempt_offset < n - 1:
                 continue
 
             t["status"] = "ACTIVE"
@@ -1190,13 +1292,18 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 t["tokens_used"] += resp.total_tokens
                 return resp
             except Exception as e:
-                last_err = e
-                err_str = _sanitize_secret_text(str(e))
-                is_quota_or_rate_limit = any(k in err_str.lower() for k in [
-                    "429", "rate limit", "quota", "resource_exhausted",
-                    "insufficient_quota", "credit", "exceeded", "too many requests"
-                ])
-                t["status"] = "EXHAUSTED" if is_quota_or_rate_limit else "ERROR"
+                err = classify_http_error(e, provider=t.get("provider", "unknown"), model=t.get("model"))
+                last_err = err
+                err_str = redact_secrets(str(err))
+                if isinstance(err, ProviderAuthError):
+                    provider.is_disabled = True
+                    t["status"] = "DISABLED"
+                elif isinstance(err, ProviderRateLimitError):
+                    t["status"] = "EXHAUSTED"
+                else:
+                    t["status"] = "ERROR"
+                t["error_class"] = type(err).__name__
+                t["hint"] = getattr(err, "hint", "")
                 t["last_error"] = err_str
                 t["failover_count"] += 1
 
@@ -1211,7 +1318,9 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                     "to_id": next_t["id"],
                     "to_name": next_t["name"],
                     "reason": err_str,
-                    "is_rate_limit": is_quota_or_rate_limit,
+                    "error_class": type(err).__name__,
+                    "hint": getattr(err, "hint", ""),
+                    "is_rate_limit": isinstance(err, ProviderRateLimitError),
                     "timestamp": time.time(),
                 }
                 if self.on_failover:
@@ -1230,11 +1339,19 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 "name": t.get("name", "unknown"),
                 "provider": t.get("provider", "unknown"),
                 "model": t.get("model", "unknown"),
+                "error_class": t.get("error_class", type(last_err).__name__ if last_err else "ProviderError"),
+                "hint": t.get("hint", getattr(last_err, "hint", "")),
                 "reason": t.get("last_error") or "exhausted or unavailable",
             }
             for t in self.telemetry
         ]
-        summary = "; ".join(f"{f['provider']}:{f['model']} ({f['reason']})" for f in failures)
+        summary_items = []
+        for f in failures:
+            item = f"{f['provider']}:{f['model']} [{f.get('error_class', 'Error')}]: {f.get('reason', 'Failed')}"
+            if f.get("hint"):
+                item += f" -> Hint: {f['hint']}"
+            summary_items.append(item)
+        summary = "; ".join(summary_items)
         raise ProviderExhaustedError(
             f"All configured LLM providers in cascade pool exhausted: {summary}",
             failures=failures,
