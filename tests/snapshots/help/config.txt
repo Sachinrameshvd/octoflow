@@ -7,10 +7,10 @@
 │ --help          Show this message and exit.                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────╮
-│ path      Display the filesystem path of the configuration file.                                 │
-│ show      Display current active configuration settings with masked secrets.                     │
-│ set       Set a single configuration key value, validate, and write atomically.                  │
-│ validate  Validate current configuration file against Pydantic schema.                           │
-│ migrate   Migrate configuration to latest schema or restore from backup.                         │
+│ path       Display the filesystem path of the configuration file.                                │
+│ show       Display current active configuration settings with masked secrets.                    │
+│ set        Set a single configuration key value, validate, and write atomically.                 │
+│ validate   Validate current configuration file against Pydantic schema.                          │
+│ migrate    Migrate configuration to latest schema or restore from backup.                        │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 
