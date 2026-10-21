@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Set, Optional, Any, List, Dict
 from octoflow.conductor import SwarmTelemetryEvent
 from octoflow.provider import redact_secrets
+from octoflow.logging_config import get_logger
 
 try:
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response
@@ -27,7 +28,7 @@ try:
 except ImportError:
     FASTAPI_AVAILABLE = False
 
-logger = logging.getLogger("octoflow.server")
+logger = get_logger("server")
 
 
 def find_available_port(start_port: int, max_attempts: int = 10, host: str = "127.0.0.1") -> Optional[int]:
@@ -112,7 +113,8 @@ class TelemetryBroadcaster:
             raw_dict = event.model_dump()
             safe_dict = self.sanitize_telemetry_dict(raw_dict)
             self.history.append(safe_dict)
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed serializing telemetry event: %s", e)  # best-effort: fallback to empty event dict
             safe_dict = {}
 
         if not self.active_sockets or not self.loop:
@@ -125,7 +127,8 @@ class TelemetryBroadcaster:
             for ws in self.active_sockets:
                 try:
                     await ws.send_text(payload)
-                except Exception:
+                except Exception as e:
+                    logger.debug("WebSocket client disconnected or send failed: %s", e)  # best-effort: dead client pruning
                     dead_sockets.add(ws)
             self.active_sockets.difference_update(dead_sockets)
 
@@ -136,7 +139,8 @@ class TelemetryBroadcaster:
         try:
             safe_dict = self.sanitize_telemetry_dict(data)
             self.history.append(safe_dict)
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed sanitizing raw telemetry dict: %s", e)  # best-effort: fallback to unmutated data
             safe_dict = data
 
         if not self.active_sockets or not self.loop:
@@ -149,7 +153,8 @@ class TelemetryBroadcaster:
             for ws in self.active_sockets:
                 try:
                     await ws.send_text(payload)
-                except Exception:
+                except Exception as e:
+                    logger.debug("WebSocket client disconnected during raw broadcast: %s", e)  # best-effort: dead client pruning
                     dead_sockets.add(ws)
             self.active_sockets.difference_update(dead_sockets)
 
@@ -228,7 +233,8 @@ class TelemetryBroadcaster:
                     await websocket.receive_text()
             except WebSocketDisconnect:
                 self.active_sockets.discard(websocket)
-            except Exception:
+            except Exception as e:
+                logger.debug("WebSocket receive loop encountered error: %s", e)  # best-effort: clean up disconnected socket
                 self.active_sockets.discard(websocket)
 
         # 3. LLM Failover Pool Endpoints (Masked Keys and Secure Config)
@@ -335,8 +341,8 @@ class TelemetryBroadcaster:
                 config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="error")
                 self.server_instance = uvicorn.Server(config)
                 self.loop.run_until_complete(self.server_instance.serve())
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Telemetry server thread exited with error: %s", e)  # best-effort: background server shutdown
 
         self.server_thread = threading.Thread(target=_run, daemon=True)
         self.server_thread.start()
@@ -349,6 +355,6 @@ class TelemetryBroadcaster:
             try:
                 if self.loop and self.loop.is_running():
                     asyncio.run_coroutine_threadsafe(ws.close(), self.loop)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Error closing websocket during server stop: %s", e)  # best-effort: socket may already be closed
         self.active_sockets.clear()
