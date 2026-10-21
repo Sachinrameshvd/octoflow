@@ -34,6 +34,7 @@ from octoflow.cockpit.render import (
 )
 from octoflow.cockpit.session import CockpitSession
 from octoflow.cockpit.shell import confirm_live_cockpit, execute_cockpit_shell
+from octoflow.logging_config import set_cockpit_active
 from octoflow.config import (
     OctoFlowConfig,
     SwarmMorphology,
@@ -110,6 +111,20 @@ def run_cockpit(
     console: Optional[Console] = None,
 ) -> None:
     """Launch the interactive OctoFlow Cephalopod Cockpit REPL."""
+    set_cockpit_active(True)
+    try:
+        _run_cockpit_impl(host=host, port=port, session=session, console=console)
+    finally:
+        set_cockpit_active(False)
+
+
+def _run_cockpit_impl(
+    host: str = "127.0.0.1",
+    port: int = 8088,
+    session: Optional[CockpitSession] = None,
+    console: Optional[Console] = None,
+) -> None:
+    """Implementation of interactive OctoFlow Cephalopod Cockpit REPL."""
     c = console or Console()
     cfg_file = get_octoflow_dir() / "config.json"
     saved_cfg = load_secure_config(cfg_file) if cfg_file.exists() else {}
