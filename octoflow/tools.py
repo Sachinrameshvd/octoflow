@@ -20,6 +20,9 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 from pydantic import BaseModel, Field
 
 from octoflow.provider import redact_secrets
+from octoflow.logging_config import get_logger
+
+logger = get_logger("tools")
 
 
 class ToolResult(BaseModel):
@@ -248,7 +251,8 @@ class WorkspaceSandbox:
                     self._locks[safe_path] = arm_id
                     return True
                 return False
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed acquiring lock on %s: %s", rel_path, e)  # best-effort: safe path resolution or invalid path
             return False
 
     def release_lock(self, rel_path: str, arm_id: int) -> bool:
@@ -260,7 +264,8 @@ class WorkspaceSandbox:
                     del self._locks[safe_path]
                     return True
                 return False
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed releasing lock on %s: %s", rel_path, e)  # best-effort: lock resolution or key missing
             return False
 
     @contextlib.contextmanager
@@ -559,14 +564,15 @@ class WorkspaceSandbox:
                                 stderr=f"PathTraversalError: Command argument '{arg}' targets path outside workspace root.",
                                 execution_time_ms=(time.time() - t0) * 1000,
                             )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Path resolution failed for arg %s: %s", arg, e)  # best-effort: malformed path argument
                 prev_token = arg
         else:
             # Unrestricted opt-in mode
             try:
                 argv = shlex.split(command)
-            except Exception:
+            except Exception as e:
+                logger.debug("shlex.split failed for command %r: %s", command, e)  # best-effort: fallback to split on unclosed quotes
                 argv = command.split()
 
         # 3. Check executable existence on PATH
