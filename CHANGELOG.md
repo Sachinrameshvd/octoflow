@@ -18,6 +18,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Typed Configuration System & Pydantic v2 Migration (P2.3)**:
+  - Added `octoflow.settings` with Pydantic v2 models: `Settings` (`schema_version=1`), `DefaultsSettings`, `UISettings`, `ServerSettings`, and `ProviderSettings`.
+  - Implemented deterministic configuration precedence: defaults < config file (`~/.octoflow/config.json`) < environment variables (`OCTOFLOW_*`, plus well-known provider keys) < CLI flags/overrides.
+  - Implemented automatic migration of legacy flat configuration files with timestamped backup creation (`config.json.bak-YYYYmmddHHMMSS`) with strict `0600` permissions.
+  - Added crash-safe atomic write mechanism using temporary files and `os.replace` with `0600` permissions.
+  - Added secret masking (`SecretStr`) ensuring credentials are never exposed in logs or `config show`.
+  - Added human-readable validation error reporting with exact field paths, hints, and clean exit code `3` without tracebacks.
+  - Added CLI command group `octoflow config`:
+    - `octoflow config show`: Inspect active settings with masked secrets (table or `--json`).
+    - `octoflow config path`: Display path to `config.json`.
+    - `octoflow config set <key> <value>`: Validate and set configuration keys atomically.
+    - `octoflow config validate`: Validate configuration file against schema.
+    - `octoflow config migrate`: Migrate or restore (`--down`) from backup.
+- **Split CLI Commands Architecture (P2.2)**:
+  - Modularized all CLI command groups from monolithic `cli.py` into dedicated modules in `octoflow/commands/`.
+  - Reduced `octoflow/cli.py` to 159 lines of clean Typer wiring.
+  - Implemented PEP 562 lazy exports in `octoflow/__init__.py` and deferred heavy imports (`torch`, `fastapi`, `uvicorn`, `onnxruntime`) on CLI `--help`.
+  - Achieved a 79.9% reduction in import time (1,232.1 ms -> 246.9 ms) and 3.88x faster wall-clock startup.
 - **Modularized Cockpit Package (`octoflow.cockpit`) (P2.1)**:
   - Extracted all interactive cephalopod cockpit TUI code out of `octoflow/cli.py` into dedicated package `octoflow/cockpit/`:
     - `octoflow.cockpit.input`: Raw/cbreak terminal mode context manager, 20 FPS keyboard polling (`select` timeout <= 0.045s), bracketed paste parsing, and guaranteed terminal restoration with `atexit` and `SIGTERM`/`SIGHUP` handlers.

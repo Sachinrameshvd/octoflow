@@ -1,0 +1,157 @@
+# OctoFlow Configuration Reference (Schema Version 1)
+
+> **Document Type:** Configuration Reference & Specification  
+> **Schema Version:** `1` (`CURRENT_SCHEMA_VERSION = 1`)  
+> **File Location:** `~/.octoflow/config.json`  
+> **Permissions:** Directory `0700` (`rwx------`), File `0600` (`rw-------`)  
+> **Module:** [`octoflow/settings.py`](file:///Users/sachinrk/Desktop/Octoflow%20copy/octoflow/settings.py)
+
+---
+
+## 1. Architecture & Design Principles
+
+OctoFlow uses a strictly typed, versioned, validated configuration system built with **Pydantic v2**:
+
+1. **Deterministic Precedence:**
+   $$\text{Defaults} < \text{Config File } (\sim/\text{.octoflow/config.json}) < \text{Environment Variables} < \text{CLI Flags / Overrides}$$
+2. **Automatic Migration & Backups:** Older or missing schema files are automatically detected, backed up to `config.json.bak-YYYYmmddHHMMSS` with `0600` permissions, transformed to the modern schema, and written atomically.
+3. **Crash-Safe Atomic Writes:** All configuration writes write to a hidden temporary file in the target directory (`.config.json.tmp_*`), flush and sync to disk, and replace the target file using `os.replace`. If an interruption occurs before replacement, the original file is untouched and no corrupted state persists.
+4. **Secret Masking:** Keys and tokens (`SecretStr` or fields with `key`/`secret`) are masked during display (`config show`) showing only the first 3 characters followed by `****`. Unmasked secrets are never logged, broadcast over telemetry, or displayed.
+5. **Human-Readable Validation Errors:** Invalid inputs (e.g., port `99999`, invalid provider names, non-positive scales) fail fast with a single-line error message specifying the exact field path and hint, terminating with exit code `3` without traceback spam.
+
+---
+
+## 2. Schema Specification
+
+### Root `Settings` (`schema_version = 1`)
+
+| Field | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `schema_version` | `int` | `1` | Schema version identifier |
+| `defaults` | `DefaultsSettings` | `DefaultsSettings()` | Core execution parameters |
+| `ui` | `UISettings` | `UISettings()` | Terminal UI & styling preferences |
+| `server` | `ServerSettings` | `ServerSettings()` | Localhost telemetry server settings |
+| `providers` | `Dict[str, ProviderSettings]` | `{}` | LLM provider definitions keyed by provider ID |
+| `extras` | `Dict[str, Any]` | `{}` | Preserved unrecognized keys |
+| `webhook_url` | `Optional[str]` | `None` | Slack/Discord webhook URL for notifications |
+| `llm_pool` | `List[Dict[str, Any]]` | `[]` | Dynamic token failover cascade entries |
+
+### `DefaultsSettings`
+
+| Field | Type | Default | Validation / Constraints |
+| :--- | :--- | :--- | :--- |
+| `default_provider` | `str` | `"anthropic"` | Must be one of: `anthropic`, `openai`, `gemini`, `grok`, `deepseek`, `ollama`, `mock` |
+| `default_model` | `Optional[str]` | `"claude-3-5-sonnet-20241022"` | Default model identifier |
+| `default_scale` | `int` | `1` | Must be $\ge 1$ octopus (8 arms each) |
+
+### `UISettings`
+
+| Field | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `theme` | `str` | `"catppuccin"` | Theme ID (`catppuccin`, `abyssal`, `tokyo-night`, `dracula`, `nord`, `minimalist`) |
+| `animation` | `bool` | `True` | Enable 20 FPS animated headers and spinners |
+| `color` | `bool` | `True` | Enable Rich 256-color / truecolor ANSI rendering |
+| `ascii` | `bool` | `False` | Force pure ASCII rendering (no Unicode bio-glyphs) |
+
+### `ServerSettings`
+
+| Field | Type | Default | Validation / Constraints |
+| :--- | :--- | :--- | :--- |
+| `host` | `str` | `"127.0.0.1"` | Bind host (strictly `127.0.0.1` for local security) |
+| `ws_port` | `int` | `8088` | WebSocket port ($1 \le \text{port} \le 65535$) |
+| `http_port` | `int` | `8089` | HTTP telemetry port ($1 \le \text{port} \le 65535$) |
+
+### `ProviderSettings`
+
+| Field | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | `str` | Required | Provider ID (`anthropic`, `openai`, `gemini`, `grok`, `deepseek`, `ollama`, `mock`) |
+| `enabled` | `bool` | `True` | Provider availability toggle |
+| `model` | `Optional[str]` | `None` | Default model for this provider |
+| `base_url` | `Optional[str]` | `None` | Custom base URL (e.g. `http://localhost:11434` for Ollama) |
+| `api_key` | `Optional[SecretStr]` | `None` | API credential (stored as `SecretStr`, masked on display) |
+| `timeout` | `float` | `60.0` | Request timeout in seconds ($> 0$) |
+
+---
+
+## 3. Precedence Order & Environment Variables
+
+Environment variables override `~/.octoflow/config.json`:
+
+| Environment Variable | Target Field | Type |
+| :--- | :--- | :--- |
+| `OCTOFLOW_THEME` | `ui.theme` | `str` |
+| `OCTOFLOW_ANIMATION` | `ui.animation` | `bool` (`1`/`0`, `true`/`false`) |
+| `OCTOFLOW_COLOR` | `ui.color` | `bool` (`1`/`0`, `true`/`false`) |
+| `OCTOFLOW_ASCII` | `ui.ascii` | `bool` (`1`/`0`, `true`/`false`) |
+| `OCTOFLOW_HOST` | `server.host` | `str` |
+| `OCTOFLOW_WS_PORT` / `OCTOFLOW_PORT` | `server.ws_port` | `int` |
+| `OCTOFLOW_HTTP_PORT` | `server.http_port` | `int` |
+| `OCTOFLOW_DEFAULT_PROVIDER` / `OCTOFLOW_PROVIDER` | `defaults.default_provider` | `str` |
+| `OCTOFLOW_DEFAULT_MODEL` / `OCTOFLOW_MODEL` | `defaults.default_model` | `str` |
+| `OCTOFLOW_DEFAULT_SCALE` / `OCTOFLOW_SCALE` | `defaults.default_scale` | `int` |
+| `OCTOFLOW_WEBHOOK_URL` / `SLACK_WEBHOOK_URL` | `webhook_url` | `str` |
+| `ANTHROPIC_API_KEY` | `providers.anthropic.api_key` | `SecretStr` |
+| `OPENAI_API_KEY` | `providers.openai.api_key` | `SecretStr` |
+| `OPENAI_BASE_URL` | `providers.openai.base_url` | `str` |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | `providers.gemini.api_key` | `SecretStr` |
+| `XAI_API_KEY` / `GROK_API_KEY` | `providers.grok.api_key` | `SecretStr` |
+| `DEEPSEEK_API_KEY` | `providers.deepseek.api_key` | `SecretStr` |
+| `OLLAMA_BASE_URL` | `providers.ollama.base_url` | `str` |
+
+---
+
+## 4. CLI Commands (`octoflow config`)
+
+### 1. Show Active Configuration
+```bash
+# Pretty-printed Rich table with masked credentials
+octoflow config show
+
+# Raw JSON output with masked secrets
+octoflow config show --json
+```
+
+### 2. View Configuration File Path
+```bash
+octoflow config path
+# Output: /Users/username/.octoflow/config.json
+```
+
+### 3. Update Configuration Value
+```bash
+octoflow config set ui.theme catppuccin
+octoflow config set server.ws_port 8088
+octoflow config set defaults.default_provider openai
+octoflow config set defaults.default_scale 2
+```
+
+### 4. Validate Configuration
+```bash
+octoflow config validate
+# Output on success (exit code 0):
+# ✔ Configuration valid: ~/.octoflow/config.json (schema_version=1)
+
+# Output on failure (exit code 3):
+# Configuration error in 'server.ws_port': Port must be between 1 and 65535
+```
+
+### 5. Migration & Manual Rollback
+```bash
+# Manually trigger migration if needed
+octoflow config migrate
+
+# Rollback to the most recent timestamped backup
+octoflow config migrate --down
+```
+
+### Manual Backup Restoration
+All backups are saved in `~/.octoflow/` with timestamp suffixes:
+```bash
+# List available backups
+ls -la ~/.octoflow/config.json.bak-*
+
+# Manually restore a specific backup
+cp ~/.octoflow/config.json.bak-20261021201905 ~/.octoflow/config.json
+chmod 0600 ~/.octoflow/config.json
+```
