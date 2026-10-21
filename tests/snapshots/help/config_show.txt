@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow config show [OPTIONS]                                                              
+                                                                                                    
+ Display current active configuration settings with masked secrets.                                 
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --json  -j        Output raw JSON with masked secrets.                                           │
+│ --help            Show this message and exit.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

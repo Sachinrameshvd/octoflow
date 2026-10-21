@@ -1,0 +1,9 @@
+                                                                                                    
+ Usage: octoflow config path [OPTIONS]                                                              
+                                                                                                    
+ Display the filesystem path of the configuration file.                                             
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

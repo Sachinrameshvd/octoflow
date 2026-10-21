@@ -64,6 +64,7 @@ from octoflow.commands import (
     federation,
     manual,
     runner,
+    config,
 )
 
 # Register command groups in strict ordering to match snapshot baselines
@@ -94,6 +95,7 @@ install_claude.register(app, octos_app)
 federation.register(app, octos_app)
 manual.register(app, octos_app)
 runner.register(app, octos_app)
+config.register(app, octos_app)
 
 
 # -------------------------------------------------------------------------

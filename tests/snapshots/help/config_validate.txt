@@ -1,0 +1,9 @@
+                                                                                                    
+ Usage: octoflow config validate [OPTIONS]                                                          
+                                                                                                    
+ Validate current configuration file against Pydantic schema.                                       
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

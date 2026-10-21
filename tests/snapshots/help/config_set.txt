@@ -1,0 +1,13 @@
+                                                                                                    
+ Usage: octoflow config set [OPTIONS] {key} {value}                                                 
+                                                                                                    
+ Set a single configuration key value, validate, and write atomically.                              
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│ *    key        <str>  Setting key path (e.g. ui.theme, server.ws_port) [required]               │
+│ *    value      <str>  Value to set [required]                                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

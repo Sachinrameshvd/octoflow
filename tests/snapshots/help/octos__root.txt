@@ -55,5 +55,6 @@
 │ manual          Display interactive Cephalopod Master Manual and Developer Field Guide.          │
 │ play            Launch the Chrome Dino-style Benthic Dot Runner game.                            │
 │ runner          Launch the Chrome Dino-style Benthic Dot Runner game.                            │
+│ config          Inspect, validate, and update OctoFlow typed configuration settings.             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

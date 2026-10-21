@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow config migrate [OPTIONS]                                                           
+                                                                                                    
+ Migrate configuration to latest schema or restore from backup.                                     
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --down,--restore          Restore configuration from the latest backup.                          │
+│ --help                    Show this message and exit.                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
