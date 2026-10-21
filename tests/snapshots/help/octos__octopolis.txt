@@ -1,0 +1,20 @@
+                                                                                                    
+ Usage: octos octopolis [OPTIONS] {objective}                                                       
+                                                                                                    
+ Deploy the flagship 8-Octopus Octopolis (64 Neural Arms) on an objective.                          
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│ *    objective      <str>  Engineering goal for the 8-octopus Octopolis (64 Arms) [required]     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --model            <str>    LLM backend [default: mock]                                          │
+│ --budget   -b      <float>  Max cost dollars [default: 15.0]                                     │
+│ --dir      -d      <str>    Workspace folder [default: .]                                        │
+│ --port     -p      <int>    3D Visualizer port [default: 8088]                                   │
+│ --host             <str>    Telemetry server bind host (default: 127.0.0.1) [default: 127.0.0.1] │
+│ --ui                        Auto-open visualizer                                                 │
+│ --theme    -t      <str>    Theme palette                                                        │
+│ --dry-run                   Run with mock provider, write no project files                       │
+│ --help                      Show this message and exit.                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

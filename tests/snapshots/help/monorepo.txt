@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow monorepo [OPTIONS]                                                                 
+                                                                                                    
+ Scan and partition monorepo packages to specialist 8-arm roles.                                    
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Workspace folder [default: .]                                             │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

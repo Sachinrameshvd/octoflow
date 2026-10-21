@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow screensaver [OPTIONS]                                                              
+                                                                                                    
+ Launch continuous ambient 3D banner screensaver until keypress.                                    
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --theme  -t      <str>  Theme palette                                                            │
+│ --help                  Show this message and exit.                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

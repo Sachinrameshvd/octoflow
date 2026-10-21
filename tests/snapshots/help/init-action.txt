@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow init-action [OPTIONS]                                                              
+                                                                                                    
+ Generate automated OctoFlow Swarm Guard GitHub Action (.github/workflows/octoflow-guard.yml).      
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace directory [default: .]                           │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

@@ -1,0 +1,15 @@
+                                                                                                    
+ Usage: octos review-pr [OPTIONS]                                                                   
+                                                                                                    
+ Execute automated 3-Arm CI/CD PR Review over git diffs.                                            
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir      -d                  <str>  Workspace folder [default: .]                              │
+│ --base     -b                  <str>  Base git ref to diff against [default: HEAD~1]             │
+│ --summary      --no-summary           Append markdown to $GITHUB_STEP_SUMMARY [default: summary] │
+│ --export   -e                  <str>  Path to export standalone HTML audit report                │
+│ --shadow                              Run advisory audit without blocking PR merge (Shadow CI    │
+│                                       Mode)                                                      │
+│ --help                                Show this message and exit.                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

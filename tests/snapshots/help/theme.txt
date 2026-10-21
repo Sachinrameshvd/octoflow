@@ -1,0 +1,13 @@
+                                                                                                    
+ Usage: octoflow theme [OPTIONS] [name]                                                             
+                                                                                                    
+ View or switch the OctoFlow terminal & visualizer theme.                                           
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│   name      <str>  Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula',             │
+│                    'cyberpunk', 'nord', 'gruvbox', 'minimalist')                                 │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

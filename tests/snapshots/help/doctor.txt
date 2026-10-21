@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octoflow doctor [OPTIONS]                                                                   
+                                                                                                    
+ Run OctoFlow environment and provider diagnostics (like 'ruflo doctor').                           
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace folder [default: .]                              │
+│ --fix                  Automatically repair missing directories and initialize git if needed     │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

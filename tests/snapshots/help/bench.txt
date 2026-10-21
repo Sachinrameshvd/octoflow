@@ -1,0 +1,13 @@
+                                                                                                    
+ Usage: octoflow bench [OPTIONS]                                                                    
+                                                                                                    
+ Run standardized 8-arm algorithmic & architectural challenge benchmarks.                           
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --task  -t      <str>  Specific challenge key (rate_limiter, lru_cache, jwt_auth,                │
+│                        topological_dag)                                                          │
+│ --mode  -m      <str>  Execution tier: fast, balanced, powerful [default: balanced]              │
+│ --dir   -d      <str>  Directory for benchmark sandbox execution [default: .octoflow_bench]      │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

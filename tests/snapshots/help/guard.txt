@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow guard [OPTIONS]                                                                    
+                                                                                                    
+ Run pre-commit secret leak and AST syntax verification on staged git files.                        
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Workspace directory [default: .]                                          │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

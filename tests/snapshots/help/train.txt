@@ -1,0 +1,16 @@
+                                                                                                    
+ Usage: octoflow train [OPTIONS] {objective}                                                        
+                                                                                                    
+ Shortcut command to run swarm in AIML_RESEARCH morphology.                                         
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│ *    objective      <str>  Model architecture and training objective [required]                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --model            <str>    LLM backend [default: mock]                                          │
+│ --budget   -b      <float>  Max cost dollars [default: 5.0]                                      │
+│ --dir      -d      <str>    Workspace directory [default: .]                                     │
+│ --dry-run                   Run with mock provider, write no project files                       │
+│ --help                      Show this message and exit.                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

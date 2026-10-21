@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octos install-hooks [OPTIONS]                                                               
+                                                                                                    
+ Install automated OctoFlow pre-commit hook into .git/hooks/.                                       
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Workspace directory with .git repository [default: .]                     │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

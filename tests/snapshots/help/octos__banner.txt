@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos banner [OPTIONS]                                                                      
+                                                                                                    
+ Play the 3D animated OCTOFLOW banner (single replay or continuous loop).                           
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --loop   -l             Run continuous ambient animation loop                                    │
+│ --theme  -t      <str>  Theme palette                                                            │
+│ --help                  Show this message and exit.                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

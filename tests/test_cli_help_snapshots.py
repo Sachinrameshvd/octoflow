@@ -1,0 +1,56 @@
+"""Test that CLI --help outputs match baseline snapshots with COLUMNS=100."""
+from pathlib import Path
+import pytest
+from typer.testing import CliRunner
+from octoflow.cli import app, octos_app
+
+SNAPSHOT_DIR = Path(__file__).resolve().parent / "snapshots" / "help"
+
+
+@pytest.fixture
+def runner():
+    return CliRunner(env={"COLUMNS": "100"})
+
+
+def test_root_help_snapshot(runner):
+    snapshot_file = SNAPSHOT_DIR / "_root.txt"
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
+    result = runner.invoke(app, ["--help"], prog_name="octoflow")
+    assert result.exit_code == 0
+    assert result.output == expected
+
+
+@pytest.mark.parametrize(
+    "cmd_name",
+    [cmd.name or cmd.callback.__name__ for cmd in app.registered_commands],
+)
+def test_app_command_help_snapshots(runner, cmd_name):
+    snapshot_file = SNAPSHOT_DIR / f"{cmd_name}.txt"
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
+    result = runner.invoke(app, [cmd_name, "--help"], prog_name="octoflow")
+    assert result.exit_code == 0
+    assert result.output == expected
+
+
+def test_octos_root_help_snapshot(runner):
+    snapshot_file = SNAPSHOT_DIR / "octos__root.txt"
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
+    result = runner.invoke(octos_app, ["--help"], prog_name="octos")
+    assert result.exit_code == 0
+    assert result.output == expected
+
+
+@pytest.mark.parametrize(
+    "cmd_name",
+    [cmd.name or cmd.callback.__name__ for cmd in octos_app.registered_commands],
+)
+def test_octos_command_help_snapshots(runner, cmd_name):
+    snapshot_file = SNAPSHOT_DIR / f"octos__{cmd_name}.txt"
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
+    result = runner.invoke(octos_app, [cmd_name, "--help"], prog_name="octos")
+    assert result.exit_code == 0
+    assert result.output == expected

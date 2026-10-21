@@ -1,0 +1,9 @@
+                                                                                                    
+ Usage: octos install-claude [OPTIONS]                                                              
+                                                                                                    
+ Install and register OctoFlow native Claude Code plugin and slash commands (/octo).                
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

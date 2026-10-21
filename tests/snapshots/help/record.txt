@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octoflow record [OPTIONS]                                                                   
+                                                                                                    
+ Launch recorded terminal session producing standard Asciinema v2 .cast.                            
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --output  -o      <str>  Asciinema .cast output path [default: octoflow_session.cast]            │
+│ --title   -t      <str>  Title for the recording session [default: OctoFlow Swarm Mission]       │
+│ --help                   Show this message and exit.                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

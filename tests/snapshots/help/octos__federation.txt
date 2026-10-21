@@ -1,0 +1,13 @@
+                                                                                                    
+ Usage: octos federation [OPTIONS] [action]                                                         
+                                                                                                    
+ Zero-trust multi-machine agent federation and PII redaction pipeline.                              
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│   action      <str>  Action: status, peers, test-pii [default: status]                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --text  -t      <str>  Text to test against 14-rule PII filter                                   │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

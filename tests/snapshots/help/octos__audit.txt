@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos audit [OPTIONS]                                                                       
+                                                                                                    
+ Run 1-100 system readiness and security diagnostic across 5 cephalopod dimensions.                 
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Workspace folder to audit [default: .]                                    │
+│ --json  -j             Output audit report as raw JSON                                           │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

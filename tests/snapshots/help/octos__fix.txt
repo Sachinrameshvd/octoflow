@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos fix [OPTIONS]                                                                         
+                                                                                                    
+ Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend).                    
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir       -d      <str>  Workspace folder [default: .]                                         │
+│ --attempts  -a      <int>  Max healing iterations [default: 3]                                   │
+│ --help                     Show this message and exit.                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

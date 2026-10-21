@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octoflow manual [OPTIONS]                                                                   
+                                                                                                    
+ Display interactive Cephalopod Master Manual and Developer Field Guide.                            
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --chapter  -c      <str>  Specific chapter number or keyword (e.g. 1, 2, commands, playbooks)    │
+│ --web      -w             Open visual manual in default web browser                              │
+│ --help                    Show this message and exit.                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

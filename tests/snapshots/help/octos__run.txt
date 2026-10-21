@@ -1,0 +1,24 @@
+                                                                                                    
+ Usage: octos run [OPTIONS] {objective}                                                             
+                                                                                                    
+ Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project.            
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│ *    objective      <str>  Engineering goal for the multi-octopus consortium [required]          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --octos    -o      <str>    Count of octopuses: 'auto' (dynamic load autoscaler), 3 (Triad), or  │
+│                             8 (Octopolis)                                                        │
+│                             [default: auto]                                                      │
+│ --guild    -g      <str>    Specialist roster/guild name from ~/.octoflow/guilds/                │
+│ --model            <str>    LLM backend: 'mock', 'anthropic', 'openai', 'ollama' [default: mock] │
+│ --budget   -b      <float>  Max cost dollars [default: 10.0]                                     │
+│ --dir      -d      <str>    Target project workspace folder [default: .]                         │
+│ --port     -p      <int>    3D Visualizer port [default: 8088]                                   │
+│ --host             <str>    Telemetry server bind host (default: 127.0.0.1) [default: 127.0.0.1] │
+│ --ui                        Auto-open 3D Visualizer in browser                                   │
+│ --theme    -t      <str>    Theme palette                                                        │
+│ --dry-run                   Run with mock provider, write no project files                       │
+│ --help                      Show this message and exit.                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

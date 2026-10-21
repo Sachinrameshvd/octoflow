@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos ui [OPTIONS]                                                                          
+                                                                                                    
+ Launch the 3D Cephalopod Constellation Visualizer bridge.                                          
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --port  -p      <int>  Port to host 3D visualizer [default: 8088]                                │
+│ --host          <str>  Host to bind 3D visualizer (default: 127.0.0.1) [default: 127.0.0.1]      │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

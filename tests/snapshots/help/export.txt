@@ -1,0 +1,12 @@
+                                                                                                    
+ Usage: octoflow export [OPTIONS]                                                                   
+                                                                                                    
+ Generate standalone self-contained HTML mission audit report with interactive connectome replay.   
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace folder [default: .]                              │
+│ --out   -o      <str>  Target HTML audit report output path                                      │
+│ --open                 Open generated HTML report in default browser                             │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

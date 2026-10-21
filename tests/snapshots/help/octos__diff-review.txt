@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos diff-review [OPTIONS]                                                                 
+                                                                                                    
+ Interactive file-by-file patch inspector and diff triage with AST validation.                      
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Workspace folder [default: .]                                             │
+│ --yes   -y             Auto-approve all AST-valid changes                                        │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

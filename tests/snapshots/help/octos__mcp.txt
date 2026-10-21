@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos mcp [OPTIONS]                                                                         
+                                                                                                    
+ Start OctoFlow as a Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for Claude Code and     
+ Cursor.                                                                                            
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Workspace directory for the MCP server [default: .]                       │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

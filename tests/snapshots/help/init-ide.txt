@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow init-ide [OPTIONS]                                                                 
+                                                                                                    
+ Auto-configure Cursor (.cursorrules), Claude (MCP), VS Code (tasks), and Git (hooks).              
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Project workspace directory to onboard [default: .]                       │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
