@@ -6,9 +6,11 @@ active workspace, theme, model selection, budget, port, and history.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from octoflow.themes import OctoTheme, load_saved_theme
-from octoflow.server import TelemetryBroadcaster
+
+if TYPE_CHECKING:
+    from octoflow.server import TelemetryBroadcaster
 
 Theme = OctoTheme
 
@@ -26,7 +28,7 @@ class CockpitSession:
     host: str = "127.0.0.1"
     port: int = 8088
     visualizer_url: str = "http://localhost:8088"
-    broadcaster: Optional[TelemetryBroadcaster] = None
+    broadcaster: Optional["TelemetryBroadcaster"] = None
     running: bool = True
     active_run: Optional[Any] = None
     history: List[str] = field(default_factory=list)

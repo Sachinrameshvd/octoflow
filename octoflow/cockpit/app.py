@@ -34,7 +34,6 @@ from octoflow.cockpit.render import (
 )
 from octoflow.cockpit.session import CockpitSession
 from octoflow.cockpit.shell import confirm_live_cockpit, execute_cockpit_shell
-from octoflow.conductor import SupraesophagealConductor
 from octoflow.config import (
     OctoFlowConfig,
     SwarmMorphology,
@@ -45,8 +44,6 @@ from octoflow.config import (
     mask_credential,
     save_secure_config,
 )
-from octoflow.ignition import ProjectIgniter
-from octoflow.memory import VerticalLobeMemory
 from octoflow.router import (
     Route,
     RouteKind,
@@ -54,7 +51,6 @@ from octoflow.router import (
     execute_shell_route,
     log_command_history,
 )
-from octoflow.server import TelemetryBroadcaster
 from octoflow.themes import (
     get_theme,
     list_themes,
@@ -144,6 +140,7 @@ def run_cockpit(
     s.previous_workspace = s.workspace
 
     # Start visualizer bridge in background
+    from octoflow.server import TelemetryBroadcaster
     broadcaster = TelemetryBroadcaster(port=s.port, host=s.host)
     broadcaster.start_in_background()
     broadcaster.broadcast_raw({
@@ -488,6 +485,7 @@ def run_cockpit(
                     continue
 
                 c.print(f"\n[{s.theme.rich_primary}]◈ Architect Decomposing 8-Arm Neural Blueprint...[/{s.theme.rich_primary}]\n")
+                from octoflow.conductor import SupraesophagealConductor
                 m_enum = SwarmMorphology.CUSTOM if s.current_guild not in ["software_dev", "aiml_research", "fullstack_ai"] else SwarmMorphology(s.current_guild)
                 plan_conductor = SupraesophagealConductor(
                     config=OctoFlowConfig(
@@ -529,6 +527,7 @@ def run_cockpit(
                     continue
 
             elif user_input.startswith("/ask"):
+                from octoflow.conductor import SupraesophagealConductor
                 parts = user_input.split(maxsplit=2)
                 m_enum = SwarmMorphology.CUSTOM if s.current_guild not in ["software_dev", "aiml_research", "fullstack_ai"] else SwarmMorphology(s.current_guild)
                 active_conductor = SupraesophagealConductor(
@@ -576,6 +575,7 @@ def run_cockpit(
                 continue
 
             elif user_input.startswith("/talk"):
+                from octoflow.conductor import SupraesophagealConductor
                 parts = user_input.split(maxsplit=1)
                 target_ident = parts[1].strip() if len(parts) > 1 else "0"
                 m_enum = SwarmMorphology.CUSTOM if s.current_guild not in ["software_dev", "aiml_research", "fullstack_ai"] else SwarmMorphology(s.current_guild)
@@ -690,6 +690,7 @@ def run_cockpit(
                 continue
 
             elif user_input == "/ignite":
+                from octoflow.ignition import ProjectIgniter
                 c.print(f"[{s.theme.rich_primary}]⚡ Igniting project runtime services in {s.workspace}...[/{s.theme.rich_primary}]")
                 igniter = ProjectIgniter(workspace_dir=str(s.workspace))
                 manifest = igniter.ignite()
@@ -821,6 +822,7 @@ def run_cockpit(
                 continue
 
             elif user_input.startswith("/rag") or user_input.startswith("/search"):
+                from octoflow.memory import VerticalLobeMemory
                 parts = user_input.split(maxsplit=1)
                 vl = VerticalLobeMemory()
                 num_chunks = vl.index_codebase(str(s.workspace))
@@ -1048,6 +1050,7 @@ def run_cockpit(
                 continue
 
             # Intelligent Conversational Reflex: Check if user input is an Inquiry vs Action
+            from octoflow.conductor import SupraesophagealConductor
             m_enum = SwarmMorphology.CUSTOM if s.current_guild not in ["software_dev", "aiml_research", "fullstack_ai"] else SwarmMorphology(s.current_guild)
             active_conductor = SupraesophagealConductor(
                 config=OctoFlowConfig(

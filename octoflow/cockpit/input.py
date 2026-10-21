@@ -14,7 +14,7 @@ import sys
 import termios
 import tty
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from rich.console import Console
 from rich.live import Live
 
