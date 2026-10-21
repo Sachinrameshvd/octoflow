@@ -18,31 +18,7 @@ class RunOutcome(str, Enum):
     FAILED = "failed"
 
 
-class OctoFlowError(Exception):
-    """Base exception for all OctoFlow runtime errors."""
-    pass
-
-
-class ProviderExhaustedError(OctoFlowError):
-    """Raised when all configured LLM providers fail in live mode."""
-
-    def __init__(self, message: str, failures: Optional[List[Dict[str, Any]]] = None):
-        self.failures = failures or []
-        formatted_failures = []
-        for f in self.failures:
-            cls_name = f.get("error_class") or "ProviderError"
-            prov = f.get("provider") or f.get("name") or "unknown"
-            hint = f.get("hint") or ""
-            reason = f.get("reason") or "Failed"
-            entry = f"• [{prov}] {cls_name}: {reason}"
-            if hint:
-                entry += f" (Hint: {hint})"
-            formatted_failures.append(entry)
-
-        full_msg = message
-        if formatted_failures and "\n• [" not in message:
-            full_msg += "\n" + "\n".join(formatted_failures)
-        super().__init__(full_msg)
+from octoflow.errors import OctoFlowError, ProviderExhaustedError
 
 
 @dataclass

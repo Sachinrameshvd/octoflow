@@ -19,6 +19,9 @@ import httpx
 
 from octoflow.config import OctoFlowConfig, LLMConfigEntry
 from octoflow.outcome import ProviderExhaustedError, OctoFlowError
+from octoflow.logging_config import get_logger
+
+logger = get_logger("provider")
 
 
 def redact_secrets(text: str) -> str:
@@ -46,71 +49,17 @@ _sanitize_secret_text = redact_secrets
 
 
 # ==============================================================================
-# Provider Error Taxonomy (Task 1)
+# Provider Error Taxonomy (Re-parented from octoflow.errors)
 # ==============================================================================
-class ProviderError(OctoFlowError):
-    """Base error for all provider-related failures.
-
-    Attributes:
-        provider: Identifier of the provider ('anthropic', 'openai', 'ollama', etc.)
-        status: HTTP status code, if applicable (e.g. 401, 429, 503)
-        hint: Actionable guidance instructing the user what to do next
-    """
-
-    def __init__(
-        self,
-        message: str,
-        provider: str = "unknown",
-        status: Optional[int] = None,
-        hint: str = "",
-    ):
-        self.provider = provider
-        self.status = status
-        self.hint = redact_secrets(hint)
-        self.raw_message = message
-        clean_msg = redact_secrets(message)
-        full_msg = f"[{provider}]"
-        if status is not None:
-            full_msg += f" (HTTP {status})"
-        full_msg += f" {clean_msg}"
-        if self.hint:
-            full_msg += f" -> Hint: {self.hint}"
-        super().__init__(full_msg)
-
-
-class ProviderAuthError(ProviderError):
-    """Authentication or authorization failure: 401, 403, or 400 with invalid-key signature."""
-    pass
-
-
-class ProviderRateLimitError(ProviderError):
-    """Rate limit or quota exhaustion: 429 error honoring Retry-After headers."""
-
-    def __init__(
-        self,
-        message: str,
-        provider: str = "unknown",
-        status: Optional[int] = 429,
-        hint: str = "",
-        retry_after: Optional[float] = None,
-    ):
-        self.retry_after = retry_after
-        super().__init__(message, provider=provider, status=status, hint=hint)
-
-
-class ProviderTransientError(ProviderError):
-    """Transient service disruptions: 5xx errors, timeouts, and network connection drops."""
-    pass
-
-
-class ProviderRequestError(ProviderError):
-    """Client request errors: other 4xx errors, bad payloads, and context-length violations."""
-    pass
-
-
-class ProviderUnavailableError(ProviderError):
-    """Service or daemon unavailable: Ollama daemon stopped or model not pulled."""
-    pass
+from octoflow.errors import (
+    ProviderError,
+    ProviderAuthError,
+    ProviderRateLimitError,
+    ProviderTransientError,
+    ProviderRequestError,
+    ProviderUnavailableError,
+    ProviderExhaustedError,
+)
 
 
 # ==============================================================================
@@ -138,7 +87,8 @@ def classify_http_error(
         if not response_text:
             try:
                 response_text = response.text
-            except Exception:
+            except Exception as e:
+                logger.debug("Unable to read response.text: %s", e)  # best-effort: response payload may not be text or already closed
                 response_text = ""
         if not resp_headers:
             resp_headers = {k.lower(): v for k, v in response.headers.items()}
@@ -243,8 +193,8 @@ def classify_http_error(
         if "retry-after" in norm_headers:
             try:
                 retry_after = float(norm_headers["retry-after"])
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                logger.debug("Failed to parse numeric Retry-After header: %s", e)  # best-effort: non-numeric retry-after header
         if retry_after is None and clean_text:
             try:
                 parsed = json.loads(clean_text)
@@ -252,8 +202,8 @@ def classify_http_error(
                     ra = parsed.get("retry_after") or parsed.get("error", {}).get("retry_after")
                     if ra:
                         retry_after = float(ra)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Response body not JSON or missing retry_after: %s", e)  # best-effort: response may be plain text or HTML
 
         return ProviderRateLimitError(
             clean_msg,
@@ -1023,8 +973,8 @@ class FailoverLLMProvider(BaseLLMProvider):
                 if self.on_failover:
                     try:
                         self.on_failover(p_name, next_p, err)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("on_failover callback raised exception: %s", e, exc_info=True)  # best-effort: callback error must not crash failover loop
 
         summary_items = []
         for f in failures:
@@ -1090,8 +1040,8 @@ class FailoverLLMProvider(BaseLLMProvider):
                 if self.on_failover:
                     try:
                         self.on_failover(p_name, next_p, err)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Async on_failover callback raised exception: %s", e, exc_info=True)  # best-effort: callback error must not crash failover loop
 
         summary_items = []
         for f in failures:
@@ -1326,8 +1276,8 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 if self.on_failover:
                     try:
                         self.on_failover(failover_event)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Cascade failover callback raised exception: %s", e, exc_info=True)  # best-effort: callback error must not interrupt cascade
 
         if self.dry_run:
             import logging
@@ -1512,8 +1462,8 @@ def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None, dry_run
             if fb_name.lower() != provider_name:
                 try:
                     fallbacks.append(_build_single_provider(fb_name, config, tier=tier, dry_run=is_dry))
-                except ProviderExhaustedError:
-                    pass
+                except ProviderExhaustedError as e:
+                    logger.debug("Fallback candidate %s unavailable: %s", fb_name, e)  # best-effort: skip unconfigured fallback and check next
 
         if fallbacks:
             return FailoverLLMProvider(primary=primary, fallbacks=fallbacks)
