@@ -61,6 +61,12 @@ env/
 # Local runtime & mission artifacts
 .octoflow/
 .octoflow-mission/
+.octoflow_bench/
+octoflow_bench/
+*.key
+*.pem
+*.checkpoint
+checkpoints/
 
 # IDEs
 .idea/

@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 from octoflow.ci import SECRET_PATTERNS
 from octoflow.config import SOFTWARE_DEV_ROSTER
 from octoflow.themes import get_theme
+from octoflow.provider import redact_secrets
 
 
 def collect_mission_audit_data(
@@ -71,7 +72,7 @@ def collect_mission_audit_data(
                 parts = first_line.split(" ")
                 if len(parts) >= 2:
                     clean_f = parts[1].replace("b/", "").strip()
-                    file_diffs[clean_f] = "diff --git " + chunk
+                    file_diffs[clean_f] = redact_secrets("diff --git " + chunk)
     except Exception:
         pass
 

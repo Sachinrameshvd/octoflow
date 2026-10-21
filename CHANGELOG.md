@@ -60,3 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integrated `redact_secrets` across all tool outputs, exception strings, directory listings, and error diagnostics.
   - Standardized tool exit code reporting: 0 for success, 1 for general error, 124 for timeout, 126 for disallowed command or traversal attempt, 127 for missing executable.
   - Created `docs/SECURITY.md` and added comprehensive security test suite in `tests/test_tools_security.py` (18 tests).
+- **Telemetry Server and Secrets Hardening (P1.5)**:
+  - Default bind host hardened to loopback `127.0.0.1` (never `0.0.0.0` by default); binding to non-localhost via `--host` displays prominent network exposure warning.
+  - Added strict WebSocket Origin validation on `/ws/telemetry`: accepts missing Origin (non-browser tests/CLI) and exact localhost/127.0.0.1 matches on served port; accepts Vite dev origin `http://localhost:5173` only in `dev_mode`; rejects untrusted origins with RFC 6455 close code `1008`.
+  - Added HTTP Host header validation middleware protecting against DNS-rebinding attacks, rejecting unauthorized Host headers with status `400`.
+  - Hardened telemetry payload sanitization: recursively strips prompts (`prompt`, `system_prompt`, `user_prompt`, `messages`), file contents (`file_content`, `diff`, `patch`), subprocess outputs (`stdout`, `stderr`, `command_output`), and credentials (`api_key`, `token`, `secret`); processes all free-text fields through `redact_secrets()`.
+  - Enforced POSIX filesystem permission hardening: creates `~/.octoflow` with mode `0700` and `config.json` with mode `0600`; automatically tightens looser permissions on load with a one-line notice.
+  - Hardened `octos setup` and cockpit credential inputs using non-echoing `getpass.getpass()`.
+  - Masked all displayed API keys across CLI listings and REST endpoints to first 3 characters followed by `****` (e.g. `sk-****`).
+  - Added `.gitignore` exclusions for `*.key`, `*.pem`, `*.checkpoint`, `checkpoints/`, `.octoflow_bench/`.
+  - Created `docs/SECURITY_MODEL.md` ("Local telemetry server") and added comprehensive test suite in `tests/test_server_security.py` (16 tests).

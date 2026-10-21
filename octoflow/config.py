@@ -5,6 +5,8 @@ AI/ML Research, and Hybrid Full-Stack AI project domains.
 """
 
 import os
+import sys
+import json
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -277,6 +279,94 @@ class LLMConfigEntry(BaseModel):
     priority: int = 1
 
 
+def get_octoflow_dir() -> Path:
+    """Return ~/.octoflow path, ensuring directory permissions are 0700."""
+    cfg_dir = Path.home() / ".octoflow"
+    if not cfg_dir.exists():
+        cfg_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            cfg_dir.chmod(0o700)
+        except OSError:
+            pass
+    else:
+        harden_permissions_if_looser(cfg_dir, 0o700, "directory")
+    return cfg_dir
+
+
+def harden_permissions_if_looser(path: Path, expected_mode: int, kind: str = "file") -> bool:
+    """Fix permissions if looser than expected_mode, printing a one-line notice."""
+    if not path.exists():
+        return False
+    try:
+        current_mode = path.stat().st_mode & 0o777
+        # Looser if any bits outside expected_mode are set (e.g. group/other read/write)
+        if (current_mode & ~expected_mode) != 0:
+            path.chmod(expected_mode)
+            print(f"Notice: Hardened permissions on {path} to {oct(expected_mode)} (was {oct(current_mode)}).")
+            return True
+    except OSError:
+        pass
+    return False
+
+
+def load_secure_config(cfg_path: Optional[Path] = None) -> dict:
+    """Load configuration from ~/.octoflow/config.json with permission hardening."""
+    if cfg_path is None:
+        cfg_dir = get_octoflow_dir()
+        cfg_path = cfg_dir / "config.json"
+    else:
+        if cfg_path.parent.exists():
+            harden_permissions_if_looser(cfg_path.parent, 0o700, "directory")
+
+    if not cfg_path.exists():
+        return {}
+
+    harden_permissions_if_looser(cfg_path, 0o600, "file")
+
+    try:
+        return json.loads(cfg_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_secure_config(data: dict, cfg_path: Optional[Path] = None) -> Path:
+    """Write configuration to ~/.octoflow/config.json with mode 0600."""
+    if cfg_path is None:
+        cfg_dir = get_octoflow_dir()
+        cfg_path = cfg_dir / "config.json"
+    else:
+        cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        harden_permissions_if_looser(cfg_path.parent, 0o700, "directory")
+
+    content = json.dumps(data, indent=2)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    try:
+        fd = os.open(str(cfg_path), flags, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        try:
+            cfg_path.chmod(0o600)
+        except OSError:
+            pass
+    except Exception:
+        cfg_path.write_text(content, encoding="utf-8")
+        try:
+            cfg_path.chmod(0o600)
+        except OSError:
+            pass
+    return cfg_path
+
+
+def mask_credential(key: Optional[str]) -> str:
+    """Mask credentials for display, showing first 3 characters followed by ****."""
+    if not key:
+        return ""
+    key_str = str(key).strip()
+    if not key_str:
+        return ""
+    return key_str[:3] + "****"
+
+
 class OctoFlowConfig(BaseModel):
     """Global configuration for an OctoFlow Swarm execution."""
     # Swarm Morphology & Custom Guilds
@@ -334,11 +424,9 @@ class OctoFlowConfig(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         """Auto-populate API keys and defaults from ~/.octoflow/config.json if not provided."""
-        cfg_file = Path.home() / ".octoflow" / "config.json"
-        if cfg_file.exists():
+        user_cfg = load_secure_config()
+        if user_cfg:
             try:
-                import json
-                user_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
                 if not self.anthropic_api_key:
                     self.anthropic_api_key = user_cfg.get("anthropic_api_key") or os.getenv("ANTHROPIC_API_KEY")
                 if not self.openai_api_key:

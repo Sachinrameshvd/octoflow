@@ -22,6 +22,7 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+import getpass
 from rich.markdown import Markdown
 from dataclasses import asdict
 from octoflow.config import (
@@ -31,6 +32,10 @@ from octoflow.config import (
     load_custom_guild,
     save_custom_guild,
     SOFTWARE_DEV_ROSTER,
+    get_octoflow_dir,
+    load_secure_config,
+    save_secure_config,
+    mask_credential,
 )
 from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
 from octoflow.outcome import RunMode, RunOutcome, RunResult, ProviderExhaustedError
@@ -164,10 +169,10 @@ def render_consortium_dashboard(
 
     # Render LLM Cascade Pool status if configured
     llm_cascade_panel = None
-    cfg_file = Path.home() / ".octoflow" / "config.json"
+    cfg_file = get_octoflow_dir() / "config.json"
     if cfg_file.exists():
         try:
-            cfg_data = json.loads(cfg_file.read_text(encoding="utf-8"))
+            cfg_data = load_secure_config(cfg_file)
             pool = cfg_data.get("llm_pool", [])
             if pool:
                 llm_table = Table(box=box.SIMPLE, show_header=True, expand=True, padding=(0, 1))
@@ -358,6 +363,7 @@ def run(
     budget: float = typer.Option(5.00, "--budget", "-b", help="Hard spending limit in dollars"),
     workspace: str = typer.Option(".", "--dir", "-d", help="Target project workspace folder"),
     port: int = typer.Option(8088, "--port", "-p", help="3D Visualizer telemetry port"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
     open_ui: bool = typer.Option(False, "--open-ui", "--ui", help="Auto-open 3D Connectome Visualizer in default browser"),
     octos: str = typer.Option("1", "--octos", "-o", help="Count of octopuses: 'auto' (dynamic load autoscaler), 1 (Solo), 3 (Triad), or 8 (Octopolis)"),
     theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')"),
@@ -399,14 +405,17 @@ def run(
         dry_run=is_dry,
     )
 
-    broadcaster = TelemetryBroadcaster(port=port_val)
+    host_str = host if isinstance(host, str) else "127.0.0.1"
+    if host_str not in ("127.0.0.1", "localhost"):
+        console.print(f"[{active_theme.rich_warning}]▲ WARNING: Binding telemetry server to '{host_str}' exposes the swarm to the network![/{active_theme.rich_warning}]")
+    broadcaster = TelemetryBroadcaster(port=port_val, host=host_str)
     broadcaster.start_in_background()
     broadcaster.broadcast_raw({
         "type": "THEME_CHANGE",
         "theme_id": active_theme.id,
         "tokens": asdict(active_theme),
     })
-    visualizer_url = f"http://localhost:{broadcaster.port}"
+    visualizer_url = f"http://{host}:{broadcaster.port}"
 
     # -------------------------------------------------------------------------
     # ELASTIC AUTOSCALING RESOLUTION
@@ -790,11 +799,17 @@ def train(
 
 
 @app.command()
-def ui(port: int = typer.Option(8088, "--port", "-p", help="Port to host 3D visualizer")):
+def ui(
+    port: int = typer.Option(8088, "--port", "-p", help="Port to host 3D visualizer"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind 3D visualizer (default: 127.0.0.1)"),
+):
     """Launch the 3D Cephalopod Connectome Visualizer bridge."""
-    url = f"http://localhost:{port}"
+    host_str = host if isinstance(host, str) else "127.0.0.1"
+    if host_str not in ("127.0.0.1", "localhost"):
+        console.print(f"[bold red]▲ WARNING: Binding visualizer to '{host_str}' exposes the bridge to the network![/bold red]")
+    url = f"http://{host_str}:{port}"
     console.print(f"\n[bold cyan]◈ Launching OctoFlow 3D Connectome Visualizer on {url}...[/bold cyan]")
-    broadcaster = TelemetryBroadcaster(port=port)
+    broadcaster = TelemetryBroadcaster(port=port, host=host_str)
     broadcaster.start_in_background()
     import webbrowser
     try:
@@ -828,12 +843,13 @@ def consortium_cmd(
     budget: float = typer.Option(10.00, "--budget", "-b", help="Max cost dollars"),
     workspace: str = typer.Option(".", "--dir", "-d", help="Target project workspace folder"),
     port: int = typer.Option(8088, "--port", "-p", help="3D Visualizer port"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
     open_ui: bool = typer.Option(False, "--ui", help="Auto-open 3D Visualizer in browser"),
     theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Run with mock provider, write no project files"),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
-    run(objective=objective, mode="software_dev", model=model, budget=budget, workspace=workspace, port=port, open_ui=open_ui, octos=octos, theme=theme, dry_run=dry_run)
+    run(objective=objective, mode="software_dev", model=model, budget=budget, workspace=workspace, port=port, host=host, open_ui=open_ui, octos=octos, theme=theme, dry_run=dry_run)
 
 
 @octos_app.command("run")
@@ -845,12 +861,13 @@ def octos_run(
     budget: float = typer.Option(10.00, "--budget", "-b", help="Max cost dollars"),
     workspace: str = typer.Option(".", "--dir", "-d", help="Target project workspace folder"),
     port: int = typer.Option(8088, "--port", "-p", help="3D Visualizer port"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
     open_ui: bool = typer.Option(False, "--ui", help="Auto-open 3D Visualizer in browser"),
     theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Run with mock provider, write no project files"),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
-    run(objective=objective, mode="software_dev", guild=guild, model=model, budget=budget, workspace=workspace, port=port, open_ui=open_ui, octos=octos, theme=theme, dry_run=dry_run)
+    run(objective=objective, mode="software_dev", guild=guild, model=model, budget=budget, workspace=workspace, port=port, host=host, open_ui=open_ui, octos=octos, theme=theme, dry_run=dry_run)
 
 
 @octos_app.command("octopolis")
@@ -860,18 +877,22 @@ def octos_octopolis(
     budget: float = typer.Option(15.00, "--budget", "-b", help="Max cost dollars"),
     workspace: str = typer.Option(".", "--dir", "-d", help="Workspace folder"),
     port: int = typer.Option(8088, "--port", "-p", help="3D Visualizer port"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
     open_ui: bool = typer.Option(False, "--ui", help="Auto-open visualizer"),
     theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Run with mock provider, write no project files"),
 ):
     """Deploy the flagship 8-Octopus Octopolis (64 Neural Arms) on an objective."""
-    run(objective=objective, mode="software_dev", model=model, budget=budget, workspace=workspace, port=port, open_ui=open_ui, octos=8, theme=theme, dry_run=dry_run)
+    run(objective=objective, mode="software_dev", model=model, budget=budget, workspace=workspace, port=port, host=host, open_ui=open_ui, octos=8, theme=theme, dry_run=dry_run)
 
 
 @octos_app.command("ui")
-def octos_ui(port: int = typer.Option(8088, "--port", "-p", help="Port to host 3D visualizer")):
+def octos_ui(
+    port: int = typer.Option(8088, "--port", "-p", help="Port to host 3D visualizer"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind 3D visualizer (default: 127.0.0.1)"),
+):
     """Launch the 3D Cephalopod Constellation Visualizer bridge."""
-    ui(port=port)
+    ui(port=port, host=host)
 
 
 @app.command("theme")
@@ -1186,13 +1207,8 @@ def run_setup_wizard(launch_after: bool = False):
     import subprocess
 
     cur_theme = load_saved_theme()
-    cfg_file = Path.home() / ".octoflow" / "config.json"
-    existing_cfg = {}
-    if cfg_file.exists():
-        try:
-            existing_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+    cfg_file = get_octoflow_dir() / "config.json"
+    existing_cfg = load_secure_config(cfg_file)
 
     workspace = Path.cwd().resolve()
 
@@ -1250,96 +1266,55 @@ def run_setup_wizard(launch_after: bool = False):
     }
     prov_name = prov_labels.get(chosen_provider, chosen_provider)
 
-    # Step 2: Key input (also in live animated loop)
+    # Step 2: Key input (non-echoing via getpass for credentials)
     saved_key = ""
     step2_heading = Text(f"\nStep 1 Selected: [{prov_name}]\nStep 2: Enter API Key or Endpoint (optional - press Enter to skip)\n", style="bold white")
 
+    def _prompt_secret_key(key_env_var: str, current_val: str) -> str:
+        masked = mask_credential(current_val) if current_val else ""
+        prompt_label = f"Enter {key_env_var} [{masked}]: " if masked else f"Enter {key_env_var}: "
+        console.print(wizard_panel)
+        console.print(step2_heading)
+        try:
+            val = getpass.getpass(prompt_label).strip()
+        except Exception:
+            try:
+                val = input(prompt_label).strip()
+            except Exception:
+                val = ""
+        return val if val else current_val
+
     if chosen_provider == "anthropic":
         env_key = os.getenv("ANTHROPIC_API_KEY") or existing_cfg.get("anthropic_api_key", "")
-        masked = (env_key[:7] + "••••" + env_key[-4:]) if len(env_key) > 12 else ""
-        prompt = f"Enter ANTHROPIC_API_KEY [{masked}]: " if masked else "Enter ANTHROPIC_API_KEY: "
-        new_key = get_live_wizard_input(
-            theme=cur_theme,
-            prompt_label=prompt,
-            default_value=env_key,
-            extra_panels=[wizard_panel, step2_heading],
-            existing_cfg=existing_cfg,
-            workspace=workspace,
-            is_password=True,
-        )
-        saved_key = new_key if new_key else env_key
+        saved_key = _prompt_secret_key("ANTHROPIC_API_KEY", env_key)
         if saved_key:
             existing_cfg["anthropic_api_key"] = saved_key
             os.environ["ANTHROPIC_API_KEY"] = saved_key
 
     elif chosen_provider == "openai":
         env_key = os.getenv("OPENAI_API_KEY") or existing_cfg.get("openai_api_key", "")
-        masked = (env_key[:7] + "••••" + env_key[-4:]) if len(env_key) > 12 else ""
-        prompt = f"Enter OPENAI_API_KEY [{masked}]: " if masked else "Enter OPENAI_API_KEY: "
-        new_key = get_live_wizard_input(
-            theme=cur_theme,
-            prompt_label=prompt,
-            default_value=env_key,
-            extra_panels=[wizard_panel, step2_heading],
-            existing_cfg=existing_cfg,
-            workspace=workspace,
-            is_password=True,
-        )
-        saved_key = new_key if new_key else env_key
+        saved_key = _prompt_secret_key("OPENAI_API_KEY", env_key)
         if saved_key:
             existing_cfg["openai_api_key"] = saved_key
             os.environ["OPENAI_API_KEY"] = saved_key
 
     elif chosen_provider == "gemini":
         env_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or existing_cfg.get("gemini_api_key", "")
-        masked = (env_key[:7] + "••••" + env_key[-4:]) if len(env_key) > 12 else ""
-        prompt = f"Enter GEMINI_API_KEY [{masked}]: " if masked else "Enter GEMINI_API_KEY: "
-        new_key = get_live_wizard_input(
-            theme=cur_theme,
-            prompt_label=prompt,
-            default_value=env_key,
-            extra_panels=[wizard_panel, step2_heading],
-            existing_cfg=existing_cfg,
-            workspace=workspace,
-            is_password=True,
-        )
-        saved_key = new_key if new_key else env_key
+        saved_key = _prompt_secret_key("GEMINI_API_KEY", env_key)
         if saved_key:
             existing_cfg["gemini_api_key"] = saved_key
             os.environ["GEMINI_API_KEY"] = saved_key
 
     elif chosen_provider == "grok":
         env_key = os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or existing_cfg.get("grok_api_key", "")
-        masked = (env_key[:7] + "••••" + env_key[-4:]) if len(env_key) > 12 else ""
-        prompt = f"Enter XAI_API_KEY [{masked}]: " if masked else "Enter XAI_API_KEY: "
-        new_key = get_live_wizard_input(
-            theme=cur_theme,
-            prompt_label=prompt,
-            default_value=env_key,
-            extra_panels=[wizard_panel, step2_heading],
-            existing_cfg=existing_cfg,
-            workspace=workspace,
-            is_password=True,
-        )
-        saved_key = new_key if new_key else env_key
+        saved_key = _prompt_secret_key("XAI_API_KEY", env_key)
         if saved_key:
             existing_cfg["grok_api_key"] = saved_key
             os.environ["XAI_API_KEY"] = saved_key
 
     elif chosen_provider == "deepseek":
         env_key = os.getenv("DEEPSEEK_API_KEY") or existing_cfg.get("deepseek_api_key", "")
-        masked = (env_key[:7] + "••••" + env_key[-4:]) if len(env_key) > 12 else ""
-        prompt = f"Enter DEEPSEEK_API_KEY [{masked}]: " if masked else "Enter DEEPSEEK_API_KEY: "
-        new_key = get_live_wizard_input(
-            theme=cur_theme,
-            prompt_label=prompt,
-            default_value=env_key,
-            extra_panels=[wizard_panel, step2_heading],
-            existing_cfg=existing_cfg,
-            workspace=workspace,
-            is_password=True,
-        )
-        saved_key = new_key if new_key else env_key
+        saved_key = _prompt_secret_key("DEEPSEEK_API_KEY", env_key)
         if saved_key:
             existing_cfg["deepseek_api_key"] = saved_key
             os.environ["DEEPSEEK_API_KEY"] = saved_key
@@ -1411,12 +1386,11 @@ def run_setup_wizard(launch_after: bool = False):
     save_theme_preference(new_theme_id)
     existing_cfg["default_theme"] = new_theme_id
 
-    # Save to ~/.octoflow/config.json
-    cfg_file.parent.mkdir(parents=True, exist_ok=True)
-    cfg_file.write_text(json.dumps(existing_cfg, indent=2), encoding="utf-8")
+    # Save to ~/.octoflow/config.json with 0600 mode
+    save_secure_config(existing_cfg, cfg_file)
 
     console.clear()
-    console.print(f"\n[{cur_theme.rich_success}]✔ Configuration saved successfully to ~/.octoflow/config.json![/{cur_theme.rich_success}]")
+    console.print(f"\n[{cur_theme.rich_success}]◈ Configuration saved successfully to ~/.octoflow/config.json![/{cur_theme.rich_success}]")
     console.print(f"  • Provider: [bold]{chosen_provider.upper()}[/bold]")
     console.print(f"  • Theme: [bold]{new_theme_id}[/bold]")
     console.print(f"[dim]Transitioning into live cephalopod console...[/dim]\n")
@@ -1507,13 +1481,8 @@ def run_doctor(workspace: str = ".", fix: bool = False):
     doc_table.add_row("Telemetry Port 8088", f"[{port_color}]● INFO[/{port_color}]", port_status)
 
     # 5. LLM API Providers & Credentials
-    cfg_file = Path.home() / ".octoflow" / "config.json"
-    saved_cfg = {}
-    if cfg_file.exists():
-        try:
-            saved_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+    cfg_file = get_octoflow_dir() / "config.json"
+    saved_cfg = load_secure_config(cfg_file) if cfg_file.exists() else {}
 
     has_anthropic = bool(saved_cfg.get("anthropic_api_key") or os.getenv("ANTHROPIC_API_KEY"))
     has_openai = bool(saved_cfg.get("openai_api_key") or os.getenv("OPENAI_API_KEY"))
@@ -2087,7 +2056,7 @@ def manual_cli_cmd(
     display_manual(chapter=chapter, web=web, console=console)
 
 
-def interactive_cockpit():
+def interactive_cockpit(host: str = "127.0.0.1"):
     """Launch the interactive OctoFlow Cephalopod Cockpit REPL."""
     import readline
     import subprocess
@@ -2095,13 +2064,8 @@ def interactive_cockpit():
     import json
 
     # Load defaults from config.json if present
-    cfg_file = Path.home() / ".octoflow" / "config.json"
-    saved_cfg = {}
-    if cfg_file.exists():
-        try:
-            saved_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+    cfg_file = get_octoflow_dir() / "config.json"
+    saved_cfg = load_secure_config(cfg_file) if cfg_file.exists() else {}
 
     theme = load_saved_theme()
     def _has_usable_credentials(cfg: dict) -> bool:
@@ -2148,7 +2112,7 @@ def interactive_cockpit():
     port = 8088
 
     # Start visualizer bridge in background
-    broadcaster = TelemetryBroadcaster(port=port)
+    broadcaster = TelemetryBroadcaster(port=port, host=host)
     broadcaster.start_in_background()
     broadcaster.broadcast_raw({
         "type": "THEME_CHANGE",
@@ -2722,7 +2686,7 @@ def interactive_cockpit():
                 run_setup_wizard(launch_after=False)
                 if cfg_file.exists():
                     try:
-                        saved_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
+                        saved_cfg = load_secure_config(cfg_file)
                         current_model = saved_cfg.get("default_model", current_model)
                         current_budget = float(saved_cfg.get("default_budget", current_budget))
                     except Exception:
@@ -2735,7 +2699,7 @@ def interactive_cockpit():
                 cfg_data = {}
                 if cfg_file.exists():
                     try:
-                        cfg_data = json.loads(cfg_file.read_text(encoding="utf-8"))
+                        cfg_data = load_secure_config(cfg_file)
                     except Exception:
                         cfg_data = {}
                 pool = cfg_data.get("llm_pool", [])
@@ -2768,7 +2732,10 @@ def interactive_cockpit():
 
                     custom_url = console.input(f"[bold cyan]Endpoint URL [default: {d_url}]: [/bold cyan]").strip() or d_url
                     custom_model = console.input(f"[bold cyan]Model name [default: {d_model}]: [/bold cyan]").strip() or d_model
-                    api_key = console.input("[bold cyan]API Key (leave blank for local / no-auth): [/bold cyan]").strip()
+                    try:
+                        api_key = getpass.getpass("API Key (leave blank for local / no-auth): ").strip()
+                    except Exception:
+                        api_key = console.input("[bold cyan]API Key (leave blank for local / no-auth): [/bold cyan]").strip()
 
                     new_entry = {
                         "id": f"{prov}-{len(pool)+1}",
@@ -2782,12 +2749,12 @@ def interactive_cockpit():
                     }
                     pool.append(new_entry)
                     cfg_data["llm_pool"] = pool
-                    cfg_file.write_text(json.dumps(cfg_data, indent=2), encoding="utf-8")
+                    save_secure_config(cfg_data, cfg_file)
                     console.print(f"[bold green]Added {name} to cascade pool as Priority #{len(pool)}.[/bold green]\n")
 
                 elif subcmd in ["clear", "reset"]:
                     cfg_data["llm_pool"] = []
-                    cfg_file.write_text(json.dumps(cfg_data, indent=2), encoding="utf-8")
+                    save_secure_config(cfg_data, cfg_file)
                     console.print("[yellow]Cleared all LLM cascade pool entries.[/yellow]\n")
 
                 else:
@@ -2805,7 +2772,7 @@ def interactive_cockpit():
 
                         for idx, item in enumerate(pool):
                             raw_k = item.get("api_key") or ""
-                            k_disp = raw_k[:3] + "..." + raw_k[-4:] if len(raw_k) > 6 else ("Configured" if raw_k else "None/Local")
+                            k_disp = mask_credential(raw_k) if raw_k else "None/Local"
                             table.add_row(
                                 f"[#{idx+1}]",
                                 item.get("name", item.get("provider")),
@@ -3486,17 +3453,23 @@ def interactive_cockpit():
 
 
 @app.callback(invoke_without_command=True)
-def app_callback(ctx: typer.Context):
+def app_callback(
+    ctx: typer.Context,
+    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
+):
     """Launch interactive cockpit if no command specified."""
     if ctx.invoked_subcommand is None:
-        interactive_cockpit()
+        interactive_cockpit(host=host)
 
 
 @octos_app.callback(invoke_without_command=True)
-def octos_callback(ctx: typer.Context):
+def octos_callback(
+    ctx: typer.Context,
+    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
+):
     """Launch interactive cockpit if no command specified."""
     if ctx.invoked_subcommand is None:
-        interactive_cockpit()
+        interactive_cockpit(host=host)
 
 
 @app.command(name="runner")
