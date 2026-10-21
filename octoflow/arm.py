@@ -18,6 +18,9 @@ from octoflow.tools import ToolResult, WorkspaceSandbox
 from octoflow.bus import InterBrachialBus, BrachialMessage
 from octoflow.memory import VerticalLobeMemory
 from octoflow.provider import BaseLLMProvider, LLMResponse
+from octoflow.logging_config import get_logger
+
+logger = get_logger("arm")
 
 
 class ArmStepResult(BaseModel):
@@ -134,8 +137,8 @@ class ArmAgent:
             parsed = json.loads(candidate)
             if isinstance(parsed, dict) and "action" in parsed:
                 return self._sanitize_action_dict(parsed)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Candidate text is not valid standard JSON: %s", e, exc_info=True)  # best-effort: model output may be free-form text
 
         # Try repairing trailing commas
         try:
@@ -143,8 +146,8 @@ class ArmAgent:
             parsed = json.loads(repaired)
             if isinstance(parsed, dict) and "action" in parsed:
                 return self._sanitize_action_dict(parsed)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Repaired candidate text is not valid JSON: %s", e, exc_info=True)  # best-effort: falling back to heuristic classification
 
         # Fallback heuristic
         lowered = text.lower()
