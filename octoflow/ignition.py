@@ -21,6 +21,9 @@ from pydantic import BaseModel, Field
 
 from octoflow.encoder import CodeSensoryEncoder
 from octoflow.tools import ToolResult
+from octoflow.logging_config import get_logger
+
+logger = get_logger("ignition")
 
 
 def wait_for_service(port: int, host: str = "127.0.0.1", timeout: float = 6.0) -> bool:
@@ -52,7 +55,8 @@ def is_port_listening(port: int, host: str = "127.0.0.1", timeout: float = 0.5) 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(timeout)
             return s.connect_ex((host, port)) == 0
-    except Exception:
+    except Exception as e:
+        logger.debug("Port check probe failed for %s:%s: %s", host, port, e)  # best-effort: probe failure indicates port not listening
         return False
 
 
@@ -375,7 +379,8 @@ class ProjectIgniter:
 
             # Default command: direct python script
             cmd = [sys.executable, "-m", "uvicorn", f"{dotted_module}:{app_var}", "--host", "127.0.0.1", "--port", str(port)]
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed parsing FastAPI entrypoint %s: %s; falling back to direct execution", entrypoint, e)  # best-effort: fallback to direct python execution
             cmd = [sys.executable, str(entrypoint)]
 
         try:
@@ -403,7 +408,8 @@ class ProjectIgniter:
                     start_new_session=True,
                 )
             return proc
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed launching backend process: %s", e)  # best-effort: launch failure returns None
             return None
 
     def _spawn_node_frontend(self, frontend_dir: Path, port: int) -> Optional[subprocess.Popen]:
@@ -423,7 +429,8 @@ class ProjectIgniter:
                 start_new_session=True,
             )
             return proc
-        except Exception:
+        except Exception as e:
+            logger.debug("Node frontend launch failed: %s; falling back to static server", e)  # best-effort: fallback to static server
             # Fallback to Python static server
             return self._spawn_static_server(frontend_dir, port)
 
@@ -440,7 +447,8 @@ class ProjectIgniter:
                 start_new_session=True,
             )
             return proc
-        except Exception:
+        except Exception as e:
+            logger.debug("Static server launch failed: %s", e)  # best-effort: static server launch failure
             return None
 
     def monitor_sensory_stream(self) -> Optional[ToolResult]:
@@ -452,8 +460,8 @@ class ProjectIgniter:
                 try:
                     if proc.stderr:
                         stderr_text = proc.stderr.read()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Failed reading crashed process stderr: %s", e)  # best-effort: unreadable stderr stream
 
                 result = ToolResult(
                     exit_code=proc.returncode,
@@ -472,19 +480,21 @@ class ProjectIgniter:
                         try:
                             pgid = os.getpgid(proc.pid)
                             os.killpg(pgid, signal.SIGTERM)
-                        except Exception:
+                        except Exception as e:
+                            logger.debug("killpg SIGTERM failed on pgid %s: %s; falling back to proc.terminate", pgid, e)  # best-effort: fallback to proc.terminate
                             proc.terminate()
                     else:
                         proc.terminate()
                     proc.wait(timeout=1.5)
-            except Exception:
+            except Exception as e:
+                logger.debug("SIGTERM handling failed on PID %s: %s; escalating to SIGKILL", proc.pid, e)  # best-effort: escalating to SIGKILL
                 try:
                     if hasattr(os, "killpg") and hasattr(os, "getpgid"):
                         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                     else:
                         proc.kill()
-                except Exception:
-                    pass
+                except Exception as err:
+                    logger.debug("Force kill failed on PID %s: %s", proc.pid, err)  # best-effort: process may already have exited
         self.active_processes.clear()
         if self.manifest:
             self.manifest.status = "STOPPED"
