@@ -15,6 +15,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from octoflow.config import OctoFlowConfig
 from octoflow.tools import WorkspaceSandbox
+from octoflow.logging_config import get_logger
+
+logger = get_logger("healing")
 
 
 def detect_test_framework(workspace_dir: str) -> Optional[Tuple[str, List[str]]]:
@@ -30,8 +33,8 @@ def detect_test_framework(workspace_dir: str) -> Optional[Tuple[str, List[str]]]
             data = json.loads(pkg_json.read_text(encoding="utf-8"))
             if "scripts" in data and "test" in data["scripts"]:
                 return ("npm", ["npm", "test"])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed parsing package.json for test script in %s: %s", ws, e)  # best-effort: malformed package.json
 
     if (ws / "Cargo.toml").exists():
         return ("cargo", ["cargo", "test"])
