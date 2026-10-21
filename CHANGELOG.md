@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Modularized Cockpit Package (`octoflow.cockpit`) (P2.1)**:
+  - Extracted all interactive cephalopod cockpit TUI code out of `octoflow/cli.py` into dedicated package `octoflow/cockpit/`:
+    - `octoflow.cockpit.input`: Raw/cbreak terminal mode context manager, 20 FPS keyboard polling (`select` timeout <= 0.045s), bracketed paste parsing, and guaranteed terminal restoration with `atexit` and `SIGTERM`/`SIGHUP` handlers.
+    - `octoflow.cockpit.render`: Banner loops, HUD panel, 8-arm Ganglia ring topology, animated prompt with paste badge and cursor, and composite grid composition.
+    - `octoflow.cockpit.session`: `CockpitSession` dataclass encapsulating mutable state (workspace, theme, model, budget, visualizer URL) without globals.
+    - `octoflow.cockpit.shell`: Non-blocking 20 FPS confirmation prompts, in-process `cd` directory tracking, and direct shell routing via `octoflow.router`.
+    - `octoflow.cockpit.app`: Main REPL event loop (`run_cockpit` / `interactive_cockpit`).
+  - Purged all `termios`, `select`, and `tty` imports from `octoflow/cli.py`.
+  - Reduced `octoflow/cli.py` from 3,500 lines to 1,907 lines (1,592 lines extracted).
+  - Maintained 100% backward compatibility via re-exports from `octoflow.cli`.
+  - Guaranteed zero blocking `input()` or `console.input()` calls across the entire cockpit package.
 - **Explicit Dry-Run Mode (`--dry-run`)**: Added `--dry-run` flag to `octoflow run` and `octos run`. Runs against `MockLLMProvider`, displays prominent `DRY-RUN` status ribbon and visualizer badge, redirects all file operations to `.octoflow/dry-run/` without touching the target workspace, and exits with code 0.
 - **Structured Outcome Models (`octoflow.outcome`)**: Added `RunMode`, `RunOutcome`, `OctoFlowError`, `ProviderExhaustedError`, and `RunResult` dataclass with backwards-compatible dictionary subscripting.
 - **Outcome Metadata in Telemetry and MCP**: Added `mode` and `outcome` fields to `SwarmTelemetryEvent`, mission audit reports, and `octoflow_run_swarm` MCP tool results.
