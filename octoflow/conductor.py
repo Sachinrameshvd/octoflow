@@ -20,7 +20,10 @@ from octoflow.bus import InterBrachialBus
 from octoflow.memory import VerticalLobeMemory
 from octoflow.provider import BaseLLMProvider, get_llm_provider
 from octoflow.arm import ArmAgent, ArmStepResult
+from octoflow.logging_config import get_logger
 from octopus_brain.coalition import extract_coalitions_from_matrix
+
+logger = get_logger("conductor")
 
 
 class SwarmTelemetryEvent(BaseModel):
@@ -66,7 +69,8 @@ def scan_codebase_topology(workspace_dir: str) -> str:
             pkg = json.loads((ws / "package.json").read_text(encoding="utf-8"))
             deps = list(pkg.get("dependencies", {}).keys())[:6]
             notes.append(f"Node/Frontend project '{pkg.get('name', 'app')}' (deps: {', '.join(deps)})")
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed parsing package.json in %s: %s", ws, e)  # best-effort: manifest may be malformed or non-standard
             notes.append("Node/Frontend project with package.json")
 
     if (ws / "pyproject.toml").exists() or (ws / "requirements.txt").exists():
@@ -83,8 +87,8 @@ def scan_codebase_topology(workspace_dir: str) -> str:
         top_dirs = [p.name for p in ws.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name not in ["node_modules", "__pycache__", "venv", ".git", "dist", "build", ".venv"]]
         if top_dirs:
             notes.append(f"Folders: {', '.join(top_dirs[:8])}")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed listing directories in %s: %s", ws, e)  # best-effort: permissions or unreadable path
 
     # 3. Python AST scanning for key classes and function interfaces
     py_files = list(ws.glob("*.py"))[:3] + list(ws.glob("*/*.py"))[:3]
@@ -101,8 +105,8 @@ def scan_codebase_topology(workspace_dir: str) -> str:
                 if classes or funcs:
                     syms = ", ".join(classes + funcs)
                     top_symbols.append(f"{pf.name}({syms})")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("AST parse failed for %s: %s", pf, e)  # best-effort: invalid python syntax or encoding in user files
         if top_symbols:
             notes.append(f"AST Symbols: {'; '.join(top_symbols[:3])}")
 
@@ -143,13 +147,13 @@ class SupraesophagealConductor:
         if persisted_memory.exists():
             try:
                 self.memory.load(str(persisted_memory))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed loading persisted memory from %s: %s", persisted_memory, e)  # best-effort: corrupted or legacy memory file
         # Episodic Codebase Vector RAG Indexing
         try:
             self.memory.index_codebase(self.config.workspace_dir)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Codebase vector indexing failed: %s", e)  # best-effort: optional RAG enhancement
         self.provider = get_llm_provider(self.config, dry_run=is_dry)
 
         # Initialize 8 arm agents with cognitive tier provider routing
@@ -195,8 +199,8 @@ class SupraesophagealConductor:
             if rag_hits:
                 relevant_files = [f"{h['file_path']}:{h.get('symbol') or h['start_line']}" for h in rag_hits]
                 topo_note = f"{topo_note} (Semantic Vectors: {', '.join(relevant_files)})"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("RAG memory search failed: %s", e)  # best-effort: non-critical prompt augmentation
 
         if morphology == SwarmMorphology.CUSTOM or (hasattr(self.config, "guild") and self.config.guild):
             sub_goals = {
@@ -329,8 +333,8 @@ class SupraesophagealConductor:
                     for domain in arm.role.workspace_domain:
                         if domain.rstrip("/") in fp:
                             scores[arm_id] += 1
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Codebase search for intent classification failed: %s", e)  # best-effort: fallback to heuristic scoring
 
         best_arm_id = max(scores, key=scores.get) if max(scores.values()) > 0 else 0
         secondary_id = 0 if best_arm_id != 0 else (1 if len(self.arms) > 1 else 0)
@@ -358,8 +362,8 @@ class SupraesophagealConductor:
                         f"File {h['file_path']} (L{h['start_line']}-{h['end_line']}):\n{h['snippet']}"
                         for h in hits
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Codebase search for conversation context failed: %s", e)  # best-effort: conversation works without RAG context
 
             response_text = arm.answer_query(user_message, context=rag_context)
             return {
@@ -524,8 +528,8 @@ class SupraesophagealConductor:
         try:
             persisted_path = Path.home() / ".octoflow" / "vertical_lobe.json"
             self.memory.save(str(persisted_path))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed saving memory to %s: %s", persisted_path, e)  # best-effort: session persistence is optional
 
         files_written = list(dict.fromkeys(self.sandbox.files_written))
 
@@ -548,8 +552,8 @@ class SupraesophagealConductor:
         if mode == RunMode.LIVE and len(files_written) > 0:
             try:
                 self._post_process_project_integrity()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Post-process project integrity failed: %s", e)  # best-effort: non-blocking cleanup
 
         status_str = "GLOBAL_QUIESCENCE" if final_quiescent >= 8 else ("QUIESCENCE" if final_quiescent >= 6 else "PARTIAL")
         if outcome == RunOutcome.FAILED:
@@ -604,8 +608,8 @@ class SupraesophagealConductor:
                         outcome=outcome.value,
                     )
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Telemetry callback failed: %s", e)  # best-effort: observer failure should not crash swarm run
 
         return result
 
@@ -744,8 +748,8 @@ class SupraesophagealConductor:
                         continue
                     cleaned_lines.append(line)
                 req_path.write_text("\n".join(cleaned_lines) + "\n", encoding="utf-8")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed sanitizing requirements.txt: %s", e)  # best-effort: optional requirement sanitization
 
         # 3. QA Test Suite Integrity Assertion & Vacuous Test Guard
         for test_file in list(ws.glob("**/test_*.py")) + list(ws.glob("**/*_test.py")):
@@ -753,8 +757,8 @@ class SupraesophagealConductor:
                 repo_tests = Path(__file__).resolve().parent.parent / "tests"
                 if test_file.resolve().is_relative_to(repo_tests):
                     continue
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Relative path check failed for %s: %s", test_file, e)  # best-effort: test path check
             try:
                 content = test_file.read_text(encoding="utf-8")
                 has_substantive_assert = any(
@@ -773,8 +777,8 @@ class SupraesophagealConductor:
                         "    assert root.exists(), 'Workspace root must exist'\n"
                     )
                     test_file.write_text(content.rstrip() + smoke_guard, encoding="utf-8")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed writing smoke test guard to %s: %s", test_file, e)  # best-effort: smoke test guard injection
 
 
 
