@@ -292,12 +292,12 @@ async def test_idempotency_and_restart(tmp_path):
     """Interrupted conductor mission can be cleanly recreated and restarted without lock conflicts."""
     ws = tmp_path / "restart_ws"
     ws.mkdir()
-    cfg = OctoFlowConfig(workspace_dir=str(ws), model_provider="mock", max_cycles=1)
+    cfg = OctoFlowConfig(workspace_dir=str(ws), model_provider="mock", dry_run=True, max_cycles=1)
 
     # Run 1: Interrupted mid-flight
     c1 = SupraesophagealConductor(config=cfg)
-    task = asyncio.create_task(c1.arun_swarm("Initial mission", max_cycles=5))
-    await asyncio.sleep(0.01)
+    task = asyncio.create_task(c1.arun_swarm("Initial mission", max_cycles=20))
+    await asyncio.sleep(0.002)
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task

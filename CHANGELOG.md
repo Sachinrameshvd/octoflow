@@ -46,3 +46,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented session command history logging in memory and persisted to `~/.octoflow/history` with restricted permissions `0600`.
   - Added deprecated escape hatch `OCTOFLOW_LEGACY_ROUTER=1`.
   - Added 95+ table-driven, characterization, and PTY simulation tests in `tests/test_router.py`.
+- **Tool Sandbox Audit and Enforcement (P1.4)**:
+  - Hardened `WorkspaceSandbox` in `octoflow/tools.py` with strict path confinement for `read_file`, `write_file`, and `list_dir`.
+  - Enforced canonical path resolution, blocking `..` traversal, out-of-workspace absolute paths, and null-byte injection (`\x00`).
+  - Added multi-level symlink escape defenses checking direct symlinks and recursively validating parent directory hierarchy for nonexistent target files.
+  - Hardened `run_command` with argument array execution (`argv`) and `shell=False` by default, parsing commands via `shlex.split`.
+  - Added `DEFAULT_ALLOWED_COMMANDS` allowlist restricting subprocess execution to approved compilers, interpreters, test runners, package managers, and safe utilities.
+  - Added compound shell operator detection (`has_compound_operators`) blocking unquoted shell metacharacters and chaining (`|`, `;`, `&&`, `||`, `>`, `<`, backticks, `$(...)`).
+  - Added explicit, documented opt-in `allow_unrestricted=True` for commands outside the allowlist.
+  - Enforced configurable timeouts with default 60.0s and maximum 300.0s, returning exit code 124 on `TimeoutExpired` and terminating processes cleanly.
+  - Bounded stdout/stderr capture to 64 KB (`MAX_CAPTURE_BYTES = 65,536`), truncating excessive output with clear diagnostic markers.
+  - Controlled subprocess environment inheritance (`SAFE_ENV_PASSTHROUGH`), automatically scrubbing keys matching `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `CREDENTIAL`, `AUTH`, `APIKEY`.
+  - Integrated `redact_secrets` across all tool outputs, exception strings, directory listings, and error diagnostics.
+  - Standardized tool exit code reporting: 0 for success, 1 for general error, 124 for timeout, 126 for disallowed command or traversal attempt, 127 for missing executable.
+  - Created `docs/SECURITY.md` and added comprehensive security test suite in `tests/test_tools_security.py` (18 tests).

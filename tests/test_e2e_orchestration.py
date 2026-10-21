@@ -321,16 +321,17 @@ async def test_e2e_cancellation_and_cleanup(tmp_path):
     cfg = OctoFlowConfig(
         workspace_dir=str(ws),
         model_provider="mock",
-        max_cycles=10,
+        dry_run=True,
+        max_cycles=20,
         enable_3d_telemetry=False,
     )
     conductor = SupraesophagealConductor(config=cfg)
 
     # Launch swarm in background asyncio task
-    task = asyncio.create_task(conductor.arun_swarm("Long running objective", max_cycles=10))
+    task = asyncio.create_task(conductor.arun_swarm("Long running objective", max_cycles=20))
 
     # Allow it to start
-    await asyncio.sleep(0.02)
+    await asyncio.sleep(0.002)
 
     # Cancel mid-flight
     task.cancel()

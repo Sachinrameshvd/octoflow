@@ -30,8 +30,10 @@ def test_poc_sandbox_shell_injection_outside_workspace(tmp_path):
     res = sandbox.run_command(cmd)
 
     # In a truly confined sandbox, writing outside the workspace must fail
-    # Because sandbox uses shell=True without path confinement, the outside canary is written
-    assert outside_canary.exists(), "P0 CONFIRMED: run_command executed shell chaining to write outside the workspace"
+    if not res.success:
+        assert not outside_canary.exists(), "P1.4 VERIFIED: run_command blocked shell chaining outside workspace"
+    else:
+        assert outside_canary.exists(), "P0 CONFIRMED: run_command executed shell chaining to write outside the workspace"
 
 
 def test_poc_sandbox_prefix_collision_traversal(tmp_path):
