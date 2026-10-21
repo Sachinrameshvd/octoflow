@@ -1,0 +1,41 @@
+# OctoFlow Exit Codes Reference
+
+OctoFlow enforces a predictable, standardized exit code taxonomy across all CLI entry points (`octoflow`, `octo`, `octos`).
+Every handled error derives from `OctoFlowError` and provides a user-facing message, an optional actionable hint, and a specific exit code.
+
+## Exit Code Taxonomy Table
+
+| Exit Code | Error Category | Exception Classes | Description |
+|-----------|----------------|-------------------|-------------|
+| **0** | Success | None | Clean command completion or graceful exit (`/exit`, `/quit`). |
+| **1** | Tool / Workspace / Runtime | `OctoFlowError`<br>`ToolError`<br>`WorkspaceError`<br>`BudgetExceeded` | Tool execution timeout/failure, workspace path traversal outside boundaries, budget caps, or general runtime failures. |
+| **2** | Provider Family | `ProviderError`<br>`ProviderAuthError`<br>`ProviderRateLimitError`<br>`ProviderTransientError`<br>`ProviderRequestError`<br>`ProviderUnavailableError`<br>`ProviderExhaustedError` | Upstream LLM provider authentication failures (401/403), rate limits (429), transient outages (5xx), malformed requests (4xx), offline daemon (Ollama), or complete pool exhaustion. |
+| **3** | Configuration & Usage | `ConfigError`<br>`UsageError` | Invalid schema, missing mandatory configuration keys, corrupted `~/.octoflow/config.json`, or invalid CLI flag usage. |
+| **70** | Internal Fatal Error | `Exception`<br>`RuntimeError`<br>Unhandled system errors | Unexpected internal fatal exception (sysexits `EX_SOFTWARE`). Outputs a short user-facing note, log file location, and records full traceback to disk logs. |
+
+---
+
+## Error Handling Style Contract
+
+All handled CLI exceptions display in the standard two-line format:
+```text
+Error: <concise description of failure>
+Hint: <actionable advice to resolve the issue>
+```
+
+### Tracebacks & Diagnostics
+- Tracebacks are **suppressed** by default for all user-facing errors.
+- Passing `--trace` on the CLI or setting `OCTOFLOW_DEBUG=1` in the environment restores full Python tracebacks to stderr and elevates disk logging to `DEBUG`.
+- Tracebacks for unexpected internal errors (exit code 70) are automatically written to `~/.octoflow/logs/octoflow.log`.
+
+---
+
+## Best-Effort Exception Convention
+
+In OctoFlow core modules, broad `except Exception: pass` clauses are strictly prohibited. Non-fatal operations (e.g. optional RAG vector search, cache saves, optional test cleanup) must:
+1. Log details at `DEBUG` level: `logger.debug("...", exc_info=True)` or `logger.debug("...", e)`.
+2. Document the intentional non-blocking rationale with an explicit inline comment:
+   ```python
+   except Exception as e:
+       logger.debug("Optional RAG cache lookup failed: %s", e)  # best-effort: non-blocking cache miss
+   ```

@@ -1,0 +1,39 @@
+### Error Handling & Logging Conventions
+
+When writing or refactoring OctoFlow code, adhere to the following standards:
+
+1. **Always Use Typed Errors**:
+   - Import errors from `octoflow.errors` (`OctoFlowError`, `ConfigError`, `UsageError`, `ProviderError` family, `ToolError`, `WorkspaceError`, `BudgetExceeded`).
+   - Standard format is `OctoFlowError(message, hint=None, exit_code=1)`. Always supply an actionable `hint` whenever user intervention can fix the issue.
+
+2. **Standardized Exit Codes**:
+   - Exit 0: Success
+   - Exit 1: Tool execution, workspace path violations, budget caps, or general runtime errors.
+   - Exit 2: Upstream LLM provider failures (`ProviderError` family).
+   - Exit 3: Configuration and CLI syntax errors (`ConfigError`, `UsageError`).
+   - Exit 70: Internal unexpected fatal errors.
+
+3. **No Silent Error Swallowing**:
+   - Silent `except Exception: pass` blocks are strictly forbidden.
+   - When an exception is legitimately best-effort (e.g. non-critical metrics, optional cache serialization, cleanup):
+     ```python
+     try:
+         self.optional_cache.save()
+     except Exception as e:
+         logger.debug("Failed saving optional cache: %s", e)  # best-effort: non-blocking cache persistence
+     ```
+   - The `# best-effort: <reason>` comment is required on every non-fatal exception handler.
+
+4. **Structured Logging**:
+   - Use standard library logging configured through `from octoflow.logging_config import get_logger`.
+   - Obtain module loggers with `logger = get_logger("module_name")`.
+   - Rotating logs are stored at `~/.octoflow/logs/octoflow.log` (1 MB × 3 backups, file mode `0600`, directory mode `0700`).
+   - Never print raw stack traces to standard output. Tracebacks are enabled globally via `--trace` or `OCTOFLOW_DEBUG=1`.
+
+5. **Cockpit Screen Protection**:
+   - Interactive cockpit sessions run in terminal raw mode. Terminal output will corrupt the TUI.
+   - All stderr log output is automatically suppressed during cockpit sessions via `CockpitSuppressFilter`. File logging continues to record disk logs normally.
+
+6. **Zero Secret Leakage**:
+   - Sensitive credentials (Anthropic `sk-ant-*`, OpenAI `sk-*`, Google `AIza*`, GitHub `ghp_*`, and Bearer tokens) are scrubbed by `RedactionFilter` before being written to disk.
+   - Do not log raw prompt payloads containing credentials or auth headers.
