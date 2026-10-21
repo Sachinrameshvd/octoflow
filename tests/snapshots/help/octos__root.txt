@@ -4,12 +4,14 @@
  ◈ OctosFlow: Multi-Cephalopod Swarm Consortium (3 to 8 Octopuses • 24 to 64 Arms)                  
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --host                      <str>  Telemetry server bind host (default: 127.0.0.1)               │
-│                                    [default: 127.0.0.1]                                          │
-│ --install-completion               Install completion for the current shell.                     │
-│ --show-completion                  Show completion for the current shell, to copy it or          │
-│                                    customize the installation.                                   │
-│ --help                             Show this message and exit.                                   │
+│ --host                        <str>  Telemetry server bind host (default: 127.0.0.1)             │
+│                                      [default: 127.0.0.1]                                        │
+│ --verbose             -v             Enable verbose output (INFO logging to stderr).             │
+│ --trace                              Enable trace mode (DEBUG logging and tracebacks on error).  │
+│ --install-completion                 Install completion for the current shell.                   │
+│ --show-completion                    Show completion for the current shell, to copy it or        │
+│                                      customize the installation.                                 │
+│ --help                               Show this message and exit.                                 │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────╮
 │ run             Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a   │

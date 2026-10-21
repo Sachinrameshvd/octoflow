@@ -4,12 +4,14 @@
  ◈ OctoFlow: Decentralized Cephalopod Multi-Agent Swarm with Sensory Surprise Gating                
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --host                      <str>  Telemetry server bind host (default: 127.0.0.1)               │
-│                                    [default: 127.0.0.1]                                          │
-│ --install-completion               Install completion for the current shell.                     │
-│ --show-completion                  Show completion for the current shell, to copy it or          │
-│                                    customize the installation.                                   │
-│ --help                             Show this message and exit.                                   │
+│ --host                        <str>  Telemetry server bind host (default: 127.0.0.1)             │
+│                                      [default: 127.0.0.1]                                        │
+│ --verbose             -v             Enable verbose output (INFO logging to stderr).             │
+│ --trace                              Enable trace mode (DEBUG logging and tracebacks on error).  │
+│ --install-completion                 Install completion for the current shell.                   │
+│ --show-completion                    Show completion for the current shell, to copy it or        │
+│                                      customize the installation.                                 │
+│ --help                               Show this message and exit.                                 │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────╮
 │ run             Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an      │
