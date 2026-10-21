@@ -124,7 +124,7 @@ def run_cockpit(
 
             run_setup_wizard(launch_after=False)
             if cfg_file.exists():
-                saved_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
+                saved_cfg = load_secure_config(cfg_file)
                 has_any_key = has_usable_credentials(saved_cfg)
         except Exception:
             pass

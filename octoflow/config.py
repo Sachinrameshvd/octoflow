@@ -311,50 +311,66 @@ def harden_permissions_if_looser(path: Path, expected_mode: int, kind: str = "fi
 
 def load_secure_config(cfg_path: Optional[Path] = None) -> dict:
     """Load configuration from ~/.octoflow/config.json with permission hardening."""
-    if cfg_path is None:
-        cfg_dir = get_octoflow_dir()
-        cfg_path = cfg_dir / "config.json"
-    else:
-        if cfg_path.parent.exists():
-            harden_permissions_if_looser(cfg_path.parent, 0o700, "directory")
-
-    if not cfg_path.exists():
+    from octoflow.settings import get_default_config_path, load_settings
+    p = cfg_path or get_default_config_path()
+    if not p.exists():
         return {}
-
-    harden_permissions_if_looser(cfg_path, 0o600, "file")
-
     try:
-        return json.loads(cfg_path.read_text(encoding="utf-8"))
+        settings = load_settings(cfg_path=p)
+        data = settings.to_dict(mask_secrets=False)
+        # Flatten for legacy callers expecting top-level fields
+        legacy_compat = dict(data.get("extras", {}))
+        legacy_compat.update({
+            "schema_version": settings.schema_version,
+            "default_provider": settings.defaults.default_provider,
+            "default_model": settings.defaults.default_model,
+            "default_scale": settings.defaults.default_scale,
+            "default_theme": settings.ui.theme,
+            "theme": settings.ui.theme,
+            "host": settings.server.host,
+            "ws_port": settings.server.ws_port,
+            "telemetry_port": settings.server.ws_port,
+            "http_port": settings.server.http_port,
+            "webhook_url": settings.webhook_url,
+            "llm_pool": settings.llm_pool,
+        })
+        for p_name, p_val in settings.providers.items():
+            if p_val.api_key:
+                raw_k = p_val.api_key
+                legacy_compat[f"{p_name}_api_key"] = (
+                    raw_k.get_secret_value()
+                    if hasattr(raw_k, "get_secret_value")
+                    else str(raw_k)
+                )
+            if p_name == "ollama" and p_val.base_url:
+                legacy_compat["ollama_base_url"] = p_val.base_url
+        legacy_compat.update(data)
+        return legacy_compat
     except Exception:
         return {}
 
 
 def save_secure_config(data: dict, cfg_path: Optional[Path] = None) -> Path:
     """Write configuration to ~/.octoflow/config.json with mode 0600."""
-    if cfg_path is None:
-        cfg_dir = get_octoflow_dir()
-        cfg_path = cfg_dir / "config.json"
-    else:
-        cfg_path.parent.mkdir(parents=True, exist_ok=True)
-        harden_permissions_if_looser(cfg_path.parent, 0o700, "directory")
-
-    content = json.dumps(data, indent=2)
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    from octoflow.settings import (
+        atomic_write_config,
+        get_default_config_path,
+        transform_legacy_config_data,
+        Settings,
+    )
+    p = cfg_path or get_default_config_path()
     try:
-        fd = os.open(str(cfg_path), flags, 0o600)
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(content)
-        try:
-            cfg_path.chmod(0o600)
-        except OSError:
-            pass
+        if data.get("schema_version") == 1 and "defaults" in data:
+            settings = Settings.model_validate(data)
+        else:
+            transformed = transform_legacy_config_data(data)
+            settings = Settings.model_validate(transformed)
+        serialized = json.dumps(settings.to_dict(mask_secrets=False), indent=2)
     except Exception:
-        cfg_path.write_text(content, encoding="utf-8")
-        try:
-            cfg_path.chmod(0o600)
-        except OSError:
-            pass
-    return cfg_path
+        serialized = json.dumps(data, indent=2)
+
+    atomic_write_config(p, serialized)
+    return p
 
 
 def mask_credential(key: Optional[str]) -> str:

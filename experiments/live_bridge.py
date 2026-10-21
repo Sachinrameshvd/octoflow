@@ -231,14 +231,12 @@ class CognitiveBridgeHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(summary).encode("utf-8"))
         elif parsed.path == "/llm/pool":
             self._set_cors_headers(200)
+            from octoflow.config import load_secure_config
             cfg_file = Path.home() / ".octoflow" / "config.json"
             entries = []
             if cfg_file.exists():
-                try:
-                    data = json.loads(cfg_file.read_text(encoding="utf-8"))
-                    entries = data.get("llm_pool", [])
-                except Exception:
-                    entries = []
+                data = load_secure_config(cfg_file)
+                entries = data.get("llm_pool", [])
             # Mask API keys for security in UI responses
             safe_entries = []
             for item in entries:
@@ -279,15 +277,11 @@ class CognitiveBridgeHandler(BaseHTTPRequestHandler):
             self._set_cors_headers(200)
             self.wfile.write(json.dumps({"status": "scenario_set", "scenario": scenario}).encode("utf-8"))
         elif parsed.path == "/llm/pool":
+            from octoflow.config import load_secure_config, save_secure_config
             cfg_dir = Path.home() / ".octoflow"
             cfg_dir.mkdir(parents=True, exist_ok=True)
             cfg_file = cfg_dir / "config.json"
-            cfg_data = {}
-            if cfg_file.exists():
-                try:
-                    cfg_data = json.loads(cfg_file.read_text(encoding="utf-8"))
-                except Exception:
-                    cfg_data = {}
+            cfg_data = load_secure_config(cfg_file) if cfg_file.exists() else {}
 
             current_pool = cfg_data.get("llm_pool", [])
             action = body.get("action", "add")

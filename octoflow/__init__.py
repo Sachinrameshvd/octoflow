@@ -86,6 +86,15 @@ _LAZY_EXPORTS = {
     "scan_monorepo_topology": "octoflow.monorepo",
     # recorder
     "TerminalRecorder": "octoflow.recorder",
+    # settings
+    "Settings": "octoflow.settings",
+    "load_settings": "octoflow.settings",
+    "save_settings": "octoflow.settings",
+    "ProviderSettings": "octoflow.settings",
+    "UISettings": "octoflow.settings",
+    "ServerSettings": "octoflow.settings",
+    "DefaultsSettings": "octoflow.settings",
+    "ConfigurationError": "octoflow.settings",
 }
 
 __all__ = list(_LAZY_EXPORTS.keys())
