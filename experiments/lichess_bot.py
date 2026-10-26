@@ -18,7 +18,7 @@ import json
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import requests
+import httpx
 import chess
 
 # Ensure project root is in sys.path
@@ -100,7 +100,7 @@ class OctopusLichessBot:
     def verify_and_upgrade_account(self):
         """Check account details and upgrade to BOT if needed."""
         url = f"{LICHESS_API_BASE}/api/account"
-        res = requests.get(url, headers=self.headers)
+        res = httpx.get(url, headers=self.headers)
         if res.status_code == 401:
             print("❌ Error: Invalid Lichess token. Please double-check your token.")
             sys.exit(1)
@@ -117,7 +117,7 @@ class OctopusLichessBot:
 
         if not is_bot:
             upgrade_url = f"{LICHESS_API_BASE}/api/bot/account/upgrade"
-            u_res = requests.post(upgrade_url, headers=self.headers)
+            u_res = httpx.post(upgrade_url, headers=self.headers)
             if u_res.status_code == 200:
                 print("✅ Successfully upgraded account to official BOT status!")
             else:
@@ -131,12 +131,14 @@ class OctopusLichessBot:
         stream_url = f"{LICHESS_API_BASE}/api/stream/event"
         while True:
             try:
-                with requests.get(stream_url, headers=self.headers, stream=True, timeout=90) as resp:
+                with httpx.stream("GET", stream_url, headers=self.headers, timeout=90.0) as resp:
                     for line in resp.iter_lines():
                         if line:
-                            event = json.loads(line.decode("utf-8"))
-                            self.handle_event(event)
-            except requests.exceptions.RequestException as e:
+                            line_str = line if isinstance(line, str) else line.decode("utf-8")
+                            if line_str.strip():
+                                event = json.loads(line_str)
+                                self.handle_event(event)
+            except httpx.HTTPError as e:
                 print(f"--> Stream reconnecting ({e})...")
                 time.sleep(3)
 
@@ -152,7 +154,7 @@ class OctopusLichessBot:
 
             # Accept challenge
             accept_url = f"{LICHESS_API_BASE}/api/challenge/{ch_id}/accept"
-            res = requests.post(accept_url, headers=self.headers)
+            res = httpx.post(accept_url, headers=self.headers)
             if res.status_code == 200:
                 print(f"✅ Challenge accepted! Entering game room...")
             else:
@@ -171,11 +173,14 @@ class OctopusLichessBot:
         is_my_turn = False
         my_color_is_white = True
 
-        with requests.get(game_url, headers=self.headers, stream=True) as stream:
+        with httpx.stream("GET", game_url, headers=self.headers, timeout=None) as stream:
             for line in stream.iter_lines():
                 if not line:
                     continue
-                data = json.loads(line.decode("utf-8"))
+                line_str = line if isinstance(line, str) else line.decode("utf-8")
+                if not line_str.strip():
+                    continue
+                data = json.loads(line_str)
                 msg_type = data.get("type")
 
                 if msg_type == "gameFull":
@@ -272,7 +277,7 @@ class OctopusLichessBot:
 
         # 4. Transmit move to Lichess API
         move_url = f"{LICHESS_API_BASE}/api/bot/game/{game_id}/move/{uci_move}"
-        res = requests.post(move_url, headers=self.headers)
+        res = httpx.post(move_url, headers=self.headers)
 
         # 5. Display real-time telemetry and ASCII board
         report_str = "".join(["●" if r else "○" for r in info["report_events"]])

@@ -5,7 +5,7 @@ import tempfile
 import time
 from pathlib import Path
 import pytest
-import requests
+import httpx
 
 from octoflow.ignition import ProjectIgniter, find_free_port, is_port_listening, LiveServiceManifest
 from octoflow.consortium import OctosConsortium
@@ -65,7 +65,7 @@ def test_ignite_static_web_server():
             time.sleep(0.5)
 
             # Probe the server
-            resp = requests.get(manifest.primary_url, timeout=3.0)
+            resp = httpx.get(manifest.primary_url, timeout=3.0)
             assert resp.status_code == 200
             assert "OctoFlow Live Test" in resp.text
         finally:

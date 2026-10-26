@@ -100,7 +100,7 @@
 | **Interactive Terminal Cockpit (`octos ❯`)** | Implemented | `octoflow/cli.py:L2180-3230` | 20 FPS non-blocking live loop; bracketed paste protection active | `rich.live`, `termios`, `select` |
 | **Benthic Dot Runner Animation & Dino Game** | Implemented | `octoflow/runner.py` | 5-line micro-dot octopus `(⌒ ⌒)` with arrow-key controls | `rich.panel`, `rich.text` |
 | **3D WebGL Neural Connectome Visualizer** | Implemented | `visualizer/src/`, `octoflow/server.py` | Compiles via Vite (`visualizer/dist` synced to `octoflow/dist`); WebSockets live | Three.js, WebSockets, FastAPI |
-| **LLM Cascade & Token Failover Pool** | Implemented | `octoflow/provider.py:L612-730` | Hot-swap failover on 429/400/exhaustion; fallback to Mock/Ollama | `httpx`, `requests` |
+| **LLM Cascade & Token Failover Pool** | Implemented | `octoflow/provider.py:L612-730` | Hot-swap failover on 429/400/exhaustion; fallback to Mock/Ollama | `httpx` |
 | **Local Ollama Integration** | Implemented | `octoflow/provider.py:L601, L776` | Verified live with `qwen2.5-coder:7b` on port 11434 | Local Ollama daemon |
 | **Auto-Shell Pass-Through (`mkdir`, `cd`, `ls`, etc.)** | Implemented | `octoflow/cli.py:L2328-2370` | Direct execution in cockpit; `cd` dynamically mutates active workspace | `subprocess`, `pathlib` |
 | **Phase 4 Autonomous Live Ignition** | Implemented | `octoflow/ignition.py` | Inspects workspace, auto-finds free ports, spawns Uvicorn/Vite, returns manifest | `socket`, `subprocess` |
@@ -203,7 +203,7 @@ The system can scale up to an entire **8-Octopus Consortium** (known as **The Oc
 - **Frameworks & Libraries:**
   - **Neural / Math:** `torch>=2.0.0`, `numpy>=1.22.0`, `scipy>=1.8.0`, `onnxruntime>=1.15.0` `[VERIFIED IN CODE: pyproject.toml:L27-34]`
   - **CLI & Output:** `rich>=13.0.0`, `typer>=0.9.0` `[VERIFIED IN CODE: pyproject.toml:L31, 35]`
-  - **HTTP & Networking:** `httpx>=0.25.0`, `requests>=2.28.0`, `websockets`, `uvicorn`, `fastapi` `[VERIFIED IN CODE: pyproject.toml:L32-33, octoflow/server.py]`
+  - **HTTP & Networking:** `httpx>=0.25.0`, `websockets`, `uvicorn`, `fastapi` `[VERIFIED IN CODE: pyproject.toml:L30, octoflow/server.py]`
   - **Data Validation:** `pydantic>=2.0.0` `[VERIFIED IN CODE: pyproject.toml:L30]`
   - **Frontend 3D:** `three>=0.186.1`, `@types/three`, `@tweenjs/tween.js`, `lucide` `[VERIFIED IN CODE: visualizer/package.json:L16-20]`
   - **Bundler:** `vite^8.3.0` `[VERIFIED IN CODE: visualizer/package.json:L13]`
