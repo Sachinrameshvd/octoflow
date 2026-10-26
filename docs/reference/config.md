@@ -43,6 +43,7 @@ OctoFlow uses a strictly typed, versioned, validated configuration system built 
 | `default_provider` | `str` | `"anthropic"` | Must be one of: `anthropic`, `openai`, `gemini`, `grok`, `deepseek`, `ollama`, `mock` |
 | `default_model` | `Optional[str]` | `"claude-3-5-sonnet-20241022"` | Default model identifier |
 | `default_scale` | `int` | `1` | Must be $\ge 1$ octopus (8 arms each) |
+| `encoder_backend` | `str` | `"numpy"` | Must be one of: `numpy`, `auto`, `torch`. Zero-torch NumPy engine by default; `torch` requires `[ml]` extra. |
 
 ### `UISettings`
 
@@ -90,6 +91,7 @@ Environment variables override `~/.octoflow/config.json`:
 | `OCTOFLOW_DEFAULT_PROVIDER` / `OCTOFLOW_PROVIDER` | `defaults.default_provider` | `str` |
 | `OCTOFLOW_DEFAULT_MODEL` / `OCTOFLOW_MODEL` | `defaults.default_model` | `str` |
 | `OCTOFLOW_DEFAULT_SCALE` / `OCTOFLOW_SCALE` | `defaults.default_scale` | `int` |
+| `OCTOFLOW_ENCODER_BACKEND` | `defaults.encoder_backend` | `str` (`numpy`, `auto`, `torch`) |
 | `OCTOFLOW_WEBHOOK_URL` / `SLACK_WEBHOOK_URL` | `webhook_url` | `str` |
 | `ANTHROPIC_API_KEY` | `providers.anthropic.api_key` | `SecretStr` |
 | `OPENAI_API_KEY` | `providers.openai.api_key` | `SecretStr` |

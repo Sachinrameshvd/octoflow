@@ -165,6 +165,17 @@ class DefaultsSettings(BaseModel):
     default_provider: str = "anthropic"
     default_model: Optional[str] = "claude-3-5-sonnet-20241022"
     default_scale: int = 1
+    encoder_backend: str = "numpy"
+
+    @field_validator("encoder_backend")
+    @classmethod
+    def validate_encoder_backend(cls, v: str) -> str:
+        v_clean = str(v).strip().lower()
+        if v_clean not in ("auto", "numpy", "torch"):
+            raise ValueError(
+                f"Unknown encoder_backend '{v}'. Allowed backends: 'auto', 'numpy', 'torch'"
+            )
+        return v_clean
 
     @field_validator("default_provider")
     @classmethod
@@ -377,6 +388,10 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     if "default_scale" in raw_data:
         defaults["default_scale"] = int(raw_data["default_scale"])
         consumed_keys.add("default_scale")
+
+    if "encoder_backend" in raw_data:
+        defaults["encoder_backend"] = str(raw_data["encoder_backend"]).strip().lower()
+        consumed_keys.add("encoder_backend")
 
     # UI
     ui: Dict[str, Any] = {}
@@ -593,6 +608,10 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
                 break
             except ValueError:
                 raise ConfigurationError(f"Invalid integer for {scale_var}: '{env[scale_var]}'", loc="defaults.default_scale")
+    for backend_var in ("OCTOFLOW_ENCODER_BACKEND", "ENCODER_BACKEND"):
+        if backend_var in env:
+            data.setdefault("defaults", {})["encoder_backend"] = env[backend_var].strip().lower()
+            break
 
     # Webhook
     for wh_var in ("OCTOFLOW_WEBHOOK_URL", "SLACK_WEBHOOK_URL", "DISCORD_WEBHOOK_URL"):

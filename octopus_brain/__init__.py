@@ -1,12 +1,19 @@
 """OctopusBrain: Modular, biologically inspired distributed neural architecture."""
 
 from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.modules import PeripheralModule
-from octopus_brain.central import CentralSystem
-from octopus_brain.brain import OctopusBrain
-from octopus_brain.losses import OctopusLoss, AdaptiveGateBudgeter
-from octopus_brain.coalition import extract_coalitions_from_matrix
-from octopus_brain.trainer import OctopusTrainer
+try:
+    from octopus_brain.modules import PeripheralModule
+    from octopus_brain.central import CentralSystem
+    from octopus_brain.brain import OctopusBrain
+    from octopus_brain.losses import OctopusLoss, AdaptiveGateBudgeter
+    from octopus_brain.trainer import OctopusTrainer
+except ImportError:
+    PeripheralModule = None
+    CentralSystem = None
+    OctopusBrain = None
+    OctopusLoss = None
+    AdaptiveGateBudgeter = None
+    OctopusTrainer = None
 
 from octopus_brain.connectome import CephalopodConnectome, ConnectomeNode, SynapticEdge, Neurotransmitter, NeuronCategory
 from octopus_brain.biophysics import BiophysicalConnectomeSimulator

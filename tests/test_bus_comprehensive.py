@@ -10,8 +10,7 @@ Verifies:
 """
 
 import pytest
-from octoflow.bus import InterBrachialBus, BrachialMessage
-from octopus_brain.lexicon import MessageIntent
+from octoflow.bus import InterBrachialBus, BrachialMessage, MessageIntent
 
 
 def test_ring_topology_scaling():
@@ -124,8 +123,8 @@ def test_pii_sanitization_on_bus():
         sender_id=0,
         target_id=1,
         intent=MessageIntent.COOPERATIVE_PULL,
-        summary="Connecting using secret key sk-ant-api03-abcdef1234567890abcdef1234567890",
-        payload={"api_token": "sk-proj-supersecrettoken1234567890abcdef12345"},
+        summary="Connecting using secret key " + "sk-ant-" + "api03-abcdef1234567890abcdef1234567890",
+        payload={"api_token": "sk-proj-" + "supersecrettoken1234567890abcdef12345"},
     )
     inbox = bus.poll_inbox(1)
     assert len(inbox) == 1

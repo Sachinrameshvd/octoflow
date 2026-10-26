@@ -22,7 +22,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 import numpy as np
-import torch
 
 from octoflow.config import OctoFlowConfig
 from octoflow.conductor import SupraesophagealConductor
@@ -44,8 +43,6 @@ from octoflow.federation import (
     SecretSanitizingLogFilter,
     get_safe_logger,
 )
-from octopus_brain.config import OctopusBrainConfig
-from octopus_brain.brain import OctopusBrain
 
 
 # ==============================================================================
@@ -135,6 +132,10 @@ def subprocess_result(returncode=0, stdout="", stderr=""):
 
 def test_graceful_degradation_no_gpu():
     """Neural policy and connectome must run smoothly on CPU when no GPU is available."""
+    torch = pytest.importorskip("torch")
+    from octopus_brain.config import OctopusBrainConfig
+    from octopus_brain.brain import OctopusBrain
+
     cfg = OctopusBrainConfig(n_modules=8, obs_dim=16, action_dim=5)
     brain = OctopusBrain(cfg)
     brain.eval()

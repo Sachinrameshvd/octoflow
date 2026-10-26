@@ -2,7 +2,8 @@
 
 import pytest
 import numpy as np
-import torch
+
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import torch.optim as optim
 

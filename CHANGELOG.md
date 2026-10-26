@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Optional PyTorch / ML Dependencies with Strict Gate Parity (P2.5 / Decision D2)**:
+  - Made PyTorch, ONNXRuntime, and SciPy optional by isolating them in `[project.optional-dependencies] ml` (`pip install "octoflow[ml]"`).
+  - Default base installation (`pip install octoflow` / `pip install -r requirements.txt`) is lightweight, fast, and 100% NumPy-only.
+  - Implemented analytical NumPy sensory observation encoding in `CodeSensoryEncoder` and NumPy surprise computation in `SurpriseGate`.
+  - Added `get_encoder(backend="auto"|"numpy"|"torch")` and `defaults.encoder_backend` in `Settings` (`OCTOFLOW_ENCODER_BACKEND`).
+  - Proved bit-for-bit feature parity ($0.00\times 10^0$ difference) and gate surprise parity ($\Delta dS \le 1.19 \times 10^{-7}$, well within the $1 \times 10^{-5}$ tolerance) across 19 golden test cases in `tests/test_gate_parity.py`.
+  - Enforced zero top-level imports of PyTorch: verified `'torch' not in sys.modules` when importing `octoflow` and its core modules (`importtime`: 2.8ms).
+  - Added Subsystem Check 8 in `octoflow doctor` reporting active backend and `[ml]` extra status with clear installation hints if misconfigured.
+  - Decoupled `octoflow` from `octopus_brain` by extracting pure NumPy `octoflow/coalition.py` and defining `MessageIntent` natively in `octoflow/bus.py`.
+  - Updated CI with dual `test-base` and `test-ml` testing pipelines.
 - **Typed Configuration System & Pydantic v2 Migration (P2.3)**:
   - Added `octoflow.settings` with Pydantic v2 models: `Settings` (`schema_version=1`), `DefaultsSettings`, `UISettings`, `ServerSettings`, and `ProviderSettings`.
   - Implemented deterministic configuration precedence: defaults < config file (`~/.octoflow/config.json`) < environment variables (`OCTOFLOW_*`, plus well-known provider keys) < CLI flags/overrides.

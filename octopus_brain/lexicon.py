@@ -23,56 +23,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from octopus_brain.config import OctopusBrainConfig
-
-
-class MessageIntent:
-    """Enumeration of semantic arm communication intents."""
-    AUTONOMOUS_EXPLORE = "AUTONOMOUS_EXPLORE"
-    TARGET_DETECTED = "TARGET_DETECTED"
-    COOPERATIVE_PULL = "COOPERATIVE_PULL"
-    HAZARD_WARNING = "HAZARD_WARNING"
-    REACH_ELONGATION = "REACH_ELONGATION"
-    ANCHOR_STABILITY = "ANCHOR_STABILITY"
-
-
-INTENT_METADATA = {
-    MessageIntent.AUTONOMOUS_EXPLORE: {
-        "label": "Autonomous Forage",
-        "icon": "🟢",
-        "description": "Routine local sensory sampling; no central assistance required.",
-        "color": "#a6e3a1",
-    },
-    MessageIntent.TARGET_DETECTED: {
-        "label": "Prey / Food Detected",
-        "icon": "🦐",
-        "description": "Chemical cues confirm food item in reach radius.",
-        "color": "#89b4fa",
-    },
-    MessageIntent.COOPERATIVE_PULL: {
-        "label": "Cooperative Grip Request",
-        "icon": "🤝",
-        "description": "Joint target requires dual-arm bilateral synchronization.",
-        "color": "#cba6f7",
-    },
-    MessageIntent.HAZARD_WARNING: {
-        "label": "Predator / Hazard Alert",
-        "icon": "⚠️",
-        "description": "High prediction surprise; rapid detour or repulsion triggered.",
-        "color": "#f38ba8",
-    },
-    MessageIntent.REACH_ELONGATION: {
-        "label": "Hydrostat Elongation",
-        "icon": "↔️",
-        "description": "Arm fully extended outward exploring perimeter.",
-        "color": "#f9e2af",
-    },
-    MessageIntent.ANCHOR_STABILITY: {
-        "label": "Substrate Anchor",
-        "icon": "⚓️",
-        "description": "Suckers locked to ground providing leverage for other arms.",
-        "color": "#94e2d5",
-    },
-}
+from octoflow.bus import MessageIntent, INTENT_METADATA
 
 
 class InterBrachialLexiconDecoder(nn.Module):

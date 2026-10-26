@@ -2,10 +2,7 @@
 
 import pytest
 import numpy as np
-import torch
-from octopus_brain.coalition import extract_coalitions_from_matrix
-from octopus_brain.central import CentralSystem
-from octopus_brain.config import OctopusBrainConfig
+from octoflow.coalition import extract_coalitions_from_matrix
 
 
 def test_extract_coalitions_from_matrix():
@@ -30,6 +27,10 @@ def test_extract_coalitions_from_matrix():
 
 
 def test_central_system_forward_and_coalition_matrix():
+    torch = pytest.importorskip("torch")
+    from octopus_brain.central import CentralSystem
+    from octopus_brain.config import OctopusBrainConfig
+
     config = OctopusBrainConfig(n_modules=8, message_dim=32, central_dim=32, num_heads=4)
     central = CentralSystem(config)
 

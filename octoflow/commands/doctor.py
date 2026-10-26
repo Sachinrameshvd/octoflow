@@ -125,6 +125,27 @@ def run_doctor(workspace: str = ".", fix: bool = False):
     else:
         doc_table.add_row("Vertical Lobe LTP", f"[{theme.rich_secondary}]● INITIAL[/{theme.rich_secondary}]", "Will initialize upon first error consolidation")
 
+    # 8. ML Subsystem & Encoder Backend
+    from octoflow.encoder import _is_torch_available, _get_configured_backend, get_encoder
+    has_torch = _is_torch_available()
+    cfg_backend = _get_configured_backend()
+
+    if cfg_backend == "torch" and not has_torch:
+        doc_table.add_row(
+            "ML / Encoder Backend",
+            f"[{theme.rich_danger}]✖ FAIL[/{theme.rich_danger}]",
+            r"Configured backend='torch' but \[ml] extra is not installed. (Hint: run 'pip install \"octoflow\[ml]\"')",
+        )
+        all_passed = False
+    else:
+        active_encoder = get_encoder(backend="auto")
+        ml_status = r"installed" if has_torch else r"not installed (optional: pip install 'octoflow\[ml\]')"
+        doc_table.add_row(
+            "ML / Encoder Backend",
+            f"[{theme.rich_success}]● PASS[/{theme.rich_success}]",
+            f"Active: {active_encoder.backend} (default: numpy) | \\[ml\\] extra: {ml_status}",
+        )
+
     console.print(doc_table)
 
     if all_passed:

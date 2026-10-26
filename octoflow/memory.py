@@ -7,7 +7,6 @@ enabling sub-millisecond retrieval without expensive vector database RAG lookups
 
 from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
-import torch
 
 
 class FixPattern:

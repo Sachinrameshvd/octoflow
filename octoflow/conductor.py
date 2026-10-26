@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Tuple, Any
 from pydantic import BaseModel, Field
 import numpy as np
-import torch
 
 from octoflow.config import OctoFlowConfig, SwarmMorphology, ArmRoleConfig
 from octoflow.outcome import RunMode, RunOutcome, RunResult, ProviderExhaustedError
@@ -21,7 +20,7 @@ from octoflow.memory import VerticalLobeMemory
 from octoflow.provider import BaseLLMProvider, get_llm_provider
 from octoflow.arm import ArmAgent, ArmStepResult
 from octoflow.logging_config import get_logger
-from octopus_brain.coalition import extract_coalitions_from_matrix
+from octoflow.coalition import extract_coalitions_from_matrix
 
 logger = get_logger("conductor")
 

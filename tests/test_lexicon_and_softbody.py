@@ -2,7 +2,8 @@
 
 import pytest
 import numpy as np
-import torch
+
+torch = pytest.importorskip("torch")
 
 from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.lexicon import InterBrachialLexiconDecoder, MessageIntent, INTENT_METADATA

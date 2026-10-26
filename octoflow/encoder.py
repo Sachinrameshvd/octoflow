@@ -5,19 +5,38 @@ git diff deltas, execution latency, and error types) into continuous 16-dimensio
 sensory observation vectors for the cephalopod forward-model predictive network.
 """
 
+from __future__ import annotations
 import math
-from typing import Optional, Union
+import os
+from typing import Any, Optional, Protocol, Union, runtime_checkable
 import numpy as np
-import torch
 
 from octoflow.tools import ToolResult
+
+
+@runtime_checkable
+class SensoryEncoder(Protocol):
+    """Protocol for sensory observation encoders."""
+    obs_dim: int
+    backend: str
+
+    def encode(
+        self,
+        result: ToolResult,
+        step: int = 0,
+        max_steps: int = 15,
+        as_tensor: Optional[bool] = None,
+        device: Optional[Any] = None,
+    ) -> Union[np.ndarray, Any]:
+        ...
 
 
 class CodeSensoryEncoder:
     """Encodes tool execution outcomes into continuous biophysical sensory observations."""
 
-    def __init__(self, obs_dim: int = 16):
+    def __init__(self, obs_dim: int = 16, backend: str = "numpy"):
         self.obs_dim = obs_dim
+        self.backend = backend.strip().lower() if isinstance(backend, str) else "numpy"
 
         # Common error signature keywords for semantic feature extraction
         self.syntax_keywords = ["syntaxerror", "indentationerror", "parseerror", "unexpected token"]
@@ -31,9 +50,9 @@ class CodeSensoryEncoder:
         result: ToolResult,
         step: int = 0,
         max_steps: int = 15,
-        as_tensor: bool = True,
-        device: Optional[Union[str, torch.device]] = None,
-    ) -> Union[torch.Tensor, np.ndarray]:
+        as_tensor: Optional[bool] = None,
+        device: Optional[Any] = None,
+    ) -> Union[np.ndarray, Any]:
         """Convert a ToolResult into a normalized sensory observation vector of shape (obs_dim,).
 
         Feature Layout (16 dimensions):
@@ -102,9 +121,78 @@ class CodeSensoryEncoder:
         is_clean = (result.returncode == 0 and stderr_len == 0 and result.success)
         features[15] = 1.0 if is_clean else 0.0
 
-        if as_tensor:
+        return_tensor = (self.backend == "torch") if as_tensor is None else bool(as_tensor)
+        if return_tensor:
+            try:
+                import torch
+            except ImportError:
+                raise ImportError(
+                    "PyTorch is required when as_tensor=True or backend='torch'. "
+                    "Install with: pip install 'octoflow[ml]'"
+                )
             t = torch.tensor(features, dtype=torch.float32)
             if device:
                 t = t.to(device)
             return t
         return features
+
+
+def _is_torch_available() -> bool:
+    """Check if torch is importable without eagerly importing it."""
+    try:
+        import importlib.util
+        return importlib.util.find_spec("torch") is not None
+    except Exception:
+        try:
+            import torch  # noqa: F401
+            return True
+        except ImportError:
+            return False
+
+
+def _get_configured_backend() -> str:
+    """Consult env vars and settings for user-configured encoder backend."""
+    env_backend = os.environ.get("OCTOFLOW_ENCODER_BACKEND") or os.environ.get("ENCODER_BACKEND")
+    if env_backend:
+        return env_backend.strip().lower()
+    try:
+        from octoflow.settings import load_settings
+        settings = load_settings()
+        return settings.defaults.encoder_backend.strip().lower()
+    except Exception:
+        return "numpy"
+
+
+def get_encoder(backend: str = "auto", obs_dim: int = 16) -> CodeSensoryEncoder:
+    """Factory function returning a configured sensory encoder.
+
+    Parameters:
+        backend: "auto" | "numpy" | "torch"
+            - "auto": picks torch only if torch is importable AND the user explicitly
+              set encoder_backend="torch" in configuration or environment; the default is NumPy.
+            - "numpy": uses the NumPy-native encoder path without importing ML frameworks.
+            - "torch": explicitly requests the PyTorch backend; raises ImportError if not installed.
+        obs_dim: observation vector dimensionality (default: 16).
+
+    Returns:
+        CodeSensoryEncoder instance configured with the resolved backend.
+    """
+    b = backend.strip().lower()
+    if b == "auto":
+        configured = _get_configured_backend()
+        if configured == "torch" and _is_torch_available():
+            selected = "torch"
+        else:
+            selected = "numpy"
+    elif b == "torch":
+        if not _is_torch_available():
+            raise ImportError(
+                "PyTorch is required for backend='torch'. Install with: pip install 'octoflow[ml]'"
+            )
+        selected = "torch"
+    elif b == "numpy":
+        selected = "numpy"
+    else:
+        raise ValueError(f"Unknown backend '{backend}'. Supported backends: 'auto', 'numpy', 'torch'.")
+
+    return CodeSensoryEncoder(obs_dim=obs_dim, backend=selected)

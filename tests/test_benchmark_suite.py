@@ -3,7 +3,8 @@
 import os
 import tempfile
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 from octopus_brain.config import OctopusBrainConfig, EnvConfig
 from octopus_brain.brain import OctopusBrain
 from envs.reach_and_avoid import ReachAndAvoidEnv

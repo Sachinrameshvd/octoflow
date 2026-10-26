@@ -195,9 +195,14 @@ cd Octoflow
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies & editable CLI
+# Base installation (lightweight & fast NumPy-only engine, no torch required):
 pip install -r requirements.txt
 pip install -e .
+
+# Optional ML extra (adds PyTorch, ONNXRuntime, and neural training backends):
+pip install ".[ml]"
+# Or via requirements:
+pip install -r requirements-ml.txt
 ```
 
 ### 2. Run the Full Test Suite

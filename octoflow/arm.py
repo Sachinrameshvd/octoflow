@@ -9,10 +9,9 @@ import re
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 import numpy as np
-import torch
 
 from octoflow.config import ArmRoleConfig
-from octoflow.encoder import CodeSensoryEncoder
+from octoflow.encoder import CodeSensoryEncoder, get_encoder
 from octoflow.gate import SurpriseGate
 from octoflow.tools import ToolResult, WorkspaceSandbox
 from octoflow.bus import InterBrachialBus, BrachialMessage
@@ -60,12 +59,13 @@ class ArmAgent:
         self.provider = provider
         self.bus = bus
         self.memory = memory
-        self.encoder = encoder or CodeSensoryEncoder(obs_dim=obs_dim)
+        self.encoder = encoder or get_encoder(obs_dim=obs_dim)
 
         self.gate = SurpriseGate(
             arm_id=self.arm_id,
             obs_dim=obs_dim,
             initial_threshold=role_config.initial_threshold,
+            backend=getattr(self.encoder, "backend", "numpy"),
         )
 
         self.status = "IDLE"
@@ -79,7 +79,7 @@ class ArmAgent:
         self.compacted_summary: str = ""
 
         # Recurrent state vector
-        self.hidden_state = torch.zeros(1, hidden_dim, dtype=torch.float32)
+        self.hidden_state = np.zeros((1, hidden_dim), dtype=np.float32)
 
     def compact_context(self, max_buffer_size: int = 4) -> str:
         """Prune and compact older execution history steps into a condensed memory synopsis."""
@@ -274,7 +274,6 @@ class ArmAgent:
             result=tool_result,
             step=self.step_count,
             max_steps=max_steps,
-            as_tensor=True,
         )
 
         escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
@@ -288,7 +287,7 @@ class ArmAgent:
             # Consolidate pattern in Vertical Lobe if it's an actionable failure
             if tool_result.stderr:
                 self.memory.consolidate(
-                    error_obs=obs.numpy(),
+                    error_obs=obs.numpy() if hasattr(obs, "numpy") else obs,
                     error_name=f"Arm {self.arm_id} Error",
                     fix_guidance=f"Inspect tool failure: {tool_result.stderr[:200]}",
                 )
@@ -428,7 +427,6 @@ class ArmAgent:
             result=tool_result,
             step=self.step_count,
             max_steps=max_steps,
-            as_tensor=True,
         )
 
         escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
@@ -441,7 +439,7 @@ class ArmAgent:
             self.status = "ESCALATED"
             if tool_result.stderr:
                 self.memory.consolidate(
-                    error_obs=obs.numpy(),
+                    error_obs=obs.numpy() if hasattr(obs, "numpy") else obs,
                     error_name=f"Arm {self.arm_id} Error",
                     fix_guidance=f"Inspect tool failure: {tool_result.stderr[:200]}",
                 )

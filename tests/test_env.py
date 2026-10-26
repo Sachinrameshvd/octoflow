@@ -2,7 +2,6 @@
 
 import pytest
 import numpy as np
-import torch
 
 from octopus_brain.config import EnvConfig
 from envs.reach_and_avoid import ReachAndAvoidEnv

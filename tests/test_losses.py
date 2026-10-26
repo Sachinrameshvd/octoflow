@@ -1,7 +1,8 @@
 """Unit tests for OctopusLoss and AdaptiveGateBudgeter."""
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.losses import AdaptiveGateBudgeter, OctopusLoss

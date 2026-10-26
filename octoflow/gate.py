@@ -7,10 +7,9 @@ Decides whether an arm executes silently or escalates an alert to the central
 conductor when sensory surprise exceeds the adaptive threshold θ.
 """
 
-from typing import Dict, Optional, Tuple, Union
+from __future__ import annotations
+from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
-import torch
-import torch.nn as nn
 
 from octoflow.tools import ToolResult
 
@@ -24,13 +23,15 @@ class SurpriseGate:
         obs_dim: int = 16,
         initial_threshold: float = 0.50,
         adaptation_rate: float = 0.05,
-        forward_model: Optional[nn.Module] = None,
+        forward_model: Optional[Any] = None,
+        backend: str = "numpy",
     ):
         self.arm_id = arm_id
         self.obs_dim = obs_dim
         self.threshold = float(initial_threshold)
         self.adaptation_rate = adaptation_rate
         self.forward_model = forward_model
+        self.backend = backend.strip().lower() if isinstance(backend, str) else "numpy"
 
         # Running statistics
         self.total_steps = 0
@@ -40,59 +41,104 @@ class SurpriseGate:
 
     def compute_surprise(
         self,
-        actual_obs: Union[torch.Tensor, np.ndarray],
-        expected_obs: Optional[Union[torch.Tensor, np.ndarray]] = None,
-        hidden_state: Optional[torch.Tensor] = None,
-        action_vector: Optional[torch.Tensor] = None,
+        actual_obs: Union[Any, np.ndarray],
+        expected_obs: Optional[Union[Any, np.ndarray]] = None,
+        hidden_state: Optional[Any] = None,
+        action_vector: Optional[Any] = None,
     ) -> float:
         """Compute the scalar sensory surprise ΔS_i = (1/D) * ||o_t - ô_t||²."""
-        if isinstance(actual_obs, np.ndarray):
-            actual_t = torch.tensor(actual_obs, dtype=torch.float32)
+        if self.backend == "torch":
+            try:
+                import torch
+            except ImportError:
+                raise ImportError(
+                    "PyTorch is required when gate backend='torch'. Install with: pip install 'octoflow[ml]'"
+                )
+            if isinstance(actual_obs, np.ndarray):
+                actual_t = torch.tensor(actual_obs, dtype=torch.float32)
+            else:
+                actual_t = actual_obs.detach().cpu()
+
+            # Corrupted / NaN / Inf inputs must trigger maximum sensory surprise
+            if torch.isnan(actual_t).any() or torch.isinf(actual_t).any():
+                return 1.0
+
+            if self.forward_model is not None and hidden_state is not None and action_vector is not None:
+                with torch.no_grad():
+                    fwd_in = torch.cat([hidden_state, action_vector], dim=-1)
+                    predicted_t = self.forward_model(fwd_in).squeeze()
+            elif expected_obs is not None:
+                if isinstance(expected_obs, np.ndarray):
+                    predicted_t = torch.tensor(expected_obs, dtype=torch.float32)
+                else:
+                    predicted_t = expected_obs.detach().cpu()
+            else:
+                baseline = torch.zeros(self.obs_dim, dtype=torch.float32)
+                if self.obs_dim > 0:
+                    baseline[-1] = 1.0
+                predicted_t = baseline
+
+            if actual_t.shape != predicted_t.shape:
+                min_dim = min(actual_t.numel(), predicted_t.numel())
+                if min_dim == 0:
+                    return 0.0
+                actual_t = actual_t.view(-1)[:min_dim]
+                predicted_t = predicted_t.view(-1)[:min_dim]
+
+            diff = actual_t - predicted_t
+            surprise = float(torch.mean(diff ** 2).item())
+            return float(max(0.0, min(1.0, surprise * 4.0)))
+
+        # NumPy path (default, lightweight)
+        if hasattr(actual_obs, "detach"):
+            actual_arr = actual_obs.detach().cpu().numpy().astype(np.float32)
         else:
-            actual_t = actual_obs.detach().cpu()
+            actual_arr = np.asarray(actual_obs, dtype=np.float32)
 
         # Corrupted / NaN / Inf inputs must trigger maximum sensory surprise (never silent false-negative)
-        if torch.isnan(actual_t).any() or torch.isinf(actual_t).any():
+        if np.isnan(actual_arr).any() or np.isinf(actual_arr).any():
             return 1.0
 
         # If forward model is provided, compute predicted observation ô_t from (h_t, action)
         if self.forward_model is not None and hidden_state is not None and action_vector is not None:
+            import torch
             with torch.no_grad():
                 fwd_in = torch.cat([hidden_state, action_vector], dim=-1)
                 predicted_t = self.forward_model(fwd_in).squeeze()
+                predicted_arr = predicted_t.detach().cpu().numpy().astype(np.float32)
         elif expected_obs is not None:
-            if isinstance(expected_obs, np.ndarray):
-                predicted_t = torch.tensor(expected_obs, dtype=torch.float32)
+            if hasattr(expected_obs, "detach"):
+                predicted_arr = expected_obs.detach().cpu().numpy().astype(np.float32)
             else:
-                predicted_t = expected_obs.detach().cpu()
+                predicted_arr = np.asarray(expected_obs, dtype=np.float32)
         else:
             # Analytical baseline expectation: clean execution (exit code 0, no stderr, quiescence=1.0)
-            baseline = torch.zeros(self.obs_dim, dtype=torch.float32)
+            baseline = np.zeros(self.obs_dim, dtype=np.float32)
             if self.obs_dim > 0:
                 baseline[-1] = 1.0  # Quiescence expected on last dimension
-            predicted_t = baseline
+            predicted_arr = baseline
 
-        # Ensure matching tensor shapes across varying dimensions
-        if actual_t.shape != predicted_t.shape:
-            min_dim = min(actual_t.numel(), predicted_t.numel())
+        # Ensure matching array shapes across varying dimensions
+        if actual_arr.shape != predicted_arr.shape:
+            min_dim = min(actual_arr.size, predicted_arr.size)
             if min_dim == 0:
                 return 0.0
-            actual_t = actual_t.view(-1)[:min_dim]
-            predicted_t = predicted_t.view(-1)[:min_dim]
+            actual_arr = actual_arr.reshape(-1)[:min_dim]
+            predicted_arr = predicted_arr.reshape(-1)[:min_dim]
 
         # Mean squared sensory prediction error across D dimensions
-        diff = actual_t - predicted_t
-        surprise = float(torch.mean(diff ** 2).item())
+        diff = actual_arr - predicted_arr
+        surprise = float(np.mean(diff ** 2))
 
         # Scale surprise into [0.0, 1.0] range
-        surprise_norm = max(0.0, min(1.0, surprise * 4.0))
+        surprise_norm = float(np.clip(surprise * 4.0, 0.0, 1.0))
         return surprise_norm
 
     def evaluate(
         self,
-        actual_obs: Union[torch.Tensor, np.ndarray],
+        actual_obs: Union[Any, np.ndarray],
         tool_result: ToolResult,
-        expected_obs: Optional[Union[torch.Tensor, np.ndarray]] = None,
+        expected_obs: Optional[Union[Any, np.ndarray]] = None,
     ) -> Tuple[bool, float, Dict[str, float]]:
         """Evaluate whether to escalate or remain silent.
 

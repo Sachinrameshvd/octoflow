@@ -11,7 +11,11 @@ isolated motor control to multi-arm cooperative hunting under high hazard pressu
 
 from typing import Dict, List, Optional, Tuple, Any, Union
 import numpy as np
-import torch
+# Optional torch import for environments; fallback to None if unavailable
+try:
+    import torch  # noqa: F401
+except ImportError:
+    torch = None
 
 from octopus_brain.config import EnvConfig
 from envs.reach_and_avoid import ReachAndAvoidEnv
@@ -160,7 +164,7 @@ class CurriculumEnv:
         return obs, info
 
     def step(
-        self, actions: Union[np.ndarray, torch.Tensor]
+        self, actions: Union[np.ndarray, Any]
     ) -> Tuple[np.ndarray, np.ndarray, bool, bool, Dict[str, Any]]:
         obs, rewards, term, trunc, info = self.active_env.step(actions)
         info["curriculum_stage"] = self.scheduler.stage

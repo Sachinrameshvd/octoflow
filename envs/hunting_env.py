@@ -10,7 +10,11 @@ In this underwater reef environment:
 
 from typing import Dict, List, Optional, Tuple, Any, Union
 import numpy as np
-import torch
+# Optional torch import for environments; fallback to None if unavailable
+try:
+    import torch  # noqa: F401
+except ImportError:
+    torch = None
 
 from octopus_brain.config import EnvConfig
 
@@ -221,10 +225,10 @@ class CooperativeHuntingEnv:
         return obs
 
     def step(
-        self, actions: Union[np.ndarray, torch.Tensor]
+        self, actions: Union[np.ndarray, Any]
     ) -> Tuple[np.ndarray, np.ndarray, bool, bool, Dict[str, Any]]:
         """Advance simulation by one time step."""
-        if isinstance(actions, torch.Tensor):
+        if torch is not None and isinstance(actions, torch.Tensor):
             actions = actions.detach().cpu().numpy()
 
         rewards = np.full(self.n_arms, self.config.step_penalty, dtype=np.float32)

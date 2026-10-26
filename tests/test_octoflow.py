@@ -15,7 +15,6 @@ import shutil
 import tempfile
 import pytest
 import numpy as np
-import torch
 
 from octoflow.config import (
     OctoFlowConfig,

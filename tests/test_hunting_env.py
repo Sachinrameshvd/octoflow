@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-import torch
 
 from octopus_brain.config import EnvConfig
 from envs.hunting_env import CooperativeHuntingEnv

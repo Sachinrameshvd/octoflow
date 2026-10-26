@@ -11,7 +11,6 @@ Verifies:
 import math
 import numpy as np
 import pytest
-import torch
 
 from octoflow.gate import SurpriseGate
 from octoflow.tools import ToolResult
