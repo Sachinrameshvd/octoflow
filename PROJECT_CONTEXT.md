@@ -197,7 +197,7 @@ The system can scale up to an entire **8-Octopus Consortium** (known as **The Oc
 ## 6. TECH STACK
 
 - **Languages:**
-  - Python 3.9+ (Core, Swarm, CLI, Server) `[VERIFIED IN CODE: pyproject.toml:L12]`
+  - Python 3.10+ (Core, Swarm, CLI, Server) `[VERIFIED IN CODE: pyproject.toml:L12]`
   - TypeScript 5.0+ / JavaScript ES Modules (3D WebGL Visualizer) `[VERIFIED IN CODE: visualizer/package.json]`
   - HTML5 & CSS3 (Visualizer HUD, Mission Audit Reports)
 - **Frameworks & Libraries:**

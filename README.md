@@ -4,7 +4,7 @@
 [![Tests](https://img.shields.io/badge/tests-73%20passed-brightgreen.svg)]()
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sachinrk/Droct/blob/main/notebooks/octopus_brain_quickstart.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Python: 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)]()
+[![Python: 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)]()
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org)
 [![ONNX](https://img.shields.io/badge/ONNX-v18%20Exported-blue.svg)](./checkpoints/octopus_brain.onnx)
 [![WASM](https://img.shields.io/badge/WebAssembly-In--Browser-purple.svg)]()

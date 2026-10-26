@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed (breaking)
+- **Python 3.9 EOL Support Dropped (P2.7)**: Raised minimum Python requirement to `>=3.10` in `pyproject.toml` following Python 3.9 end-of-life. Removed Python 3.9 classifier and updated CI matrix to Python 3.10, 3.11, and 3.12 (with 3.13 experimental allowed-failure).
 - **Mock Fallback Removed (Decision D1)**: Eliminated silent fallback to `MockLLMProvider` in live mode when real API providers fail or credentials are missing. Live runs with misconfigured or exhausted providers now raise `ProviderExhaustedError`, report `[FAILED]` with actionable configuration hints, sanitize all credentials, and exit with code 2.
 - **Truthful Run Outcomes**: Live mode runs that produce 0 filesystem modifications now report outcome `FAILED` (`model produced no file changes`) with exit code 2. Only runs that successfully commit changes report `COMPLETE`.
 - **Exit Code Contract**: Standardized exit codes across CLI:

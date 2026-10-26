@@ -10,10 +10,17 @@ jobs:
   test-base:
     name: Base Package Unit Tests (No Torch/ML)
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental || false }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12"]
+        experimental: [false]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.13"
+            experimental: true
 
     steps:
     - name: Checkout Code
@@ -41,10 +48,17 @@ jobs:
   test-ml:
     name: ML Optional Extra & Parity Verification
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental || false }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12"]
+        experimental: [false]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.13"
+            experimental: true
 
     steps:
     - name: Checkout Code
