@@ -28,7 +28,10 @@ import time
 from pathlib import Path
 import httpx
 import pytest
-import websockets
+try:
+    from websockets.asyncio.client import connect as ws_connect
+except ImportError:
+    from websockets import connect as ws_connect
 from websockets.exceptions import ConnectionClosed
 
 from octoflow.server import TelemetryBroadcaster, find_available_port
@@ -97,7 +100,7 @@ def test_websocket_accepts_no_origin(ephemeral_server):
     """Verify CLI / automated tests without an Origin header connect successfully."""
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
-        async with websockets.connect(uri) as ws:
+        async with ws_connect(uri) as ws:
             assert ws is not None
     asyncio.run(_test())
 
@@ -107,7 +110,7 @@ def test_websocket_accepts_localhost_origin(ephemeral_server):
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         origin = f"http://localhost:{ephemeral_server.port}"
-        async with websockets.connect(uri, origin=origin) as ws:
+        async with ws_connect(uri, origin=origin) as ws:
             assert ws is not None
     asyncio.run(_test())
 
@@ -117,7 +120,7 @@ def test_websocket_accepts_127_origin(ephemeral_server):
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         origin = f"http://127.0.0.1:{ephemeral_server.port}"
-        async with websockets.connect(uri, origin=origin) as ws:
+        async with ws_connect(uri, origin=origin) as ws:
             assert ws is not None
     asyncio.run(_test())
 
@@ -127,7 +130,7 @@ def test_websocket_rejects_evil_origin_with_1008(ephemeral_server):
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         with pytest.raises(ConnectionClosed) as exc_info:
-            async with websockets.connect(uri, origin="https://evil.example") as ws:
+            async with ws_connect(uri, origin="https://evil.example") as ws:
                 await ws.recv()
         close_code = exc_info.value.rcvd.code if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd else exc_info.value.code
         assert close_code == 1008
@@ -139,7 +142,7 @@ def test_websocket_rejects_arbitrary_web_page_origin(ephemeral_server):
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         with pytest.raises(ConnectionClosed) as exc_info:
-            async with websockets.connect(uri, origin="http://attacker.com:8080") as ws:
+            async with ws_connect(uri, origin="http://attacker.com:8080") as ws:
                 await ws.recv()
         close_code = exc_info.value.rcvd.code if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd else exc_info.value.code
         assert close_code == 1008
@@ -154,15 +157,52 @@ def test_vite_dev_mode_origin_behavior(ephemeral_server, dev_mode_server):
         # Production/default server rejects Vite dev origin
         uri_prod = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         with pytest.raises(ConnectionClosed) as exc_info:
-            async with websockets.connect(uri_prod, origin=vite_origin) as ws:
+            async with ws_connect(uri_prod, origin=vite_origin) as ws:
                 await ws.recv()
         close_code = exc_info.value.rcvd.code if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd else exc_info.value.code
         assert close_code == 1008
 
         # Dev server accepts Vite dev origin
         uri_dev = f"ws://127.0.0.1:{dev_mode_server.port}/ws/telemetry"
-        async with websockets.connect(uri_dev, origin=vite_origin) as ws:
+        async with ws_connect(uri_dev, origin=vite_origin) as ws:
             assert ws is not None
+    asyncio.run(_test())
+
+
+def test_websocket_e2e_message_flow(ephemeral_server):
+    """E2E Test: Proves local client connects, registers, and receives broadcast telemetry packets."""
+    import json
+
+    async def _test():
+        uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
+        async with ws_connect(uri) as ws:
+            # Wait briefly for server to register connection into active_sockets
+            await asyncio.sleep(0.15)
+            assert len(ephemeral_server.active_sockets) >= 1
+
+            test_event = SwarmTelemetryEvent(
+                event_type="STEP",
+                arm_id=4,
+                role="Backend Engineer",
+                status="DISPATCHED",
+                surprise=0.42,
+                threshold=0.35,
+                active_coalitions=[[1, 4]],
+                summary="Refactoring API endpoints",
+            )
+            ephemeral_server.broadcast(test_event)
+
+            msg = await asyncio.wait_for(ws.recv(), timeout=2.0)
+            data = json.loads(msg)
+            assert data["event_type"] == "STEP"
+            assert data["arm_id"] == 4
+            assert data["role"] == "Backend Engineer"
+            assert data["status"] == "DISPATCHED"
+            assert data["surprise"] == 0.42
+            assert data["threshold"] == 0.35
+            assert data["active_coalitions"] == [[1, 4]]
+            assert data["summary"] == "Refactoring API endpoints"
+
     asyncio.run(_test())
 
 

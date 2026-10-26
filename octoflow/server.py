@@ -338,7 +338,7 @@ class TelemetryBroadcaster:
             try:
                 self.loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self.loop)
-                config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="error")
+                config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="error", ws="websockets-sansio")
                 self.server_instance = uvicorn.Server(config)
                 self.loop.run_until_complete(self.server_instance.serve())
             except Exception as e:
