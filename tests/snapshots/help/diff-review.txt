@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octoflow diff-review [OPTIONS]                                                              
                                                                                                     
- Interactive file-by-file patch inspector and diff triage with AST validation.                      
+ Interactive file-by-file patch inspector and diff triage with AST validation. [experimental]       
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --dir   -d      <str>  Workspace folder [default: .]                                             │

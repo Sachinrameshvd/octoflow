@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octoflow federation [OPTIONS] [action]                                                      
                                                                                                     
- Zero-trust multi-machine agent federation and PII redaction pipeline.                              
+ Zero-trust multi-machine agent federation and PII redaction pipeline. [experimental]               
                                                                                                     
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
 │   action      <str>  Action: status, peers, test-pii [default: status]                           │

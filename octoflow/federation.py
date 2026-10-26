@@ -1,8 +1,12 @@
-"""OctoFlow Zero-Trust Agent Federation & PII-Gated Messaging Pipeline.
+"""OctoFlow PII/Secret Redactor & Experimental Agent Federation Pipeline.
 
-Provides peer node authentication, dynamic trust scoring, and an automated 14-pattern
-PII & secret redaction pipeline for safe cross-arm, cross-octopus, and cross-machine
-collaboration.
+CORE UTILITY:
+Provides automated 14-pattern PII, secret, and credential redaction (API keys,
+tokens, credit cards, emails) and safe log filtering across arms and swarms.
+
+EXPERIMENTAL / UNUSED:
+Networking and peer node trust scoring (FederationPeer, PeerTrustLevel) are
+currently experimental, unused prototypes. Networking for federation is not implemented.
 """
 
 import re
@@ -22,7 +26,7 @@ class PIIAction(str, Enum):
 
 
 class PeerTrustLevel(str, Enum):
-    """Zero-trust security tiers for federated cephalopod agents."""
+    """Zero-trust security tiers for federated cephalopod agents. [experimental: unused prototype]"""
     UNTRUSTED = "UNTRUSTED"  # Level 0: Public/unknown peer, strict PII redaction & discovery only
     PROBATION = "PROBATION"  # Level 1: Initial verified handshake, task requests permitted
     VERIFIED = "VERIFIED"    # Level 2: Proven reliability, partial memory share

@@ -1,4 +1,4 @@
-"""Test that CLI --help outputs match baseline snapshots with COLUMNS=100."""
+import os
 from pathlib import Path
 import pytest
 from typer.testing import CliRunner
@@ -14,10 +14,12 @@ def runner():
 
 def test_root_help_snapshot(runner):
     snapshot_file = SNAPSHOT_DIR / "_root.txt"
-    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
-    expected = snapshot_file.read_text(encoding="utf-8")
     result = runner.invoke(app, ["--help"], prog_name="octoflow")
     assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
 
 
@@ -27,19 +29,23 @@ def test_root_help_snapshot(runner):
 )
 def test_app_command_help_snapshots(runner, cmd_name):
     snapshot_file = SNAPSHOT_DIR / f"{cmd_name}.txt"
-    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
-    expected = snapshot_file.read_text(encoding="utf-8")
     result = runner.invoke(app, [cmd_name, "--help"], prog_name="octoflow")
     assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
 
 
 def test_octos_root_help_snapshot(runner):
     snapshot_file = SNAPSHOT_DIR / "octos__root.txt"
-    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
-    expected = snapshot_file.read_text(encoding="utf-8")
     result = runner.invoke(octos_app, ["--help"], prog_name="octos")
     assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
 
 
@@ -49,10 +55,12 @@ def test_octos_root_help_snapshot(runner):
 )
 def test_octos_command_help_snapshots(runner, cmd_name):
     snapshot_file = SNAPSHOT_DIR / f"octos__{cmd_name}.txt"
-    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
-    expected = snapshot_file.read_text(encoding="utf-8")
     result = runner.invoke(octos_app, [cmd_name, "--help"], prog_name="octos")
     assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
 
 

@@ -8,11 +8,18 @@ from octoflow.themes import load_saved_theme
 console = Console()
 
 
+_notice_printed = False
+
+
 def notify_cli_cmd(
     message: str = typer.Argument("OctoFlow Swarm Mission Update", help="Notification summary text"),
     url: Optional[str] = typer.Option(None, "--url", "-u", help="Target Slack or Discord webhook URL"),
 ):
-    """Dispatch mission status card to team Slack or Discord webhook."""
+    r"""Dispatch mission status card to team Slack or Discord webhook. \[experimental]"""
+    global _notice_printed
+    if not _notice_printed:
+        console.print("[yellow]Notice: 'notify' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
+        _notice_printed = True
     from octoflow.notify import send_mission_notification
     theme = load_saved_theme()
     ok = send_mission_notification(webhook_url=url, custom_message=message)

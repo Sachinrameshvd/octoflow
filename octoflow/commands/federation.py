@@ -8,11 +8,18 @@ from rich.table import Table
 console = Console()
 
 
+_notice_printed = False
+
+
 def federation_cli_cmd(
     action: str = typer.Argument("status", help="Action: status, peers, test-pii"),
     text: Optional[str] = typer.Option(None, "--text", "-t", help="Text to test against 14-rule PII filter"),
 ):
-    """Zero-trust multi-machine agent federation and PII redaction pipeline."""
+    r"""Zero-trust multi-machine agent federation and PII redaction pipeline. \[experimental]"""
+    global _notice_printed
+    if not _notice_printed:
+        console.print("[yellow]Notice: 'federation' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
+        _notice_printed = True
     from octoflow.federation import GLOBAL_FEDERATION_GUARD, PII_RULES
     from octoflow.themes import load_saved_theme
     theme = load_saved_theme()

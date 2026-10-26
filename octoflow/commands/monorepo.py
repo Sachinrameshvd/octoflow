@@ -8,10 +8,17 @@ from octoflow.themes import load_saved_theme
 console = Console()
 
 
+_notice_printed = False
+
+
 def monorepo_cli_cmd(
     workspace: str = typer.Option(".", "--dir", "-d", help="Workspace folder"),
 ):
-    """Scan and partition monorepo packages to specialist 8-arm roles."""
+    r"""Scan and partition monorepo packages to specialist 8-arm roles. \[experimental]"""
+    global _notice_printed
+    if not _notice_printed:
+        console.print("[yellow]Notice: 'monorepo' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
+        _notice_printed = True
     from octoflow.monorepo import scan_monorepo_topology
     theme = load_saved_theme()
     topo = scan_monorepo_topology(workspace)

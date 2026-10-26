@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octos eject [OPTIONS]                                                                       
                                                                                                     
- Eject autonomous standalone cephalopod agent harness into any repository.                          
+ Eject autonomous standalone cephalopod agent harness into any repository. [experimental]           
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --output  -o      <str>  Target output directory for standalone harness                          │

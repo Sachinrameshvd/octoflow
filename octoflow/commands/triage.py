@@ -7,11 +7,18 @@ from octoflow.themes import load_saved_theme
 console = Console()
 
 
+_notice_printed = False
+
+
 def triage_cli_cmd(
     workspace: str = typer.Option(".", "--dir", "-d", help="Workspace folder"),
     auto_approve: bool = typer.Option(False, "--yes", "-y", help="Auto-approve all AST-valid changes"),
 ):
-    """Interactive file-by-file patch inspector and diff triage with AST validation."""
+    r"""Interactive file-by-file patch inspector and diff triage with AST validation. \[experimental]"""
+    global _notice_printed
+    if not _notice_printed:
+        console.print("[yellow]Notice: 'triage' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
+        _notice_printed = True
     from octoflow.triage import triage_workspace_diffs
     theme = load_saved_theme()
     console.print(f"\n[{theme.rich_primary}]◈ OctoFlow Patch Triage: Reviewing uncommitted changes...[/{theme.rich_primary}]")

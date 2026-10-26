@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octos notify [OPTIONS] [message]                                                            
                                                                                                     
- Dispatch mission status card to team Slack or Discord webhook.                                     
+ Dispatch mission status card to team Slack or Discord webhook. [experimental]                      
                                                                                                     
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
 │   message      <str>  Notification summary text [default: OctoFlow Swarm Mission Update]         │

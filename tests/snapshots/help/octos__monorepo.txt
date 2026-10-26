@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octos monorepo [OPTIONS]                                                                    
                                                                                                     
- Scan and partition monorepo packages to specialist 8-arm roles.                                    
+ Scan and partition monorepo packages to specialist 8-arm roles. [experimental]                     
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --dir   -d      <str>  Workspace folder [default: .]                                             │

@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octoflow bench [OPTIONS]                                                                    
                                                                                                     
- Run standardized 8-arm algorithmic & architectural challenge benchmarks.                           
+ Run standardized 8-arm algorithmic & architectural challenge benchmarks. [experimental]            
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --task  -t      <str>  Specific challenge key (rate_limiter, lru_cache, jwt_auth,                │

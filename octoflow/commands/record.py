@@ -7,11 +7,18 @@ from octoflow.themes import load_saved_theme
 console = Console()
 
 
+_notice_printed = False
+
+
 def record_cli_cmd(
     output: str = typer.Option("octoflow_session.cast", "--output", "-o", help="Asciinema .cast output path"),
     title: str = typer.Option("OctoFlow Swarm Mission", "--title", "-t", help="Title for the recording session"),
 ):
-    """Launch recorded terminal session producing standard Asciinema v2 .cast."""
+    r"""Launch recorded terminal session producing standard Asciinema v2 .cast. \[experimental]"""
+    global _notice_printed
+    if not _notice_printed:
+        console.print("[yellow]Notice: 'record' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
+        _notice_printed = True
     from octoflow.recorder import TerminalRecorder
     theme = load_saved_theme()
     console.print(f"[{theme.rich_primary}]◈ OctoFlow Asciinema Recorder: Session started -> [bold]{output}[/bold][/{theme.rich_primary}]")

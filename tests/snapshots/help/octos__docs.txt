@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octos docs [OPTIONS]                                                                        
                                                                                                     
- Display interactive Cephalopod Master Manual and Developer Field Guide.                            
+ Display interactive Cephalopod Master Manual and Developer Field Guide. [experimental]             
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --chapter  -c      <str>  Specific chapter number or keyword (e.g. 1, 2, commands, playbooks)    │

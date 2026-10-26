@@ -1,7 +1,7 @@
                                                                                                     
  Usage: octoflow runner [OPTIONS]                                                                   
                                                                                                     
- Launch the Chrome Dino-style Benthic Dot Runner game.                                              
+ Launch the Chrome Dino-style Benthic Dot Runner game. [experimental]                               
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --help          Show this message and exit.                                                      │
