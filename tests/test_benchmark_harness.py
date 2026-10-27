@@ -294,3 +294,27 @@ def test_cli_bench_help():
     assert "--runs" in res.output
     assert "--seed" in res.output
     assert "--out" in res.output
+
+
+def test_fastapi_todo_task_execution():
+    task = next((t for t in BENCHMARK_SUITE if t.id == "fastapi_todo"), None)
+    assert task is not None
+    assert task.target_file == "app.py"
+    assert task.acceptance_test_file == "test_app.py"
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        fake_provider = FakeBenchmarkProvider(prompt_tokens=120, completion_tokens=80, estimated=False)
+        res = run_single_benchmark_run(
+            task=task,
+            mode="gated",
+            provider_name="fake",
+            seed=42,
+            temperature=0.0,
+            workspace_dir=tmp_dir,
+            custom_provider=fake_provider,
+            max_cycles=3,
+        )
+        assert res["task"] == "fastapi_todo"
+        assert res["acceptance_test_passed"] is True
+        assert "app.py" in res["files_written"]
+

@@ -261,6 +261,87 @@ assert order.index("auth") < order.index("app")
 print("VERIFICATION_PASSED")
 """,
     ),
+    BenchmarkTask(
+        id="fastapi_todo",
+        name="Tiny FastAPI Todo API",
+        category="Web",
+        objective="Implement a tiny FastAPI todo API in app.py with routes: GET /todos, POST /todos (accepting JSON {\"title\": str}), and DELETE /todos/{todo_id}",
+        target_file="app.py",
+        reference_solution="""from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Dict
+
+app = FastAPI()
+
+class TodoCreate(BaseModel):
+    title: str
+
+_todos: Dict[int, str] = {}
+_next_id: int = 1
+
+@app.get("/todos")
+def get_todos():
+    return [{"id": tid, "title": title} for tid, title in _todos.items()]
+
+@app.post("/todos", status_code=201)
+def create_todo(todo: TodoCreate):
+    global _next_id
+    item_id = _next_id
+    _next_id += 1
+    _todos[item_id] = todo.title
+    return {"id": item_id, "title": todo.title}
+
+@app.delete("/todos/{todo_id}")
+def delete_todo(todo_id: int):
+    if todo_id not in _todos:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    del _todos[todo_id]
+    return {"status": "deleted", "id": todo_id}
+""",
+        acceptance_test_file="test_app.py",
+        acceptance_test_code="""import pytest
+from fastapi.testclient import TestClient
+from app import app
+
+client = TestClient(app)
+
+def test_todo_api_lifecycle():
+    resp = client.get("/todos")
+    assert resp.status_code == 200
+    initial_count = len(resp.json())
+
+    post_resp = client.post("/todos", json={"title": "Buy groceries"})
+    assert post_resp.status_code in (200, 201)
+    data = post_resp.json()
+    assert "id" in data
+    assert data["title"] == "Buy groceries"
+    todo_id = data["id"]
+
+    list_resp = client.get("/todos")
+    assert list_resp.status_code == 200
+    todos = list_resp.json()
+    assert len(todos) == initial_count + 1
+    assert any(t["id"] == todo_id for t in todos)
+
+    del_resp = client.delete(f"/todos/{todo_id}")
+    assert del_resp.status_code in (200, 204)
+
+    del_again = client.delete(f"/todos/{todo_id}")
+    assert del_again.status_code == 404
+""",
+        verification_code="""from fastapi.testclient import TestClient
+from app import app
+client = TestClient(app)
+r = client.get("/todos")
+assert r.status_code == 200
+post = client.post("/todos", json={"title": "test"})
+assert post.status_code in (200, 201)
+tid = post.json()["id"]
+del_r = client.delete(f"/todos/{tid}")
+assert del_r.status_code in (200, 204)
+print("VERIFICATION_PASSED")
+""",
+    ),
 ]
 
 
@@ -301,6 +382,10 @@ class FakeBenchmarkProvider(BaseLLMProvider):
                 return task.target_file, task.reference_solution
         if "topo" in p_lower or "dag" in p_lower or "resolve_dependencies" in p_lower:
             task = next((t for t in BENCHMARK_SUITE if t.id == "dag_topo_sort"), None)
+            if task:
+                return task.target_file, task.reference_solution
+        if "fastapi" in p_lower or "todo" in p_lower or "app.py" in p_lower:
+            task = next((t for t in BENCHMARK_SUITE if t.id == "fastapi_todo"), None)
             if task:
                 return task.target_file, task.reference_solution
         return None

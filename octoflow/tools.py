@@ -13,6 +13,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -228,9 +229,13 @@ class WorkspaceSandbox:
             if val is not None:
                 clean_env[var] = val
 
-        # Ensure PATH is always present
-        if "PATH" not in clean_env:
-            clean_env["PATH"] = os.defpath
+        # Ensure PATH includes current Python environment directory
+        py_bin = str(Path(sys.executable).parent)
+        curr_path = clean_env.get("PATH", os.defpath)
+        if py_bin not in curr_path.split(os.pathsep):
+            clean_env["PATH"] = f"{py_bin}{os.pathsep}{curr_path}"
+        else:
+            clean_env["PATH"] = curr_path
 
         # Explicitly scrub any key that resembles a secret/credential even if in passthrough
         secret_indicators = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "AUTH", "APIKEY")
