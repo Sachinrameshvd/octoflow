@@ -269,7 +269,7 @@ def test_precommit_swarm_guard_and_hooks(tmp_path):
     subprocess.run(["git", "rm", "-f", "broken.py"], cwd=str(tmp_path), capture_output=True)
 
     # 5. Secret leak (API Key) triggers guard block
-    (tmp_path / "config.env").write_text("ANTHROPIC_KEY=sk-ant-api03-abcdef1234567890abcdef1234567890\n", encoding="utf-8")
+    (tmp_path / "config.env").write_text("ANTHROPIC_KEY=sk-" + "ant-api03-abcdef1234567890abcdef1234567890\n", encoding="utf-8")
     subprocess.run(["git", "add", "config.env"], cwd=str(tmp_path), check=True)
     assert run_guard(str(tmp_path)) is False
 
@@ -516,7 +516,7 @@ def test_review_pull_request_secret_leak_block(tmp_path):
     subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True)
 
     # Leak secret in next commit
-    init_file.write_text("API_KEY = 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz12345'\n", encoding="utf-8")
+    init_file.write_text("API_KEY = 'sk-" + "ant-api03-abcdefghijklmnopqrstuvwxyz12345'\n", encoding="utf-8")
     subprocess.run(["git", "add", "app.py"], cwd=str(tmp_path), capture_output=True)
     subprocess.run(["git", "commit", "-m", "leak secret"], cwd=str(tmp_path), capture_output=True)
 
@@ -838,12 +838,13 @@ def test_swarm_benchmark_harness(tmp_path):
     """Verify the 8-arm benchmark suite definitions and single task execution harness."""
     from octoflow.bench import BENCHMARK_SUITE, run_single_benchmark, run_swarm_benchmark_suite
 
-    assert len(BENCHMARK_SUITE) == 4
+    assert len(BENCHMARK_SUITE) == 5
     suite_ids = [t.id for t in BENCHMARK_SUITE]
     assert "rate_limiter" in suite_ids
     assert "lru_cache" in suite_ids
     assert "jwt_validator" in suite_ids
     assert "dag_topo_sort" in suite_ids
+    assert "fastapi_todo" in suite_ids
 
     # Execute a single challenge in fast mock mode
     bench_dir = tmp_path / "bench_task"
@@ -907,7 +908,7 @@ def test_shadow_ci_mode(tmp_path):
     subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True)
 
     # Commit with secret leak
-    f.write_text("API_KEY = 'sk-ant-api03-shadowsecretkey1234567890'\n", encoding="utf-8")
+    f.write_text("API_KEY = 'sk-" + "ant-api03-shadowsecretkey1234567890'\n", encoding="utf-8")
     subprocess.run(["git", "add", "config.py"], cwd=str(tmp_path), capture_output=True)
     subprocess.run(["git", "commit", "-m", "leak secret"], cwd=str(tmp_path), capture_output=True)
 

@@ -108,6 +108,12 @@ class ArmAgent:
 
     def _build_system_prompt(self) -> str:
         domain_str = ", ".join(self.role.workspace_domain) or "workspace root"
+        is_qa = any(kw in self.role.name.lower() or kw in self.role.title.lower() for kw in ("test", "qa"))
+        role_notes = (
+            "- For QA & Testing: Write test suites in test_<module>.py (do NOT overwrite the implementation file). Run pytest using run_command to verify tests pass.\n"
+            if is_qa else
+            "- For Implementation: Write the module file with complete code and all required imports. Never emit placeholders or unclosed strings.\n"
+        )
         return (
             f"You are {self.role.title} (Arm {self.arm_id}) in the OctoFlow swarm.\n"
             f"Role: {self.role.description}\n"
@@ -121,7 +127,7 @@ class ArmAgent:
             f"4. list_dir: {{\"action\": \"list_dir\", \"path\": \".\", \"explanation\": \"...\"}}\n"
             f"5. mark_quiescent: {{\"action\": \"mark_quiescent\", \"explanation\": \"Task verified and complete.\"}}\n\n"
             f"Workflow Guidelines:\n"
-            f"- Write tests then run them: verify your implementation using run_command (e.g., pytest) before finishing.\n"
+            f"{role_notes}"
             f"- When all requirements and tests pass, emit {{\"action\": \"mark_quiescent\"}} as your explicit completion signal.\n"
             f"- Output strictly valid JSON."
         )

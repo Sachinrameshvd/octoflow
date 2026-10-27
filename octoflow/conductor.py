@@ -243,7 +243,7 @@ class SupraesophagealConductor:
                 "lru", "jwt", "dag", "topo", "fastapi", "todo api", "todo", "algorithm",
                 "single file", "unit test", "implement "
             ]) and not any(kw in prompt_lower for kw in [
-                "full-stack", "fullstack", "react", "frontend and backend", "monorepo", "docker-compose"
+                "full-stack", "fullstack", "react", "vue", "svelte", "frontend", "monorepo", "docker-compose"
             ])
 
             if is_targeted:
@@ -251,7 +251,7 @@ class SupraesophagealConductor:
                 # Other arms remain idle and do not call the LLM.
                 sub_goals = {
                     2: f"Implement the required Python code, classes, and logic for: {user_prompt}",
-                    5: f"Write pytest tests and execute run_command to verify tests pass for: {user_prompt}",
+                    5: f"Write pytest tests in test_<module>.py and execute run_command to verify tests pass for: {user_prompt}",
                 }
             else:
                 sub_goals = {
