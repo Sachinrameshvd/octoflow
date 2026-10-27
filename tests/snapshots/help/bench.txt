@@ -4,19 +4,20 @@
  Run standardized 8-arm algorithmic & architectural challenge benchmarks. [experimental]            
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --task      -t      <str>  Challenge task ID ('all' or specific: rate_limiter, lru_cache,        │
-│                            jwt_validator, dag_topo_sort)                                         │
-│                            [default: all]                                                        │
-│ --mode      -m      <str>  Gate mode: gated, ungated, or both [default: both]                    │
-│ --provider  -p      <str>  LLM provider name: mock, fake, anthropic, openai, gemini, ollama,     │
-│                            etc.                                                                  │
-│                            [default: mock]                                                       │
-│ --model             <str>  Model identifier (optional, uses provider default if omitted)         │
-│ --runs      -n      <int>  Number of benchmark repetitions per task and mode (default: 3)        │
-│                            [default: 3]                                                          │
-│ --seed      -s      <int>  Base pseudo-random seed (default: 42) [default: 42]                   │
-│ --out       -o      <str>  Output directory for run JSONs and summary.md                         │
-│                            [default: benchmarks/results]                                         │
-│ --help                     Show this message and exit.                                           │
+│ --task             -t      <str>  Challenge task ID ('all' or specific: rate_limiter, lru_cache, │
+│                                   jwt_validator, dag_topo_sort)                                  │
+│                                   [default: all]                                                 │
+│ --mode             -m      <str>  Gate mode: gated, ungated, or both [default: both]             │
+│ --provider         -p      <str>  LLM provider name: mock, fake, anthropic, openai, gemini,      │
+│                                   ollama, etc.                                                   │
+│                                   [default: mock]                                                │
+│ --model                    <str>  Model identifier (optional, uses provider default if omitted)  │
+│ --runs             -n      <int>  Number of benchmark repetitions per task and mode (default: 3) │
+│                                   [default: 3]                                                   │
+│ --seed             -s      <int>  Base pseudo-random seed (default: 42) [default: 42]            │
+│ --out              -o      <str>  Output directory for run JSONs and summary.md                  │
+│                                   [default: benchmarks/results]                                  │
+│ --record-cassette          <str>  Directory to record LLM request/response cassettes             │
+│ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

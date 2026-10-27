@@ -17,6 +17,7 @@ def bench_cli_cmd(
     runs: int = typer.Option(3, "--runs", "-n", help="Number of benchmark repetitions per task and mode (default: 3)"),
     seed: int = typer.Option(42, "--seed", "-s", help="Base pseudo-random seed (default: 42)"),
     out: str = typer.Option("benchmarks/results", "--out", "-o", help="Output directory for run JSONs and summary.md"),
+    record_cassette: Optional[str] = typer.Option(None, "--record-cassette", help="Directory to record LLM request/response cassettes"),
 ):
     r"""Run standardized 8-arm algorithmic & architectural challenge benchmarks. \[experimental]"""
     global _notice_printed
@@ -33,6 +34,7 @@ def bench_cli_cmd(
         seed=seed,
         out_dir=out,
         console=console,
+        record_cassette=record_cassette,
     )
 
 

@@ -448,6 +448,7 @@ def run_single_benchmark_run(
     workspace_dir: Optional[str] = None,
     custom_provider: Optional[BaseLLMProvider] = None,
     max_cycles: int = 3,
+    record_cassette_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute a single benchmark run in an isolated sandbox and record truthful telemetry."""
     normalized_mode = "always_escalate" if mode in ("ungated", "always_escalate") else "gated"
@@ -475,6 +476,18 @@ def run_single_benchmark_run(
             custom_provider.set_ledger(conductor.usage_ledger)
             for arm in conductor.arms:
                 arm.provider = custom_provider
+
+        if record_cassette_dir:
+            from octoflow.cassette import CassetteRecorder
+            rec = CassetteRecorder(
+                provider=conductor.provider,
+                cassette_dir=record_cassette_dir,
+                workspace_root=target_dir,
+            )
+            rec.set_ledger(conductor.usage_ledger)
+            conductor.provider = rec
+            for arm in conductor.arms:
+                arm.provider = rec
 
         try:
             conductor.run_swarm(task.objective, max_cycles=max_cycles)
@@ -747,6 +760,7 @@ def run_benchmark_harness(
     out_dir: str = "benchmarks/results",
     custom_provider: Optional[BaseLLMProvider] = None,
     console: Optional[Console] = None,
+    record_cassette: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Primary entry point for running the honest benchmark harness."""
     c = console or Console()
@@ -795,6 +809,7 @@ def run_benchmark_harness(
                     seed=run_seed,
                     temperature=temperature,
                     custom_provider=custom_provider,
+                    record_cassette_dir=record_cassette,
                 )
                 all_runs.append(res)
 
