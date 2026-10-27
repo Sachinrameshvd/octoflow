@@ -1,0 +1,29 @@
+{
+  "task": "rate_limiter",
+  "task_name": "Sliding Window Rate Limiter",
+  "category": "Systems",
+  "mode": "always_escalate",
+  "provider": "fake",
+  "model": "fake-model-v1",
+  "seed": 44,
+  "temperature": 0.0,
+  "wall_time_seconds": 0.0125,
+  "llm_calls": 24,
+  "tokens": {
+    "prompt_tokens": 3600,
+    "completion_tokens": 1200,
+    "total_tokens": 4800,
+    "estimated": false
+  },
+  "files_written": [
+    "limiter.py"
+  ],
+  "acceptance_test_passed": true,
+  "outcome": "complete",
+  "settings": {
+    "temperature": 0.0,
+    "gate_mode": "always_escalate",
+    "seed": 44,
+    "max_cycles": 3
+  }
+}

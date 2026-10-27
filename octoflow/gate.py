@@ -25,6 +25,7 @@ class SurpriseGate:
         adaptation_rate: float = 0.05,
         forward_model: Optional[Any] = None,
         backend: str = "numpy",
+        gate_mode: str = "gated",
     ):
         self.arm_id = arm_id
         self.obs_dim = obs_dim
@@ -32,6 +33,7 @@ class SurpriseGate:
         self.adaptation_rate = adaptation_rate
         self.forward_model = forward_model
         self.backend = backend.strip().lower() if isinstance(backend, str) else "numpy"
+        self.gate_mode = "always_escalate" if str(gate_mode).strip().lower() in ("always_escalate", "ungated") else "gated"
 
         # Running statistics
         self.total_steps = 0
@@ -156,7 +158,10 @@ class SurpriseGate:
             # Ensure significant surprise for fatal tool crashes
             surprise = max(surprise, 0.65)
 
-        should_escalate = (surprise > self.threshold)
+        if self.gate_mode == "always_escalate":
+            should_escalate = True
+        else:
+            should_escalate = (surprise > self.threshold)
 
         if should_escalate:
             self.escalation_count += 1
@@ -177,6 +182,7 @@ class SurpriseGate:
             "silent_steps": float(self.silent_steps),
             "escalations": float(self.escalation_count),
             "savings_pct": savings_pct,
+            "gate_mode": self.gate_mode,
         }
 
         return should_escalate, surprise, telemetry

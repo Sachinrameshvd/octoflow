@@ -18,6 +18,7 @@ from octoflow.tools import WorkspaceSandbox
 from octoflow.bus import InterBrachialBus
 from octoflow.memory import VerticalLobeMemory
 from octoflow.provider import BaseLLMProvider, get_llm_provider
+from octoflow.usage import UsageLedger
 from octoflow.arm import ArmAgent, ArmStepResult
 from octoflow.logging_config import get_logger
 from octoflow.coalition import extract_coalitions_from_matrix
@@ -153,21 +154,28 @@ class SupraesophagealConductor:
             self.memory.index_codebase(self.config.workspace_dir)
         except Exception as e:
             logger.debug("Codebase vector indexing failed: %s", e)  # best-effort: optional RAG enhancement
+        self.usage_ledger = UsageLedger()
         self.provider = get_llm_provider(self.config, dry_run=is_dry)
+        self.provider.set_ledger(self.usage_ledger)
 
         # Initialize 8 arm agents with cognitive tier provider routing
         self.roster: List[ArmRoleConfig] = self.config.get_roster()
-        self.arms: List[ArmAgent] = [
-            ArmAgent(
-                role_config=role,
-                sandbox=self.sandbox,
-                provider=get_llm_provider(self.config, tier=role.model_tier, dry_run=is_dry),
-                bus=self.bus,
-                memory=self.memory,
-                obs_dim=self.config.obs_dim,
+        self.arms: List[ArmAgent] = []
+        for role in self.roster:
+            arm_provider = get_llm_provider(self.config, tier=role.model_tier, dry_run=is_dry)
+            arm_provider.set_ledger(self.usage_ledger)
+            self.arms.append(
+                ArmAgent(
+                    role_config=role,
+                    sandbox=self.sandbox,
+                    provider=arm_provider,
+                    bus=self.bus,
+                    memory=self.memory,
+                    obs_dim=self.config.obs_dim,
+                    gate_mode=getattr(self.config, "gate_mode", "gated"),
+                    temperature=getattr(self.config, "temperature", None),
+                )
             )
-            for role in self.roster
-        ]
 
         # 8x8 pairwise dynamic coalition attention matrix
         self.coalition_matrix = np.zeros((8, 8), dtype=np.float32)
@@ -571,6 +579,7 @@ class SupraesophagealConductor:
             total_cost_dollars=self.total_cost,
             token_reduction_pct=savings_pct,
             execution_time_seconds=total_time,
+            usage_ledger=self.usage_ledger,
             extra={
                 "objective": objective,
                 "status": status_str,

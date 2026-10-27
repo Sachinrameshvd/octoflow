@@ -52,6 +52,8 @@ class ArmAgent:
         encoder: Optional[CodeSensoryEncoder] = None,
         obs_dim: int = 16,
         hidden_dim: int = 64,
+        gate_mode: str = "gated",
+        temperature: Optional[float] = None,
     ):
         self.role = role_config
         self.arm_id = role_config.arm_id
@@ -60,12 +62,14 @@ class ArmAgent:
         self.bus = bus
         self.memory = memory
         self.encoder = encoder or get_encoder(obs_dim=obs_dim)
+        self.temperature = temperature
 
         self.gate = SurpriseGate(
             arm_id=self.arm_id,
             obs_dim=obs_dim,
             initial_threshold=role_config.initial_threshold,
             backend=getattr(self.encoder, "backend", "numpy"),
+            gate_mode=gate_mode,
         )
 
         self.status = "IDLE"
@@ -227,10 +231,13 @@ class ArmAgent:
             f"Choose your next tool action in JSON:"
         )
 
-        # 4. Generate LLM action with biophysically modulated temperature
+        # 4. Generate LLM action with biophysically modulated temperature (or fixed temperature if specified)
         system_prompt = self._build_system_prompt()
         last_surprise = self.gate.surprise_history[-1] if self.gate.surprise_history else 0.0
-        dyn_temp, _ = self.gate.compute_generation_parameters(last_surprise)
+        if self.temperature is not None:
+            dyn_temp = float(self.temperature)
+        else:
+            dyn_temp, _ = self.gate.compute_generation_parameters(last_surprise)
         llm_resp: LLMResponse = self.provider.generate(
             prompt=prompt,
             system_prompt=system_prompt,
@@ -279,7 +286,13 @@ class ArmAgent:
         escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
 
         # 7. Update status
-        if self.is_quiescent or (tool_result.success and not escalate and not coalition_context and tool_result.tool_name == "write_file"):
+        if self.is_quiescent or (
+            self.gate.gate_mode != "always_escalate"
+            and tool_result.success
+            and not escalate
+            and not coalition_context
+            and tool_result.tool_name == "write_file"
+        ):
             self.is_quiescent = True
             self.status = "QUIESCENT"
         elif escalate:
@@ -366,10 +379,13 @@ class ArmAgent:
             f"Choose your next tool action in JSON:"
         )
 
-        # 4. Asynchronously generate LLM action with biophysically modulated temperature
+        # 4. Asynchronously generate LLM action with biophysically modulated temperature (or fixed temperature if specified)
         system_prompt = self._build_system_prompt()
         last_surprise = self.gate.surprise_history[-1] if self.gate.surprise_history else 0.0
-        dyn_temp, _ = self.gate.compute_generation_parameters(last_surprise)
+        if self.temperature is not None:
+            dyn_temp = float(self.temperature)
+        else:
+            dyn_temp, _ = self.gate.compute_generation_parameters(last_surprise)
         llm_resp: LLMResponse = await self.provider.agenerate(
             prompt=prompt,
             system_prompt=system_prompt,
@@ -432,7 +448,13 @@ class ArmAgent:
         escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
 
         # 7. Update status
-        if self.is_quiescent or (tool_result.success and not escalate and not coalition_context and tool_result.tool_name == "write_file"):
+        if self.is_quiescent or (
+            self.gate.gate_mode != "always_escalate"
+            and tool_result.success
+            and not escalate
+            and not coalition_context
+            and tool_result.tool_name == "write_file"
+        ):
             self.is_quiescent = True
             self.status = "QUIESCENT"
         elif escalate:

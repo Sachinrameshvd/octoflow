@@ -1,0 +1,29 @@
+{
+  "task": "dag_topo_sort",
+  "task_name": "Topological DAG Resolver",
+  "category": "Architecture",
+  "mode": "gated",
+  "provider": "fake",
+  "model": "fake-model-v1",
+  "seed": 43,
+  "temperature": 0.0,
+  "wall_time_seconds": 0.0115,
+  "llm_calls": 22,
+  "tokens": {
+    "prompt_tokens": 3300,
+    "completion_tokens": 1100,
+    "total_tokens": 4400,
+    "estimated": false
+  },
+  "files_written": [
+    "topo.py"
+  ],
+  "acceptance_test_passed": true,
+  "outcome": "complete",
+  "settings": {
+    "temperature": 0.0,
+    "gate_mode": "gated",
+    "seed": 43,
+    "max_cycles": 3
+  }
+}

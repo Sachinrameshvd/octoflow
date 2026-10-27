@@ -36,6 +36,7 @@ class RunResult:
     total_cost_dollars: float = 0.0
     token_reduction_pct: float = 0.0
     execution_time_seconds: float = 0.0
+    usage_ledger: Optional[Any] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def __getitem__(self, key: str) -> Any:

@@ -424,6 +424,9 @@ class OctoFlowConfig(BaseModel):
     max_budget_dollars: float = 5.00
     max_steps_per_arm: int = 15
     surprise_threshold: float = 0.50
+    gate_mode: str = "gated"  # "gated" or "always_escalate"
+    allow_mock: bool = False
+    is_bench: bool = False
     auto_git_checkpoint: bool = True
     sandbox_mode: str = "local"  # "local" or "docker"
     docker_image: str = "python:3.12-slim"

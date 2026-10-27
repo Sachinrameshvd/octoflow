@@ -34,6 +34,7 @@ VALID_PROVIDERS: Set[str] = {
     "deepseek",
     "ollama",
     "mock",
+    "fake",
 }
 
 _WARNED_EXTRAS: Set[str] = set()
@@ -166,6 +167,19 @@ class DefaultsSettings(BaseModel):
     default_model: Optional[str] = "claude-3-5-sonnet-20241022"
     default_scale: int = 1
     encoder_backend: str = "numpy"
+    gate_mode: str = "gated"
+
+    @field_validator("gate_mode")
+    @classmethod
+    def validate_gate_mode(cls, v: str) -> str:
+        v_clean = str(v).strip().lower()
+        if v_clean in ("always_escalate", "ungated"):
+            return "always_escalate"
+        if v_clean in ("gated", "normal"):
+            return "gated"
+        raise ValueError(
+            f"Unknown gate_mode '{v}'. Allowed modes: 'gated', 'always_escalate'"
+        )
 
     @field_validator("encoder_backend")
     @classmethod

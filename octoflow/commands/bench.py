@@ -3,28 +3,37 @@
 from typing import Optional
 import typer
 from rich.console import Console
-from octoflow.themes import load_saved_theme
 
 console = Console()
-
 
 _notice_printed = False
 
 
 def bench_cli_cmd(
-    task: Optional[str] = typer.Option(None, "--task", "-t", help="Specific challenge key (rate_limiter, lru_cache, jwt_auth, topological_dag)"),
-    mode: str = typer.Option("balanced", "--mode", "-m", help="Execution tier: fast, balanced, powerful"),
-    workspace: str = typer.Option(".octoflow_bench", "--dir", "-d", help="Directory for benchmark sandbox execution"),
+    task: str = typer.Option("all", "--task", "-t", help="Challenge task ID ('all' or specific: rate_limiter, lru_cache, jwt_validator, dag_topo_sort)"),
+    mode: str = typer.Option("both", "--mode", "-m", help="Gate mode: gated, ungated, or both"),
+    provider: str = typer.Option("mock", "--provider", "-p", help="LLM provider name: mock, fake, anthropic, openai, gemini, ollama, etc."),
+    model: Optional[str] = typer.Option(None, "--model", help="Model identifier (optional, uses provider default if omitted)"),
+    runs: int = typer.Option(3, "--runs", "-n", help="Number of benchmark repetitions per task and mode (default: 3)"),
+    seed: int = typer.Option(42, "--seed", "-s", help="Base pseudo-random seed (default: 42)"),
+    out: str = typer.Option("benchmarks/results", "--out", "-o", help="Output directory for run JSONs and summary.md"),
 ):
     r"""Run standardized 8-arm algorithmic & architectural challenge benchmarks. \[experimental]"""
     global _notice_printed
     if not _notice_printed:
         console.print("[yellow]Notice: 'bench' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
         _notice_printed = True
-    from octoflow.bench import run_swarm_benchmark_suite
-    theme = load_saved_theme()
-    console.print(f"\n[{theme.rich_primary}]◈ OctoFlow Swarm Benchmark Suite: Starting evaluation harness...[/{theme.rich_primary}]\n")
-    run_swarm_benchmark_suite(task_key=task, mode=mode, workspace_dir=workspace, console=console)
+    from octoflow.bench import run_benchmark_harness
+    run_benchmark_harness(
+        task=task,
+        mode=mode,
+        provider=provider,
+        model=model,
+        runs=runs,
+        seed=seed,
+        out_dir=out,
+        console=console,
+    )
 
 
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:

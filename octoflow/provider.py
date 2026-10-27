@@ -20,6 +20,7 @@ import httpx
 from octoflow.config import OctoFlowConfig, LLMConfigEntry
 from octoflow.outcome import ProviderExhaustedError, OctoFlowError
 from octoflow.logging_config import get_logger
+from octoflow.usage import UsageLedger, estimate_tokens_from_chars
 
 logger = get_logger("provider")
 
@@ -426,6 +427,15 @@ class LLMResponse(BaseModel):
     total_tokens: int = 0
     estimated_cost_dollars: float = 0.0
     tool_calls: List[Dict[str, Any]] = []
+    estimated: bool = False
+
+    @property
+    def prompt_tokens(self) -> int:
+        return self.tokens_prompt
+
+    @property
+    def completion_tokens(self) -> int:
+        return self.tokens_completion
 
 
 class BaseLLMProvider(ABC):
@@ -437,6 +447,22 @@ class BaseLLMProvider(ABC):
     sleep_fn: Optional[Callable[[float], None]] = None
     asleep_fn: Optional[Callable[[float], Any]] = None
     timeout: Optional[httpx.Timeout] = None
+    usage_ledger: Optional[UsageLedger] = None
+
+    def set_ledger(self, ledger: Optional[UsageLedger]) -> None:
+        """Attach a UsageLedger to accumulate token consumption."""
+        self.usage_ledger = ledger
+
+    def record_usage(self, response: LLMResponse) -> None:
+        """Record usage into attached ledger if present."""
+        if self.usage_ledger is not None:
+            self.usage_ledger.record(
+                prompt_tokens=response.tokens_prompt,
+                completion_tokens=response.tokens_completion,
+                estimated=response.estimated,
+                provider=self.provider_name,
+                model=self.model,
+            )
 
     @abstractmethod
     def generate(
@@ -484,16 +510,19 @@ class MockLLMProvider(BaseLLMProvider):
         # Check explicit custom scripts
         for pattern, response in self.script_responses.items():
             if pattern.lower() in prompt_lower:
-                tokens_in = len(prompt) // 4
-                tokens_out = len(response) // 4
+                tokens_in = estimate_tokens_from_chars(prompt)
+                tokens_out = estimate_tokens_from_chars(response)
                 self.total_tokens_spent += (tokens_in + tokens_out)
-                return LLMResponse(
+                resp = LLMResponse(
                     content=response,
                     tokens_prompt=tokens_in,
                     tokens_completion=tokens_out,
                     total_tokens=tokens_in + tokens_out,
                     estimated_cost_dollars=0.0,
+                    estimated=True,
                 )
+                self.record_usage(resp)
+                return resp
 
         # Default intelligent mock responses for various agent roles
         if "developer question:" in prompt_lower or "inquiry:" in prompt_lower:
@@ -508,6 +537,104 @@ class MockLLMProvider(BaseLLMProvider):
                 "action": "run_command",
                 "command": "python -c 'print(\"1 passed in 0.01s\")'",
                 "explanation": "Running unit test suite to verify code contracts.",
+            })
+        elif "slidingwindowratelimiter" in prompt_lower or "limiter.py" in prompt_lower or "rate limiter" in prompt_lower:
+            content = json.dumps({
+                "action": "write_file",
+                "path": "limiter.py",
+                "content": (
+                    "import time\nimport threading\n\n"
+                    "class SlidingWindowRateLimiter:\n"
+                    "    def __init__(self):\n"
+                    "        self._lock = threading.Lock()\n"
+                    "        self._requests = {}\n\n"
+                    "    def allow_request(self, client_id: str, limit: int, window_sec: float) -> bool:\n"
+                    "        with self._lock:\n"
+                    "            now = time.time()\n"
+                    "            timestamps = self._requests.setdefault(client_id, [])\n"
+                    "            self._requests[client_id] = [t for t in timestamps if now - t < window_sec]\n"
+                    "            if len(self._requests[client_id]) < limit:\n"
+                    "                self._requests[client_id].append(now)\n"
+                    "                return True\n"
+                    "            return False\n"
+                ),
+                "explanation": "Implemented thread-safe SlidingWindowRateLimiter in limiter.py",
+            })
+        elif "lrucache" in prompt_lower or "lru.py" in prompt_lower or "lru cache" in prompt_lower:
+            content = json.dumps({
+                "action": "write_file",
+                "path": "lru.py",
+                "content": (
+                    "from collections import OrderedDict\n\n"
+                    "class LRUCache:\n"
+                    "    def __init__(self, capacity: int):\n"
+                    "        self.capacity = capacity\n"
+                    "        self.cache = OrderedDict()\n\n"
+                    "    def get(self, key: int) -> int:\n"
+                    "        if key not in self.cache:\n"
+                    "            return -1\n"
+                    "        self.cache.move_to_end(key)\n"
+                    "        return self.cache[key]\n\n"
+                    "    def put(self, key: int, value: int) -> None:\n"
+                    "        if key in self.cache:\n"
+                    "            self.cache.move_to_end(key)\n"
+                    "        self.cache[key] = value\n"
+                    "        if len(self.cache) > self.capacity:\n"
+                    "            self.cache.popitem(last=False)\n"
+                ),
+                "explanation": "Implemented O(1) LRUCache in lru.py",
+            })
+        elif "generate_token" in prompt_lower or "auth.py" in prompt_lower or "jwt" in prompt_lower:
+            content = json.dumps({
+                "action": "write_file",
+                "path": "auth.py",
+                "content": (
+                    "import hmac\nimport hashlib\nimport json\nimport base64\n\n"
+                    "def generate_token(payload: dict, secret: str) -> str:\n"
+                    "    payload_str = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()\n"
+                    "    signature = hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()\n"
+                    "    return f'{payload_str}.{signature}'\n\n"
+                    "def verify_token(token: str, secret: str) -> dict:\n"
+                    "    try:\n"
+                    "        parts = token.split('.')\n"
+                    "        if len(parts) != 2:\n"
+                    "            return None\n"
+                    "        payload_str, signature = parts\n"
+                    "        expected_sig = hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()\n"
+                    "        if not hmac.compare_digest(signature, expected_sig):\n"
+                    "            return None\n"
+                    "        return json.loads(base64.urlsafe_b64decode(payload_str.encode()).decode())\n"
+                    "    except Exception:\n"
+                    "        return None\n"
+                ),
+                "explanation": "Implemented HMAC-SHA256 JWT Tokenizer in auth.py",
+            })
+        elif "resolve_dependencies" in prompt_lower or "topo.py" in prompt_lower or "topological" in prompt_lower or "dag" in prompt_lower:
+            content = json.dumps({
+                "action": "write_file",
+                "path": "topo.py",
+                "content": (
+                    "def resolve_dependencies(nodes, edges):\n"
+                    "    from collections import defaultdict, deque\n"
+                    "    in_degree = {n: 0 for n in nodes}\n"
+                    "    adj = defaultdict(list)\n"
+                    "    for u, v in edges:\n"
+                    "        adj[v].append(u)\n"
+                    "        in_degree[u] += 1\n"
+                    "    queue = deque([n for n in nodes if in_degree[n] == 0])\n"
+                    "    order = []\n"
+                    "    while queue:\n"
+                    "        curr = queue.popleft()\n"
+                    "        order.append(curr)\n"
+                    "        for neighbor in adj[curr]:\n"
+                    "            in_degree[neighbor] -= 1\n"
+                    "            if in_degree[neighbor] == 0:\n"
+                    "                queue.append(neighbor)\n"
+                    "    if len(order) != len(nodes):\n"
+                    "        raise ValueError('Cycle detected in graph')\n"
+                    "    return order\n"
+                ),
+                "explanation": "Implemented Topological DAG Resolver in topo.py",
             })
         elif "write" in prompt_lower or "create" in prompt_lower:
             content = json.dumps({
@@ -529,17 +656,20 @@ class MockLLMProvider(BaseLLMProvider):
                 "explanation": "Task objectives satisfied in full.",
             })
 
-        tokens_in = len(prompt) // 4
-        tokens_out = len(content) // 4
+        tokens_in = estimate_tokens_from_chars(prompt)
+        tokens_out = estimate_tokens_from_chars(content)
         self.total_tokens_spent += (tokens_in + tokens_out)
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=tokens_in,
             tokens_completion=tokens_out,
             total_tokens=tokens_in + tokens_out,
             estimated_cost_dollars=0.0,
+            estimated=True,
         )
+        self.record_usage(resp)
+        return resp
 
     async def agenerate(
         self,
@@ -602,19 +732,29 @@ class AnthropicProvider(BaseLLMProvider):
             data = resp.json()
 
         content = data["content"][0]["text"]
-        in_toks = data.get("usage", {}).get("input_tokens", len(prompt) // 4)
-        out_toks = data.get("usage", {}).get("output_tokens", len(content) // 4)
+        usage = data.get("usage")
+        if usage and usage.get("input_tokens") is not None and usage.get("output_tokens") is not None:
+            in_toks = int(usage["input_tokens"])
+            out_toks = int(usage["output_tokens"])
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
 
         # Claude 3.5 Sonnet pricing: $3 / MTok in, $15 / MTok out
         cost = (in_toks * 0.000003) + (out_toks * 0.000015)
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
             total_tokens=in_toks + out_toks,
             estimated_cost_dollars=cost,
+            estimated=estimated,
         )
+        self.record_usage(resp)
+        return resp
 
     async def agenerate(
         self,
@@ -644,17 +784,27 @@ class AnthropicProvider(BaseLLMProvider):
             data = resp.json()
 
         content = data["content"][0]["text"]
-        in_toks = data.get("usage", {}).get("input_tokens", len(prompt) // 4)
-        out_toks = data.get("usage", {}).get("output_tokens", len(content) // 4)
+        usage = data.get("usage")
+        if usage and usage.get("input_tokens") is not None and usage.get("output_tokens") is not None:
+            in_toks = int(usage["input_tokens"])
+            out_toks = int(usage["output_tokens"])
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
         cost = (in_toks * 0.000003) + (out_toks * 0.000015)
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
             total_tokens=in_toks + out_toks,
             estimated_cost_dollars=cost,
+            estimated=estimated,
         )
+        self.record_usage(resp)
+        return resp
 
 
 class OpenAIProvider(BaseLLMProvider):
@@ -714,19 +864,29 @@ class OpenAIProvider(BaseLLMProvider):
             data = resp.json()
 
         content = data["choices"][0]["message"]["content"]
-        in_toks = data.get("usage", {}).get("prompt_tokens", len(prompt) // 4)
-        out_toks = data.get("usage", {}).get("completion_tokens", len(content) // 4)
+        usage = data.get("usage")
+        if usage and usage.get("prompt_tokens") is not None and usage.get("completion_tokens") is not None:
+            in_toks = int(usage["prompt_tokens"])
+            out_toks = int(usage["completion_tokens"])
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
 
         # GPT-4o pricing: $2.50 / MTok in, $10 / MTok out
         cost = (in_toks * 0.0000025) + (out_toks * 0.000010)
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
             total_tokens=in_toks + out_toks,
             estimated_cost_dollars=cost,
+            estimated=estimated,
         )
+        self.record_usage(resp)
+        return resp
 
     async def agenerate(
         self,
@@ -759,17 +919,27 @@ class OpenAIProvider(BaseLLMProvider):
             data = resp.json()
 
         content = data["choices"][0]["message"]["content"]
-        in_toks = data.get("usage", {}).get("prompt_tokens", len(prompt) // 4)
-        out_toks = data.get("usage", {}).get("completion_tokens", len(content) // 4)
+        usage = data.get("usage")
+        if usage and usage.get("prompt_tokens") is not None and usage.get("completion_tokens") is not None:
+            in_toks = int(usage["prompt_tokens"])
+            out_toks = int(usage["completion_tokens"])
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
         cost = (in_toks * 0.0000025) + (out_toks * 0.000010)
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
             total_tokens=in_toks + out_toks,
             estimated_cost_dollars=cost,
+            estimated=estimated,
         )
+        self.record_usage(resp)
+        return resp
 
 
 class GeminiProvider(OpenAIProvider):
@@ -851,16 +1021,27 @@ class OllamaProvider(BaseLLMProvider):
             data = resp.json()
 
         content = data.get("response", "")
-        in_toks = data.get("prompt_eval_count", len(prompt) // 4)
-        out_toks = data.get("eval_count", len(content) // 4)
+        in_eval = data.get("prompt_eval_count")
+        out_eval = data.get("eval_count")
+        if in_eval is not None and out_eval is not None:
+            in_toks = int(in_eval)
+            out_toks = int(out_eval)
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
             total_tokens=in_toks + out_toks,
             estimated_cost_dollars=0.0,  # 100% free offline
+            estimated=estimated,
         )
+        self.record_usage(resp)
+        return resp
 
     async def agenerate(
         self,
@@ -890,16 +1071,27 @@ class OllamaProvider(BaseLLMProvider):
                 data = resp.json()
 
         content = data.get("response", "")
-        in_toks = data.get("prompt_eval_count", len(prompt) // 4)
-        out_toks = data.get("eval_count", len(content) // 4)
+        in_eval = data.get("prompt_eval_count")
+        out_eval = data.get("eval_count")
+        if in_eval is not None and out_eval is not None:
+            in_toks = int(in_eval)
+            out_toks = int(out_eval)
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
 
-        return LLMResponse(
+        resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
             total_tokens=in_toks + out_toks,
             estimated_cost_dollars=0.0,
+            estimated=estimated,
         )
+        self.record_usage(resp)
+        return resp
 
 
 class FailoverLLMProvider(BaseLLMProvider):
@@ -920,6 +1112,15 @@ class FailoverLLMProvider(BaseLLMProvider):
         self.fallbacks = fallbacks or []
         self.on_failover = on_failover
         self.failover_history: List[Dict[str, Any]] = []
+
+    def set_ledger(self, ledger: Optional[UsageLedger]) -> None:
+        """Attach UsageLedger to self and all underlying cascade providers."""
+        self.usage_ledger = ledger
+        if hasattr(self.primary, "set_ledger"):
+            self.primary.set_ledger(ledger)
+        for fb in self.fallbacks:
+            if hasattr(fb, "set_ledger"):
+                fb.set_ledger(ledger)
 
     def generate(
         self,
@@ -1323,8 +1524,12 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
     p_name = provider_name.lower().strip()
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
 
+    if p_name == "fake":
+        from octoflow.bench import FakeBenchmarkProvider
+        return FakeBenchmarkProvider()
+
     if p_name == "mock":
-        if is_dry:
+        if is_dry or getattr(config, "allow_mock", False) or getattr(config, "is_bench", False):
             return MockLLMProvider()
         raise ProviderExhaustedError(
             "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
@@ -1436,8 +1641,12 @@ def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None, dry_run
     elif tier == "fast" and config.fast_provider:
         provider_name = config.fast_provider.lower()
 
+    if provider_name == "fake":
+        from octoflow.bench import FakeBenchmarkProvider
+        return FakeBenchmarkProvider()
+
     if provider_name == "mock":
-        if is_dry or is_testing:
+        if is_dry or is_testing or getattr(config, "allow_mock", False) or getattr(config, "is_bench", False):
             return MockLLMProvider()
         raise ProviderExhaustedError(
             "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",

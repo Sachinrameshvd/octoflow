@@ -1,0 +1,29 @@
+{
+  "task": "lru_cache",
+  "task_name": "O(1) LRU Cache",
+  "category": "Algorithms",
+  "mode": "gated",
+  "provider": "fake",
+  "model": "fake-model-v1",
+  "seed": 43,
+  "temperature": 0.0,
+  "wall_time_seconds": 0.0109,
+  "llm_calls": 22,
+  "tokens": {
+    "prompt_tokens": 3300,
+    "completion_tokens": 1100,
+    "total_tokens": 4400,
+    "estimated": false
+  },
+  "files_written": [
+    "lru.py"
+  ],
+  "acceptance_test_passed": true,
+  "outcome": "complete",
+  "settings": {
+    "temperature": 0.0,
+    "gate_mode": "gated",
+    "seed": 43,
+    "max_cycles": 3
+  }
+}
