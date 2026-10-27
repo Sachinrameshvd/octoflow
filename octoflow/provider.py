@@ -1609,12 +1609,12 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
 
     elif p_name == "ollama":
         url = config.base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-        if tier == "fast":
-            model = config.fast_model or "qwen2.5-coder:1.5b"
-        elif tier == "frontier":
-            model = config.frontier_model or "deepseek-coder-v2:16b"
+        if tier == "fast" and config.fast_model:
+            model = config.fast_model
+        elif tier == "frontier" and config.frontier_model:
+            model = config.frontier_model
         else:
-            model = config.model_name if ("coder" in config.model_name or "llama" in config.model_name) else "qwen2.5-coder:7b"
+            model = config.model_name or "qwen2.5-coder:7b"
         return OllamaProvider(base_url=url, model=model)
 
     if is_dry:

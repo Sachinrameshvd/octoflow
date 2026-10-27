@@ -671,8 +671,9 @@ def run_benchmark_harness(
     if task == "all":
         selected_tasks = list(BENCHMARK_SUITE)
     else:
-        # Match task ID or alias
-        matched = [t for t in BENCHMARK_SUITE if t.id == task or task in t.id]
+        # Match task ID or alias (handling hyphens and underscores interchangeably)
+        norm_task = task.lower().replace("-", "_")
+        matched = [t for t in BENCHMARK_SUITE if t.id == task or task in t.id or norm_task == t.id.replace("-", "_")]
         if not matched:
             valid_ids = [t.id for t in BENCHMARK_SUITE]
             raise ValueError(f"Unknown task '{task}'. Available: {valid_ids}")
