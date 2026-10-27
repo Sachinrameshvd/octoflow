@@ -109,16 +109,21 @@ class ArmAgent:
     def _build_system_prompt(self) -> str:
         domain_str = ", ".join(self.role.workspace_domain) or "workspace root"
         return (
-            f"You are {self.role.title} (Arm {self.arm_id}) in the OctoFlow cephalopod swarm.\n"
-            f"Role Description: {self.role.description}\n"
-            f"Your Assigned Domain: {domain_str}\n"
-            f"Rule 1: Execute actions using ONLY the requested JSON structure.\n"
-            f"Rule 2: Available actions: 'write_file', 'read_file', 'run_command', 'mark_quiescent'.\n"
-            f"Rule 3: Execute tasks efficiently and silently. Do not output conversational text.\n"
-            f"JSON format example:\n"
-            f'{{"action": "write_file", "path": "models/user.py", "content": "class User: pass", "explanation": "Creating user model"}}\n'
-            f'or {{"action": "run_command", "command": "pytest tests/", "explanation": "Running test suite"}}\n'
-            f'or {{"action": "mark_quiescent", "explanation": "All objectives satisfied"}}'
+            f"You are {self.role.title} (Arm {self.arm_id}) in the OctoFlow swarm.\n"
+            f"Role: {self.role.description}\n"
+            f"Workspace Root: All file paths are relative to workspace root (e.g. 'limiter.py', 'app.py', 'test_app.py').\n"
+            f"Assigned Domain: {domain_str}\n\n"
+            f"Allowed Tools (respond with ONLY a JSON object):\n"
+            f"1. write_file: {{\"action\": \"write_file\", \"path\": \"relative/path.py\", \"content\": \"...\", \"explanation\": \"...\"}}\n"
+            f"   - Write complete, robust, self-contained Python code without placeholders. Always include all required standard library imports (e.g., import time, import threading).\n"
+            f"2. read_file: {{\"action\": \"read_file\", \"path\": \"relative/path.py\", \"explanation\": \"...\"}}\n"
+            f"3. run_command: {{\"action\": \"run_command\", \"command\": \"pytest -q <test_file>\", \"explanation\": \"...\"}}\n"
+            f"4. list_dir: {{\"action\": \"list_dir\", \"path\": \".\", \"explanation\": \"...\"}}\n"
+            f"5. mark_quiescent: {{\"action\": \"mark_quiescent\", \"explanation\": \"Task verified and complete.\"}}\n\n"
+            f"Workflow Guidelines:\n"
+            f"- Write tests then run them: verify your implementation using run_command (e.g., pytest) before finishing.\n"
+            f"- When all requirements and tests pass, emit {{\"action\": \"mark_quiescent\"}} as your explicit completion signal.\n"
+            f"- Output strictly valid JSON."
         )
 
     def _parse_llm_action(self, text: str) -> Dict[str, Any]:
@@ -322,10 +327,22 @@ class ArmAgent:
             f"Step {s['step']}: {s['action']} -> {'SUCCESS' if s['success'] else 'FAIL'}: {s['summary']}"
             for s in self.saccade_buffer[-2:]
         )
-
         recent_history_block = f"Recent Tool History:\n{recent_history}\n" if recent_history else ""
+
+        # Workspace files overview
+        existing_files = []
+        try:
+            for p in sorted(self.sandbox.root.iterdir()):
+                if not p.name.startswith((".", "__")) and p.name not in ("venv", ".git"):
+                    existing_files.append(p.name)
+        except Exception:
+            pass
+        files_str = ", ".join(existing_files) if existing_files else "(empty workspace)"
+
         prompt = (
             f"Current Arm Objective: {sub_goal}\n"
+            f"Execution Step: {self.step_count} of max {max_steps}\n"
+            f"Workspace Files: {files_str}\n"
             f"{f'Active Coalition Context: {coalition_context}' if coalition_context else ''}\n"
             f"{lateral_notes}\n"
             f"{recalled_guidance}\n"
@@ -412,13 +429,15 @@ class ArmAgent:
         escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
 
         # 7. Update status
+        is_qa_or_tester = any(kw in self.role.name.lower() or kw in self.role.title.lower() for kw in ("test", "qa"))
         if self.is_quiescent or (
             self.gate.gate_mode != "always_escalate"
             and tool_result.success
             and not escalate
             and not coalition_context
             and tool_result.tool_name == "write_file"
-        ):
+            and not is_qa_or_tester
+        ) or self.step_count >= max_steps:
             self.is_quiescent = True
             self.status = "QUIESCENT"
         elif escalate:
@@ -440,7 +459,7 @@ class ArmAgent:
             "step": self.step_count,
             "action": action_type,
             "success": tool_result.success,
-            "summary": (tool_result.stdout or tool_result.stderr)[:150],
+            "summary": (tool_result.stdout or tool_result.stderr or "")[:400],
         })
         if len(self.saccade_buffer) > 3:
             self.saccade_buffer.pop(0)
@@ -494,10 +513,22 @@ class ArmAgent:
             f"Step {s['step']}: {s['action']} -> {'SUCCESS' if s['success'] else 'FAIL'}: {s['summary']}"
             for s in self.saccade_buffer[-2:]
         )
-
         recent_history_block = f"Recent Tool History:\n{recent_history}\n" if recent_history else ""
+
+        # Workspace files overview
+        existing_files = []
+        try:
+            for p in sorted(self.sandbox.root.iterdir()):
+                if not p.name.startswith((".", "__")) and p.name not in ("venv", ".git"):
+                    existing_files.append(p.name)
+        except Exception:
+            pass
+        files_str = ", ".join(existing_files) if existing_files else "(empty workspace)"
+
         prompt = (
             f"Current Arm Objective: {sub_goal}\n"
+            f"Execution Step: {self.step_count} of max {max_steps}\n"
+            f"Workspace Files: {files_str}\n"
             f"{f'Active Coalition Context: {coalition_context}' if coalition_context else ''}\n"
             f"{lateral_notes}\n"
             f"{recalled_guidance}\n"
@@ -516,7 +547,7 @@ class ArmAgent:
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=dyn_temp,
-            max_tokens=512,
+            max_tokens=2048,
         )
         self.total_tokens += llm_resp.total_tokens
         self.total_cost += llm_resp.estimated_cost_dollars
@@ -594,13 +625,15 @@ class ArmAgent:
         escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
 
         # 7. Update status
+        is_qa_or_tester = any(kw in self.role.name.lower() or kw in self.role.title.lower() for kw in ("test", "qa"))
         if self.is_quiescent or (
             self.gate.gate_mode != "always_escalate"
             and tool_result.success
             and not escalate
             and not coalition_context
             and tool_result.tool_name == "write_file"
-        ):
+            and not is_qa_or_tester
+        ) or self.step_count >= max_steps:
             self.is_quiescent = True
             self.status = "QUIESCENT"
         elif escalate:
@@ -621,7 +654,7 @@ class ArmAgent:
             "step": self.step_count,
             "action": action_type,
             "success": tool_result.success,
-            "summary": (tool_result.stdout or tool_result.stderr)[:150],
+            "summary": (tool_result.stdout or tool_result.stderr or "")[:400],
         })
         if len(self.saccade_buffer) > 3:
             self.saccade_buffer.pop(0)
