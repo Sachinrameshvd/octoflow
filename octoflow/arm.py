@@ -122,67 +122,170 @@ class ArmAgent:
         )
 
     def _parse_llm_action(self, text: str) -> Dict[str, Any]:
-        """Extract structured action JSON from LLM text, handling markdown blocks and formatting quirks."""
+        """Extract structured action JSON from LLM text, handling markdown blocks, trailing commas, and formatting quirks."""
         cleaned = text.strip()
-        # Strip markdown fences
+        if not cleaned:
+            return {
+                "action": "invalid_action",
+                "error": "Empty response from model. Please output a valid tool action JSON object.",
+            }
+
+        # 1. Search for markdown code block containing JSON: ```json ... ``` or ``` ... ```
+        candidate = None
         fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
         if fence_match:
-            candidate = fence_match.group(1)
+            candidate = fence_match.group(1).strip()
         else:
             first_brace = cleaned.find("{")
             last_brace = cleaned.rfind("}")
             if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-                candidate = cleaned[first_brace:last_brace + 1]
-            else:
-                candidate = cleaned
+                candidate = cleaned[first_brace:last_brace + 1].strip()
 
-        # Attempt standard JSON parse
-        try:
-            parsed = json.loads(candidate)
-            if isinstance(parsed, dict) and "action" in parsed:
-                return self._sanitize_action_dict(parsed)
-        except Exception as e:
-            logger.debug("Candidate text is not valid standard JSON: %s", e, exc_info=True)  # best-effort: model output may be free-form text
+        if candidate:
+            # Attempt 1: direct parse with strict=False to tolerate unescaped control chars
+            try:
+                parsed = json.loads(candidate, strict=False)
+                if isinstance(parsed, dict):
+                    return self._sanitize_action_dict(parsed)
+            except Exception as e:
+                logger.debug("Candidate text is not valid standard JSON: %s", e)
 
-        # Try repairing trailing commas
-        try:
-            repaired = re.sub(r",\s*([\}\]])", r"\1", candidate)
-            parsed = json.loads(repaired)
-            if isinstance(parsed, dict) and "action" in parsed:
-                return self._sanitize_action_dict(parsed)
-        except Exception as e:
-            logger.debug("Repaired candidate text is not valid JSON: %s", e, exc_info=True)  # best-effort: falling back to heuristic classification
+            # Attempt 2: trailing comma repair
+            try:
+                repaired = re.sub(r",\s*([\}\]])", r"\1", candidate)
+                parsed = json.loads(repaired, strict=False)
+                if isinstance(parsed, dict):
+                    return self._sanitize_action_dict(parsed)
+            except Exception as e:
+                logger.debug("Repaired candidate text is not valid JSON: %s", e)
 
-        # Fallback heuristic
-        lowered = text.lower()
-        if "quiescent" in lowered or "all objectives satisfied" in lowered or "task complete" in lowered:
+            # Attempt 3: single-quote evaluation if valid Python literal dict
+            try:
+                import ast
+                val = ast.literal_eval(candidate)
+                if isinstance(val, dict):
+                    return self._sanitize_action_dict(val)
+            except Exception:
+                pass
+
+        # 2. Heuristics for completion
+        lowered = cleaned.lower()
+        if "mark_quiescent" in lowered or "all objectives satisfied" in lowered or "task complete" in lowered or "all tests pass" in lowered:
             return {"action": "mark_quiescent", "explanation": "Marking complete via text heuristic"}
 
-        if "def " in text or "import " in text or "<html" in text or "FROM " in text:
-            fname = "app.py"
-            if "<html" in text:
-                fname = "index.html"
-            elif "FROM " in text:
-                fname = "Dockerfile"
-            return self._sanitize_action_dict({
-                "action": "write_file",
-                "path": fname,
-                "content": text,
-                "explanation": "Extracted code from direct LLM output",
-            })
+        # 3. Direct python code block fallback (if model dumped code without JSON wrapper)
+        code_block_match = re.search(r"```(?:python|py)?\s*(.*?)\s*```", cleaned, re.DOTALL)
+        if code_block_match:
+            code_text = code_block_match.group(1).strip()
+            if code_text and ("def " in code_text or "import " in code_text or "class " in code_text):
+                fname = "main.py"
+                if "test_" in code_text or "pytest" in code_text or "assert " in code_text:
+                    fname = "test_main.py"
+                return self._sanitize_action_dict({
+                    "action": "write_file",
+                    "path": fname,
+                    "content": code_text,
+                    "explanation": "Extracted code from direct LLM code block",
+                })
 
-        return {"action": "read_file", "path": "README.md", "explanation": "Fallback inspection"}
+        # 4. If unparseable, return invalid_action with corrective instructions
+        snippet = cleaned[:200].replace("\n", " ")
+        return {
+            "action": "invalid_action",
+            "error": f"Invalid tool format. Expected JSON like {{\"action\": \"write_file\", \"path\": \"...\", \"content\": \"...\"}} or {{\"action\": \"run_command\", \"command\": \"...\"}}. Received: '{snippet}'",
+        }
 
     def _sanitize_action_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Sanitize action dictionary keys and paths."""
-        action = str(data.get("action", "read_file")).strip()
-        data["action"] = action
-        if "path" in data and isinstance(data["path"], str):
-            clean_path = data["path"].strip().strip("'\"").lstrip("/\\")
-            data["path"] = clean_path or "output.txt"
-        if "command" in data and isinstance(data["command"], str):
-            data["command"] = data["command"].strip()
-        return data
+        """Normalize keys, action names, and paths for structured actions."""
+        key_aliases = {
+            "tool": "action",
+            "function": "action",
+            "tool_name": "action",
+            "name": "action",
+            "file": "path",
+            "filename": "path",
+            "filepath": "path",
+            "target": "path",
+            "code": "content",
+            "body": "content",
+            "text": "content",
+            "file_content": "content",
+            "cmd": "command",
+            "shell": "command",
+            "exec": "command",
+            "reason": "explanation",
+            "desc": "explanation",
+            "description": "explanation",
+        }
+        normalized: Dict[str, Any] = {}
+        for k, v in data.items():
+            norm_k = key_aliases.get(str(k).lower(), str(k).lower())
+            if norm_k not in normalized:
+                normalized[norm_k] = v
+
+        action = str(normalized.get("action", "")).strip().lower()
+
+        action_aliases = {
+            "create_file": "write_file",
+            "write": "write_file",
+            "save_file": "write_file",
+            "overwrite_file": "write_file",
+            "cat": "read_file",
+            "view_file": "read_file",
+            "open_file": "read_file",
+            "read": "read_file",
+            "run": "run_command",
+            "shell": "run_command",
+            "bash": "run_command",
+            "execute": "run_command",
+            "exec": "run_command",
+            "dir": "list_dir",
+            "ls": "list_dir",
+            "list_files": "list_dir",
+            "done": "mark_quiescent",
+            "complete": "mark_quiescent",
+            "finish": "mark_quiescent",
+            "stop": "mark_quiescent",
+            "quiescent": "mark_quiescent",
+        }
+        action = action_aliases.get(action, action)
+        normalized["action"] = action
+
+        allowed_actions = {"write_file", "read_file", "run_command", "list_dir", "mark_quiescent"}
+        if action not in allowed_actions:
+            return {
+                "action": "invalid_action",
+                "error": f"Unknown tool '{action}'. Allowed tools: write_file, read_file, run_command, list_dir, mark_quiescent.",
+                "raw": data,
+            }
+
+        if action == "write_file":
+            path = str(normalized.get("path", "")).strip().strip("'\"").lstrip("/\\")
+            normalized["path"] = path or "main.py"
+            if "content" not in normalized:
+                normalized["content"] = ""
+            elif not isinstance(normalized["content"], str):
+                normalized["content"] = str(normalized["content"])
+
+        elif action == "read_file":
+            path = str(normalized.get("path", "")).strip().strip("'\"").lstrip("/\\")
+            normalized["path"] = path or "README.md"
+
+        elif action == "run_command":
+            cmd = str(normalized.get("command", "")).strip()
+            if not cmd:
+                return {
+                    "action": "invalid_action",
+                    "error": "Missing 'command' argument for run_command.",
+                    "raw": data,
+                }
+            normalized["command"] = cmd
+
+        elif action == "list_dir":
+            path = str(normalized.get("path", ".")).strip().strip("'\"")
+            normalized["path"] = path or "."
+
+        return normalized
 
     def step(
         self,
@@ -266,6 +369,9 @@ class ArmAgent:
         elif action_type == "run_command":
             cmd = action_data.get("command", "ls")
             tool_result = self.sandbox.run_command(cmd)
+        elif action_type == "list_dir":
+            path = action_data.get("path", ".")
+            tool_result = self.sandbox.list_dir(path)
         elif action_type == "mark_quiescent":
             self.is_quiescent = True
             tool_result = ToolResult(
@@ -274,6 +380,26 @@ class ArmAgent:
                 success=True,
                 returncode=0,
                 stdout="Sub-goal completed.",
+            )
+        elif action_type == "invalid_action":
+            err_msg = action_data.get("error", "Invalid or unknown tool action.")
+            tool_result = ToolResult(
+                tool_name="invalid_action",
+                target="",
+                success=False,
+                returncode=1,
+                stderr=err_msg,
+                error=err_msg,
+            )
+        else:
+            err_msg = f"Unknown tool '{action_type}'. Allowed tools: write_file, read_file, run_command, list_dir, mark_quiescent."
+            tool_result = ToolResult(
+                tool_name=action_type,
+                target="",
+                success=False,
+                returncode=1,
+                stderr=err_msg,
+                error=err_msg,
             )
 
         # 6. Encode into sensory observation & evaluate Surprise Gate
@@ -427,6 +553,26 @@ class ArmAgent:
                     success=True,
                     returncode=0,
                     stdout="Sub-goal completed.",
+                )
+            elif action_type == "invalid_action":
+                err_msg = action_data.get("error", "Invalid or unknown tool action.")
+                tool_result = ToolResult(
+                    tool_name="invalid_action",
+                    target="",
+                    success=False,
+                    returncode=1,
+                    stderr=err_msg,
+                    error=err_msg,
+                )
+            else:
+                err_msg = f"Unknown tool '{action_type}'. Allowed tools: write_file, read_file, run_command, list_dir, mark_quiescent."
+                tool_result = ToolResult(
+                    tool_name=action_type,
+                    target="",
+                    success=False,
+                    returncode=1,
+                    stderr=err_msg,
+                    error=err_msg,
                 )
         except Exception as e:
             tool_result = ToolResult(
