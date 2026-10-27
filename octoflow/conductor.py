@@ -237,16 +237,33 @@ class SupraesophagealConductor:
                 7: f"Package application into Docker container with docker-compose for: {user_prompt}",
             }
         else:  # SOFTWARE_DEV
-            sub_goals = {
-                0: f"Define system architecture, folder topology, and interface specifications for: {user_prompt}",
-                1: f"Create database schemas, models, and persistence connectors for: {user_prompt}",
-                2: f"Implement backend REST/WebSocket API endpoints and controllers for: {user_prompt}",
-                3: f"Scaffold package.json, index.html, and develop frontend UI views, responsive layout, and components for: {user_prompt}",
-                4: f"Build client reactive state management, custom hooks, and store for: {user_prompt}",
-                5: f"Write unit test suites, integration tests, and edge-case verifications for: {user_prompt}",
-                6: f"Perform security audit, dependency checks, and input sanitization for: {user_prompt}",
-                7: f"Generate Dockerfile, deployment configs, and comprehensive README.md for: {user_prompt}",
-            }
+            prompt_lower = user_prompt.lower()
+            is_targeted = any(kw in prompt_lower for kw in [
+                ".py", "module", "class ", "function ", "rate limiter", "rate-limiter",
+                "lru", "jwt", "dag", "topo", "fastapi", "todo api", "todo", "algorithm",
+                "single file", "unit test", "implement "
+            ]) and not any(kw in prompt_lower for kw in [
+                "full-stack", "fullstack", "react", "frontend and backend", "monorepo", "docker-compose"
+            ])
+
+            if is_targeted:
+                # Sane work distribution: assign work only to relevant arms (Backend + QA).
+                # Other arms remain idle and do not call the LLM.
+                sub_goals = {
+                    2: f"Implement the required Python code, classes, and logic for: {user_prompt}",
+                    5: f"Write pytest tests and execute run_command to verify tests pass for: {user_prompt}",
+                }
+            else:
+                sub_goals = {
+                    0: f"Define system architecture, folder topology, and interface specifications for: {user_prompt}",
+                    1: f"Create database schemas, models, and persistence connectors for: {user_prompt}",
+                    2: f"Implement backend REST/WebSocket API endpoints and controllers for: {user_prompt}",
+                    3: f"Scaffold package.json, index.html, and develop frontend UI views, responsive layout, and components for: {user_prompt}",
+                    4: f"Build client reactive state management, custom hooks, and store for: {user_prompt}",
+                    5: f"Write unit test suites, integration tests, and edge-case verifications for: {user_prompt}",
+                    6: f"Perform security audit, dependency checks, and input sanitization for: {user_prompt}",
+                    7: f"Generate Dockerfile, deployment configs, and comprehensive README.md for: {user_prompt}",
+                }
 
         if topo_note:
             sub_goals = {arm_id: f"{goal}{topo_note}" for arm_id, goal in sub_goals.items()}
@@ -441,6 +458,12 @@ class SupraesophagealConductor:
         is_dry = getattr(self.config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
         mode = RunMode.DRY_RUN if is_dry else RunMode.LIVE
 
+        # Mark arms not assigned work in decomposition as quiescent so they do not call the LLM
+        for arm in self.arms:
+            if arm.arm_id not in sub_goals:
+                arm.is_quiescent = True
+                arm.status = "QUIESCENT"
+
         for cycle in range(max_cycles):
             final_cycles = cycle + 1
             # Check global quiescence
@@ -449,7 +472,7 @@ class SupraesophagealConductor:
                 break
 
             # Find active arms and their coalition contexts
-            active_arms = [arm for arm in self.arms if not arm.is_quiescent]
+            active_arms = [arm for arm in self.arms if not arm.is_quiescent and arm.arm_id in sub_goals]
             if not active_arms:
                 break
 
