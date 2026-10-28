@@ -1524,7 +1524,7 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
     p_name = provider_name.lower().strip()
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
 
-    if p_name == "fake":
+    if p_name in ("fake", "replay"):
         from octoflow.bench import FakeBenchmarkProvider
         return FakeBenchmarkProvider()
 
