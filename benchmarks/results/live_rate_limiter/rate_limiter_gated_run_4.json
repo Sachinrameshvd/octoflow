@@ -1,0 +1,29 @@
+{
+  "task": "rate_limiter",
+  "task_name": "Sliding Window Rate Limiter",
+  "category": "Systems",
+  "mode": "gated",
+  "provider": "ollama",
+  "model": "qwen2.5-coder:7b",
+  "seed": 45,
+  "temperature": 0.0,
+  "wall_time_seconds": 159.7234,
+  "llm_calls": 4,
+  "tokens": {
+    "prompt_tokens": 1860,
+    "completion_tokens": 1258,
+    "total_tokens": 3118,
+    "estimated": false
+  },
+  "files_written": [
+    "limiter.py"
+  ],
+  "acceptance_test_passed": true,
+  "outcome": "complete",
+  "settings": {
+    "temperature": 0.0,
+    "gate_mode": "gated",
+    "seed": 45,
+    "max_cycles": 3
+  }
+}

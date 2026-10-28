@@ -32,6 +32,19 @@ The evaluation suite runs four standardized algorithmic and architectural challe
    - *Target:* `topo.py`
    - *Objective:* Dependency resolution with valid topological order and cycle detection.
    - *Acceptance:* Validated via `test_topo.py` using `pytest`.
+5. **Tiny FastAPI Todo API (`fastapi_todo`):**
+   - *Target:* `app.py`
+   - *Objective:* REST endpoints `GET /todos`, `POST /todos`, and `DELETE /todos/{id}` with 404 validation.
+   - *Acceptance:* Validated via `test_app.py` using `TestClient` and `pytest`.
+
+### Verified Live Local LLM Performance (Ollama `qwen2.5-coder:7b`)
+
+| Canonical Task | Target File | Mode | Runs | Pass Rate | LLM Calls (Med) | Tokens (Med) | Wall Time (Med) |
+|---|---|---|---|---|---|---|---|
+| `rate_limiter` | `limiter.py` | Gated | 5 | **100% (5/5)** | 4 | 3,118 | 129.06s |
+| `fastapi_todo` | `app.py` | Gated | 5 | **100% (5/5)** | 4 | 3,193 | 185.27s |
+
+*For complete failure taxonomy, root cause analysis, and cassette replay, see `docs/audit/P3.2-failure-taxonomy.md` and `docs/model-compatibility.md`.*
 
 ---
 
