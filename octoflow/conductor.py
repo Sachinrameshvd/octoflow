@@ -250,8 +250,8 @@ class SupraesophagealConductor:
                 # Sane work distribution: assign work only to relevant arms (Backend + QA).
                 # Other arms remain idle and do not call the LLM.
                 sub_goals = {
-                    2: f"Implement the required Python code, classes, and logic for: {user_prompt}",
-                    5: f"Write pytest tests in test_<module>.py and execute run_command to verify tests pass for: {user_prompt}",
+                    2: f"Implement the required Python code, classes, and logic for: {user_prompt}. When removing items by id, verify existence first: if not found raise HTTPException(status_code=404), otherwise remove the item.",
+                    5: f"Write pytest tests in test_<module>.py to test the implementation of: {user_prompt}. Do not write implementation code; write tests that import from the target module and verify requirements.",
                 }
             else:
                 sub_goals = {

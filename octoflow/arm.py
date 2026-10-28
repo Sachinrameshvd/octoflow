@@ -378,14 +378,26 @@ class ArmAgent:
 
         # 5. Execute action inside sandbox
         tool_result = ToolResult(tool_name="noop", target="", success=True)
+        is_qa = any(kw in self.role.name.lower() or kw in self.role.title.lower() for kw in ("test", "qa"))
         if action_type == "write_file":
             path = action_data.get("path", "temp.py")
             content = action_data.get("content", "")
-            try:
-                with self.sandbox.file_lock(path, self.arm_id):
-                    tool_result = self.sandbox.write_file(path, content, arm_id=self.arm_id)
-            except Exception as e:
-                tool_result = ToolResult(tool_name="write_file", target=path, success=False, returncode=1, stderr=str(e), error=str(e))
+            p_clean = str(path).strip().lower()
+            if is_qa and not (p_clean.startswith("test_") or "test" in p_clean or p_clean.startswith("tests/")):
+                tool_result = ToolResult(
+                    tool_name="write_file",
+                    target=path,
+                    success=False,
+                    returncode=1,
+                    stderr=f"Action rejected: QA arm cannot write implementation file '{path}'. Write test suites in 'test_<module>.py' or 'tests/' instead.",
+                    error=f"Action rejected: QA arm cannot write implementation file '{path}'. Write test suites in 'test_<module>.py' or 'tests/' instead.",
+                )
+            else:
+                try:
+                    with self.sandbox.file_lock(path, self.arm_id):
+                        tool_result = self.sandbox.write_file(path, content, arm_id=self.arm_id)
+                except Exception as e:
+                    tool_result = ToolResult(tool_name="write_file", target=path, success=False, returncode=1, stderr=str(e), error=str(e))
         elif action_type == "read_file":
             path = action_data.get("path", "README.md")
             tool_result = self.sandbox.read_file(path)
@@ -565,14 +577,26 @@ class ArmAgent:
         # 5. Asynchronously execute action inside sandbox
         tool_result = ToolResult(tool_name="noop", target="", success=True)
         try:
+            is_qa = any(kw in self.role.name.lower() or kw in self.role.title.lower() for kw in ("test", "qa"))
             if action_type == "write_file":
                 path = action_data.get("path", "temp.py")
                 content = action_data.get("content", "")
-                try:
-                    with self.sandbox.file_lock(path, self.arm_id):
-                        tool_result = await self.sandbox.awrite_file(path, content, arm_id=self.arm_id)
-                except Exception as e:
-                    tool_result = ToolResult(tool_name="write_file", target=path, success=False, returncode=1, stderr=str(e), error=str(e))
+                p_clean = str(path).strip().lower()
+                if is_qa and not (p_clean.startswith("test_") or "test" in p_clean or p_clean.startswith("tests/")):
+                    tool_result = ToolResult(
+                        tool_name="write_file",
+                        target=path,
+                        success=False,
+                        returncode=1,
+                        stderr=f"Action rejected: QA arm cannot write implementation file '{path}'. Write test suites in 'test_<module>.py' or 'tests/' instead.",
+                        error=f"Action rejected: QA arm cannot write implementation file '{path}'. Write test suites in 'test_<module>.py' or 'tests/' instead.",
+                    )
+                else:
+                    try:
+                        with self.sandbox.file_lock(path, self.arm_id):
+                            tool_result = await self.sandbox.awrite_file(path, content, arm_id=self.arm_id)
+                    except Exception as e:
+                        tool_result = ToolResult(tool_name="write_file", target=path, success=False, returncode=1, stderr=str(e), error=str(e))
             elif action_type == "read_file":
                 path = action_data.get("path", "README.md")
                 tool_result = await self.sandbox.aread_file(path)

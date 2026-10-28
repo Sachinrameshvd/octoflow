@@ -265,7 +265,7 @@ print("VERIFICATION_PASSED")
         id="fastapi_todo",
         name="Tiny FastAPI Todo API",
         category="Web",
-        objective="Implement a tiny FastAPI todo API in app.py with routes: GET /todos, POST /todos (accepting JSON {\"title\": str}), and DELETE /todos/{todo_id}",
+        objective="Implement a tiny FastAPI todo API in app.py with Pydantic model Todo(id: Optional[int] = None, title: str) and routes: GET /todos (returns list of todos), POST /todos (accepts JSON {\"title\": str}, assigns integer id, returns item with id and title), and DELETE /todos/{todo_id} (checks if todo_id exists: if not found raises HTTPException(status_code=404), otherwise removes it and returns 200 or 204)",
         target_file="app.py",
         reference_solution="""from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
