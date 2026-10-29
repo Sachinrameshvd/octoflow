@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from octoflow.config import OctoFlowConfig
 from octoflow.tools import WorkspaceSandbox
 from octoflow.logging_config import get_logger
+from octoflow.errors import BudgetExceeded
 
 logger = get_logger("healing")
 
@@ -92,20 +93,53 @@ def parse_pytest_failures(output: str) -> List[Dict[str, Any]]:
     return failures
 
 
+def extract_failure_signature(parsed_failures: List[Dict[str, Any]], raw_output: str) -> Tuple[Tuple[str, str], ...]:
+    """Extract a normalized tuple signature of (test_id, error_type) pairs."""
+    if not parsed_failures:
+        tail = raw_output.strip().splitlines()[-1] if raw_output.strip() else "unknown"
+        return (("suite", tail[:120]),)
+    sig_items = []
+    for f in parsed_failures:
+        test_id = f"{f.get('file', '')}::{f.get('test_name', '') or ''}"
+        err = f.get("error", "").strip()
+        m = re.match(r"^([A-Za-z0-9_]+(?:Error|Exception))", err)
+        if m:
+            err_type = m.group(1)
+        elif ":" in err:
+            err_type = err.split(":", 1)[0].strip()
+        else:
+            err_type = err.split()[0] if err else "Error"
+        sig_items.append((test_id, err_type))
+    return tuple(sorted(sig_items))
+
+
+def count_failing_tests(parsed_failures: List[Dict[str, Any]], raw_output: str) -> int:
+    """Count unique failing tests from parsed failures or raw output."""
+    if parsed_failures:
+        unique_ids = {f"{f.get('file', '')}::{f.get('test_name', '') or ''}" for f in parsed_failures}
+        return len(unique_ids)
+    m = re.search(r"(\d+)\s+failed", raw_output)
+    if m:
+        return int(m.group(1))
+    return 1 if raw_output.strip() else 0
+
+
 def self_heal_workspace(
     workspace_dir: str = ".",
-    max_attempts: int = 3,
+    max_attempts: Optional[int] = None,
     custom_cmd: Optional[List[str]] = None,
     config: Optional[OctoFlowConfig] = None,
+    budget_tracker: Optional[Any] = None,
 ) -> Dict[str, Any]:
-    """Execute autonomous closed-loop test repair.
+    """Execute autonomous closed-loop test repair with budget and repetition enforcement.
 
     1. Executes detected test suite.
     2. If tests pass, returns immediately with success.
     3. If tests fail, parses traceback and deploys Arm 5 (QA) and Arm 2 (Backend)
        to formulate a targeted patch.
     4. Validates patch AST before writing to prevent syntax degradation.
-    5. Re-runs tests in a closed loop until 100% pass or max attempts exhausted.
+    5. Re-runs tests in a closed loop until 100% pass, max attempts reached,
+       repetition detected, or failing count fails to decrease over 2 iterations.
     """
     ws = Path(workspace_dir).resolve()
     fw_info = detect_test_framework(str(ws))
@@ -113,6 +147,9 @@ def self_heal_workspace(
     cmd = custom_cmd or (fw_info[1] if fw_info else ["pytest", "-q"])
 
     sandbox = WorkspaceSandbox(str(ws))
+    if budget_tracker is not None:
+        sandbox.set_budget_tracker(budget_tracker)
+
     history: List[Dict[str, Any]] = []
     repaired_files: List[str] = []
 
@@ -127,13 +164,43 @@ def self_heal_workspace(
             "framework": fw_name,
             "repaired_files": [],
             "message": "All workspace tests are currently passing. Zero healing required.",
+            "stop_reason": "all_passed",
             "history": [],
             "final_output": full_log,
         }
 
     cfg = config or OctoFlowConfig(workspace_dir=str(ws))
+    limit = max_attempts if max_attempts is not None else (cfg.budget.max_heal_iterations if hasattr(cfg, "budget") else 5)
 
-    for attempt in range(1, max_attempts + 1):
+    initial_failures = parse_pytest_failures(full_log)
+    initial_sig = extract_failure_signature(initial_failures, full_log)
+    initial_count = count_failing_tests(initial_failures, full_log)
+
+    signature_history: List[Tuple[Tuple[str, str], ...]] = []
+    iterations_without_decrease: int = 0
+    prev_failing_count: int = initial_count
+    stop_reason: str = "max_iterations_reached"
+    attempts_used: int = 0
+
+    for attempt in range(1, limit + 1):
+        attempts_used = attempt
+        if budget_tracker is not None:
+            try:
+                budget_tracker.check_wall_time()
+                budget_tracker.check_heal_iteration()
+            except BudgetExceeded as be:
+                stop_reason = "budget_exceeded"
+                return {
+                    "success": False,
+                    "attempts": attempt - 1,
+                    "framework": fw_name,
+                    "repaired_files": repaired_files,
+                    "message": f"Healing stopped: budget limit exceeded: {be.limit_name}",
+                    "stop_reason": stop_reason,
+                    "history": history,
+                    "final_output": full_log,
+                }
+
         parsed_failures = parse_pytest_failures(full_log)
         failure_summary = parsed_failures[0] if parsed_failures else {
             "file": "tests", "test_name": "suite", "error": full_log[-300:]
@@ -181,7 +248,25 @@ Do not include conversational filler or markdown notes around the code.
 
         from octoflow.provider import get_llm_provider
         provider = get_llm_provider(cfg, tier="frontier")
+        if budget_tracker is not None:
+            try:
+                budget_tracker.check_wall_time()
+                budget_tracker.check_llm_call()
+            except BudgetExceeded as be:
+                stop_reason = "budget_exceeded"
+                return {
+                    "success": False,
+                    "attempts": attempt - 1,
+                    "framework": fw_name,
+                    "repaired_files": repaired_files,
+                    "message": f"Healing stopped: budget limit exceeded: {be.limit_name}",
+                    "stop_reason": stop_reason,
+                    "history": history,
+                    "final_output": full_log,
+                }
         resp = provider.generate(repair_prompt, system_prompt="You are an expert autonomous bug repair agent.")
+        if budget_tracker is not None:
+            budget_tracker.record_tokens(resp.total_tokens)
 
         # Extract code from response
         patched_code = resp.content.strip()
@@ -199,9 +284,22 @@ Do not include conversational filler or markdown notes around the code.
                 is_valid_ast = False
 
         if is_valid_ast and patched_code:
-            sandbox.write_file(target_to_repair, patched_code)
-            if target_to_repair not in repaired_files:
-                repaired_files.append(target_to_repair)
+            try:
+                sandbox.write_file(target_to_repair, patched_code)
+                if target_to_repair not in repaired_files:
+                    repaired_files.append(target_to_repair)
+            except BudgetExceeded as be:
+                stop_reason = "budget_exceeded"
+                return {
+                    "success": False,
+                    "attempts": attempt,
+                    "framework": fw_name,
+                    "repaired_files": repaired_files,
+                    "message": f"Healing stopped: budget limit exceeded: {be.limit_name}",
+                    "stop_reason": stop_reason,
+                    "history": history,
+                    "final_output": full_log,
+                }
 
         # Re-run tests to check if healed
         rc, stdout, stderr = run_test_suite(str(ws), cmd)
@@ -222,16 +320,40 @@ Do not include conversational filler or markdown notes around the code.
                 "framework": fw_name,
                 "repaired_files": repaired_files,
                 "message": f"Autonomous healing succeeded on attempt {attempt}. 100% of tests passing.",
+                "stop_reason": "all_passed",
                 "history": history,
                 "final_output": full_log,
             }
 
+        # Evaluate termination conditions
+        current_failures = parse_pytest_failures(full_log)
+        current_sig = extract_failure_signature(current_failures, full_log)
+        current_count = count_failing_tests(current_failures, full_log)
+        signature_history.append(current_sig)
+
+        # Condition (b): same failing-test signature repeats twice in healing attempts
+        if signature_history.count(current_sig) >= 2:
+            stop_reason = "repetition_detected"
+            break
+
+        # Condition (c): total failing count does not decrease over 2 iterations
+        if current_count >= prev_failing_count:
+            iterations_without_decrease += 1
+        else:
+            iterations_without_decrease = 0
+        prev_failing_count = current_count
+
+        if iterations_without_decrease >= 2:
+            stop_reason = "no_progress"
+            break
+
     return {
         "success": False,
-        "attempts": max_attempts,
+        "attempts": attempts_used,
         "framework": fw_name,
         "repaired_files": repaired_files,
-        "message": f"Healing loop reached max attempts ({max_attempts}) without resolving all failures.",
+        "message": f"Healing stopped ({stop_reason}): reached termination condition on attempt {attempts_used}.",
+        "stop_reason": stop_reason,
         "history": history,
         "final_output": full_log,
     }

@@ -39,6 +39,11 @@ def run(
     init_git: bool = typer.Option(False, "--init-git", help="Automatically initialize git repository if workspace is not in a git repo"),
     no_checkpoint: bool = typer.Option(False, "--no-checkpoint", help="Disable git checkpointing and branch creation"),
     open_app: bool = typer.Option(False, "--open", help="Open primary service URL in browser after ignition readiness"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Maximum tokens allowed across run"),
+    max_calls: Optional[int] = typer.Option(None, "--max-calls", help="Maximum LLM calls allowed across run"),
+    timeout: Optional[int] = typer.Option(None, "--timeout", help="Maximum wall time in seconds"),
+    max_heal: Optional[int] = typer.Option(None, "--max-heal", help="Maximum healing iterations"),
+    no_limits: bool = typer.Option(False, "--no-limits", help="Disable all execution budget limits"),
 ):
     """Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an objective."""
     # Lazy imports of heavy components
@@ -50,6 +55,27 @@ def run(
         get_consortium_guilds,
     )
     from octoflow.ignition import ProjectIgniter
+    from octoflow.settings import load_settings
+
+    loaded_settings = load_settings()
+    run_budget = loaded_settings.budget.model_copy()
+
+    if no_limits:
+        console.print("[bold yellow]▲ Warning: --no-limits enabled. Execution limits are disabled.[/bold yellow]")
+        run_budget.max_tokens = None
+        run_budget.max_llm_calls = None
+        run_budget.max_wall_seconds = None
+        run_budget.max_heal_iterations = None
+        run_budget.max_files_written = None
+    else:
+        if max_tokens is not None:
+            run_budget.max_tokens = max_tokens
+        if max_calls is not None:
+            run_budget.max_llm_calls = max_calls
+        if timeout is not None:
+            run_budget.max_wall_seconds = timeout
+        if max_heal is not None:
+            run_budget.max_heal_iterations = max_heal
 
     dry_val = dry_run if isinstance(dry_run, bool) else False
     orig_dry = os.environ.get("OCTOFLOW_DRY_RUN")
@@ -79,6 +105,7 @@ def run(
         guild=selected_guild,
         model_provider=model,
         max_budget_dollars=budget,
+        budget=run_budget,
         workspace_dir=workspace,
         telemetry_port=port_val,
         sandbox_mode=sandbox_str,
@@ -468,7 +495,16 @@ def run(
                 finalize_run(checkpoint_meta, success=False, files_written=files, goal=objective)
                 finalized = True
             reason = getattr(result, "reason", "partial quiescence") if not isinstance(result, dict) else result.get("reason", "partial quiescence")
-            console.print(f"\n◈ [bold yellow][PARTIAL] {reason}[/bold yellow]\n")
+            budget_line = ""
+            if hasattr(result, "extra") and isinstance(result.extra, dict):
+                budget_line = result.extra.get("budget_line", "")
+            elif isinstance(result, dict) and "extra" in result and isinstance(result["extra"], dict):
+                budget_line = result["extra"].get("budget_line", "")
+            ribbon = f"\n◈ [bold yellow][PARTIAL] {reason}[/bold yellow]"
+            if budget_line:
+                ribbon += f" • [dim]{budget_line}[/dim]"
+            ribbon += "\n"
+            console.print(ribbon)
             raise typer.Exit(code=1)
         else:
             if checkpoint_meta and not finalized:
@@ -560,6 +596,11 @@ def octos_run(
     init_git: bool = typer.Option(False, "--init-git", help="Automatically initialize git repository in non-git workspace"),
     no_checkpoint: bool = typer.Option(False, "--no-checkpoint", help="Disable git checkpointing and branch creation"),
     open_app: bool = typer.Option(False, "--open", help="Open primary service URL in browser after ignition readiness"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Maximum tokens allowed across run"),
+    max_calls: Optional[int] = typer.Option(None, "--max-calls", help="Maximum LLM calls allowed across run"),
+    timeout: Optional[int] = typer.Option(None, "--timeout", help="Maximum wall time in seconds"),
+    max_heal: Optional[int] = typer.Option(None, "--max-heal", help="Maximum healing iterations"),
+    no_limits: bool = typer.Option(False, "--no-limits", help="Disable all execution budget limits"),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
     run(
@@ -579,6 +620,11 @@ def octos_run(
         init_git=init_git,
         no_checkpoint=no_checkpoint,
         open_app=open_app,
+        max_tokens=max_tokens,
+        max_calls=max_calls,
+        timeout=timeout,
+        max_heal=max_heal,
+        no_limits=no_limits,
     )
 
 

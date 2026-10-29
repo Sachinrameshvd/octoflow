@@ -32,3 +32,5 @@ class CockpitSession:
     running: bool = True
     active_run: Optional[Any] = None
     history: List[str] = field(default_factory=list)
+    budget_tracker: Optional[Any] = None
+    budget_line: Optional[str] = None

@@ -47,6 +47,15 @@ def build_hud_panel(session: CockpitSession) -> Panel:
     hud_table.add_column(style="white")
     hud_table.add_row("◈ WORKSPACE", f"{session.workspace}  [dim]({git_branch})[/dim]")
     hud_table.add_row("◈ LLM CORE", f"{session.current_model.upper()}  [dim](Budget: ${session.current_budget:.2f})[/dim]")
+    budget_line = getattr(session, "budget_line", None)
+    if not budget_line and getattr(session, "budget_tracker", None):
+        budget_line = session.budget_tracker.format_hud_line()
+    if not budget_line:
+        from octoflow.budget import RunBudget, BudgetTracker
+        budget = getattr(session, "budget", None) or RunBudget()
+        tracker = BudgetTracker(budget=budget)
+        budget_line = tracker.format_hud_line()
+    hud_table.add_row("◈ BUDGET", f"{budget_line}")
     hud_table.add_row("◈ SWARM TIER", f"Octopuses: {session.current_octos.upper()}  [dim](Cross-Ring Synaptic Bus)[/dim]")
     hud_table.add_row(
         "◈ PALETTE",

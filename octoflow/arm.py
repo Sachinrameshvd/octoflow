@@ -77,6 +77,7 @@ class ArmAgent:
         self.total_tokens = 0
         self.total_cost = 0.0
         self.is_quiescent = False
+        self.budget_tracker: Optional[Any] = None
 
         # Sensory Saccade Buffer: retains only the last 3 tool cycles to prevent token bloat
         self.saccade_buffer: List[Dict[str, Any]] = []
@@ -364,11 +365,16 @@ class ArmAgent:
             dyn_temp = float(self.temperature)
         else:
             dyn_temp, _ = self.gate.compute_generation_parameters(last_surprise)
+        if self.budget_tracker is not None:
+            self.budget_tracker.check_wall_time()
+            self.budget_tracker.check_llm_call()
         llm_resp: LLMResponse = self.provider.generate(
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=dyn_temp,
         )
+        if self.budget_tracker is not None:
+            self.budget_tracker.record_tokens(llm_resp.total_tokens)
         self.total_tokens += llm_resp.total_tokens
         self.total_cost += llm_resp.estimated_cost_dollars
 
@@ -561,12 +567,17 @@ class ArmAgent:
             dyn_temp = float(self.temperature)
         else:
             dyn_temp, _ = self.gate.compute_generation_parameters(last_surprise)
+        if self.budget_tracker is not None:
+            self.budget_tracker.check_wall_time()
+            self.budget_tracker.check_llm_call()
         llm_resp: LLMResponse = await self.provider.agenerate(
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=dyn_temp,
             max_tokens=2048,
         )
+        if self.budget_tracker is not None:
+            self.budget_tracker.record_tokens(llm_resp.total_tokens)
         self.total_tokens += llm_resp.total_tokens
         self.total_cost += llm_resp.estimated_cost_dollars
 
@@ -740,11 +751,16 @@ class ArmAgent:
         if bus_messages:
             user_content += f"{bus_messages}\n\n"
 
+        if self.budget_tracker is not None:
+            self.budget_tracker.check_wall_time()
+            self.budget_tracker.check_llm_call()
         response = self.provider.generate(
             prompt=user_content,
             system_prompt=system_prompt,
             temperature=0.3,
             max_tokens=600,
         )
+        if self.budget_tracker is not None:
+            self.budget_tracker.record_tokens(response.total_tokens)
         return response.content.strip()
 

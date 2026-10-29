@@ -26,6 +26,11 @@
 │ --init-git                        Automatically initialize git repository in non-git workspace   │
 │ --no-checkpoint                   Disable git checkpointing and branch creation                  │
 │ --open                            Open primary service URL in browser after ignition readiness   │
+│ --max-tokens             <int>    Maximum tokens allowed across run                              │
+│ --max-calls              <int>    Maximum LLM calls allowed across run                           │
+│ --timeout                <int>    Maximum wall time in seconds                                   │
+│ --max-heal               <int>    Maximum healing iterations                                     │
+│ --no-limits                       Disable all execution budget limits                            │
 │ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

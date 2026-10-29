@@ -24,6 +24,8 @@ from pydantic import (
     ValidationError,
 )
 
+from octoflow.budget import RunBudget
+
 CURRENT_SCHEMA_VERSION = 1
 
 VALID_PROVIDERS: Set[str] = {
@@ -216,6 +218,7 @@ class Settings(BaseModel):
     defaults: DefaultsSettings = Field(default_factory=DefaultsSettings)
     ui: UISettings = Field(default_factory=UISettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
+    budget: RunBudget = Field(default_factory=RunBudget)
     providers: Dict[str, ProviderSettings] = Field(default_factory=dict)
     extras: Dict[str, Any] = Field(default_factory=dict)
     webhook_url: Optional[str] = None
@@ -232,6 +235,7 @@ class Settings(BaseModel):
             "defaults",
             "ui",
             "server",
+            "budget",
             "providers",
             "extras",
             "webhook_url",
@@ -501,6 +505,17 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     if "server" in raw_data and isinstance(raw_data["server"], dict):
         server.update(raw_data["server"])
         consumed_keys.add("server")
+    budget = {
+        "max_tokens": 200_000,
+        "max_llm_calls": 200,
+        "max_wall_seconds": 1800,
+        "max_heal_iterations": 5,
+        "max_files_written": 200,
+        "no_limits": False,
+    }
+    if "budget" in raw_data and isinstance(raw_data["budget"], dict):
+        budget.update(raw_data["budget"])
+        consumed_keys.add("budget")
 
     # Extras: anything not consumed
     extras = {}
@@ -513,6 +528,7 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         "defaults": defaults,
         "ui": ui,
         "server": server,
+        "budget": budget,
         "providers": providers,
         "extras": extras,
         "webhook_url": webhook_url,
@@ -678,7 +694,7 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
             parts = k[len("OCTOFLOW_"):].lower().split("_", 1)
             if len(parts) == 2:
                 sec, prop = parts
-                if sec in ("ui", "server", "defaults"):
+                if sec in ("ui", "server", "defaults", "budget"):
                     cur_sec = data.setdefault(sec, {})
                     # Type coerce if integer or boolean
                     if v.isdigit():
@@ -735,6 +751,14 @@ def load_settings(
             "host": "127.0.0.1",
             "ws_port": 8088,
             "http_port": 8089,
+        },
+        "budget": {
+            "max_tokens": 200_000,
+            "max_llm_calls": 200,
+            "max_wall_seconds": 1800,
+            "max_heal_iterations": 5,
+            "max_files_written": 200,
+            "no_limits": False,
         },
         "providers": {},
         "extras": {},

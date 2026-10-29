@@ -167,6 +167,11 @@ class WorkspaceSandbox:
         self._locks: Dict[str, int] = {}
         self._lock_mutex = threading.RLock()
         self.files_written: List[str] = []
+        self.budget_tracker: Optional[Any] = None
+
+    def set_budget_tracker(self, tracker: Optional[Any]) -> None:
+        """Attach a BudgetTracker to enforce file writing limits."""
+        self.budget_tracker = tracker
 
     def _resolve_safe(self, rel_path: str) -> Path:
         """Resolve a relative or absolute path safely within the workspace.
@@ -353,6 +358,9 @@ class WorkspaceSandbox:
         try:
             target = self._resolve_safe(rel_path)
             str_path = str(target)
+
+            if self.budget_tracker is not None:
+                self.budget_tracker.check_and_record_file_write(rel_path)
 
             # Prevent writing through external symlinks
             if target.is_symlink() and not _is_subpath(target.resolve(), self.root):

@@ -137,18 +137,34 @@ class WorkspaceError(OctoFlowError):
 
 
 class BudgetExceeded(OctoFlowError):
-    """Execution budget limit reached (exit 1). Placeholder for P3.5."""
+    """Execution budget limit reached (exit 1)."""
 
     def __init__(
         self,
-        message: str = "Mission execution budget limit exceeded.",
-        hint: Optional[str] = "Increase max budget with --budget or adjust max_budget_dollars in ~/.octoflow/config.json",
+        limit_name: str = "budget",
+        used: Optional[Any] = None,
+        limit: Optional[Any] = None,
+        message: Optional[str] = None,
+        hint: Optional[str] = None,
         exit_code: int = 1,
         budget: Optional[float] = None,
         cost: Optional[float] = None,
     ):
-        self.budget = budget
-        self.cost = cost
+        self.limit_name = limit_name
+        self.used = used
+        self.limit = limit
+        self.budget = budget or limit
+        self.cost = cost or used
+
+        if message is None:
+            if used is not None and limit is not None:
+                message = f"Budget limit '{limit_name}' exceeded: {used}/{limit}."
+            else:
+                message = f"Budget limit exceeded: {limit_name}."
+
+        if hint is None:
+            hint = f"Increase {limit_name} limit via CLI flags (--max-tokens, --max-calls, --timeout, --max-heal) or use --no-limits."
+
         super().__init__(message, hint=hint, exit_code=exit_code)
 
 

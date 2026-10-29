@@ -165,6 +165,7 @@ def render_dashboard(
     quiescent_count: int = 0,
     elapsed_seconds: float = 0.0,
     theme: Optional[OctoTheme] = None,
+    budget_line: Optional[str] = None,
 ) -> Panel:
     """Render the reactive cephalopod terminal dashboard using Rich."""
     if theme is None:
@@ -182,6 +183,8 @@ def render_dashboard(
 
     savings_style = theme.rich_success if tokens_saved_pct >= 50.0 else theme.rich_warning
     badge_text = Text()
+    if budget_line:
+        badge_text.append(f"{budget_line} | ", style=theme.rich_secondary)
     badge_text.append(f"Tokens Saved: {tokens_saved_pct:.1f}% ", style=savings_style)
     badge_text.append(f"| Cost: ${total_cost:.3f} ", style="bold white")
     badge_text.append(f"| Coalitions: {len(active_coalitions)}", style=theme.rich_primary)

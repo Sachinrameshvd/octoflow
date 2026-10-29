@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
+from octoflow.budget import RunBudget
+
 
 class SwarmMorphology(str, Enum):
     """Cephalopod swarm operational morphology presets."""
@@ -422,6 +424,7 @@ class OctoFlowConfig(BaseModel):
     workspace_dir: str = "."
     dry_run: bool = False
     max_budget_dollars: float = 5.00
+    budget: RunBudget = Field(default_factory=RunBudget)
     max_steps_per_arm: int = 15
     surprise_threshold: float = 0.50
     gate_mode: str = "gated"  # "gated" or "always_escalate"

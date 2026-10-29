@@ -22,6 +22,8 @@ from octoflow.usage import UsageLedger
 from octoflow.arm import ArmAgent, ArmStepResult
 from octoflow.logging_config import get_logger
 from octoflow.coalition import extract_coalitions_from_matrix
+from octoflow.budget import RunBudget, BudgetTracker
+from octoflow.errors import BudgetExceeded
 
 logger = get_logger("conductor")
 
@@ -155,8 +157,12 @@ class SupraesophagealConductor:
         except Exception as e:
             logger.debug("Codebase vector indexing failed: %s", e)  # best-effort: optional RAG enhancement
         self.usage_ledger = UsageLedger()
+        self.budget_tracker = BudgetTracker(budget=self.config.budget)
+        self.sandbox.set_budget_tracker(self.budget_tracker)
         self.provider = get_llm_provider(self.config, dry_run=is_dry)
         self.provider.set_ledger(self.usage_ledger)
+        if hasattr(self.provider, "set_budget_tracker"):
+            self.provider.set_budget_tracker(self.budget_tracker)
 
         # Initialize 8 arm agents with cognitive tier provider routing
         self.roster: List[ArmRoleConfig] = self.config.get_roster()
@@ -164,18 +170,20 @@ class SupraesophagealConductor:
         for role in self.roster:
             arm_provider = get_llm_provider(self.config, tier=role.model_tier, dry_run=is_dry)
             arm_provider.set_ledger(self.usage_ledger)
-            self.arms.append(
-                ArmAgent(
-                    role_config=role,
-                    sandbox=self.sandbox,
-                    provider=arm_provider,
-                    bus=self.bus,
-                    memory=self.memory,
-                    obs_dim=self.config.obs_dim,
-                    gate_mode=getattr(self.config, "gate_mode", "gated"),
-                    temperature=getattr(self.config, "temperature", None),
-                )
+            if hasattr(arm_provider, "set_budget_tracker"):
+                arm_provider.set_budget_tracker(self.budget_tracker)
+            arm_agent = ArmAgent(
+                role_config=role,
+                sandbox=self.sandbox,
+                provider=arm_provider,
+                bus=self.bus,
+                memory=self.memory,
+                obs_dim=self.config.obs_dim,
+                gate_mode=getattr(self.config, "gate_mode", "gated"),
+                temperature=getattr(self.config, "temperature", None),
             )
+            arm_agent.budget_tracker = self.budget_tracker
+            self.arms.append(arm_agent)
 
         # 8x8 pairwise dynamic coalition attention matrix
         self.coalition_matrix = np.zeros((8, 8), dtype=np.float32)
@@ -185,6 +193,18 @@ class SupraesophagealConductor:
         self.total_tokens_used = 0
         self.estimated_chatty_tokens = 0
         self.total_cost = 0.0
+
+    def set_budget_tracker(self, tracker: BudgetTracker) -> None:
+        """Attach a BudgetTracker to conductor, sandbox, provider, and all arms."""
+        self.budget_tracker = tracker
+        self.sandbox.set_budget_tracker(tracker)
+        if hasattr(self.provider, "set_budget_tracker"):
+            self.provider.set_budget_tracker(tracker)
+        for arm in self.arms:
+            arm.budget_tracker = tracker
+            arm.sandbox.set_budget_tracker(tracker)
+            if hasattr(arm.provider, "set_budget_tracker"):
+                arm.provider.set_budget_tracker(tracker)
 
     def decompose_objective(self, user_prompt: str) -> Dict[int, str]:
         """Decompose the user prompt into 8 discrete arm sub-goals."""
@@ -464,8 +484,16 @@ class SupraesophagealConductor:
                 arm.is_quiescent = True
                 arm.status = "QUIESCENT"
 
+        budget_exceeded_err: Optional[BudgetExceeded] = None
         for cycle in range(max_cycles):
             final_cycles = cycle + 1
+            # Check wall time limit before each cycle
+            try:
+                self.budget_tracker.check_wall_time()
+            except BudgetExceeded as be:
+                budget_exceeded_err = be
+                break
+
             # Check global quiescence
             quiescent_count = sum(1 for arm in self.arms if arm.is_quiescent)
             if quiescent_count == 8:
@@ -495,7 +523,11 @@ class SupraesophagealConductor:
                 )
                 for arm, c_ctx in zip(active_arms, arm_contexts)
             ]
-            step_results: List[ArmStepResult] = await asyncio.gather(*tasks)
+            try:
+                step_results: List[ArmStepResult] = await asyncio.gather(*tasks)
+            except BudgetExceeded as be:
+                budget_exceeded_err = be
+                break
 
             # Conductor processes step results and updates coalition attention
             for arm, step_res in zip(active_arms, step_results):
@@ -563,7 +595,10 @@ class SupraesophagealConductor:
 
         files_written = list(dict.fromkeys(self.sandbox.files_written))
 
-        if mode == RunMode.LIVE:
+        if budget_exceeded_err is not None:
+            outcome = RunOutcome.PARTIAL
+            reason = f"budget limit exceeded: {budget_exceeded_err.limit_name}"
+        elif mode == RunMode.LIVE:
             if len(files_written) == 0:
                 outcome = RunOutcome.FAILED
                 reason = "model produced no file changes"
@@ -589,6 +624,22 @@ class SupraesophagealConductor:
         if outcome == RunOutcome.FAILED:
             status_str = "FAILED"
 
+        budget_line = self.budget_tracker.format_hud_line()
+        extra_dict = {
+            "objective": objective,
+            "status": status_str,
+            "success": (outcome == RunOutcome.COMPLETE),
+            "quiescent_arms": final_quiescent,
+            "total_cycles": final_cycles,
+            "chatty_baseline_tokens": self.estimated_chatty_tokens,
+            "budget_line": budget_line,
+            "budget_tracker": self.budget_tracker,
+        }
+        if budget_exceeded_err is not None:
+            extra_dict["budget_exceeded"] = budget_exceeded_err.limit_name
+            extra_dict["budget_limit"] = budget_exceeded_err.limit
+            extra_dict["budget_used"] = budget_exceeded_err.used
+
         result = RunResult(
             mode=mode,
             outcome=outcome,
@@ -598,19 +649,12 @@ class SupraesophagealConductor:
             tests_run=0,
             tests_passed=0,
             reason=reason,
-            tokens_consumed=self.total_tokens_used,
+            tokens_consumed=max(self.total_tokens_used, self.budget_tracker.tokens_consumed),
             total_cost_dollars=self.total_cost,
             token_reduction_pct=savings_pct,
             execution_time_seconds=total_time,
             usage_ledger=self.usage_ledger,
-            extra={
-                "objective": objective,
-                "status": status_str,
-                "success": (outcome == RunOutcome.COMPLETE),
-                "quiescent_arms": final_quiescent,
-                "total_cycles": final_cycles,
-                "chatty_baseline_tokens": self.estimated_chatty_tokens,
-            },
+            extra=extra_dict,
         )
         result.extra["run_result"] = result
 
