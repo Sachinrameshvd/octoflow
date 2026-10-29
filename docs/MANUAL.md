@@ -92,13 +92,18 @@ Every command can be executed from the shell (`./octo <command>`) or inside the 
 
 ### Swarm Execution & Orchestration
 * `./octos run` (or `./octo run "<goal>"`): Deploys the multi-octopus consortium on a specific mission.
+  * `--open`: Automatically opens the primary live service URL in your default browser upon verified readiness (interactive local TTY only; prints URL in non-TTY/SSH). Never opens without this opt-in flag.
   * `--allow-dirty`: Permits running on a dirty working tree by snapshotting uncommitted changes via `git stash create`.
   * `--init-git`: Automatically initializes a git repository if the workspace is not already inside one.
   * `--no-checkpoint`: Runs without git checkpointing (for non-git workspaces or temporary testing).
   * `--dry-run`: Mock execution that writes no project files and creates no checkpoint.
+* `./octo ps` (or `octos ps`): Lists active background ignition runtime services (Run ID, service type, PID, PGID, port, URL, and status).
+* `./octo stop [run-id] [--all]` (or `octos stop`): Terminates running ignition services via isolated process group signals (`SIGTERM` with 3s grace, escalating to `SIGKILL`), updating registry state to `STOPPED`.
 * `./octo undo [run-id]` (or `/undo` / `/rollback` in Cockpit): Safely undoes an OctoFlow run by checking out the original branch and deleting the isolated run branch (`git branch -D` exclusively for branches matching `octoflow/run-*` confirmed by `meta.json`). Restores stashed dirty changes if an allow-dirty snapshot was taken. Never touches other branches, never force-pushes, and never runs `git clean` on user files.
 * `./octo runs` (or `octos runs`): Lists recent runs (run ID, goal summary, outcome status, mode, branch, timestamp).
 * `./octos ui` (or `/ui`): Launches the 3D WebGL Constellation in your default browser.
+* `/open` (Cockpit): Opens the running live application URL in your default browser.
+* `/ignite` (Cockpit): Manually provisions and launches runtime services in the current workspace.
 * `./octo heal` (or `/heal`): Autonomous self-healing test repair loop (Arm 5 QA + Arm 2 Backend).
 * `./octo triage` (or `/triage`): File-by-file interactive diff inspector with AST error triage.
 * `./octo plan "<goal>"` (or `/plan <goal>`): Previews the 8-arm task allocation blueprint before execution.

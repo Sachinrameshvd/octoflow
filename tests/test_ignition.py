@@ -56,7 +56,7 @@ def test_ignite_static_web_server():
         manifest = igniter.ignite(objective="Test static web launch")
 
         try:
-            assert manifest.status == "RUNNING"
+            assert manifest.status in ("RUNNING", "READY")
             assert manifest.primary_url is not None
             assert manifest.frontend_port is not None
             assert len(manifest.pids) > 0

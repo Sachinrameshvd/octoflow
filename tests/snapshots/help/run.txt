@@ -32,6 +32,7 @@
 │ --init-git                        Automatically initialize git repository if workspace is not in │
 │                                   a git repo                                                     │
 │ --no-checkpoint                   Disable git checkpointing and branch creation                  │
+│ --open                            Open primary service URL in browser after ignition readiness   │
 │ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

@@ -175,6 +175,7 @@ from octoflow.commands import (
     runner,
     config,
     checkpoint_cmds,
+    ignition_cmds,
 )
 
 # Register command groups in strict ordering to match snapshot baselines
@@ -207,6 +208,7 @@ manual.register(app, octos_app)
 runner.register(app, octos_app)
 config.register(app, octos_app)
 checkpoint_cmds.register(app, octos_app)
+ignition_cmds.register(app, octos_app)
 
 
 # -------------------------------------------------------------------------

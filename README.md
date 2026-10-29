@@ -288,6 +288,14 @@ OctoFlow turns the 8-arm cephalopod architecture into an autonomous software eng
 # -------------------------------------------------------------------------
 ./octos ui       # Launch offline 3D WebGL Benthic Connectome in browser
 ./octos export   # Export single-file offline HTML audit report with 3D scrubber
+
+# -------------------------------------------------------------------------
+# ● 8. ONE-COMMAND PREVIEW & PROCESS RUNTIME MANAGEMENT
+# -------------------------------------------------------------------------
+./octos run "Build an interactive dashboard" --open   # Open in browser upon readiness
+./octos ps                                            # List active running live services
+./octos stop                                          # Cleanly terminate running services
+./octos undo                                          # Rollback to pre-flight checkpoint
 ```
 
 ---

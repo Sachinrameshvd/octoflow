@@ -70,6 +70,8 @@
 │ undo            Undo an OctoFlow run: checkout original branch, discard run branch, and restore  │
 │                 stash.                                                                           │
 │ runs            List recent OctoFlow execution runs and their git provenance status.             │
+│ ps              List actively running Phase 4 ignition application & API servers.                │
+│ stop            Stop active ignition application and API background servers.                     │
 │ config          Inspect, validate, and update OctoFlow typed configuration settings.             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octos ps [OPTIONS]                                                                          
+                                                                                                    
+ List actively running Phase 4 ignition application & API servers.                                  
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Filter services by workspace directory                                    │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

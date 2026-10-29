@@ -392,6 +392,7 @@ class OctosConsortium:
         self,
         objective: str,
         cycles_per_octopus: int = 5,
+        open_browser: bool = False,
     ) -> Dict[str, Any]:
         """Execute the multi-octopus consortium across synchronized phase gates."""
         t_start = time.time()
@@ -470,8 +471,8 @@ class OctosConsortium:
         # ---------------------------------------------------------------------
         ignition_manifest = None
         try:
-            ignition_manifest = self.igniter.ignite(objective=objective)
-            if ignition_manifest and ignition_manifest.status == "RUNNING":
+            ignition_manifest = self.igniter.ignite(objective=objective, open_browser=open_browser)
+            if ignition_manifest and ignition_manifest.status in ("RUNNING", "READY"):
                 results["ignition"] = ignition_manifest.model_dump()
                 self.synaptic_bus.broadcast(
                     sender_id=7 if self.octopus_count >= 8 else 0,
@@ -525,6 +526,7 @@ class OctosConsortium:
         self,
         objective: str,
         cycles_per_octopus: int = 5,
+        open_browser: bool = False,
     ) -> Dict[str, Any]:
         """Synchronously execute consortium across all Python 3.10-3.14+ loop environments."""
         try:
@@ -535,9 +537,9 @@ class OctosConsortium:
         if loop is not None and loop.is_running():
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self.arun_consortium(objective, cycles_per_octopus)).result()
+                return pool.submit(asyncio.run, self.arun_consortium(objective, cycles_per_octopus, open_browser)).result()
         else:
-            return asyncio.run(self.arun_consortium(objective, cycles_per_octopus))
+            return asyncio.run(self.arun_consortium(objective, cycles_per_octopus, open_browser))
 
 
 def get_system_ram_gb() -> float:

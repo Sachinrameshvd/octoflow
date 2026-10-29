@@ -38,6 +38,7 @@ def run(
     allow_dirty: bool = typer.Option(False, "--allow-dirty", help="Allow running in a git repo with uncommitted changes (snapshots changes via git stash create)"),
     init_git: bool = typer.Option(False, "--init-git", help="Automatically initialize git repository if workspace is not in a git repo"),
     no_checkpoint: bool = typer.Option(False, "--no-checkpoint", help="Disable git checkpointing and branch creation"),
+    open_app: bool = typer.Option(False, "--open", help="Open primary service URL in browser after ignition readiness"),
 ):
     """Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an objective."""
     # Lazy imports of heavy components
@@ -227,7 +228,7 @@ def run(
                         theme=active_theme,
                     )
                 )
-                res = consortium.run_consortium(objective=objective, cycles_per_octopus=4)
+                res = consortium.run_consortium(objective=objective, cycles_per_octopus=4, open_browser=open_app)
 
             if is_dry:
                 console.print("\n◈ [bold yellow][DRY-RUN: no project files written][/bold yellow]\n")
@@ -422,8 +423,8 @@ def run(
             # Live Phase 4 Ignition
             try:
                 igniter = ProjectIgniter(workspace_dir=workspace)
-                ign_manifest = igniter.ignite(objective=objective)
-                if ign_manifest and ign_manifest.status == "RUNNING" and ign_manifest.primary_url:
+                ign_manifest = igniter.ignite(objective=objective, open_browser=open_app)
+                if ign_manifest and ign_manifest.status in ("RUNNING", "READY") and ign_manifest.primary_url:
                     prim_url = ign_manifest.primary_url
                     docs_url = ign_manifest.api_docs_url
                     inf_url = ign_manifest.inference_url
@@ -558,6 +559,7 @@ def octos_run(
     allow_dirty: bool = typer.Option(False, "--allow-dirty", help="Allow running on dirty working tree by snapshotting changes via git stash create"),
     init_git: bool = typer.Option(False, "--init-git", help="Automatically initialize git repository in non-git workspace"),
     no_checkpoint: bool = typer.Option(False, "--no-checkpoint", help="Disable git checkpointing and branch creation"),
+    open_app: bool = typer.Option(False, "--open", help="Open primary service URL in browser after ignition readiness"),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
     run(
@@ -576,6 +578,7 @@ def octos_run(
         allow_dirty=allow_dirty,
         init_git=init_git,
         no_checkpoint=no_checkpoint,
+        open_app=open_app,
     )
 
 

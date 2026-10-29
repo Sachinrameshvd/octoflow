@@ -172,7 +172,7 @@ def _run_cockpit_impl(
         "/export", "/report", "/plan", "/ask", "/talk", "/theme", "/model",
         "/octos", "/guild", "/guard", "/hooks", "/rag", "/audit", "/eject",
         "/federation", "/install-claude", "/bench", "/monorepo", "/record",
-        "/runner", "/play", "/banner", "/screensaver", "/ignite", "/diff",
+        "/runner", "/play", "/banner", "/screensaver", "/ignite", "/open", "/diff",
         "/commit", "/rollback", "/undo", "/ui", "/memory", "/status",
         "/budget", "/clear", "/exit", "/quit",
     ]
@@ -344,6 +344,7 @@ def _run_cockpit_impl(
                 help_table.add_row("/rag [query]", "Episodic Codebase Vector RAG search & indexing", "/rag auth token")
                 help_table.add_row("/budget [val]", "Set spending ceiling in dollars", "/budget 15.00")
                 help_table.add_row("/ignite", "Boot generated frontend & backend dev servers", "/ignite")
+                help_table.add_row("/open", "Open live application URL in default browser", "/open")
                 help_table.add_row("/diff", "Show colorized git diff of workspace changes", "/diff")
                 help_table.add_row("/commit [msg]", "Safely stage & commit workspace changes", "/commit auth fix")
                 help_table.add_row("/rollback", "Revert workspace to state before last objective", "/rollback")
@@ -718,6 +719,32 @@ def _run_cockpit_impl(
                 else:
                     c.print(f"[{s.theme.rich_success}]✔ Runtime online: [bold]{manifest.title}[/bold] ({manifest.service_type})[/{s.theme.rich_success}]")
                 c.print()
+                continue
+
+            elif user_input == "/open":
+                from octoflow.ignition import list_active_ignitions, open_url_in_browser
+                active = list_active_ignitions()
+                ws_str = str(s.workspace.resolve())
+                matched = None
+                for item in active:
+                    try:
+                        if str(Path(item.get("workspace_dir", "")).resolve()) == ws_str:
+                            matched = item
+                            break
+                    except Exception:
+                        pass
+                if not matched and active:
+                    matched = active[0]
+
+                if matched and matched.get("primary_url"):
+                    url = matched["primary_url"]
+                    opened = open_url_in_browser(url)
+                    if opened:
+                        c.print(f"[{s.theme.rich_success}]✔ Opened {url} in browser.[/{s.theme.rich_success}]\n")
+                    else:
+                        c.print(f"[{s.theme.rich_primary}]● Primary URL: {url}[/{s.theme.rich_primary}]\n")
+                else:
+                    c.print(f"[{s.theme.rich_warning}]▲ No active running ignition service found. Run /ignite first.[/{s.theme.rich_warning}]\n")
                 continue
 
             elif user_input == "/diff":

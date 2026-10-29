@@ -1,0 +1,14 @@
+                                                                                                    
+ Usage: octoflow stop [OPTIONS] [run_id]                                                            
+                                                                                                    
+ Stop active ignition application and API background servers.                                       
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│   run_id      <str>  Specific run ID to stop (default: latest active run)                        │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --all   -a             Stop all running ignition services across all runs                        │
+│ --dir   -d      <str>  Target project workspace folder                                           │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
