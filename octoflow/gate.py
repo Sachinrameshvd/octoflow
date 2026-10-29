@@ -120,11 +120,13 @@ class SurpriseGate:
                 baseline[-1] = 1.0  # Quiescence expected on last dimension
             predicted_arr = baseline
 
+        # Handle empty observations
+        if actual_arr.size == 0 or predicted_arr.size == 0:
+            return 0.0
+
         # Ensure matching array shapes across varying dimensions
         if actual_arr.shape != predicted_arr.shape:
             min_dim = min(actual_arr.size, predicted_arr.size)
-            if min_dim == 0:
-                return 0.0
             actual_arr = actual_arr.reshape(-1)[:min_dim]
             predicted_arr = predicted_arr.reshape(-1)[:min_dim]
 

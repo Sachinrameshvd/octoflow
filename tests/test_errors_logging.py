@@ -20,6 +20,8 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
+pytestmark = pytest.mark.unit
+
 from octoflow.cli import OctoFlowGroup, app
 from octoflow.errors import (
     OctoFlowError,
@@ -342,6 +344,7 @@ def test_cockpit_stderr_suppression(capsys):
     assert "Post-cockpit message" in captured.err
 
 
+@pytest.mark.pty
 def test_cockpit_silent_logging_through_pty():
     """Logging writes nothing to the terminal during a PTY cockpit session, even with DEBUG enabled."""
     master, slave = pty.openpty()

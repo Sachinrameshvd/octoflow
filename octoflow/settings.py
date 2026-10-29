@@ -571,7 +571,15 @@ def migrate_config_if_needed(cfg_path: Path) -> Tuple[bool, Optional[Path]]:
     except ValidationError as e:
         first_err = e.errors()[0]
         loc = ".".join(str(p) for p in first_err["loc"])
-        raise ConfigurationError(first_err["msg"], loc=loc)
+        msg = first_err["msg"]
+        hint = None
+        if "port" in loc.lower():
+            hint = "Ports must be between 1 and 65535"
+        elif "provider" in loc.lower():
+            hint = f"Allowed providers: {', '.join(sorted(VALID_PROVIDERS))}"
+        elif "scale" in loc.lower():
+            hint = "Scale must be at least 1 octopus"
+        raise ConfigurationError(msg, loc=loc, hint=hint)
 
     # Write migrated structure atomically
     migrated_json = json.dumps(settings_obj.to_dict(mask_secrets=False), indent=2)

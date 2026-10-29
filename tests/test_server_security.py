@@ -28,6 +28,8 @@ import time
 from pathlib import Path
 import httpx
 import pytest
+
+pytestmark = pytest.mark.integration_local
 try:
     from websockets.asyncio.client import connect as ws_connect
 except ImportError:

@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 import httpx
 
+pytestmark = pytest.mark.integration_local
+
 from octoflow.ignition import ProjectIgniter, find_free_port, is_port_listening, LiveServiceManifest
 from octoflow.consortium import OctosConsortium
 from octoflow.config import OctoFlowConfig, SwarmMorphology

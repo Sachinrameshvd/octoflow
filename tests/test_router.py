@@ -26,6 +26,10 @@ from typing import Optional
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
+import pytest
+
 from octoflow.router import (
     ALLOWED_SIMPLE_SHELL_COMMANDS,
     DESTRUCTIVE_COMMANDS,
@@ -360,6 +364,7 @@ def test_history_logging_and_permissions(tmp_path: Path, monkeypatch):
 # 8. PTY / TERMINAL CONFIRMATION SIMULATION TESTS
 # ============================================================================
 
+@pytest.mark.pty
 def test_pty_confirmation_yes(tmp_path: Path):
     """Verify non-blocking confirmation succeeds when user provides 'y'."""
     import tty
@@ -379,6 +384,7 @@ def test_pty_confirmation_yes(tmp_path: Path):
         os.close(slave)
 
 
+@pytest.mark.pty
 def test_pty_confirmation_no(tmp_path: Path):
     """Verify non-blocking confirmation rejects when user provides 'n'."""
     import tty
@@ -395,6 +401,7 @@ def test_pty_confirmation_no(tmp_path: Path):
         os.close(slave)
 
 
+@pytest.mark.pty
 def test_pty_confirmation_default_reject_on_enter(tmp_path: Path):
     """Verify non-blocking confirmation defaults to No when user presses Enter."""
     master, slave = pty.openpty()

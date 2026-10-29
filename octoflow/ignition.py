@@ -46,18 +46,26 @@ def kill_process_group(pgid: int, grace_seconds: float = 3.0) -> bool:
     
     Guarantees no orphaned child processes remain after shutdown or Ctrl-C.
     """
-    if pgid <= 0:
+    if pgid <= 1:
         return True
+    try:
+        if hasattr(os, "getpgid") and pgid == os.getpgid(0):
+            return True
+    except Exception:
+        pass
     if not hasattr(os, "killpg"):
         return True
 
     # 1. Send SIGTERM to process group
     try:
         os.killpg(pgid, signal.SIGTERM)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return True
     except Exception as e:
-        logger.debug("Failed sending SIGTERM to pgid %d: %s", pgid, e)
+        try:
+            logger.debug("Failed sending SIGTERM to pgid %d: %s", pgid, e)
+        except Exception:
+            pass
 
     # 2. Wait up to grace_seconds
     deadline = time.time() + grace_seconds
@@ -67,16 +75,21 @@ def kill_process_group(pgid: int, grace_seconds: float = 3.0) -> bool:
             time.sleep(0.1)
         except ProcessLookupError:
             return True
+        except PermissionError:
+            return True
         except Exception:
             break
 
     # 3. Escalate to SIGKILL if still alive
     try:
         os.killpg(pgid, signal.SIGKILL)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return True
     except Exception as e:
-        logger.debug("Failed sending SIGKILL to pgid %d: %s", pgid, e)
+        try:
+            logger.debug("Failed sending SIGKILL to pgid %d: %s", pgid, e)
+        except Exception:
+            pass
 
     return True
 

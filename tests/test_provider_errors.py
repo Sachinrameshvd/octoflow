@@ -24,6 +24,8 @@ import pytest
 import httpx
 from unittest.mock import MagicMock, patch
 
+pytestmark = pytest.mark.unit
+
 from octoflow.outcome import ProviderExhaustedError
 from octoflow.provider import (
     BaseLLMProvider,

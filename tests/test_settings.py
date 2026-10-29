@@ -21,6 +21,8 @@ import pytest
 from typer.testing import CliRunner
 from pydantic import SecretStr, ValidationError
 
+pytestmark = pytest.mark.unit
+
 from octoflow.settings import (
     CURRENT_SCHEMA_VERSION,
     ConfigurationError,

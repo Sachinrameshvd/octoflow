@@ -18,6 +18,8 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from typer.testing import CliRunner
 
+pytestmark = pytest.mark.unit
+
 from octoflow.cli import app
 from octoflow.config import OctoFlowConfig
 from octoflow.conductor import SupraesophagealConductor

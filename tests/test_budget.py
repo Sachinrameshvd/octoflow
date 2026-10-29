@@ -11,6 +11,8 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
+pytestmark = pytest.mark.unit
+
 from octoflow.budget import RunBudget, BudgetTracker, format_k, format_hud_line
 from octoflow.config import OctoFlowConfig
 from octoflow.conductor import SupraesophagealConductor

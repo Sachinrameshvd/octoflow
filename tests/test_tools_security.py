@@ -25,6 +25,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.unit, pytest.mark.security]
+
 from octoflow.tools import (
     DEFAULT_ALLOWED_COMMANDS,
     DEFAULT_TIMEOUT_SECONDS,

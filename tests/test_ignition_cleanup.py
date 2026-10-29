@@ -24,6 +24,8 @@ import httpx
 import pytest
 from typer.testing import CliRunner
 
+pytestmark = pytest.mark.integration_local
+
 from octoflow.cli import app
 from octoflow.ignition import (
     ProjectIgniter,

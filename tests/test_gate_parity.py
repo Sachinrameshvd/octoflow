@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 import numpy as np
 
+pytestmark = [pytest.mark.unit, pytest.mark.characterization]
+
 from octoflow.tools import ToolResult
 from octoflow.encoder import CodeSensoryEncoder, get_encoder
 from octoflow.gate import SurpriseGate

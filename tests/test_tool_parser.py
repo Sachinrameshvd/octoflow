@@ -1,6 +1,6 @@
-"""Unit tests for robust tool-call parsing with real-world failure samples."""
-
 import pytest
+
+pytestmark = pytest.mark.unit
 from octoflow.arm import ArmAgent
 from octoflow.tools import WorkspaceSandbox
 from octoflow.bus import InterBrachialBus
