@@ -35,6 +35,9 @@ def run(
     theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')"),
     sandbox: str = typer.Option("local", "--sandbox", "-s", help="Execution isolation: 'local' (host) or 'docker' (containerized)"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Run with mock provider, write no project files"),
+    allow_dirty: bool = typer.Option(False, "--allow-dirty", help="Allow running in a git repo with uncommitted changes (snapshots changes via git stash create)"),
+    init_git: bool = typer.Option(False, "--init-git", help="Automatically initialize git repository if workspace is not in a git repo"),
+    no_checkpoint: bool = typer.Option(False, "--no-checkpoint", help="Disable git checkpointing and branch creation"),
 ):
     """Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an objective."""
     # Lazy imports of heavy components
@@ -80,6 +83,28 @@ def run(
         sandbox_mode=sandbox_str,
         dry_run=is_dry,
     )
+
+    checkpoint_meta = None
+    finalized = False
+    if not is_dry:
+        from octoflow.checkpoint import preflight_and_start_run, finalize_run
+        try:
+            checkpoint_meta = preflight_and_start_run(
+                workspace_dir=workspace,
+                goal=objective,
+                mode=mode,
+                model=model,
+                dry_run=is_dry,
+                allow_dirty=allow_dirty,
+                init_git=init_git,
+                no_checkpoint=no_checkpoint,
+            )
+        except ValueError as ve:
+            console.print(f"\n✖ [bold red][FAILED] Checkpoint pre-flight failed:[/bold red] {ve}\n")
+            raise typer.Exit(code=2)
+        except Exception as e:
+            console.print(f"\n✖ [bold red][FAILED] Checkpoint error:[/bold red] {e}\n")
+            raise typer.Exit(code=2)
 
     host_str = host if isinstance(host, str) else "127.0.0.1"
     if host_str not in ("127.0.0.1", "localhost"):
@@ -208,6 +233,11 @@ def run(
                 console.print("\n◈ [bold yellow][DRY-RUN: no project files written][/bold yellow]\n")
                 raise typer.Exit(code=0)
 
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=True, goal=objective)
+                finalized = True
+
             console.print(f"\n[bold green]✔ OCTOSFLOW CONSORTIUM MISSION COMPLETE![/bold green]")
             console.print(f"◈ Deployed: [bold cyan]{resolved_octos} Octopuses ({total_arms} Neural Arms)[/bold cyan]")
             console.print(f"● Total Execution Time: {res.get('execution_time_seconds', 0):.2f}s")
@@ -233,14 +263,26 @@ def run(
 
             raise typer.Exit(code=0)
         except ProviderExhaustedError as pe:
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=False, goal=objective)
+                finalized = True
             console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
             raise typer.Exit(code=2)
         except typer.Exit:
             raise
         except KeyboardInterrupt:
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=False, goal=objective)
+                finalized = True
             console.print("\n[bold yellow]· Consortium paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n")
             raise typer.Exit(code=1)
         except Exception as e:
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=False, goal=objective)
+                finalized = True
             log_dir = Path.home() / ".octoflow"
             log_dir.mkdir(parents=True, exist_ok=True)
             crash_log = log_dir / "last_error.log"
@@ -366,6 +408,10 @@ def run(
         mod = getattr(result, "model", "default") if not isinstance(result, dict) else result.get("model", "default")
 
         if outcome == RunOutcome.COMPLETE or str(outcome).lower() == "complete":
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=True, files_written=files, goal=objective)
+                finalized = True
             console.print(f"\n◈ [bold green][LIVE: {prov}:{mod}] COMPLETE, {len(files)} files written[/bold green]")
             for f in files:
                 console.print(f"  • {f}")
@@ -416,23 +462,43 @@ def run(
             return
 
         elif outcome == RunOutcome.PARTIAL or str(outcome).lower() == "partial":
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=False, files_written=files, goal=objective)
+                finalized = True
             reason = getattr(result, "reason", "partial quiescence") if not isinstance(result, dict) else result.get("reason", "partial quiescence")
             console.print(f"\n◈ [bold yellow][PARTIAL] {reason}[/bold yellow]\n")
             raise typer.Exit(code=1)
         else:
+            if checkpoint_meta and not finalized:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=False, files_written=files, goal=objective)
+                finalized = True
             reason = getattr(result, "reason", "model produced no file changes")
             console.print(f"\n✖ [bold red][FAILED] {reason}[/bold red]\n")
             raise typer.Exit(code=2)
 
     except ProviderExhaustedError as pe:
+        if checkpoint_meta and not finalized:
+            from octoflow.checkpoint import finalize_run
+            finalize_run(checkpoint_meta, success=False, goal=objective)
+            finalized = True
         console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
         raise typer.Exit(code=2)
     except typer.Exit:
         raise
     except KeyboardInterrupt:
+        if checkpoint_meta and not finalized:
+            from octoflow.checkpoint import finalize_run
+            finalize_run(checkpoint_meta, success=False, goal=objective)
+            finalized = True
         console.print("\n[bold yellow]· Swarm execution paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n")
         raise typer.Exit(code=1)
     except Exception as e:
+        if checkpoint_meta and not finalized:
+            from octoflow.checkpoint import finalize_run
+            finalize_run(checkpoint_meta, success=False, goal=objective)
+            finalized = True
         log_dir = Path.home() / ".octoflow"
         log_dir.mkdir(parents=True, exist_ok=True)
         crash_log = log_dir / "last_error.log"
@@ -453,6 +519,13 @@ def run(
         console.print(error_panel)
         raise typer.Exit(code=2)
     finally:
+        if checkpoint_meta and not finalized:
+            try:
+                from octoflow.checkpoint import finalize_run
+                finalize_run(checkpoint_meta, success=False, goal=objective)
+                finalized = True
+            except Exception:
+                pass
         if orig_dry is None:
             os.environ.pop("OCTOFLOW_DRY_RUN", None)
         else:
@@ -482,9 +555,28 @@ def octos_run(
     open_ui: bool = typer.Option(False, "--ui", help="Auto-open 3D Visualizer in browser"),
     theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Run with mock provider, write no project files"),
+    allow_dirty: bool = typer.Option(False, "--allow-dirty", help="Allow running on dirty working tree by snapshotting changes via git stash create"),
+    init_git: bool = typer.Option(False, "--init-git", help="Automatically initialize git repository in non-git workspace"),
+    no_checkpoint: bool = typer.Option(False, "--no-checkpoint", help="Disable git checkpointing and branch creation"),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
-    run(objective=objective, mode="software_dev", guild=guild, model=model, budget=budget, workspace=workspace, port=port, host=host, open_ui=open_ui, octos=octos, theme=theme, dry_run=dry_run)
+    run(
+        objective=objective,
+        mode="software_dev",
+        guild=guild,
+        model=model,
+        budget=budget,
+        workspace=workspace,
+        port=port,
+        host=host,
+        open_ui=open_ui,
+        octos=octos,
+        theme=theme,
+        dry_run=dry_run,
+        allow_dirty=allow_dirty,
+        init_git=init_git,
+        no_checkpoint=no_checkpoint,
+    )
 
 
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:

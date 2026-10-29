@@ -1,0 +1,14 @@
+                                                                                                    
+ Usage: octoflow undo [OPTIONS] [run_id]                                                            
+                                                                                                    
+ Undo an OctoFlow run: checkout original branch, discard run branch, and restore stash.             
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│   run_id      <str>  Specific run ID to undo (default: most recent run)                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --yes   -y             Skip confirmation prompt and proceed immediately                          │
+│ --dir   -d      <str>  Target project workspace folder [default: .]                              │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

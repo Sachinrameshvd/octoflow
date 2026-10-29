@@ -432,5 +432,8 @@ Exact replacement lines for the designated sections of `PROJECT_CONTEXT.md`:
 8. **Telemetry Server & Secrets Hardening (P1.5 / Decision D5):**
    - *Decision:* Server binds to `127.0.0.1` by default; WebSocket Origin validation rejects untrusted web origins with code 1008; HTTP Host validation blocks DNS-rebinding (400); telemetry payloads strip prompts, files, outputs, and keys; `~/.octoflow` is `0700` and `config.json` is `0600`; setup wizard uses `getpass.getpass()`.
    - *Rationale:* Prevents cross-site WebSocket hijacking from visited websites, eliminates secret leakage over telemetry streams, and protects local credential storage.
+9. **Git Checkpoint, Safe Undo, and Run Provenance (P3.3 / Decision D7):**
+   - *Decision:* Every live run in a git repository requires a clean working tree or `--allow-dirty` (stashing via `git stash create`), switches to an isolated `octoflow/run-<id>` branch from HEAD, and records metadata in `~/.octoflow/runs/<run-id>/meta.json`. Commits completed output or `[wip]` on interruption. Non-git workspaces offer `--init-git` or `--no-checkpoint`. `octoflow undo` and cockpit `/undo` verify metadata ownership, prompt confirmation with diff stats, return to the original branch, safely delete the run branch (`git branch -D` only on verified `octoflow/run-*` branches), and restore stashed dirty changes. Never touches other branches, never force-pushes, and never runs `git clean` on user files.
+   - *Rationale:* Enables fearless live testing in production codebases with guaranteed one-command rollback to pristine repository state.
 <!-- REPLACEMENT END: SECTION 9 -->
 ```

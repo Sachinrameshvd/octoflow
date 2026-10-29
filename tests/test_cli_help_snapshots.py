@@ -66,10 +66,12 @@ def test_octos_command_help_snapshots(runner, cmd_name):
 
 def test_config_group_help_snapshot(runner):
     snapshot_file = SNAPSHOT_DIR / "config.txt"
-    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
-    expected = snapshot_file.read_text(encoding="utf-8")
     result = runner.invoke(app, ["config", "--help"], prog_name="octoflow")
     assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
 
 
@@ -79,9 +81,11 @@ def test_config_group_help_snapshot(runner):
 )
 def test_config_subcommand_help_snapshots(runner, sub_cmd):
     snapshot_file = SNAPSHOT_DIR / f"config_{sub_cmd}.txt"
-    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
-    expected = snapshot_file.read_text(encoding="utf-8")
     result = runner.invoke(app, ["config", sub_cmd, "--help"], prog_name="octoflow")
     assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
 

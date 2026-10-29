@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octoflow runs [OPTIONS]                                                                     
+                                                                                                    
+ List recent OctoFlow execution runs and their git provenance status.                               
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir    -d      <str>  Filter runs by workspace folder                                          │
+│ --limit  -n      <int>  Maximum number of runs to display [default: 10]                          │
+│ --help                  Show this message and exit.                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

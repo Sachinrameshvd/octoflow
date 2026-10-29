@@ -14,59 +14,62 @@
 │ --help                               Show this message and exit.                                 │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────╮
-│ run              Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an     │
-│                  objective.                                                                      │
-│ train            Shortcut command to run swarm in AIML_RESEARCH morphology.                      │
-│ ui               Launch the 3D Cephalopod Connectome Visualizer bridge.                          │
-│ mcp-serve        Run OctoFlow as a Model Context Protocol (MCP) server for Claude Code and       │
-│                  Cursor.                                                                         │
-│ consortium       Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a  │
-│                  project.                                                                        │
-│ theme            View or switch the OctoFlow terminal & visualizer theme.                        │
-│ banner           Play the 3D animated OCTOFLOW banner (single replay or continuous loop).        │
-│ screensaver      Launch continuous ambient 3D banner screensaver until keypress.                 │
-│ setup            Launch the interactive OctoFlow Setup Wizard.                                   │
-│ doctor           Run OctoFlow environment and provider diagnostics (like 'ruflo doctor').        │
-│ mcp              Start OctoFlow as a Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for  │
-│                  Claude Code and Cursor.                                                         │
-│ guard            Run pre-commit secret leak and AST syntax verification on staged git files.     │
-│ install-hooks    Install automated OctoFlow pre-commit hook into .git/hooks/.                    │
-│ init-ide         Auto-configure Cursor (.cursorrules), Claude (MCP), VS Code (tasks), and Git    │
-│                  (hooks).                                                                        │
-│ init-action      Generate automated OctoFlow Swarm Guard GitHub Action                           │
-│                  (.github/workflows/octoflow-guard.yml).                                         │
-│ review-pr        Execute automated 3-Arm CI/CD PR Review over git diffs.                         │
-│ report           Generate standalone self-contained HTML mission audit report with interactive   │
-│                  connectome replay.                                                              │
-│ export           Generate standalone self-contained HTML mission audit report with interactive   │
-│                  connectome replay.                                                              │
-│ fix              Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend). │
-│ heal             Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend). │
-│ diff-review      Interactive file-by-file patch inspector and diff triage with AST validation.   │
-│                  [experimental]                                                                  │
-│ triage           Interactive file-by-file patch inspector and diff triage with AST validation.   │
-│                  [experimental]                                                                  │
-│ notify           Dispatch mission status card to team Slack or Discord webhook. [experimental]   │
-│ guild            Manage 8-arm specialist guilds (custom community rosters).                      │
-│ bench            Run standardized 8-arm algorithmic & architectural challenge benchmarks.        │
-│                  [experimental]                                                                  │
-│ monorepo         Scan and partition monorepo packages to specialist 8-arm roles. [experimental]  │
-│ record           Launch recorded terminal session producing standard Asciinema v2 .cast.         │
-│                  [experimental]                                                                  │
-│ audit            Run 1-100 system readiness and security diagnostic across 5 cephalopod          │
-│                  dimensions.                                                                     │
-│ eject            Eject autonomous standalone cephalopod agent harness into any repository.       │
-│                  [experimental]                                                                  │
-│ install-claude   Install and register OctoFlow native Claude Code plugin and slash commands      │
-│                  (/octo).                                                                        │
-│ federation       Zero-trust multi-machine agent federation and PII redaction pipeline.           │
-│                  [experimental]                                                                  │
-│ docs             Display interactive Cephalopod Master Manual and Developer Field Guide.         │
-│                  [experimental]                                                                  │
-│ manual           Display interactive Cephalopod Master Manual and Developer Field Guide.         │
-│                  [experimental]                                                                  │
-│ play             Launch the Chrome Dino-style Benthic Dot Runner game. [experimental]            │
-│ runner           Launch the Chrome Dino-style Benthic Dot Runner game. [experimental]            │
-│ config           Inspect, validate, and update OctoFlow typed configuration settings.            │
+│ run             Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an      │
+│                 objective.                                                                       │
+│ train           Shortcut command to run swarm in AIML_RESEARCH morphology.                       │
+│ ui              Launch the 3D Cephalopod Connectome Visualizer bridge.                           │
+│ mcp-serve       Run OctoFlow as a Model Context Protocol (MCP) server for Claude Code and        │
+│                 Cursor.                                                                          │
+│ consortium      Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a   │
+│                 project.                                                                         │
+│ theme           View or switch the OctoFlow terminal & visualizer theme.                         │
+│ banner          Play the 3D animated OCTOFLOW banner (single replay or continuous loop).         │
+│ screensaver     Launch continuous ambient 3D banner screensaver until keypress.                  │
+│ setup           Launch the interactive OctoFlow Setup Wizard.                                    │
+│ doctor          Run OctoFlow environment and provider diagnostics (like 'ruflo doctor').         │
+│ mcp             Start OctoFlow as a Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for   │
+│                 Claude Code and Cursor.                                                          │
+│ guard           Run pre-commit secret leak and AST syntax verification on staged git files.      │
+│ install-hooks   Install automated OctoFlow pre-commit hook into .git/hooks/.                     │
+│ init-ide        Auto-configure Cursor (.cursorrules), Claude (MCP), VS Code (tasks), and Git     │
+│                 (hooks).                                                                         │
+│ init-action     Generate automated OctoFlow Swarm Guard GitHub Action                            │
+│                 (.github/workflows/octoflow-guard.yml).                                          │
+│ review-pr       Execute automated 3-Arm CI/CD PR Review over git diffs.                          │
+│ report          Generate standalone self-contained HTML mission audit report with interactive    │
+│                 connectome replay.                                                               │
+│ export          Generate standalone self-contained HTML mission audit report with interactive    │
+│                 connectome replay.                                                               │
+│ fix             Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend).  │
+│ heal            Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend).  │
+│ diff-review     Interactive file-by-file patch inspector and diff triage with AST validation.    │
+│                 [experimental]                                                                   │
+│ triage          Interactive file-by-file patch inspector and diff triage with AST validation.    │
+│                 [experimental]                                                                   │
+│ notify          Dispatch mission status card to team Slack or Discord webhook. [experimental]    │
+│ guild           Manage 8-arm specialist guilds (custom community rosters).                       │
+│ bench           Run standardized 8-arm algorithmic & architectural challenge benchmarks.         │
+│                 [experimental]                                                                   │
+│ monorepo        Scan and partition monorepo packages to specialist 8-arm roles. [experimental]   │
+│ record          Launch recorded terminal session producing standard Asciinema v2 .cast.          │
+│                 [experimental]                                                                   │
+│ audit           Run 1-100 system readiness and security diagnostic across 5 cephalopod           │
+│                 dimensions.                                                                      │
+│ eject           Eject autonomous standalone cephalopod agent harness into any repository.        │
+│                 [experimental]                                                                   │
+│ install-claude  Install and register OctoFlow native Claude Code plugin and slash commands       │
+│                 (/octo).                                                                         │
+│ federation      Zero-trust multi-machine agent federation and PII redaction pipeline.            │
+│                 [experimental]                                                                   │
+│ docs            Display interactive Cephalopod Master Manual and Developer Field Guide.          │
+│                 [experimental]                                                                   │
+│ manual          Display interactive Cephalopod Master Manual and Developer Field Guide.          │
+│                 [experimental]                                                                   │
+│ play            Launch the Chrome Dino-style Benthic Dot Runner game. [experimental]             │
+│ runner          Launch the Chrome Dino-style Benthic Dot Runner game. [experimental]             │
+│ undo            Undo an OctoFlow run: checkout original branch, discard run branch, and restore  │
+│                 stash.                                                                           │
+│ runs            List recent OctoFlow execution runs and their git provenance status.             │
+│ config          Inspect, validate, and update OctoFlow typed configuration settings.             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

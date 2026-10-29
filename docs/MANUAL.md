@@ -92,6 +92,12 @@ Every command can be executed from the shell (`./octo <command>`) or inside the 
 
 ### Swarm Execution & Orchestration
 * `./octos run` (or `./octo run "<goal>"`): Deploys the multi-octopus consortium on a specific mission.
+  * `--allow-dirty`: Permits running on a dirty working tree by snapshotting uncommitted changes via `git stash create`.
+  * `--init-git`: Automatically initializes a git repository if the workspace is not already inside one.
+  * `--no-checkpoint`: Runs without git checkpointing (for non-git workspaces or temporary testing).
+  * `--dry-run`: Mock execution that writes no project files and creates no checkpoint.
+* `./octo undo [run-id]` (or `/undo` / `/rollback` in Cockpit): Safely undoes an OctoFlow run by checking out the original branch and deleting the isolated run branch (`git branch -D` exclusively for branches matching `octoflow/run-*` confirmed by `meta.json`). Restores stashed dirty changes if an allow-dirty snapshot was taken. Never touches other branches, never force-pushes, and never runs `git clean` on user files.
+* `./octo runs` (or `octos runs`): Lists recent runs (run ID, goal summary, outcome status, mode, branch, timestamp).
 * `./octos ui` (or `/ui`): Launches the 3D WebGL Constellation in your default browser.
 * `./octo heal` (or `/heal`): Autonomous self-healing test repair loop (Arm 5 QA + Arm 2 Backend).
 * `./octo triage` (or `/triage`): File-by-file interactive diff inspector with AST error triage.

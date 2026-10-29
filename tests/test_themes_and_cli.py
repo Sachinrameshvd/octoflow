@@ -223,7 +223,7 @@ def test_prompt_prefix_stripping():
         assert user_input == exp
 
 
-def test_cli_run_sandbox_mode_default_direct_call(monkeypatch):
+def test_cli_run_sandbox_mode_default_direct_call(monkeypatch, tmp_path):
     """Verify that calling cli.run directly as a Python function doesn't fail Pydantic validation on sandbox_mode."""
     from octoflow.cli import run
 
@@ -245,10 +245,11 @@ def test_cli_run_sandbox_mode_default_direct_call(monkeypatch):
         octos=1,
         model="mock",
         budget=1.0,
-        workspace=".",
+        workspace=str(tmp_path),
         port=8099,
         open_ui=False,
         theme="abyssal",
+        no_checkpoint=True,
     )
     assert mock_executed is True
 

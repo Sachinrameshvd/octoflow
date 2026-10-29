@@ -7,25 +7,31 @@
 │ *    objective      <str>  High-level engineering or research goal for the swarm [required]      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --mode          -m      <str>    Swarm mode: 'software_dev', 'aiml_research', 'fullstack_ai'     │
-│                                  [default: software_dev]                                         │
-│ --guild         -g      <str>    Specialist roster/guild name from ~/.octoflow/guilds/           │
-│ --model                 <str>    LLM backend: 'mock', 'anthropic', 'openai', 'ollama'            │
-│                                  [default: mock]                                                 │
-│ --budget        -b      <float>  Hard spending limit in dollars [default: 5.0]                   │
-│ --dir           -d      <str>    Target project workspace folder [default: .]                    │
-│ --port          -p      <int>    3D Visualizer telemetry port [default: 8088]                    │
-│ --host                  <str>    Telemetry server bind host (default: 127.0.0.1)                 │
-│                                  [default: 127.0.0.1]                                            │
-│ --open-ui,--ui                   Auto-open 3D Connectome Visualizer in default browser           │
-│ --octos         -o      <str>    Count of octopuses: 'auto' (dynamic load autoscaler), 1 (Solo), │
-│                                  3 (Triad), or 8 (Octopolis)                                     │
-│                                  [default: 1]                                                    │
-│ --theme         -t      <str>    Theme palette ('abyssal', 'catppuccin', 'tokyo-night',          │
-│                                  'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')        │
-│ --sandbox       -s      <str>    Execution isolation: 'local' (host) or 'docker' (containerized) │
-│                                  [default: local]                                                │
-│ --dry-run                        Run with mock provider, write no project files                  │
-│ --help                           Show this message and exit.                                     │
+│ --mode           -m      <str>    Swarm mode: 'software_dev', 'aiml_research', 'fullstack_ai'    │
+│                                   [default: software_dev]                                        │
+│ --guild          -g      <str>    Specialist roster/guild name from ~/.octoflow/guilds/          │
+│ --model                  <str>    LLM backend: 'mock', 'anthropic', 'openai', 'ollama'           │
+│                                   [default: mock]                                                │
+│ --budget         -b      <float>  Hard spending limit in dollars [default: 5.0]                  │
+│ --dir            -d      <str>    Target project workspace folder [default: .]                   │
+│ --port           -p      <int>    3D Visualizer telemetry port [default: 8088]                   │
+│ --host                   <str>    Telemetry server bind host (default: 127.0.0.1)                │
+│                                   [default: 127.0.0.1]                                           │
+│ --open-ui,--ui                    Auto-open 3D Connectome Visualizer in default browser          │
+│ --octos          -o      <str>    Count of octopuses: 'auto' (dynamic load autoscaler), 1        │
+│                                   (Solo), 3 (Triad), or 8 (Octopolis)                            │
+│                                   [default: 1]                                                   │
+│ --theme          -t      <str>    Theme palette ('abyssal', 'catppuccin', 'tokyo-night',         │
+│                                   'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')       │
+│ --sandbox        -s      <str>    Execution isolation: 'local' (host) or 'docker'                │
+│                                   (containerized)                                                │
+│                                   [default: local]                                               │
+│ --dry-run                         Run with mock provider, write no project files                 │
+│ --allow-dirty                     Allow running in a git repo with uncommitted changes           │
+│                                   (snapshots changes via git stash create)                       │
+│ --init-git                        Automatically initialize git repository if workspace is not in │
+│                                   a git repo                                                     │
+│ --no-checkpoint                   Disable git checkpointing and branch creation                  │
+│ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

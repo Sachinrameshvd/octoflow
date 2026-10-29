@@ -752,23 +752,34 @@ def _run_cockpit_impl(
                 continue
 
             elif user_input in ["/rollback", "/undo"]:
-                chk_file = Path.home() / ".octoflow" / "last_checkpoint.json"
-                if not chk_file.exists():
-                    c.print("[dim]No prior checkpoint found to rollback.[/dim]\n")
-                    continue
+                from octoflow.checkpoint import undo_run
                 try:
-                    chk_data = json.loads(chk_file.read_text(encoding="utf-8"))
-                    target_head = chk_data.get("head")
-                    obj = chk_data.get("objective", "previous mission")
-                    c.print(f"[{s.theme.rich_warning}]▲ Rollback: Reverting workspace changes from objective '[bold]{obj[:45]}[/bold]'...[/{s.theme.rich_warning}]")
-                    if target_head:
-                        subprocess.run(["git", "reset", "--hard", target_head], cwd=str(s.workspace), capture_output=True)
-                        subprocess.run(["git", "clean", "-fd"], cwd=str(s.workspace), capture_output=True)
-                        c.print(f"[{s.theme.rich_success}]✔ Cleanly reverted workspace to checkpoint ({target_head[:8]}).[/{s.theme.rich_success}]\n")
-                    else:
-                        c.print("[yellow]Checkpoint recorded but no git commit hash was available.[/yellow]\n")
+                    def _cockpit_confirm(prompt_text: str, diff_stat: str) -> bool:
+                        if diff_stat:
+                            c.print(Panel(diff_stat, title="[cyan]Changes to be Discarded[/cyan]", border_style="cyan"))
+                        c.print(f"[{s.theme.rich_warning}]▲ {prompt_text}[/{s.theme.rich_warning}]")
+                        ans = prompt_user_str(c, f"[{s.theme.rich_primary}]Are you sure you want to discard this run branch and return to original branch? (y/N): [/{s.theme.rich_primary}]").lower()
+                        return ans in ["y", "yes"]
+
+                    res = undo_run(
+                        workspace_dir=s.workspace,
+                        confirm=True,
+                        interactive_confirm=_cockpit_confirm,
+                    )
+                    if res.get("status") == "SUCCESS":
+                        c.print(f"[{s.theme.rich_success}]✔ Cleanly undone OctoFlow run '{res['run_id']}'.[/{s.theme.rich_success}]")
+                        c.print(f"● Switched back to original branch: [bold cyan]{res['original_branch']}[/bold cyan]")
+                        c.print(f"● Deleted run branch: [dim]{res['deleted_branch']}[/dim]")
+                        if res.get("restored_stash"):
+                            c.print(f"[{s.theme.rich_success}]✔ Restored uncommitted changes from stash snapshot.[/{s.theme.rich_success}]\n")
+                        else:
+                            c.print()
+                    elif res.get("status") == "CANCELLED":
+                        c.print("[dim]Undo operation cancelled by user.[/dim]\n")
+                except ValueError as ve:
+                    c.print(f"[{s.theme.rich_warning}]Undo note: {ve}[/{s.theme.rich_warning}]\n")
                 except Exception as rb_err:
-                    c.print(f"[{s.theme.rich_danger}]Rollback error: {rb_err}[/{s.theme.rich_danger}]\n")
+                    c.print(f"[{s.theme.rich_danger}]Undo error: {rb_err}[/{s.theme.rich_danger}]\n")
                 continue
 
             elif user_input == "/memory":
@@ -1093,37 +1104,30 @@ def _run_cockpit_impl(
                 c.print()
                 continue
 
-            # Check git branch safety for existing codebases
-            try:
-                b_chk = subprocess.run(["git", "branch", "--show-current"], cwd=str(s.workspace), capture_output=True, text=True, timeout=1)
-                curr_branch = b_chk.stdout.strip()
-                if curr_branch in ["main", "master"]:
-                    import re
+            # Pre-flight git checkpoint checks
+            allow_dirty_flag = False
+            init_git_flag = False
+            no_checkpoint_flag = False
 
-                    clean_slug = re.sub(r'[^a-zA-Z0-9]+', '-', user_input.lower())[:24].strip('-')
-                    safe_branch = f"octos/{clean_slug or 'task'}"
-                    c.print(f"[{s.theme.rich_warning}]▲  Branch Protection: You are on production branch '[bold]{curr_branch}[/bold]'.[/{s.theme.rich_warning}]")
-                    branch_ans = prompt_user_str(c, f"[{s.theme.rich_primary}]Switch to safety branch '[bold]{safe_branch}[/bold]'? (Y/n): [/{s.theme.rich_primary}]").lower()
-                    if branch_ans in ["", "y", "yes"]:
-                        sw_out = subprocess.run(["git", "checkout", "-b", safe_branch], cwd=str(s.workspace), capture_output=True, text=True)
-                        if sw_out.returncode == 0:
-                            c.print(f"[{s.theme.rich_success}]✔ Switched to protection branch: [bold]{safe_branch}[/bold][/{s.theme.rich_success}]\n")
-            except Exception:
-                pass
-
-            # Pre-mission git checkpoint for /rollback
-            try:
-                rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(s.workspace), capture_output=True, text=True, timeout=1)
-                if rev.returncode == 0:
-                    chk_payload = {
-                        "head": rev.stdout.strip(),
-                        "time": time.time(),
-                        "objective": user_input,
-                    }
-                    (Path.home() / ".octoflow").mkdir(parents=True, exist_ok=True)
-                    (Path.home() / ".octoflow" / "last_checkpoint.json").write_text(json.dumps(chk_payload), encoding="utf-8")
-            except Exception:
-                pass
+            from octoflow.checkpoint import is_git_repo, is_working_tree_clean, init_git_repo
+            if not is_git_repo(s.workspace):
+                c.print(f"[{s.theme.rich_warning}]▲ Workspace is not a git repository.[/{s.theme.rich_warning}]")
+                init_ans = prompt_user_str(c, f"[{s.theme.rich_primary}]Initialize git repository for safe rollback? (y/N): [/{s.theme.rich_primary}]").lower()
+                if init_ans in ["y", "yes"]:
+                    init_git_repo(s.workspace)
+                    init_git_flag = True
+                    c.print(f"[{s.theme.rich_success}]✔ Initialized git repository.[/{s.theme.rich_success}]\n")
+                else:
+                    no_checkpoint_flag = True
+                    c.print(f"[{s.theme.rich_warning}]Proceeding without checkpoint rollback protection (--no-checkpoint).[/{s.theme.rich_warning}]\n")
+            elif not is_working_tree_clean(s.workspace):
+                c.print(f"[{s.theme.rich_warning}]▲ Working tree has uncommitted changes.[/{s.theme.rich_warning}]")
+                dirty_ans = prompt_user_str(c, f"[{s.theme.rich_primary}]Snapshot changes with git stash create and proceed (--allow-dirty)? (Y/n): [/{s.theme.rich_primary}]").lower()
+                if dirty_ans in ["", "y", "yes"]:
+                    allow_dirty_flag = True
+                else:
+                    c.print(f"[{s.theme.rich_danger}]Mission aborted. Please commit or stash your changes before proceeding.[/{s.theme.rich_danger}]\n")
+                    continue
 
             # Natural language goal -> Execute Swarm!
             c.print(f"\n[{s.theme.rich_primary}]◈ Deploying Swarm on Objective:[/{s.theme.rich_primary}] [bold white]{user_input}[/bold white]\n")
@@ -1145,6 +1149,9 @@ def _run_cockpit_impl(
                     octos=s.current_octos,
                     theme=s.theme.id,
                     sandbox="local",
+                    allow_dirty=allow_dirty_flag,
+                    init_git=init_git_flag,
+                    no_checkpoint=no_checkpoint_flag,
                 )
             except Exception as swarm_err:
                 c.print(f"[{s.theme.rich_danger}]Swarm execution note: {swarm_err}[/{s.theme.rich_danger}]")
