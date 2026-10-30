@@ -8,22 +8,23 @@ HTTP Host header DNS-rebinding protection, and structural payload secret sanitiz
 
 import asyncio
 import json
-import logging
 import os
 import socket
 import sys
 import threading
 from pathlib import Path
-from typing import Set, Optional, Any, List, Dict
+from typing import Any
+
 from octoflow.conductor import SwarmTelemetryEvent
-from octoflow.provider import redact_secrets
 from octoflow.logging_config import get_logger
+from octoflow.provider import redact_secrets
 
 try:
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response
-    from fastapi.staticfiles import StaticFiles
-    from fastapi.responses import HTMLResponse
     import uvicorn
+    from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+    from fastapi.responses import HTMLResponse
+    from fastapi.staticfiles import StaticFiles
+
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
@@ -31,7 +32,9 @@ except ImportError:
 logger = get_logger("server")
 
 
-def find_available_port(start_port: int, max_attempts: int = 10, host: str = "127.0.0.1") -> Optional[int]:
+def find_available_port(
+    start_port: int, max_attempts: int = 10, host: str = "127.0.0.1"
+) -> int | None:
     """Find the next available port starting from start_port on the specified host."""
     host_str = host if isinstance(host, str) else "127.0.0.1"
     for p in range(start_port, start_port + max_attempts):
@@ -52,12 +55,14 @@ class TelemetryBroadcaster:
         self.requested_port = port if isinstance(port, int) else 8088
         self.port = self.requested_port
         self.host = host if isinstance(host, str) else "127.0.0.1"
-        self.dev_mode = dev_mode or (os.getenv("OCTOFLOW_DEV") == "1") or (os.getenv("VITE_DEV") == "1")
-        self.active_sockets: Set[Any] = set()
-        self.server_thread: Optional[threading.Thread] = None
-        self.server_instance: Optional[Any] = None
-        self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.history: List[dict] = []
+        self.dev_mode = (
+            dev_mode or (os.getenv("OCTOFLOW_DEV") == "1") or (os.getenv("VITE_DEV") == "1")
+        )
+        self.active_sockets: set[Any] = set()
+        self.server_thread: threading.Thread | None = None
+        self.server_instance: Any | None = None
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self.history: list[dict] = []
 
         if self.host not in ("127.0.0.1", "localhost"):
             warning_msg = (
@@ -73,19 +78,45 @@ class TelemetryBroadcaster:
         and pass free-text fields through the secret redactor."""
         clean = {}
         sensitive_field_names = {
-            "prompt", "prompt_text", "prompts", "system_prompt", "user_prompt", "messages",
-            "file_content", "file_contents", "content", "contents", "file_data", "diff", "diff_content", "patch",
-            "stdout", "stderr", "command_output", "raw_output", "output",
-            "api_key", "key", "token", "secret", "password",
-            "anthropic_api_key", "openai_api_key", "gemini_api_key",
-            "grok_api_key", "deepseek_api_key", "authorization"
+            "prompt",
+            "prompt_text",
+            "prompts",
+            "system_prompt",
+            "user_prompt",
+            "messages",
+            "file_content",
+            "file_contents",
+            "content",
+            "contents",
+            "file_data",
+            "diff",
+            "diff_content",
+            "patch",
+            "stdout",
+            "stderr",
+            "command_output",
+            "raw_output",
+            "output",
+            "api_key",
+            "key",
+            "token",
+            "secret",
+            "password",
+            "anthropic_api_key",
+            "openai_api_key",
+            "gemini_api_key",
+            "grok_api_key",
+            "deepseek_api_key",
+            "authorization",
         }
 
         for k, v in data.items():
             k_lower = k.lower()
             if k_lower in sensitive_field_names:
                 continue
-            if any(term in k_lower for term in ["password", "secret", "token", "api_key", "apikey"]):
+            if any(
+                term in k_lower for term in ["password", "secret", "token", "api_key", "apikey"]
+            ):
                 continue
 
             if isinstance(v, str):
@@ -114,7 +145,9 @@ class TelemetryBroadcaster:
             safe_dict = self.sanitize_telemetry_dict(raw_dict)
             self.history.append(safe_dict)
         except Exception as e:
-            logger.debug("Failed serializing telemetry event: %s", e)  # best-effort: fallback to empty event dict
+            logger.debug(
+                "Failed serializing telemetry event: %s", e
+            )  # best-effort: fallback to empty event dict
             safe_dict = {}
 
         if not self.active_sockets or not self.loop:
@@ -128,7 +161,9 @@ class TelemetryBroadcaster:
                 try:
                     await ws.send_text(payload)
                 except Exception as e:
-                    logger.debug("WebSocket client disconnected or send failed: %s", e)  # best-effort: dead client pruning
+                    logger.debug(
+                        "WebSocket client disconnected or send failed: %s", e
+                    )  # best-effort: dead client pruning
                     dead_sockets.add(ws)
             self.active_sockets.difference_update(dead_sockets)
 
@@ -140,7 +175,9 @@ class TelemetryBroadcaster:
             safe_dict = self.sanitize_telemetry_dict(data)
             self.history.append(safe_dict)
         except Exception as e:
-            logger.debug("Failed sanitizing raw telemetry dict: %s", e)  # best-effort: fallback to unmutated data
+            logger.debug(
+                "Failed sanitizing raw telemetry dict: %s", e
+            )  # best-effort: fallback to unmutated data
             safe_dict = data
 
         if not self.active_sockets or not self.loop:
@@ -154,17 +191,19 @@ class TelemetryBroadcaster:
                 try:
                     await ws.send_text(payload)
                 except Exception as e:
-                    logger.debug("WebSocket client disconnected during raw broadcast: %s", e)  # best-effort: dead client pruning
+                    logger.debug(
+                        "WebSocket client disconnected during raw broadcast: %s", e
+                    )  # best-effort: dead client pruning
                     dead_sockets.add(ws)
             self.active_sockets.difference_update(dead_sockets)
 
         asyncio.run_coroutine_threadsafe(_send_all(), self.loop)
 
-    def get_history(self) -> List[dict]:
+    def get_history(self) -> list[dict]:
         """Retrieve all recorded sanitized telemetry events from the current session."""
         return list(self.history)
 
-    def get_allowed_origins(self) -> Set[str]:
+    def get_allowed_origins(self) -> set[str]:
         """Build exact set of allowed WebSocket Origin values."""
         allowed = {
             f"http://127.0.0.1:{self.port}",
@@ -182,7 +221,7 @@ class TelemetryBroadcaster:
             allowed.add("https://127.0.0.1:5173")
         return allowed
 
-    def get_allowed_hosts(self) -> Set[str]:
+    def get_allowed_hosts(self) -> set[str]:
         """Build set of permitted Host header values for DNS-rebinding protection."""
         allowed = {"127.0.0.1", "localhost", "testserver"}
         if self.host not in ("127.0.0.1", "localhost", "0.0.0.0"):
@@ -234,13 +273,16 @@ class TelemetryBroadcaster:
             except WebSocketDisconnect:
                 self.active_sockets.discard(websocket)
             except Exception as e:
-                logger.debug("WebSocket receive loop encountered error: %s", e)  # best-effort: clean up disconnected socket
+                logger.debug(
+                    "WebSocket receive loop encountered error: %s", e
+                )  # best-effort: clean up disconnected socket
                 self.active_sockets.discard(websocket)
 
         # 3. LLM Failover Pool Endpoints (Masked Keys and Secure Config)
         @app.get("/llm/pool")
         async def get_llm_pool():
             from octoflow.config import load_secure_config, mask_credential
+
             cfg_data = load_secure_config()
             raw_pool = cfg_data.get("llm_pool", [])
             safe_entries = []
@@ -256,6 +298,7 @@ class TelemetryBroadcaster:
         @app.post("/llm/pool")
         async def post_llm_pool(payload: dict):
             from octoflow.config import load_secure_config, save_secure_config
+
             cfg_data = load_secure_config()
             current_pool = cfg_data.get("llm_pool", [])
             action = payload.get("action", "add")
@@ -296,6 +339,7 @@ class TelemetryBroadcaster:
             try:
                 from octoflow.config import LLMConfigEntry
                 from octoflow.provider import _build_from_pool_entry
+
                 entry = LLMConfigEntry(**entry_data)
                 prov = _build_from_pool_entry(entry)
                 resp = prov.generate("Ping")
@@ -310,6 +354,7 @@ class TelemetryBroadcaster:
         if dist_path.exists():
             app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="visualizer")
         else:
+
             @app.get("/")
             async def fallback_index():
                 return HTMLResponse(
@@ -338,11 +383,19 @@ class TelemetryBroadcaster:
             try:
                 self.loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self.loop)
-                config = uvicorn.Config(app=app, host=self.host, port=self.port, log_level="error", ws="websockets-sansio")
+                config = uvicorn.Config(
+                    app=app,
+                    host=self.host,
+                    port=self.port,
+                    log_level="error",
+                    ws="websockets-sansio",
+                )
                 self.server_instance = uvicorn.Server(config)
                 self.loop.run_until_complete(self.server_instance.serve())
             except Exception as e:
-                logger.debug("Telemetry server thread exited with error: %s", e)  # best-effort: background server shutdown
+                logger.debug(
+                    "Telemetry server thread exited with error: %s", e
+                )  # best-effort: background server shutdown
 
         self.server_thread = threading.Thread(target=_run, daemon=True)
         self.server_thread.start()
@@ -356,5 +409,7 @@ class TelemetryBroadcaster:
                 if self.loop and self.loop.is_running():
                     asyncio.run_coroutine_threadsafe(ws.close(), self.loop)
             except Exception as e:
-                logger.debug("Error closing websocket during server stop: %s", e)  # best-effort: socket may already be closed
+                logger.debug(
+                    "Error closing websocket during server stop: %s", e
+                )  # best-effort: socket may already be closed
         self.active_sockets.clear()

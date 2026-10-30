@@ -3,6 +3,7 @@
 import typer
 from rich.console import Console
 from rich.table import Table
+
 from octoflow.themes import load_saved_theme
 
 console = Console()
@@ -17,12 +18,17 @@ def monorepo_cli_cmd(
     r"""Scan and partition monorepo packages to specialist 8-arm roles. \[experimental]"""
     global _notice_printed
     if not _notice_printed:
-        console.print("[yellow]Notice: 'monorepo' is an experimental feature and may change or be removed in future releases.[/yellow]\n")
+        console.print(
+            "[yellow]Notice: 'monorepo' is an experimental feature and may change or be removed in future releases.[/yellow]\n"
+        )
         _notice_printed = True
     from octoflow.monorepo import scan_monorepo_topology
+
     theme = load_saved_theme()
     topo = scan_monorepo_topology(workspace)
-    t = Table(title="Monorepo Package & Swarm Topology", border_style=theme.rich_border, expand=True)
+    t = Table(
+        title="Monorepo Package & Swarm Topology", border_style=theme.rich_border, expand=True
+    )
     t.add_column("Package Name", style="bold white", width=22)
     t.add_column("Subdirectory", style=theme.rich_secondary, width=24)
     t.add_column("Type", width=12)
@@ -43,10 +49,17 @@ def monorepo_cli_cmd(
     for pkg in packages:
         arm_id = pkg.get("primary_arm", 2)
         arm_title = arm_titles.get(arm_id, f"Arm {arm_id}")
-        t.add_row(pkg.get("name", ""), pkg.get("rel_path", ""), str(pkg.get("type", "")).upper(), f"Arm {arm_id} ({arm_title})")
+        t.add_row(
+            pkg.get("name", ""),
+            pkg.get("rel_path", ""),
+            str(pkg.get("type", "")).upper(),
+            f"Arm {arm_id} ({arm_title})",
+        )
 
     console.print(t)
-    console.print(f"[dim]Total packages detected: [bold]{len(packages)}[/bold] (Monorepo: [bold]{'YES' if topo.get('is_monorepo') else 'NO'}[/bold])[/dim]\n")
+    console.print(
+        f"[dim]Total packages detected: [bold]{len(packages)}[/bold] (Monorepo: [bold]{'YES' if topo.get('is_monorepo') else 'NO'}[/bold])[/dim]\n"
+    )
 
 
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:

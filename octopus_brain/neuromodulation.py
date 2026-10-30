@@ -8,7 +8,6 @@ and behavioral thresholds (Octopamine, FMRFamide, Dopamine, Serotonin):
 - Serotonin (5-HT): Defensive withdrawal, nociception, and synaptic depression (LTD).
 """
 
-from typing import Dict, Any
 import numpy as np
 
 
@@ -23,10 +22,10 @@ class CephalopodNeuromodulation:
         self.decay = float(np.exp(-dt_sec / decay_tau_sec))
 
         # Basal concentrations [0.0 to 1.0]
-        self.octopamine: float = 0.1     # Arousal / hunting tone
-        self.fmrfamide: float = 0.2      # Muscle contraction gain
-        self.dopamine: float = 0.05      # Reward / LTP gate
-        self.serotonin: float = 0.05     # Nociception / defensive withdrawal
+        self.octopamine: float = 0.1  # Arousal / hunting tone
+        self.fmrfamide: float = 0.2  # Muscle contraction gain
+        self.dopamine: float = 0.05  # Reward / LTP gate
+        self.serotonin: float = 0.05  # Nociception / defensive withdrawal
 
     def update(self):
         """Decays transient surges back to basal levels."""
@@ -52,7 +51,7 @@ class CephalopodNeuromodulation:
         """Returns muscular force multiplier modulated by FMRFamide and octopamine."""
         return float(1.0 + 0.8 * self.fmrfamide + 0.5 * (self.octopamine - 0.1))
 
-    def get_state_dict(self) -> Dict[str, float]:
+    def get_state_dict(self) -> dict[str, float]:
         """Returns current neuromodulatory profile."""
         return {
             "octopamine": round(self.octopamine, 3),

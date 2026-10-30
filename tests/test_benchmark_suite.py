@@ -2,14 +2,17 @@
 
 import os
 import tempfile
+
 import pytest
 
 torch = pytest.importorskip("torch")
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
-from envs.reach_and_avoid import ReachAndAvoidEnv
-from experiments.baselines import DenseCentralizedBaseline, AlwaysLocalBaseline, SynchronousFullCommBaseline
+from experiments.baselines import (
+    AlwaysLocalBaseline,
+    DenseCentralizedBaseline,
+    SynchronousFullCommBaseline,
+)
 from experiments.run_benchmark_suite import run_benchmark_suite
+from octopus_brain.config import OctopusBrainConfig
 
 
 def test_baseline_models_step():

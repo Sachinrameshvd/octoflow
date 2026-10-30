@@ -6,29 +6,29 @@ Includes atomic writes, automatic migration, secret masking, and 0600 file permi
 """
 
 from __future__ import annotations
+
 import datetime
 import json
 import os
-import re
-import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
+
 from pydantic import (
     BaseModel,
     Field,
     SecretStr,
+    ValidationError,
     field_validator,
     model_validator,
-    ValidationError,
 )
 
 from octoflow.budget import RunBudget
 
 CURRENT_SCHEMA_VERSION = 1
 
-VALID_PROVIDERS: Set[str] = {
+VALID_PROVIDERS: set[str] = {
     "anthropic",
     "openai",
     "gemini",
@@ -39,13 +39,13 @@ VALID_PROVIDERS: Set[str] = {
     "fake",
 }
 
-_WARNED_EXTRAS: Set[str] = set()
+_WARNED_EXTRAS: set[str] = set()
 
 
 class ConfigurationError(Exception):
     """Raised when configuration validation or loading fails."""
 
-    def __init__(self, message: str, loc: Optional[str] = None, hint: Optional[str] = None):
+    def __init__(self, message: str, loc: str | None = None, hint: str | None = None):
         super().__init__(message)
         self.message = message
         self.loc = loc or ""
@@ -78,7 +78,7 @@ def get_default_config_path() -> Path:
     return get_default_config_dir() / "config.json"
 
 
-def mask_secret_value(val: Union[str, SecretStr, None]) -> str:
+def mask_secret_value(val: str | SecretStr | None) -> str:
     """Mask secret credential for display, showing first 3 characters followed by ****."""
     if val is None:
         return ""
@@ -90,7 +90,7 @@ def mask_secret_value(val: Union[str, SecretStr, None]) -> str:
     return raw[:3] + "****"
 
 
-def _warn_extras_once(extras: Dict[str, Any]) -> None:
+def _warn_extras_once(extras: dict[str, Any]) -> None:
     """Print a one-time warning for unknown keys preserved under extras."""
     unwarned = [k for k in extras.keys() if k not in _WARNED_EXTRAS]
     if unwarned:
@@ -107,9 +107,9 @@ class ProviderSettings(BaseModel):
 
     name: str
     enabled: bool = True
-    model: Optional[str] = None
-    base_url: Optional[str] = None
-    api_key: Optional[SecretStr] = None
+    model: str | None = None
+    base_url: str | None = None
+    api_key: SecretStr | None = None
     timeout: float = 60.0
 
     @model_validator(mode="before")
@@ -166,7 +166,7 @@ class DefaultsSettings(BaseModel):
     """Default runtime execution parameters for the swarm."""
 
     default_provider: str = "anthropic"
-    default_model: Optional[str] = "claude-3-5-sonnet-20241022"
+    default_model: str | None = "claude-3-5-sonnet-20241022"
     default_scale: int = 1
     encoder_backend: str = "numpy"
     gate_mode: str = "gated"
@@ -179,9 +179,7 @@ class DefaultsSettings(BaseModel):
             return "always_escalate"
         if v_clean in ("gated", "normal"):
             return "gated"
-        raise ValueError(
-            f"Unknown gate_mode '{v}'. Allowed modes: 'gated', 'always_escalate'"
-        )
+        raise ValueError(f"Unknown gate_mode '{v}'. Allowed modes: 'gated', 'always_escalate'")
 
     @field_validator("encoder_backend")
     @classmethod
@@ -219,10 +217,10 @@ class Settings(BaseModel):
     ui: UISettings = Field(default_factory=UISettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
     budget: RunBudget = Field(default_factory=RunBudget)
-    providers: Dict[str, ProviderSettings] = Field(default_factory=dict)
-    extras: Dict[str, Any] = Field(default_factory=dict)
-    webhook_url: Optional[str] = None
-    llm_pool: List[Dict[str, Any]] = Field(default_factory=list)
+    providers: dict[str, ProviderSettings] = Field(default_factory=dict)
+    extras: dict[str, Any] = Field(default_factory=dict)
+    webhook_url: str | None = None
+    llm_pool: list[dict[str, Any]] = Field(default_factory=list)
 
     @model_validator(mode="before")
     @classmethod
@@ -273,7 +271,7 @@ class Settings(BaseModel):
         clean_data["extras"] = raw_extras
         return clean_data
 
-    def to_dict(self, mask_secrets: bool = False) -> Dict[str, Any]:
+    def to_dict(self, mask_secrets: bool = False) -> dict[str, Any]:
         """Serialize settings to dictionary, optionally masking secret keys."""
         dumped = self.model_dump(mode="python")
 
@@ -295,7 +293,9 @@ class Settings(BaseModel):
         # Mask secrets in extras if requested
         if mask_secrets and "extras" in dumped and isinstance(dumped["extras"], dict):
             for k, v in dumped["extras"].items():
-                if any(term in k.lower() for term in ("key", "secret", "token", "password")) and isinstance(v, str):
+                if any(
+                    term in k.lower() for term in ("key", "secret", "token", "password")
+                ) and isinstance(v, str):
                     dumped["extras"][k] = mask_secret_value(v)
 
         return dumped
@@ -363,7 +363,7 @@ def create_config_backup(cfg_path: Path) -> Path:
     return bak_path
 
 
-def restore_config_backup(cfg_path: Optional[Path] = None) -> Path:
+def restore_config_backup(cfg_path: Path | None = None) -> Path:
     """Restore configuration from the latest config.json.bak-* file."""
     if cfg_path is None:
         cfg_path = get_default_config_path()
@@ -381,12 +381,12 @@ def restore_config_backup(cfg_path: Optional[Path] = None) -> Path:
     return latest_bak
 
 
-def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+def transform_legacy_config_data(raw_data: dict[str, Any]) -> dict[str, Any]:
     """Transform legacy flat config dict into structured Settings dict."""
     consumed_keys = set()
 
     # Defaults
-    defaults: Dict[str, Any] = {}
+    defaults: dict[str, Any] = {}
     if "default_provider" in raw_data:
         defaults["default_provider"] = raw_data["default_provider"]
         consumed_keys.add("default_provider")
@@ -412,7 +412,7 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         consumed_keys.add("encoder_backend")
 
     # UI
-    ui: Dict[str, Any] = {}
+    ui: dict[str, Any] = {}
     if "default_theme" in raw_data:
         ui["theme"] = raw_data["default_theme"]
         consumed_keys.add("default_theme")
@@ -426,7 +426,7 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             consumed_keys.add(k)
 
     # Server
-    server: Dict[str, Any] = {}
+    server: dict[str, Any] = {}
     if "host" in raw_data:
         server["host"] = str(raw_data["host"])
         consumed_keys.add("host")
@@ -441,7 +441,7 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         consumed_keys.add("http_port")
 
     # Providers
-    providers: Dict[str, Any] = {}
+    providers: dict[str, Any] = {}
     provider_keys_map = {
         "anthropic": "anthropic_api_key",
         "openai": "openai_api_key",
@@ -536,7 +536,7 @@ def transform_legacy_config_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def migrate_config_if_needed(cfg_path: Path) -> Tuple[bool, Optional[Path]]:
+def migrate_config_if_needed(cfg_path: Path) -> tuple[bool, Path | None]:
     """Detect missing or older schema_version, backup, transform, and write atomically.
 
     Returns (was_migrated, backup_path).
@@ -591,7 +591,7 @@ def migrate_config_if_needed(cfg_path: Path) -> Tuple[bool, Optional[Path]]:
     return True, bak_path
 
 
-def _deep_merge_dict(target: Dict[str, Any], source: Dict[str, Any]) -> None:
+def _deep_merge_dict(target: dict[str, Any], source: dict[str, Any]) -> None:
     """Recursively merge source dictionary into target dictionary."""
     for key, val in source.items():
         if key in target and isinstance(target[key], dict) and isinstance(val, dict):
@@ -600,7 +600,7 @@ def _deep_merge_dict(target: Dict[str, Any], source: Dict[str, Any]) -> None:
             target[key] = val
 
 
-def _apply_env_overrides(data: Dict[str, Any]) -> None:
+def _apply_env_overrides(data: dict[str, Any]) -> None:
     """Apply environment variables over data with proper precedence."""
     env = os.environ
 
@@ -608,7 +608,11 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
     if "OCTOFLOW_THEME" in env:
         data.setdefault("ui", {})["theme"] = env["OCTOFLOW_THEME"]
     if "OCTOFLOW_ANIMATION" in env:
-        data.setdefault("ui", {})["animation"] = env["OCTOFLOW_ANIMATION"].lower() in ("1", "true", "yes")
+        data.setdefault("ui", {})["animation"] = env["OCTOFLOW_ANIMATION"].lower() in (
+            "1",
+            "true",
+            "yes",
+        )
     if "OCTOFLOW_COLOR" in env:
         data.setdefault("ui", {})["color"] = env["OCTOFLOW_COLOR"].lower() in ("1", "true", "yes")
     if "OCTOFLOW_ASCII" in env:
@@ -623,12 +627,17 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
                 data.setdefault("server", {})["ws_port"] = int(env[ws_var])
                 break
             except ValueError:
-                raise ConfigurationError(f"Invalid integer for {ws_var}: '{env[ws_var]}'", loc="server.ws_port")
+                raise ConfigurationError(
+                    f"Invalid integer for {ws_var}: '{env[ws_var]}'", loc="server.ws_port"
+                )
     if "OCTOFLOW_HTTP_PORT" in env:
         try:
             data.setdefault("server", {})["http_port"] = int(env["OCTOFLOW_HTTP_PORT"])
         except ValueError:
-            raise ConfigurationError(f"Invalid integer for OCTOFLOW_HTTP_PORT: '{env['OCTOFLOW_HTTP_PORT']}'", loc="server.http_port")
+            raise ConfigurationError(
+                f"Invalid integer for OCTOFLOW_HTTP_PORT: '{env['OCTOFLOW_HTTP_PORT']}'",
+                loc="server.http_port",
+            )
 
     # Defaults Settings
     for prov_var in ("OCTOFLOW_DEFAULT_PROVIDER", "OCTOFLOW_PROVIDER"):
@@ -645,7 +654,10 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
                 data.setdefault("defaults", {})["default_scale"] = int(env[scale_var])
                 break
             except ValueError:
-                raise ConfigurationError(f"Invalid integer for {scale_var}: '{env[scale_var]}'", loc="defaults.default_scale")
+                raise ConfigurationError(
+                    f"Invalid integer for {scale_var}: '{env[scale_var]}'",
+                    loc="defaults.default_scale",
+                )
     for backend_var in ("OCTOFLOW_ENCODER_BACKEND", "ENCODER_BACKEND"):
         if backend_var in env:
             data.setdefault("defaults", {})["encoder_backend"] = env[backend_var].strip().lower()
@@ -699,7 +711,7 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
             "OCTOFLOW_DEV",
             "OCTOFLOW_UNRESTRICTED_TOOLS",
         ):
-            parts = k[len("OCTOFLOW_"):].lower().split("_", 1)
+            parts = k[len("OCTOFLOW_") :].lower().split("_", 1)
             if len(parts) == 2:
                 sec, prop = parts
                 if sec in ("ui", "server", "defaults", "budget"):
@@ -708,12 +720,12 @@ def _apply_env_overrides(data: Dict[str, Any]) -> None:
                     if v.isdigit():
                         cur_sec[prop] = int(v)
                     elif v.lower() in ("true", "false"):
-                        cur_sec[prop] = (v.lower() == "true")
+                        cur_sec[prop] = v.lower() == "true"
                     else:
                         cur_sec[prop] = v
 
 
-def _apply_cli_overrides(data: Dict[str, Any], cli_overrides: Dict[str, Any]) -> None:
+def _apply_cli_overrides(data: dict[str, Any], cli_overrides: dict[str, Any]) -> None:
     """Apply CLI overrides (supporting dotted keys like 'server.ws_port') over data."""
     for key, val in cli_overrides.items():
         if "." in key:
@@ -729,8 +741,8 @@ def _apply_cli_overrides(data: Dict[str, Any], cli_overrides: Dict[str, Any]) ->
 
 
 def load_settings(
-    cli_overrides: Optional[Dict[str, Any]] = None,
-    cfg_path: Optional[Path] = None,
+    cli_overrides: dict[str, Any] | None = None,
+    cfg_path: Path | None = None,
 ) -> Settings:
     """Load, validate, and return the application settings with full precedence.
 
@@ -742,7 +754,7 @@ def load_settings(
     cfg_path = cfg_path.resolve()
 
     # 1. Base defaults
-    merged_data: Dict[str, Any] = {
+    merged_data: dict[str, Any] = {
         "schema_version": CURRENT_SCHEMA_VERSION,
         "defaults": {
             "default_provider": "anthropic",
@@ -778,7 +790,9 @@ def load_settings(
             cur_parent_mode = cfg_path.parent.stat().st_mode & 0o777
             if (cur_parent_mode & ~0o700) != 0:
                 cfg_path.parent.chmod(0o700)
-                print(f"Notice: Hardened permissions on {cfg_path.parent} to {oct(0o700)} (was {oct(cur_parent_mode)}).")
+                print(
+                    f"Notice: Hardened permissions on {cfg_path.parent} to {oct(0o700)} (was {oct(cur_parent_mode)})."
+                )
         except OSError:
             pass
 
@@ -786,7 +800,9 @@ def load_settings(
             cur_file_mode = cfg_path.stat().st_mode & 0o777
             if (cur_file_mode & ~0o600) != 0:
                 cfg_path.chmod(0o600)
-                print(f"Notice: Hardened permissions on {cfg_path} to {oct(0o600)} (was {oct(cur_file_mode)}).")
+                print(
+                    f"Notice: Hardened permissions on {cfg_path} to {oct(0o600)} (was {oct(cur_file_mode)})."
+                )
         except OSError:
             pass
 
@@ -828,7 +844,7 @@ def load_settings(
     return settings_obj
 
 
-def save_settings(settings: Settings, cfg_path: Optional[Path] = None) -> Path:
+def save_settings(settings: Settings, cfg_path: Path | None = None) -> Path:
     """Save settings atomically to config file with mode 0600."""
     if cfg_path is None:
         cfg_path = get_default_config_path()
@@ -839,7 +855,7 @@ def save_settings(settings: Settings, cfg_path: Optional[Path] = None) -> Path:
     return cfg_path
 
 
-def set_config_value(key_path: str, value_str: str, cfg_path: Optional[Path] = None) -> Settings:
+def set_config_value(key_path: str, value_str: str, cfg_path: Path | None = None) -> Settings:
     """Set a single configuration key path to a value, validate, and write atomically."""
     if cfg_path is None:
         cfg_path = get_default_config_path()

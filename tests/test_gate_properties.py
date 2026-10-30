@@ -2,10 +2,8 @@
 
 import numpy as np
 import pytest
-
 from octoflow.gate import SurpriseGate
 from octoflow.tools import ToolResult
-
 
 # ---------------------------------------------------------------------------
 # 1. Monotonicity property: higher dS never flips escalate decision to reflex
@@ -42,14 +40,16 @@ def test_gate_monotonicity_table_test():
             computed_ds = gate.compute_surprise(actual_obs=obs, expected_obs=baseline)
 
             # Invariant: computed_ds > theta => escalate
-            should_escalate = (computed_ds > theta)
+            should_escalate = computed_ds > theta
 
             if should_escalate:
                 escalate_seen = True
 
             # If we already saw an escalate decision at a lower dS, it must stay escalated
             if escalate_seen and computed_ds > theta:
-                assert should_escalate is True, f"Monotonicity violated at theta={theta}, ds={computed_ds}"
+                assert should_escalate is True, (
+                    f"Monotonicity violated at theta={theta}, ds={computed_ds}"
+                )
 
 
 def test_gate_evaluate_monotonicity_pairs():
@@ -65,15 +65,21 @@ def test_gate_evaluate_monotonicity_pairs():
                 g1 = SurpriseGate(arm_id=0, initial_threshold=theta)
                 g1.adaptation_rate = 0.0
                 obs1 = np.ones(16, dtype=np.float32) * np.sqrt(s1 / 4.0)
-                esc1, _, _ = g1.evaluate(obs1, tool_res, expected_obs=np.zeros(16, dtype=np.float32))
+                esc1, _, _ = g1.evaluate(
+                    obs1, tool_res, expected_obs=np.zeros(16, dtype=np.float32)
+                )
 
                 g2 = SurpriseGate(arm_id=0, initial_threshold=theta)
                 g2.adaptation_rate = 0.0
                 obs2 = np.ones(16, dtype=np.float32) * np.sqrt(s2 / 4.0)
-                esc2, _, _ = g2.evaluate(obs2, tool_res, expected_obs=np.zeros(16, dtype=np.float32))
+                esc2, _, _ = g2.evaluate(
+                    obs2, tool_res, expected_obs=np.zeros(16, dtype=np.float32)
+                )
 
                 if esc1:
-                    assert esc2, f"Monotonicity broken: theta={theta}, s1={s1} escalated, but s2={s2} remained silent!"
+                    assert esc2, (
+                        f"Monotonicity broken: theta={theta}, s1={s1} escalated, but s2={s2} remained silent!"
+                    )
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +126,9 @@ def test_gate_fatal_tool_failure_invariants():
     gate = SurpriseGate(arm_id=0, initial_threshold=0.50)
     # Even with zero sensory observation diff, returncode != 0 forces surprise >= 0.65
     obs = np.zeros(16, dtype=np.float32)
-    fail_tool_res = ToolResult(tool_name="run", target="cmd", success=False, returncode=1, stderr="Error")
+    fail_tool_res = ToolResult(
+        tool_name="run", target="cmd", success=False, returncode=1, stderr="Error"
+    )
 
     esc, surp, _ = gate.evaluate(obs, fail_tool_res, expected_obs=obs)
     assert surp >= 0.65
@@ -182,9 +190,7 @@ def test_gate_torch_backend_if_installed():
     gate_with_fwd = SurpriseGate(arm_id=2, backend="torch", forward_model=fwd_model)
     h_state = torch.zeros(8, dtype=torch.float32)
     a_vec = torch.zeros(8, dtype=torch.float32)
-    surp_fwd = gate_with_fwd.compute_surprise(
-        actual, hidden_state=h_state, action_vector=a_vec
-    )
+    surp_fwd = gate_with_fwd.compute_surprise(actual, hidden_state=h_state, action_vector=a_vec)
     assert 0.0 <= surp_fwd <= 1.0
 
     # Numpy gate with forward model
@@ -207,6 +213,7 @@ def test_gate_torch_backend_if_installed():
 @pytest.mark.unit
 def test_gate_torch_import_error(monkeypatch):
     import sys
+
     monkeypatch.setitem(sys.modules, "torch", None)
     gate = SurpriseGate(arm_id=0, backend="torch")
     with pytest.raises(ImportError, match="PyTorch is required"):

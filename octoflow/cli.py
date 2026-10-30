@@ -7,19 +7,20 @@ to ensure `octoflow --help` starts up fast.
 import os
 import sys
 import traceback
-from typing import Optional, Any
+from typing import Any
+
 import click
 import typer
-from typer.core import TyperGroup
 from rich.console import Console
+from typer.core import TyperGroup
 
 from octoflow.errors import OctoFlowError
-from octoflow.logging_config import setup_logging, get_log_file, get_logger, is_trace_mode
+from octoflow.logging_config import get_log_file, get_logger, is_trace_mode, setup_logging
 
 logger = get_logger("cli")
 
 
-def _is_trace_active(args: Optional[list] = None, ctx: Optional[click.Context] = None) -> bool:
+def _is_trace_active(args: list | None = None, ctx: click.Context | None = None) -> bool:
     if is_trace_mode():
         return True
     if os.getenv("OCTOFLOW_DEBUG") == "1" or os.getenv("OCTOFLOW_TRACE") == "1":
@@ -29,7 +30,7 @@ def _is_trace_active(args: Optional[list] = None, ctx: Optional[click.Context] =
     if args and "--trace" in args:
         return True
     if ctx:
-        curr: Optional[click.Context] = ctx
+        curr: click.Context | None = ctx
         while curr:
             if curr.params and curr.params.get("trace"):
                 return True
@@ -116,15 +117,22 @@ octos_app = typer.Typer(
 )
 console = Console()
 
+
 # -------------------------------------------------------------------------
 # Callbacks (default to interactive cockpit)
 # -------------------------------------------------------------------------
 @app.callback(invoke_without_command=True)
 def app_callback(
     ctx: typer.Context,
-    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output (INFO logging to stderr)."),
-    trace: bool = typer.Option(False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output (INFO logging to stderr)."
+    ),
+    trace: bool = typer.Option(
+        False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."
+    ),
 ):
     """Launch interactive cockpit if no command specified."""
     setup_logging(verbose=verbose, trace=trace)
@@ -135,9 +143,15 @@ def app_callback(
 @octos_app.callback(invoke_without_command=True)
 def octos_callback(
     ctx: typer.Context,
-    host: str = typer.Option("127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output (INFO logging to stderr)."),
-    trace: bool = typer.Option(False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Telemetry server bind host (default: 127.0.0.1)"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output (INFO logging to stderr)."
+    ),
+    trace: bool = typer.Option(
+        False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."
+    ),
 ):
     """Launch interactive cockpit if no command specified."""
     setup_logging(verbose=verbose, trace=trace)
@@ -149,33 +163,33 @@ def octos_callback(
 # Command Registration
 # -------------------------------------------------------------------------
 from octoflow.commands import (
-    run,
-    consortium,
-    ui,
-    mcp,
-    theme,
-    setup,
-    doctor,
-    guard,
-    init,
-    review_pr,
-    report,
-    heal,
-    triage,
-    notify,
-    guild,
-    bench,
-    monorepo,
-    record,
     audit,
-    eject,
-    install_claude,
-    federation,
-    manual,
-    runner,
-    config,
+    bench,
     checkpoint_cmds,
+    config,
+    consortium,
+    doctor,
+    eject,
+    federation,
+    guard,
+    guild,
+    heal,
     ignition_cmds,
+    init,
+    install_claude,
+    manual,
+    mcp,
+    monorepo,
+    notify,
+    record,
+    report,
+    review_pr,
+    run,
+    runner,
+    setup,
+    theme,
+    triage,
+    ui,
 )
 
 # Register command groups in strict ordering to match snapshot baselines
@@ -215,51 +229,10 @@ ignition_cmds.register(app, octos_app)
 # Backward-Compatibility Re-Exports
 # -------------------------------------------------------------------------
 from octoflow.cockpit import (
-    run_cockpit,
     interactive_cockpit,
-    CockpitSession,
-    CockpitInput,
-    get_live_cockpit_input,
-    confirm_live_cockpit,
-    print_welcome_banner,
-    get_live_wizard_input,
-)
-from octoflow.commands.dashboard import (
-    render_dashboard,
-    render_consortium_dashboard,
 )
 from octoflow.commands.run import (
     run,
-    train,
-    octos_run,
-)
-from octoflow.commands.doctor import (
-    run_doctor,
-    doctor_cli_cmd,
-)
-from octoflow.commands.guard import (
-    run_guard,
-    install_git_hooks,
-    guard_cli_cmd,
-    install_hooks_cli_cmd,
-)
-from octoflow.commands.report import (
-    export_cli_cmd,
-)
-from octoflow.commands.theme import (
-    app_theme_cmd,
-    octos_theme_cmd,
-    app_banner_cmd,
-    octos_banner_cmd,
-    app_screensaver_cmd,
-    octos_screensaver_cmd,
-)
-from octoflow.commands.setup import (
-    run_setup_wizard,
-    setup_cli_cmd,
-)
-from octoflow.commands.install_claude import (
-    install_claude_cli_cmd,
 )
 
 

@@ -7,19 +7,17 @@ Verifies:
 4. OctoFlowMCPServer JSON-RPC 2.0 protocol handling (initialize, tools/list, tools/call)
 """
 
-import json
 import os
 import shutil
 import tempfile
-import pytest
-import numpy as np
 
-from octoflow.config import OctoFlowConfig, SwarmMorphology
+import numpy as np
+import pytest
 from octoflow.conductor import SupraesophagealConductor
-from octoflow.tools import WorkspaceSandbox
+from octoflow.config import OctoFlowConfig, SwarmMorphology
+from octoflow.mcp import OctoFlowMCPServer
 from octoflow.memory import VerticalLobeMemory
-from octoflow.provider import MockLLMProvider
-from octoflow.mcp import OctoFlowMCPServer, MCPRegistry, MCPToolSchema, MCPToolCallResult
+from octoflow.tools import WorkspaceSandbox
 
 
 @pytest.fixture
@@ -86,7 +84,9 @@ def test_vertical_lobe_memory_persistence(temp_workspace):
     # Consolidate a custom learned bug fix
     err_vec = np.zeros(16, dtype=np.float32)
     err_vec[3] = 1.0
-    mem1.consolidate(err_vec, "DatabaseConnectionTimeout", "Retry with exponential backoff connection pool.")
+    mem1.consolidate(
+        err_vec, "DatabaseConnectionTimeout", "Retry with exponential backoff connection pool."
+    )
 
     save_path = os.path.join(temp_workspace, "persisted_lobe.json")
     mem1.save(save_path)
@@ -163,8 +163,13 @@ async def test_mcp_server_protocol(temp_workspace):
 
 def test_frontier_llm_providers():
     """Verify Gemini, Grok, and DeepSeek providers initialize and route properly."""
-    from octoflow.provider import GeminiProvider, GrokProvider, DeepSeekProvider, _build_single_provider
     from octoflow.config import OctoFlowConfig
+    from octoflow.provider import (
+        DeepSeekProvider,
+        GeminiProvider,
+        GrokProvider,
+        _build_single_provider,
+    )
 
     # 1. Direct class instantiation
     gemini = GeminiProvider(api_key="test-gemini-key")
@@ -196,7 +201,11 @@ def test_frontier_llm_providers():
 def test_cascade_pool_token_failover():
     """Verify CascadePoolLLMProvider hot-swaps to the next LLM when tokens deplete or 429 occurs."""
     from octoflow.config import LLMConfigEntry
-    from octoflow.provider import CascadePoolLLMProvider, MockLLMProvider, BaseLLMProvider, LLMResponse
+    from octoflow.provider import (
+        BaseLLMProvider,
+        CascadePoolLLMProvider,
+        LLMResponse,
+    )
 
     # Create dummy failing provider (simulates 429 quota exhaustion)
     class ExhaustedQuotaProvider(BaseLLMProvider):
@@ -238,4 +247,3 @@ def test_cascade_pool_token_failover():
     assert failovers_logged[0]["from_id"] == "gemini-1"
     assert failovers_logged[0]["to_id"] == "grok-1"
     assert failovers_logged[0]["is_rate_limit"] is True
-

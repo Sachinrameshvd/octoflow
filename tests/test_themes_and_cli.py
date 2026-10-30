@@ -7,21 +7,15 @@ Verifies:
 4. CLI theme switching commands and live rendering.
 """
 
-import os
-import json
-import tempfile
-import pytest
-from typer.testing import CliRunner
-
+from octoflow.cli import octos_app
 from octoflow.themes import (
-    OctoTheme,
     THEMES,
     get_theme,
+    list_themes,
     load_saved_theme,
     save_theme_preference,
-    list_themes,
 )
-from octoflow.cli import app, octos_app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -31,8 +25,14 @@ def test_theme_palette_integrity():
     themes = list_themes()
     assert len(themes) == 8
     expected_ids = [
-        "abyssal", "catppuccin", "tokyo-night", "dracula",
-        "cyberpunk", "nord", "gruvbox", "minimalist"
+        "abyssal",
+        "catppuccin",
+        "tokyo-night",
+        "dracula",
+        "cyberpunk",
+        "nord",
+        "gruvbox",
+        "minimalist",
     ]
     for theme_id in expected_ids:
         assert theme_id in themes
@@ -103,6 +103,7 @@ def test_cli_theme_switch_command(monkeypatch, tmp_path):
 def test_render_theme_selector_panel():
     """Verify render_theme_selector_panel renders all 8 developer palettes and preview bar without error."""
     from octoflow.theme_selector import render_theme_selector_panel
+
     themes_list = list(THEMES.items())
 
     for idx in range(len(themes_list)):
@@ -213,11 +214,22 @@ def test_prompt_prefix_stripping():
         while True:
             prev_len = len(user_input)
             for prefix in [
-                "octos ❯", "octos >", "octos:", "octo ❯", "octo >", "❯", ">", "$", "#",
-                "./octos ", "./octo ", "octos ", "octo ",
+                "octos ❯",
+                "octos >",
+                "octos:",
+                "octo ❯",
+                "octo >",
+                "❯",
+                ">",
+                "$",
+                "#",
+                "./octos ",
+                "./octo ",
+                "octos ",
+                "octo ",
             ]:
                 if user_input.startswith(prefix):
-                    user_input = user_input[len(prefix):].strip()
+                    user_input = user_input[len(prefix) :].strip()
             if len(user_input) == prev_len:
                 break
         assert user_input == exp
@@ -235,6 +247,7 @@ def test_cli_run_sandbox_mode_default_direct_call(monkeypatch, tmp_path):
         return {"objective": objective, "status": "completed"}
 
     from octoflow.conductor import SupraesophagealConductor
+
     monkeypatch.setattr(SupraesophagealConductor, "run_swarm", mock_run_swarm)
 
     # Calling run without sandbox argument should normalize OptionInfo to 'local'
@@ -306,6 +319,3 @@ def test_cli_banner_and_screensaver_commands(monkeypatch):
     continuous_called = False
     app_screensaver_cmd(theme="cyberpunk")
     assert continuous_called is True
-
-
-

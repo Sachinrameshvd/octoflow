@@ -10,14 +10,14 @@ Combines macroscopic neural mass continuum dynamics across the entire
   3D continuous soft-body hydrostat actuation.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
-import numpy as np
+from typing import Any
 
-from octopus_brain.blue_brain.atlas import AdultOctopusAtlas
+import numpy as np
+from envs.soft_body_tentacle import SoftBodyTentacleEnv
+
+from octopus_brain.bend_propagation import StereotypicBendWaveController
 from octopus_brain.blue_brain.sparse_synthesizer import AdultOctopusConnectomeSynthesizer
 from octopus_brain.vertical_lobe_ltp import VerticalLobeAssociativeMemory
-from octopus_brain.bend_propagation import StereotypicBendWaveController
-from envs.soft_body_tentacle import SoftBodyTentacleEnv
 
 
 class AdultOctopusHybridSimulator:
@@ -25,7 +25,7 @@ class AdultOctopusHybridSimulator:
 
     def __init__(
         self,
-        synthesizer: Optional[AdultOctopusConnectomeSynthesizer] = None,
+        synthesizer: AdultOctopusConnectomeSynthesizer | None = None,
         dt_sec: float = 0.01,  # 10 ms integration step
     ):
         self.synthesizer = synthesizer or AdultOctopusConnectomeSynthesizer()
@@ -43,7 +43,9 @@ class AdultOctopusHybridSimulator:
         self.metabolic_energy = np.ones(self.n_lobes, dtype=np.float32)  # Normalized 1.0
 
         # Microscopic sub-systems:
-        self.vertical_lobe_matrix = VerticalLobeAssociativeMemory(n_sfl_inputs=16, n_amacrine_fibers=128, n_efferent_outputs=4)
+        self.vertical_lobe_matrix = VerticalLobeAssociativeMemory(
+            n_sfl_inputs=16, n_amacrine_fibers=128, n_efferent_outputs=4
+        )
         self.wave_controller = StereotypicBendWaveController(n_segments=5, dt_sec=self.dt)
 
         self.time_sec: float = 0.0
@@ -56,7 +58,7 @@ class AdultOctopusHybridSimulator:
         self.vertical_lobe_matrix.reset()
         self.time_sec = 0.0
 
-    def step(self, external_sensory_inputs: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    def step(self, external_sensory_inputs: dict[str, float] | None = None) -> dict[str, Any]:
         """Advances the 500M neural mass continuum and microscopic sub-circuits by dt.
 
         Args:
@@ -109,14 +111,16 @@ class AdultOctopusHybridSimulator:
 
         return {
             "time_sec": round(self.time_sec, 3),
-            "macro_firing_rates": {lid: round(float(self.firing_rates[i]), 1) for i, lid in enumerate(self.lobe_ids)},
+            "macro_firing_rates": {
+                lid: round(float(self.firing_rates[i]), 1) for i, lid in enumerate(self.lobe_ids)
+            },
             "mean_macro_rate_hz": round(float(np.mean(self.firing_rates)), 1),
             "total_adult_represented_neurons": self.synthesizer.summary["total_adult_neurons"],
             "total_biological_synapses": self.synthesizer.summary["total_estimated_synapses"],
             "actions": actions,
         }
 
-    def run_embodied_episode(self, env: SoftBodyTentacleEnv, max_steps: int = 30) -> Dict[str, Any]:
+    def run_embodied_episode(self, env: SoftBodyTentacleEnv, max_steps: int = 30) -> dict[str, Any]:
         """Runs a closed-loop episode coupling the 500M neural mass simulator to 3D soft-body physics."""
         self.reset()
         reset_res = env.reset()
@@ -147,11 +151,13 @@ class AdultOctopusHybridSimulator:
                 next_obs, rewards, done, info = step_res
 
             total_reward += float(np.sum(rewards))
-            trajectory.append({
-                "step": step_idx,
-                "reward": float(np.sum(rewards)),
-                "mean_rate_hz": res["mean_macro_rate_hz"],
-            })
+            trajectory.append(
+                {
+                    "step": step_idx,
+                    "reward": float(np.sum(rewards)),
+                    "mean_rate_hz": res["mean_macro_rate_hz"],
+                }
+            )
             obs = next_obs
             if done:
                 break

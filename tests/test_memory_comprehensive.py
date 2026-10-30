@@ -12,11 +12,9 @@ Verifies:
 """
 
 import os
-import tempfile
-import numpy as np
-import pytest
 
-from octoflow.memory import VerticalLobeMemory, FixPattern, EpisodicCodebaseRAG
+import numpy as np
+from octoflow.memory import EpisodicCodebaseRAG, VerticalLobeMemory
 
 
 def test_hebbian_seed_and_recall():
@@ -50,7 +48,7 @@ def test_hebbian_consolidation_and_recall():
     mem.consolidate(
         error_obs=novel_sig,
         error_name="PostgresDeadlockError",
-        fix_guidance="Retry transaction with exponential backoff and enforce consistent table lock ordering."
+        fix_guidance="Retry transaction with exponential backoff and enforce consistent table lock ordering.",
     )
 
     # After consolidation: matches immediately
@@ -131,7 +129,7 @@ def test_episodic_codebase_rag_index_and_search(tmp_path):
     auth_file = src_dir / "auth.py"
     auth_file.write_text(
         "def verify_jwt_token(token: str) -> bool:\n"
-        "    \"\"\"Verify JWT authorization signature and claims.\"\"\"\n"
+        '    """Verify JWT authorization signature and claims."""\n'
         "    if not token:\n"
         "        return False\n"
         "    return token.startswith('bearer_')\n"
@@ -141,7 +139,7 @@ def test_episodic_codebase_rag_index_and_search(tmp_path):
     db_file.write_text(
         "class DatabasePool:\n"
         "    def execute_query(self, sql: str):\n"
-        "        \"\"\"Execute SQL against Postgres connection pool.\"\"\"\n"
+        '        """Execute SQL against Postgres connection pool."""\n'
         "        pass\n"
     )
 

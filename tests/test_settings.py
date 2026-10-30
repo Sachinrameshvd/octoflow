@@ -11,18 +11,18 @@ Covers:
 """
 
 from __future__ import annotations
+
 import json
 import os
-import shutil
-import tempfile
 from pathlib import Path
-from typing import Any, Dict
+
 import pytest
-from typer.testing import CliRunner
 from pydantic import SecretStr, ValidationError
+from typer.testing import CliRunner
 
 pytestmark = pytest.mark.unit
 
+from octoflow.cli import app
 from octoflow.settings import (
     CURRENT_SCHEMA_VERSION,
     ConfigurationError,
@@ -30,17 +30,13 @@ from octoflow.settings import (
     ProviderSettings,
     ServerSettings,
     Settings,
-    UISettings,
     atomic_write_config,
-    create_config_backup,
     load_settings,
     mask_secret_value,
     migrate_config_if_needed,
     restore_config_backup,
-    save_settings,
     set_config_value,
 )
-from octoflow.cli import app
 
 
 @pytest.fixture
@@ -66,6 +62,7 @@ def cli_runner() -> CliRunner:
 # ---------------------------------------------------------------------------
 # 1. Pydantic Models & Field Validation Tests
 # ---------------------------------------------------------------------------
+
 
 def test_defaults_settings_validation():
     """Verify default values and constraints for DefaultsSettings."""
@@ -129,6 +126,7 @@ def test_provider_settings_and_secret_str():
 # 2. Secret Masking Tests
 # ---------------------------------------------------------------------------
 
+
 def test_mask_secret_value_function():
     """Verify secret masking behavior."""
     assert mask_secret_value(None) == ""
@@ -172,6 +170,7 @@ def test_settings_to_dict_masking():
 # 3. Precedence Matrix Tests
 # ---------------------------------------------------------------------------
 
+
 def test_precedence_defaults(temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
     """Level 1: When no config file and no env exist, default settings apply."""
     monkeypatch.delenv("OCTOFLOW_THEME", raising=False)
@@ -185,7 +184,9 @@ def test_precedence_defaults(temp_config_file: Path, monkeypatch: pytest.MonkeyP
     assert settings.defaults.default_provider == "anthropic"
 
 
-def test_precedence_file_overrides_defaults(temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+def test_precedence_file_overrides_defaults(
+    temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Level 2: Config file overrides defaults."""
     monkeypatch.delenv("OCTOFLOW_THEME", raising=False)
     monkeypatch.delenv("OCTOFLOW_WS_PORT", raising=False)
@@ -227,7 +228,9 @@ def test_precedence_env_overrides_file(temp_config_file: Path, monkeypatch: pyte
     assert settings.providers["anthropic"].api_key.get_secret_value() == "sk-ant-from-env"
 
 
-def test_precedence_cli_overrides_env_and_file(temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+def test_precedence_cli_overrides_env_and_file(
+    temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Level 4: CLI overrides beat environment variables, file, and defaults."""
     file_data = {
         "schema_version": 1,
@@ -253,6 +256,7 @@ def test_precedence_cli_overrides_env_and_file(temp_config_file: Path, monkeypat
 # ---------------------------------------------------------------------------
 # 4. Migration & Backup Tests
 # ---------------------------------------------------------------------------
+
 
 def test_migration_of_legacy_config_file(temp_config_file: Path):
     """Verify legacy flat config.json is backed up and migrated to schema_version 1."""
@@ -322,6 +326,7 @@ def test_restore_from_backup(temp_config_file: Path):
 # 5. Atomic-Write and Permissions Tests
 # ---------------------------------------------------------------------------
 
+
 def test_atomic_write_file_permissions(temp_config_file: Path):
     """Verify atomic write creates files with mode 0600 and directories with 0700."""
     content = json.dumps({"schema_version": 1})
@@ -334,7 +339,9 @@ def test_atomic_write_file_permissions(temp_config_file: Path):
     assert dir_mode == 0o700
 
 
-def test_atomic_write_interruption_preserves_original(temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+def test_atomic_write_interruption_preserves_original(
+    temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Simulate a crash/failure during atomic write (before os.replace).
 
     The original configuration file must remain unmodified and uncorrupted.
@@ -361,6 +368,7 @@ def test_atomic_write_interruption_preserves_original(temp_config_file: Path, mo
 # 6. Validation Error Reporting & Exit Code 3
 # ---------------------------------------------------------------------------
 
+
 def test_validation_error_port_out_of_range(temp_config_file: Path):
     """Verify invalid port raises ConfigurationError with field path and hint."""
     bad_data = {
@@ -374,7 +382,9 @@ def test_validation_error_port_out_of_range(temp_config_file: Path):
 
     err = exc_info.value
     assert "server.ws_port" in err.loc
-    assert "Port must be between 1 and 65535" in err.message or (err.hint and "1 and 65535" in err.hint)
+    assert "Port must be between 1 and 65535" in err.message or (
+        err.hint and "1 and 65535" in err.hint
+    )
 
 
 def test_validation_error_unknown_provider(temp_config_file: Path):
@@ -397,17 +407,26 @@ def test_validation_error_unknown_provider(temp_config_file: Path):
 # 7. CLI Subcommands Tests (config show, path, set, validate, migrate)
 # ---------------------------------------------------------------------------
 
-def test_cli_config_path(cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+
+def test_cli_config_path(
+    cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test `octoflow config path` outputs config file path."""
-    monkeypatch.setattr("octoflow.commands.config.get_default_config_path", lambda: temp_config_file)
+    monkeypatch.setattr(
+        "octoflow.commands.config.get_default_config_path", lambda: temp_config_file
+    )
     result = cli_runner.invoke(app, ["config", "path"])
     assert result.exit_code == 0
     assert str(temp_config_file) in result.output
 
 
-def test_cli_config_show_masks_secrets(cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+def test_cli_config_show_masks_secrets(
+    cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test `octoflow config show` and `--json` never output plaintext secrets."""
-    monkeypatch.setattr("octoflow.commands.config.get_default_config_path", lambda: temp_config_file)
+    monkeypatch.setattr(
+        "octoflow.commands.config.get_default_config_path", lambda: temp_config_file
+    )
     monkeypatch.setattr("octoflow.settings.get_default_config_path", lambda: temp_config_file)
 
     cfg = {
@@ -435,9 +454,13 @@ def test_cli_config_show_masks_secrets(cli_runner: CliRunner, temp_config_file: 
     assert data["providers"]["anthropic"]["api_key"] == "sk-****"
 
 
-def test_cli_config_set_valid_and_invalid(cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+def test_cli_config_set_valid_and_invalid(
+    cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test `octoflow config set` updates valid keys and returns exit code 3 on invalid values."""
-    monkeypatch.setattr("octoflow.commands.config.get_default_config_path", lambda: temp_config_file)
+    monkeypatch.setattr(
+        "octoflow.commands.config.get_default_config_path", lambda: temp_config_file
+    )
     monkeypatch.setattr("octoflow.settings.get_default_config_path", lambda: temp_config_file)
 
     # Valid set
@@ -453,9 +476,13 @@ def test_cli_config_set_valid_and_invalid(cli_runner: CliRunner, temp_config_fil
     assert "server.ws_port" in res_err.output
 
 
-def test_cli_config_validate(cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch):
+def test_cli_config_validate(
+    cli_runner: CliRunner, temp_config_file: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test `octoflow config validate` command."""
-    monkeypatch.setattr("octoflow.commands.config.get_default_config_path", lambda: temp_config_file)
+    monkeypatch.setattr(
+        "octoflow.commands.config.get_default_config_path", lambda: temp_config_file
+    )
     monkeypatch.setattr("octoflow.settings.get_default_config_path", lambda: temp_config_file)
 
     # Valid config
@@ -465,7 +492,9 @@ def test_cli_config_validate(cli_runner: CliRunner, temp_config_file: Path, monk
     assert "Configuration valid" in res.output
 
     # Corrupt/invalid config (exit code 3)
-    atomic_write_config(temp_config_file, json.dumps({"schema_version": 1, "server": {"ws_port": -1}}))
+    atomic_write_config(
+        temp_config_file, json.dumps({"schema_version": 1, "server": {"ws_port": -1}})
+    )
     res_bad = cli_runner.invoke(app, ["config", "validate"])
     assert res_bad.exit_code == 3
     assert "Traceback" not in res_bad.output

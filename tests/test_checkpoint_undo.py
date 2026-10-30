@@ -1,31 +1,24 @@
 """Unit and integration tests for git checkpointing, rollback, and run provenance tracking."""
 
-import os
 import subprocess
 from pathlib import Path
-from typing import Generator
-import pytest
-from typer.testing import CliRunner
 
+import pytest
 from octoflow.checkpoint import (
-    RunMetadata,
-    is_git_repo,
-    get_current_head,
-    get_current_branch,
-    is_working_tree_clean,
-    create_stash_snapshot,
-    init_git_repo,
     branch_exists,
-    get_diff_summary,
-    save_run_metadata,
-    load_run_metadata,
-    list_runs,
-    get_latest_run_metadata,
-    preflight_and_start_run,
+    create_stash_snapshot,
     finalize_run,
+    get_current_branch,
+    get_current_head,
+    init_git_repo,
+    is_git_repo,
+    is_working_tree_clean,
+    list_runs,
+    preflight_and_start_run,
     undo_run,
 )
-from octoflow.cli import app, octos_app
+from octoflow.cli import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -134,7 +127,9 @@ def test_dirty_working_tree_aborts_without_allow_dirty(git_repo: Path, temp_runs
     assert dirty_file.exists()
 
 
-def test_dirty_working_tree_with_allow_dirty_and_undo_restores_stash(git_repo: Path, temp_runs_dir: Path):
+def test_dirty_working_tree_with_allow_dirty_and_undo_restores_stash(
+    git_repo: Path, temp_runs_dir: Path
+):
     """Dirty tree with --allow-dirty captures stash, commits run, and undo restores dirty changes."""
     orig_branch = get_current_branch(git_repo)
     readme = git_repo / "README.md"
@@ -182,7 +177,9 @@ def test_undo_refuses_to_delete_unrelated_or_unowned_branch(git_repo: Path, temp
     assert branch_exists(git_repo, "octoflow/run-fake123")
 
 
-def test_branch_collision_aborts(git_repo: Path, temp_runs_dir: Path, monkeypatch: pytest.MonkeyPatch):
+def test_branch_collision_aborts(
+    git_repo: Path, temp_runs_dir: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Detects and blocks duplicate run branch creation."""
     # Monkeypatch run_id creation to trigger collision
     import octoflow.checkpoint as chk_mod
@@ -270,7 +267,13 @@ def test_failed_run_commits_as_wip(git_repo: Path, temp_runs_dir: Path):
     assert meta.status == "WIP"
     assert meta.commit_hash is not None
 
-    log_res = subprocess.run(["git", "log", "-1", "--pretty=%s"], cwd=git_repo, check=True, capture_output=True, text=True)
+    log_res = subprocess.run(
+        ["git", "log", "-1", "--pretty=%s"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
     assert "[wip]" in log_res.stdout
 
 
@@ -297,17 +300,24 @@ def test_cli_runs_and_undo_commands(git_repo: Path, temp_runs_dir: Path):
     assert not f.exists()
 
 
-def test_cli_run_dirty_abort_and_allow_dirty(git_repo: Path, temp_runs_dir: Path, monkeypatch: pytest.MonkeyPatch):
+def test_cli_run_dirty_abort_and_allow_dirty(
+    git_repo: Path, temp_runs_dir: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test octoflow run CLI command behavior with dirty working tree."""
     (git_repo / "dirty.txt").write_text("dirty content", encoding="utf-8")
 
     # Clean run without --allow-dirty should fail
     res = runner.invoke(app, ["run", "test goal", "--model", "fake", "--dir", str(git_repo)])
     assert res.exit_code != 0
-    assert "Working tree has uncommitted changes" in res.output or "CHECKPOINT PRE-FLIGHT ERROR" in res.output
+    assert (
+        "Working tree has uncommitted changes" in res.output
+        or "CHECKPOINT PRE-FLIGHT ERROR" in res.output
+    )
 
     # With --allow-dirty, it proceeds
-    res_allow = runner.invoke(app, ["run", "test goal", "--model", "fake", "--dir", str(git_repo), "--allow-dirty"])
+    res_allow = runner.invoke(
+        app, ["run", "test goal", "--model", "fake", "--dir", str(git_repo), "--allow-dirty"]
+    )
     assert res_allow.exit_code == 0
 
 

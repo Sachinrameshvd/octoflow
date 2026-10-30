@@ -1,7 +1,8 @@
 import os
-from flask import Flask, request, jsonify
+
+from flask import Flask, jsonify
 from flask_httpauth import HTTPBasicAuth
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -15,6 +16,7 @@ users = {
     "user": generate_password_hash(user_pwd),
 }
 
+
 @auth.verify_password
 def verify_password(username, password):
     if username in users:
@@ -23,11 +25,13 @@ def verify_password(username, password):
             return username
     return None
 
-@app.route('/api/data', methods=['GET'])
+
+@app.route("/api/data", methods=["GET"])
 @auth.login_required
 def get_data():
-    return jsonify({'data': 'This is protected data'}), 200
+    return jsonify({"data": "This is protected data"}), 200
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     is_debug = os.getenv("OCTOFLOW_DEBUG", "false").lower() in ("true", "1")
     app.run(debug=is_debug, host="127.0.0.1", port=5000)

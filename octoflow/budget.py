@@ -13,13 +13,15 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Callable, Dict, Optional, Set
+from collections.abc import Callable
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from octoflow.errors import BudgetExceeded
 
 
-def format_k(n: Optional[int]) -> str:
+def format_k(n: int | None) -> str:
     """Format token/call integers into readable shorthand (e.g. 41k, 200k, 1.2M)."""
     if n is None:
         return "unlimited"
@@ -35,7 +37,7 @@ def format_k(n: Optional[int]) -> str:
     return str(n)
 
 
-def format_hud_line(tracker: "BudgetTracker") -> str:
+def format_hud_line(tracker: BudgetTracker) -> str:
     """Format single-line budget status string for HUD / outcome ribbon."""
     return tracker.format_hud_line()
 
@@ -43,11 +45,19 @@ def format_hud_line(tracker: "BudgetTracker") -> str:
 class RunBudget(BaseModel):
     """Enforceable resource limits for an autonomous swarm run."""
 
-    max_tokens: Optional[int] = Field(default=200_000, description="Max total tokens consumed across all LLM calls")
-    max_llm_calls: Optional[int] = Field(default=200, description="Max total LLM completions allowed")
-    max_wall_seconds: Optional[int] = Field(default=1800, description="Max execution wall time in seconds")
-    max_heal_iterations: Optional[int] = Field(default=5, description="Max test repair self-healing iterations")
-    max_files_written: Optional[int] = Field(default=200, description="Max unique files written into workspace")
+    max_tokens: int | None = Field(
+        default=200_000, description="Max total tokens consumed across all LLM calls"
+    )
+    max_llm_calls: int | None = Field(default=200, description="Max total LLM completions allowed")
+    max_wall_seconds: int | None = Field(
+        default=1800, description="Max execution wall time in seconds"
+    )
+    max_heal_iterations: int | None = Field(
+        default=5, description="Max test repair self-healing iterations"
+    )
+    max_files_written: int | None = Field(
+        default=200, description="Max unique files written into workspace"
+    )
     no_limits: bool = Field(default=False, description="Disable all budget limits explicitly")
 
 
@@ -56,8 +66,8 @@ class BudgetTracker:
 
     def __init__(
         self,
-        budget: Optional[RunBudget] = None,
-        clock: Optional[Callable[[], float]] = None,
+        budget: RunBudget | None = None,
+        clock: Callable[[], float] | None = None,
         tokens_consumed: int = 0,
         llm_calls_made: int = 0,
     ) -> None:
@@ -68,7 +78,7 @@ class BudgetTracker:
         self.tokens_used: int = tokens_consumed
         self.llm_calls: int = llm_calls_made
         self.files_written: int = 0
-        self.files_written_set: Set[str] = set()
+        self.files_written_set: set[str] = set()
         self.heal_iterations: int = 0
 
         self._lock = threading.Lock()
@@ -109,7 +119,7 @@ class BudgetTracker:
 
     def check_llm_call(self) -> None:
         """Check budget constraints before making an LLM completion call.
-        
+
         Increments call counter if allowed, or raises BudgetExceeded.
         """
         with self._lock:
@@ -126,7 +136,10 @@ class BudgetTracker:
                         )
 
                 # 2. Call count check
-                if self.budget.max_llm_calls is not None and self.llm_calls >= self.budget.max_llm_calls:
+                if (
+                    self.budget.max_llm_calls is not None
+                    and self.llm_calls >= self.budget.max_llm_calls
+                ):
                     raise BudgetExceeded(
                         limit_name="max_llm_calls",
                         used=self.llm_calls,
@@ -135,7 +148,10 @@ class BudgetTracker:
                     )
 
                 # 3. Token limit check
-                if self.budget.max_tokens is not None and self.tokens_used >= self.budget.max_tokens:
+                if (
+                    self.budget.max_tokens is not None
+                    and self.tokens_used >= self.budget.max_tokens
+                ):
                     raise BudgetExceeded(
                         limit_name="max_tokens",
                         used=self.tokens_used,
@@ -177,7 +193,10 @@ class BudgetTracker:
 
                 # Unique files written check
                 if self.budget.max_files_written is not None:
-                    if path not in self.files_written_set and len(self.files_written_set) >= self.budget.max_files_written:
+                    if (
+                        path not in self.files_written_set
+                        and len(self.files_written_set) >= self.budget.max_files_written
+                    ):
                         raise BudgetExceeded(
                             limit_name="max_files_written",
                             used=len(self.files_written_set),
@@ -192,7 +211,10 @@ class BudgetTracker:
         """Check healing loop budget before starting a repair iteration."""
         with self._lock:
             if not self.budget.no_limits:
-                if self.budget.max_heal_iterations is not None and self.heal_iterations >= self.budget.max_heal_iterations:
+                if (
+                    self.budget.max_heal_iterations is not None
+                    and self.heal_iterations >= self.budget.max_heal_iterations
+                ):
                     raise BudgetExceeded(
                         limit_name="max_heal_iterations",
                         used=self.heal_iterations,
@@ -203,7 +225,7 @@ class BudgetTracker:
 
     def format_hud_line(self) -> str:
         """Return single-line budget status string for HUD / outcome ribbon.
-        
+
         Example format:
         budget: tokens 41k/200k, calls 33/200
         """
@@ -214,13 +236,17 @@ class BudgetTracker:
                 suffix = " (no limits)"
             else:
                 tok_limit = format_k(self.budget.max_tokens)
-                call_limit = str(self.budget.max_llm_calls) if self.budget.max_llm_calls is not None else "unlimited"
+                call_limit = (
+                    str(self.budget.max_llm_calls)
+                    if self.budget.max_llm_calls is not None
+                    else "unlimited"
+                )
                 suffix = ""
 
             tok_used = format_k(self.tokens_used)
             return f"budget: tokens {tok_used}/{tok_limit}, calls {self.llm_calls}/{call_limit}{suffix}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize budget tracker statistics."""
         with self._lock:
             return {

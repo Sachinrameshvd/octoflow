@@ -1,29 +1,28 @@
 """Unit tests for octoflow/provider.py to achieve >80% line coverage."""
-import json
-import os
-import pytest
-import httpx
-from unittest.mock import MagicMock, AsyncMock
 
-from octoflow.provider import (
-    AnthropicProvider,
-    OpenAIProvider,
-    GeminiProvider,
-    GrokProvider,
-    DeepSeekProvider,
-    OllamaProvider,
-    FailoverLLMProvider,
-    CascadePoolLLMProvider,
-    LLMConfigEntry,
-    MockLLMProvider,
-    LLMResponse,
-    redact_secrets,
-)
+from unittest.mock import AsyncMock, MagicMock
+
+import httpx
+import pytest
 from octoflow.errors import (
-    ProviderTransientError,
     ProviderAuthError,
     ProviderExhaustedError,
     ProviderRateLimitError,
+    ProviderTransientError,
+)
+from octoflow.provider import (
+    AnthropicProvider,
+    CascadePoolLLMProvider,
+    DeepSeekProvider,
+    FailoverLLMProvider,
+    GeminiProvider,
+    GrokProvider,
+    LLMConfigEntry,
+    LLMResponse,
+    MockLLMProvider,
+    OllamaProvider,
+    OpenAIProvider,
+    redact_secrets,
 )
 from octoflow.usage import UsageLedger
 
@@ -51,7 +50,9 @@ def test_anthropic_provider_lifecycle(monkeypatch):
         "content": [{"type": "text", "text": "Anthropic sync response"}],
         "usage": {"input_tokens": 15, "output_tokens": 30},
     }
-    fake_http_resp = httpx.Response(200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url))
+    fake_http_resp = httpx.Response(
+        200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url)
+    )
     monkeypatch.setattr(httpx.Client, "post", MagicMock(return_value=fake_http_resp))
 
     resp = provider.generate("hello anthropic", system_prompt="be concise")
@@ -64,7 +65,9 @@ def test_anthropic_provider_lifecycle(monkeypatch):
     mock_resp_no_usage = {
         "content": [{"type": "text", "text": "Anthropic estimated"}],
     }
-    fake_no_usage_resp = httpx.Response(200, json=mock_resp_no_usage, request=httpx.Request("POST", provider.base_url))
+    fake_no_usage_resp = httpx.Response(
+        200, json=mock_resp_no_usage, request=httpx.Request("POST", provider.base_url)
+    )
     monkeypatch.setattr(httpx.Client, "post", MagicMock(return_value=fake_no_usage_resp))
     resp_est = provider.generate("hello")
     assert resp_est.estimated is True
@@ -78,7 +81,9 @@ async def test_anthropic_provider_agenerate(monkeypatch):
         "content": [{"type": "text", "text": "Anthropic async"}],
         "usage": {"input_tokens": 20, "output_tokens": 40},
     }
-    fake_resp = httpx.Response(200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url))
+    fake_resp = httpx.Response(
+        200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url)
+    )
     monkeypatch.setattr(httpx.AsyncClient, "post", AsyncMock(return_value=fake_resp))
 
     resp = await provider.agenerate("hello async")
@@ -101,7 +106,9 @@ def test_openai_provider_lifecycle(monkeypatch):
         "choices": [{"message": {"role": "assistant", "content": "OpenAI sync"}}],
         "usage": {"prompt_tokens": 12, "completion_tokens": 24},
     }
-    fake_resp = httpx.Response(200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url))
+    fake_resp = httpx.Response(
+        200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url)
+    )
     monkeypatch.setattr(httpx.Client, "post", MagicMock(return_value=fake_resp))
 
     resp = provider.generate("prompt", system_prompt="sys")
@@ -113,7 +120,15 @@ def test_openai_provider_lifecycle(monkeypatch):
     mock_no_usage = {
         "choices": [{"message": {"role": "assistant", "content": "No usage"}}],
     }
-    monkeypatch.setattr(httpx.Client, "post", MagicMock(return_value=httpx.Response(200, json=mock_no_usage, request=httpx.Request("POST", provider.base_url))))
+    monkeypatch.setattr(
+        httpx.Client,
+        "post",
+        MagicMock(
+            return_value=httpx.Response(
+                200, json=mock_no_usage, request=httpx.Request("POST", provider.base_url)
+            )
+        ),
+    )
     resp_no_usage = provider.generate("prompt")
     assert resp_no_usage.estimated is True
 
@@ -126,7 +141,9 @@ async def test_openai_provider_agenerate(monkeypatch):
         "choices": [{"message": {"role": "assistant", "content": "OpenAI async"}}],
         "usage": {"prompt_tokens": 10, "completion_tokens": 10},
     }
-    fake_resp = httpx.Response(200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url))
+    fake_resp = httpx.Response(
+        200, json=mock_resp_data, request=httpx.Request("POST", provider.base_url)
+    )
     monkeypatch.setattr(httpx.AsyncClient, "post", AsyncMock(return_value=fake_resp))
 
     resp = await provider.agenerate("async prompt")
@@ -172,7 +189,9 @@ def test_ollama_provider_lifecycle(monkeypatch):
         "prompt_eval_count": 5,
         "eval_count": 15,
     }
-    fake_resp = httpx.Response(200, json=mock_resp_data, request=httpx.Request("POST", f"{provider.base_url}/api/generate"))
+    fake_resp = httpx.Response(
+        200, json=mock_resp_data, request=httpx.Request("POST", f"{provider.base_url}/api/generate")
+    )
     monkeypatch.setattr(httpx.Client, "post", MagicMock(return_value=fake_resp))
 
     resp = provider.generate("hello ollama")
@@ -183,7 +202,17 @@ def test_ollama_provider_lifecycle(monkeypatch):
 
     # Without eval counts
     mock_no_eval = {"response": "No eval counts"}
-    monkeypatch.setattr(httpx.Client, "post", MagicMock(return_value=httpx.Response(200, json=mock_no_eval, request=httpx.Request("POST", f"{provider.base_url}/api/generate"))))
+    monkeypatch.setattr(
+        httpx.Client,
+        "post",
+        MagicMock(
+            return_value=httpx.Response(
+                200,
+                json=mock_no_eval,
+                request=httpx.Request("POST", f"{provider.base_url}/api/generate"),
+            )
+        ),
+    )
     resp_no_eval = provider.generate("hello")
     assert resp_no_eval.estimated is True
 
@@ -197,7 +226,9 @@ async def test_ollama_provider_agenerate(monkeypatch):
         "prompt_eval_count": 4,
         "eval_count": 8,
     }
-    fake_resp = httpx.Response(200, json=mock_resp_data, request=httpx.Request("POST", f"{provider.base_url}/api/generate"))
+    fake_resp = httpx.Response(
+        200, json=mock_resp_data, request=httpx.Request("POST", f"{provider.base_url}/api/generate")
+    )
     monkeypatch.setattr(httpx.AsyncClient, "post", AsyncMock(return_value=fake_resp))
 
     resp = await provider.agenerate("async ollama")
@@ -210,9 +241,12 @@ def test_failover_provider_sync_and_async():
     p2 = MockLLMProvider()
 
     # Fail p1 on generate
-    p1.generate = MagicMock(side_effect=ProviderTransientError("503 Server Error", provider="mock", status=503))
-    
+    p1.generate = MagicMock(
+        side_effect=ProviderTransientError("503 Server Error", provider="mock", status=503)
+    )
+
     failover_log = []
+
     def on_failover_cb(from_p, to_p, err):
         failover_log.append((from_p, to_p))
 
@@ -223,7 +257,9 @@ def test_failover_provider_sync_and_async():
     assert failover_log[0] == ("MockLLMProvider", "MockLLMProvider")
 
     # All providers fail -> ProviderExhaustedError
-    p2.generate = MagicMock(side_effect=ProviderRateLimitError("429 Too Many Requests", provider="mock", status=429))
+    p2.generate = MagicMock(
+        side_effect=ProviderRateLimitError("429 Too Many Requests", provider="mock", status=429)
+    )
     with pytest.raises(ProviderExhaustedError) as exc_info:
         failover.generate("test prompt")
     assert len(exc_info.value.failures) == 2
@@ -242,8 +278,14 @@ async def test_failover_provider_agenerate_flow():
     p1 = MockLLMProvider()
     p2 = MockLLMProvider()
 
-    p1.agenerate = AsyncMock(side_effect=ProviderAuthError("401 Unauthorized", provider="mock", status=401))
-    p2.agenerate = AsyncMock(return_value=LLMResponse(content="fallback async ok", tokens_prompt=5, tokens_completion=5, total_tokens=10))
+    p1.agenerate = AsyncMock(
+        side_effect=ProviderAuthError("401 Unauthorized", provider="mock", status=401)
+    )
+    p2.agenerate = AsyncMock(
+        return_value=LLMResponse(
+            content="fallback async ok", tokens_prompt=5, tokens_completion=5, total_tokens=10
+        )
+    )
 
     failover = FailoverLLMProvider(primary=p1, fallbacks=[p2])
     resp = await failover.agenerate("async test")
@@ -258,8 +300,12 @@ async def test_failover_provider_agenerate_flow():
 @pytest.mark.unit
 def test_cascade_pool_llm_provider(tmp_path):
     entries = [
-        LLMConfigEntry(id="entry-1", name="Primary Mock", provider="mock", model="mock-model", priority=1),
-        LLMConfigEntry(id="entry-2", name="Secondary Mock", provider="mock", model="mock-model-2", priority=2),
+        LLMConfigEntry(
+            id="entry-1", name="Primary Mock", provider="mock", model="mock-model", priority=1
+        ),
+        LLMConfigEntry(
+            id="entry-2", name="Secondary Mock", provider="mock", model="mock-model-2", priority=2
+        ),
     ]
 
     pool = CascadePoolLLMProvider(entries=entries, dry_run=True)
@@ -297,7 +343,9 @@ def test_provider_factory_and_single_builder(monkeypatch):
     assert isinstance(mock_p, MockLLMProvider)
 
     # Mock provider without dry run raises
-    cfg_mock_nodry = OctoFlowConfig(model_provider="mock", allow_mock=False, dry_run=False, is_bench=False)
+    cfg_mock_nodry = OctoFlowConfig(
+        model_provider="mock", allow_mock=False, dry_run=False, is_bench=False
+    )
     monkeypatch.delenv("OCTOFLOW_DRY_RUN", raising=False)
     with pytest.raises(ProviderExhaustedError):
         _build_single_provider("mock", cfg_mock_nodry, dry_run=False)
@@ -308,12 +356,16 @@ def test_provider_factory_and_single_builder(monkeypatch):
     assert isinstance(ant_p, AnthropicProvider)
 
     # Anthropic fast tier
-    cfg_anthropic_fast = OctoFlowConfig(model_provider="anthropic", anthropic_api_key="test-key", fast_model="claude-haiku")
+    cfg_anthropic_fast = OctoFlowConfig(
+        model_provider="anthropic", anthropic_api_key="test-key", fast_model="claude-haiku"
+    )
     ant_fast = _build_single_provider("anthropic", cfg_anthropic_fast, tier="fast")
     assert ant_fast.model == "claude-haiku"
 
     # Anthropic frontier tier
-    cfg_anthropic_frontier = OctoFlowConfig(model_provider="anthropic", anthropic_api_key="test-key", frontier_model="claude-opus")
+    cfg_anthropic_frontier = OctoFlowConfig(
+        model_provider="anthropic", anthropic_api_key="test-key", frontier_model="claude-opus"
+    )
     ant_front = _build_single_provider("anthropic", cfg_anthropic_frontier, tier="frontier")
     assert ant_front.model == "claude-opus"
 
@@ -331,9 +383,13 @@ def test_provider_factory_and_single_builder(monkeypatch):
     assert isinstance(oai_p, OpenAIProvider)
 
     # OpenAI tiers
-    oai_fast = _build_single_provider("openai", OctoFlowConfig(openai_api_key="k", fast_model="gpt-mini"), tier="fast")
+    oai_fast = _build_single_provider(
+        "openai", OctoFlowConfig(openai_api_key="k", fast_model="gpt-mini"), tier="fast"
+    )
     assert oai_fast.model == "gpt-mini"
-    oai_front = _build_single_provider("openai", OctoFlowConfig(openai_api_key="k", frontier_model="o3"), tier="frontier")
+    oai_front = _build_single_provider(
+        "openai", OctoFlowConfig(openai_api_key="k", frontier_model="o3"), tier="frontier"
+    )
     assert oai_front.model == "o3"
 
     # OpenAI missing key raises
@@ -407,8 +463,8 @@ def test_provider_factory_and_single_builder(monkeypatch):
 
 @pytest.mark.unit
 def test_classify_http_error_branches():
+    from octoflow.errors import ProviderError, ProviderRequestError
     from octoflow.provider import classify_http_error
-    from octoflow.errors import ProviderRequestError, ProviderError
 
     e400 = classify_http_error(400, body="bad payload")
     assert isinstance(e400, ProviderRequestError)
@@ -427,6 +483,7 @@ def test_classify_http_error_branches():
 @pytest.mark.unit
 def test_retry_http_request_legacy():
     from octoflow.provider import retry_http_request
+
     fake_resp = MagicMock(spec=httpx.Response)
     fake_resp.raise_for_status = MagicMock()
     res = retry_http_request(lambda: fake_resp)
@@ -437,6 +494,7 @@ def test_retry_http_request_legacy():
 @pytest.mark.anyio
 async def test_aretry_http_request_legacy():
     from octoflow.provider import aretry_http_request
+
     fake_resp = MagicMock(spec=httpx.Response)
     fake_resp.raise_for_status = MagicMock()
 
@@ -451,18 +509,24 @@ async def test_aretry_http_request_legacy():
 @pytest.mark.anyio
 async def test_aexecute_with_retry_flows():
     from octoflow.provider import aexecute_with_retry
-    
+
     # 1. Rate limit retry then success
     sleep_calls = []
+
     async def dummy_asleep(d):
         sleep_calls.append(d)
 
     call_count = [0]
     req1 = httpx.Request("POST", "https://api.openai.com")
+
     async def rate_limited_coro():
         call_count[0] += 1
         if call_count[0] == 1:
-            raise httpx.HTTPStatusError("Rate limited", request=req1, response=httpx.Response(429, headers={"retry-after": "1"}, request=req1))
+            raise httpx.HTTPStatusError(
+                "Rate limited",
+                request=req1,
+                response=httpx.Response(429, headers={"retry-after": "1"}, request=req1),
+            )
         return httpx.Response(200, json={"ok": True}, request=req1)
 
     res = await aexecute_with_retry(rate_limited_coro, provider="openai", asleep_fn=dummy_asleep)
@@ -472,10 +536,13 @@ async def test_aexecute_with_retry_flows():
     # 2. Transient retry then success
     call_count_transient = [0]
     req2 = httpx.Request("POST", "https://api.anthropic.com")
+
     async def transient_coro():
         call_count_transient[0] += 1
         if call_count_transient[0] == 1:
-            raise httpx.HTTPStatusError("500 Server Error", request=req2, response=httpx.Response(500, request=req2))
+            raise httpx.HTTPStatusError(
+                "500 Server Error", request=req2, response=httpx.Response(500, request=req2)
+            )
         return httpx.Response(200, json={"ok": True}, request=req2)
 
     res2 = await aexecute_with_retry(transient_coro, provider="anthropic", asleep_fn=dummy_asleep)
@@ -483,9 +550,12 @@ async def test_aexecute_with_retry_flows():
 
     # 3. Auth error fails immediately and disables provider
     mock_prov = MockLLMProvider()
+
     async def auth_coro():
         req = httpx.Request("POST", "https://api.anthropic.com")
-        raise httpx.HTTPStatusError("401 Unauthorized", request=req, response=httpx.Response(401, request=req))
+        raise httpx.HTTPStatusError(
+            "401 Unauthorized", request=req, response=httpx.Response(401, request=req)
+        )
 
     with pytest.raises(ProviderAuthError):
         await aexecute_with_retry(auth_coro, provider=mock_prov, asleep_fn=dummy_asleep)
@@ -502,7 +572,10 @@ def test_mock_llm_provider_templates():
     assert resp_script.content == "Scripted output 123"
 
     # Developer question
-    resp_dev = mock.generate("developer question: what is the architecture?", system_prompt="You are System Architect (Arm 0)")
+    resp_dev = mock.generate(
+        "developer question: what is the architecture?",
+        system_prompt="You are System Architect (Arm 0)",
+    )
     assert "System Architect" in resp_dev.content
 
     # Test runner prompt
@@ -519,18 +592,41 @@ def test_cascade_pool_runtime_failover():
     p1 = MockLLMProvider()
     p2 = MockLLMProvider()
 
-    p1.generate = MagicMock(side_effect=ProviderRateLimitError("429 Quota exhausted", provider="p1", status=429))
-    p2.generate = MagicMock(return_value=LLMResponse(content="cascade fallback ok", tokens_prompt=10, tokens_completion=10, total_tokens=20))
+    p1.generate = MagicMock(
+        side_effect=ProviderRateLimitError("429 Quota exhausted", provider="p1", status=429)
+    )
+    p2.generate = MagicMock(
+        return_value=LLMResponse(
+            content="cascade fallback ok", tokens_prompt=10, tokens_completion=10, total_tokens=20
+        )
+    )
 
     events = []
+
     def on_cascade_failover(ev):
         events.append(ev)
 
     pool = CascadePoolLLMProvider(entries=[], dry_run=False)
     pool.providers = [p1, p2]
     pool.telemetry = [
-        {"id": "p1", "name": "P1", "provider": "p1", "model": "m1", "status": "ACTIVE", "tokens_used": 0, "failover_count": 0},
-        {"id": "p2", "name": "P2", "provider": "p2", "model": "m2", "status": "STANDBY", "tokens_used": 0, "failover_count": 0},
+        {
+            "id": "p1",
+            "name": "P1",
+            "provider": "p1",
+            "model": "m1",
+            "status": "ACTIVE",
+            "tokens_used": 0,
+            "failover_count": 0,
+        },
+        {
+            "id": "p2",
+            "name": "P2",
+            "provider": "p2",
+            "model": "m2",
+            "status": "STANDBY",
+            "tokens_used": 0,
+            "failover_count": 0,
+        },
     ]
     pool.on_failover = on_cascade_failover
 

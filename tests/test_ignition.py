@@ -1,17 +1,17 @@
 """Tests for Phase Gate 4: ProjectIgniter & Live Service Provisioning."""
 
-import asyncio
 import tempfile
 import time
 from pathlib import Path
-import pytest
+
 import httpx
+import pytest
 
 pytestmark = pytest.mark.integration_local
 
-from octoflow.ignition import ProjectIgniter, find_free_port, is_port_listening, LiveServiceManifest
-from octoflow.consortium import OctosConsortium
 from octoflow.config import OctoFlowConfig, SwarmMorphology
+from octoflow.consortium import OctosConsortium
+from octoflow.ignition import ProjectIgniter, find_free_port, is_port_listening
 
 
 def test_find_free_port():
@@ -93,7 +93,9 @@ async def test_consortium_live_ignition_phase_gate(anyio_backend):
             workspace_dir=tmpdir,
         )
         consortium = OctosConsortium(config=cfg, octopus_count=3)
-        res = await consortium.arun_consortium(objective="Build a live web dashboard", cycles_per_octopus=2)
+        res = await consortium.arun_consortium(
+            objective="Build a live web dashboard", cycles_per_octopus=2
+        )
 
         assert res["status"] == "COMPLETED"
         assert "ignition" in res

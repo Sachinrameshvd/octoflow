@@ -1,14 +1,14 @@
 """Unit tests for OctopusGymAdapter and ONNX export pipeline."""
 
 import os
-import pytest
+
 import numpy as np
+import pytest
 
 torch = pytest.importorskip("torch")
 
-from octopus_brain.config import OctopusBrainConfig
-from octopus_brain.brain import OctopusBrain
 from octopus_brain.adapter import OctopusGymAdapter
+from octopus_brain.config import OctopusBrainConfig
 
 
 def test_adapter_initialization_and_properties():

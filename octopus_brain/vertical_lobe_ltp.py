@@ -11,7 +11,8 @@ B. Hochner and T. Shomrat (2008, 2012):
 - Enables real-time biological associative learning without backpropagation or artificial loss gradients.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
+
 import numpy as np
 
 
@@ -20,9 +21,9 @@ class VerticalLobeAssociativeMemory:
 
     def __init__(
         self,
-        n_sfl_inputs: int = 16,        # Superior Frontal Lobe sensory afferents (visual/chemo)
-        n_amacrine_fibers: int = 128,   # Vertical Lobe parallel amacrine interneurons
-        n_efferent_outputs: int = 4,    # Large efferent output neurons (e.g. Attack, Retract, Sucker Grip, Camouflage)
+        n_sfl_inputs: int = 16,  # Superior Frontal Lobe sensory afferents (visual/chemo)
+        n_amacrine_fibers: int = 128,  # Vertical Lobe parallel amacrine interneurons
+        n_efferent_outputs: int = 4,  # Large efferent output neurons (e.g. Attack, Retract, Sucker Grip, Camouflage)
         initial_weight: float = 0.25,
         ltp_learning_rate: float = 0.08,
         ltd_depression_rate: float = 0.02,
@@ -87,9 +88,9 @@ class VerticalLobeAssociativeMemory:
 
     def apply_reinforcement(
         self,
-        reward_dopamine: float = 0.0,      # Positive reward (e.g. food capture) -> LTP
-        punishment_serotonin: float = 0.0, # Negative reinforcement (e.g. predator bite/shock) -> LTD / Avoidance
-        target_action_idx: Optional[int] = None,
+        reward_dopamine: float = 0.0,  # Positive reward (e.g. food capture) -> LTP
+        punishment_serotonin: float = 0.0,  # Negative reinforcement (e.g. predator bite/shock) -> LTD / Avoidance
+        target_action_idx: int | None = None,
     ):
         """Applies Cephalopod LTP/LTD synaptic plasticity to the Vertical Lobe.
 
@@ -112,13 +113,15 @@ class VerticalLobeAssociativeMemory:
         # 2. Long-Term Depression (LTD) / Avoidance remodeling upon shock
         if punishment_serotonin > 0.0:
             delta_w = self.eta_ltd * punishment_serotonin * ama_pre
-            self.w_ama_eff[target_action_idx] = np.maximum(0.01, self.w_ama_eff[target_action_idx] - delta_w)
+            self.w_ama_eff[target_action_idx] = np.maximum(
+                0.01, self.w_ama_eff[target_action_idx] - delta_w
+            )
             self.ltd_event_count += 1
 
         # Biological upper bound saturation
         self.w_ama_eff = np.clip(self.w_ama_eff, 0.01, 2.5)
 
-    def get_synaptic_stats(self) -> Dict[str, Any]:
+    def get_synaptic_stats(self) -> dict[str, Any]:
         """Returns statistics of the plastic Vertical Lobe matrix."""
         return {
             "mean_synaptic_strength": float(np.mean(self.w_ama_eff)),

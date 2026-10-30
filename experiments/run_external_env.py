@@ -21,18 +21,19 @@ Usage:
     python experiments/run_external_env.py --render ascii
 """
 
-import sys
 import argparse
+import sys
 from pathlib import Path
+
 import numpy as np
 
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from octopus_brain.adapter import OctopusGymAdapter, ACTION_NAMES
-from envs.reach_and_avoid import ReachAndAvoidEnv
 from envs.hunting_env import CooperativeHuntingEnv as HuntingEnv
+from envs.reach_and_avoid import ReachAndAvoidEnv
 from envs.soft_body_tentacle import SoftBodyTentacleEnv
+from octopus_brain.adapter import OctopusGymAdapter
 from octopus_brain.config import EnvConfig
 
 
@@ -42,13 +43,18 @@ def build_environment(env_name: str):
     if env_name_lower in ["reach", "reach_and_avoid"]:
         return ReachAndAvoidEnv(EnvConfig(n_arms=8, max_steps=30)), "Reach & Avoid Gridworld"
     elif env_name_lower in ["hunting", "hunt"]:
-        return HuntingEnv(EnvConfig(n_arms=8, max_steps=35)), "Dynamic Prey Hunting & Cooperative Encirclement"
+        return HuntingEnv(
+            EnvConfig(n_arms=8, max_steps=35)
+        ), "Dynamic Prey Hunting & Cooperative Encirclement"
     elif env_name_lower in ["soft_body_3d", "softbody", "tentacle"]:
-        return SoftBodyTentacleEnv(n_arms=8, max_steps=35), "3D Muscular Hydrostat Continuous Continuum"
+        return SoftBodyTentacleEnv(
+            n_arms=8, max_steps=35
+        ), "3D Muscular Hydrostat Continuous Continuum"
     else:
         # Classical Gymnasium environment
         try:
             import gymnasium as gym
+
             env = gym.make(env_name)
             return env, f"Classical Gymnasium ({env_name})"
         except Exception as e:
@@ -102,11 +108,32 @@ def render_ascii_arena(env, step: int, rew: float, reports: list, coalitions: li
 
 def main():
     parser = argparse.ArgumentParser(description="OctopusBrain Universal External Driver")
-    parser.add_argument("--env", type=str, default="reach", help="Environment: reach, soft_body_3d, hunting, CartPole-v1")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/top1_octopus_brain.pt", help="Checkpoint path")
+    parser.add_argument(
+        "--env",
+        type=str,
+        default="reach",
+        help="Environment: reach, soft_body_3d, hunting, CartPole-v1",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="checkpoints/top1_octopus_brain.pt",
+        help="Checkpoint path",
+    )
     parser.add_argument("--episodes", type=int, default=2, help="Number of evaluation episodes")
-    parser.add_argument("--render", type=str, default="terminal", choices=["terminal", "ascii", "none"], help="Rendering mode")
-    parser.add_argument("--sever-arm", type=int, default=3, help="Arm index to sever mid-run in Episode 2 (default: 3)")
+    parser.add_argument(
+        "--render",
+        type=str,
+        default="terminal",
+        choices=["terminal", "ascii", "none"],
+        help="Rendering mode",
+    )
+    parser.add_argument(
+        "--sever-arm",
+        type=int,
+        default=3,
+        help="Arm index to sever mid-run in Episode 2 (default: 3)",
+    )
     args = parser.parse_args()
 
     print("=" * 85)
@@ -136,7 +163,7 @@ def main():
         obs = reset_res[0] if isinstance(reset_res, tuple) else reset_res
         adapter.reset()
         ep_reward = 0.0
-        print(f"\n{'='*35} Rollout Episode {ep}/{args.episodes} {'='*35}")
+        print(f"\n{'=' * 35} Rollout Episode {ep}/{args.episodes} {'=' * 35}")
 
         for step in range(max_steps):
             total_steps += 1
@@ -145,7 +172,9 @@ def main():
             if ep == 2 and step >= 15:
                 active_mask = [i for i in range(adapter.n_arms) if i != args.sever_arm]
                 if step == 15:
-                    print(f"\n  ⚠️  [PERTURBATION] Arm #{args.sever_arm} physically severed! Testing decentralized resilience...")
+                    print(
+                        f"\n  ⚠️  [PERTURBATION] Arm #{args.sever_arm} physically severed! Testing decentralized resilience..."
+                    )
 
             # 3. Query actions from the OctopusBrain
             actions, info = adapter.predict(obs, active_mask=active_mask, deterministic=True)
@@ -173,7 +202,11 @@ def main():
             if step % 5 == 0 or is_joint_hit or step == 15:
                 report_str = "".join(["●" if r else "○" for r in info["report_events"]])
                 coalitions = info["coalition_clusters"]
-                coalition_str = ", ".join([f"({','.join(map(str, c))})" for c in coalitions]) if coalitions else "None"
+                coalition_str = (
+                    ", ".join([f"({','.join(map(str, c))})" for c in coalitions])
+                    if coalitions
+                    else "None"
+                )
                 mean_val = float(np.mean(info["values"]))
                 action_str = "".join([a[0] for a in info["action_names"]])
 
@@ -181,7 +214,7 @@ def main():
                     f"  [Step {step:02d}] "
                     f"Rew: {step_reward:+5.2f} | "
                     f"Acts: [{action_str}] | "
-                    f"Gating: [{report_str}] ({info['report_rate']*100:2.0f}%) | "
+                    f"Gating: [{report_str}] ({info['report_rate'] * 100:2.0f}%) | "
                     f"Coalitions: {coalition_str:<8} | "
                     f"V(s): {mean_val:+4.2f} | "
                     f"Max ΔS: {np.max(info['surprise_values']):.2f}"
@@ -191,7 +224,9 @@ def main():
                 active_intents = [it for it in info["decoded_intents"] if it["is_reporting"]]
                 if active_intents:
                     for it in active_intents:
-                        print(f"      🗣  Arm #{it['arm_index']}: {it['icon']} {it['label']} ({it['confidence']*100:.0f}%) -> {it['description']}")
+                        print(
+                            f"      🗣  Arm #{it['arm_index']}: {it['icon']} {it['label']} ({it['confidence'] * 100:.0f}%) -> {it['description']}"
+                        )
 
                 # ASCII Arena visualization
                 if args.render == "ascii":
@@ -199,7 +234,9 @@ def main():
 
             obs = next_obs
             if term or trunc:
-                print(f"  --> Episode finished at step {step} ({'Goal Reached' if term else 'Truncated'})")
+                print(
+                    f"  --> Episode finished at step {step} ({'Goal Reached' if term else 'Truncated'})"
+                )
                 break
 
         total_reward += ep_reward
@@ -209,8 +246,12 @@ def main():
     print("\n" + "=" * 85)
     print("🏆 DEMO EVALUATION SUMMARY")
     print(f"• Total Cumulative Reward Across Episodes: {total_reward:+.2f}")
-    print(f"• Overall Communication Bandwidth Savings: {comm_savings:.1f}% (Sparse Event-Triggered Gating)")
-    print(f"• Decentralized Amputation Handling: Arm #{args.sever_arm} severed mid-run with ZERO system crash.")
+    print(
+        f"• Overall Communication Bandwidth Savings: {comm_savings:.1f}% (Sparse Event-Triggered Gating)"
+    )
+    print(
+        f"• Decentralized Amputation Handling: Arm #{args.sever_arm} severed mid-run with ZERO system crash."
+    )
     print("=" * 85)
 
 

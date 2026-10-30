@@ -2,15 +2,13 @@ import pytest
 
 pytestmark = pytest.mark.unit
 from octoflow.arm import ArmAgent
-from octoflow.tools import WorkspaceSandbox
 from octoflow.bus import InterBrachialBus
+from octoflow.config import ArmRoleConfig
+from octoflow.encoder import CodeSensoryEncoder
 from octoflow.gate import SurpriseGate
 from octoflow.memory import VerticalLobeMemory
-from octoflow.config import OctoFlowConfig, ArmRoleConfig
-from octoflow.encoder import CodeSensoryEncoder
-
-
 from octoflow.provider import MockLLMProvider
+from octoflow.tools import WorkspaceSandbox
 
 
 @pytest.fixture
@@ -21,7 +19,13 @@ def arm(tmp_path):
     memory = VerticalLobeMemory()
     encoder = CodeSensoryEncoder()
     provider = MockLLMProvider()
-    role = ArmRoleConfig(arm_id=2, name="backend", title="Backend Developer", description="Backend logic", workspace_domain=["*.py"])
+    role = ArmRoleConfig(
+        arm_id=2,
+        name="backend",
+        title="Backend Developer",
+        description="Backend logic",
+        workspace_domain=["*.py"],
+    )
     return ArmAgent(
         role_config=role,
         sandbox=sandbox,

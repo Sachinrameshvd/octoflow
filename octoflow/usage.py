@@ -9,13 +9,14 @@ from __future__ import annotations
 import math
 import threading
 import time
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 
 @dataclass
 class UsageRecord:
     """Individual record of an LLM completion call and its token consumption."""
+
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
@@ -24,7 +25,7 @@ class UsageRecord:
     model: str = ""
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -32,7 +33,7 @@ class UsageLedger:
     """Thread-safe ledger aggregating token usage and call statistics per run."""
 
     def __init__(self) -> None:
-        self.records: List[UsageRecord] = []
+        self.records: list[UsageRecord] = []
         self._lock = threading.Lock()
 
     def record(
@@ -114,7 +115,7 @@ class UsageLedger:
         with self._lock:
             return sum(r.completion_tokens for r in self.records if r.estimated)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return aggregated usage summary dictionary."""
         with self._lock:
             calls = len(self.records)

@@ -1,7 +1,6 @@
 """Configuration dataclasses for OctopusBrain architecture and experiments."""
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Tuple
+from dataclasses import dataclass
 
 
 @dataclass
@@ -75,8 +74,8 @@ class EnvConfig:
 # Allow safe unpickling of configuration classes under PyTorch >=2.6 weights_only=True
 try:
     import torch
+
     if hasattr(torch.serialization, "add_safe_globals"):
         torch.serialization.add_safe_globals([OctopusBrainConfig, EnvConfig])
 except Exception:
     pass
-

@@ -9,20 +9,18 @@ Features:
 - Strict ZERO EMOJI rule: Pure bio-glyphs only (•, ·, ○, °, o, ⌒, ─).
 """
 
-from dataclasses import dataclass
 import math
 import random
 import select
 import sys
 import time
-from typing import List, Optional, Tuple
+
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
-from rich.live import Live
 
 from octoflow.themes import OctoTheme, load_saved_theme
-
 
 # --- 5-LINE ULTRA MICRO-DOT SPRITES ---
 
@@ -71,11 +69,11 @@ def render_runner_frame(
     theme: OctoTheme,
     octo_x: int = 0,
     octo_y: int = 0,
-    fish_positions: Optional[List[int]] = None,
-    fish_x: Optional[int] = None,
+    fish_positions: list[int] | None = None,
+    fish_x: int | None = None,
     is_jumping: bool = False,
     is_dead: bool = False,
-    bubbles: Optional[List[tuple]] = None,
+    bubbles: list[tuple] | None = None,
     score: int = 0,
     high_score: int = 0,
     game_over: bool = False,
@@ -167,53 +165,70 @@ def render_runner_frame(
     )
 
 
-def get_animation_frames(theme: OctoTheme) -> List[Panel]:
+def get_animation_frames(theme: OctoTheme) -> list[Panel]:
     """Generates the left-and-right swimming and jumping frames across the extended platform."""
     frames = [
         # Frame 0: Touching far left edge, seabed
         render_runner_frame(
-            theme, octo_x=0, octo_y=0, is_jumping=False,
+            theme,
+            octo_x=0,
+            octo_y=0,
+            is_jumping=False,
             bubbles=[(10, 1, "°"), (35, 2, "·"), (50, 0, "o")],
-            stride_alt=False
+            stride_alt=False,
         ),
         # Frame 1: Ascending jump gliding rightward
         render_runner_frame(
-            theme, octo_x=12, octo_y=1, is_jumping=True,
+            theme,
+            octo_x=12,
+            octo_y=1,
+            is_jumping=True,
             bubbles=[(15, 0, "°"), (40, 2, "o"), (55, 1, "·")],
-            stride_alt=True
+            stride_alt=True,
         ),
         # Frame 2: Mid-water free floating rightward
         render_runner_frame(
-            theme, octo_x=28, octo_y=1, is_jumping=True,
+            theme,
+            octo_x=28,
+            octo_y=1,
+            is_jumping=True,
             bubbles=[(8, 1, "o"), (25, 0, "°"), (48, 2, "°")],
-            stride_alt=False
+            stride_alt=False,
         ),
         # Frame 3: Touching far right edge!
         render_runner_frame(
-            theme, octo_x=45, octo_y=0, is_jumping=False,
+            theme,
+            octo_x=45,
+            octo_y=0,
+            is_jumping=False,
             bubbles=[(5, 2, "°"), (20, 1, "·"), (58, 0, "o")],
-            stride_alt=True
+            stride_alt=True,
         ),
         # Frame 4: Ascending jump gliding leftward
         render_runner_frame(
-            theme, octo_x=30, octo_y=1, is_jumping=True,
+            theme,
+            octo_x=30,
+            octo_y=1,
+            is_jumping=True,
             bubbles=[(18, 0, "°"), (38, 2, "o"), (52, 1, "·")],
-            stride_alt=False
+            stride_alt=False,
         ),
         # Frame 5: Gliding back towards far left start
         render_runner_frame(
-            theme, octo_x=12, octo_y=1, is_jumping=True,
+            theme,
+            octo_x=12,
+            octo_y=1,
+            is_jumping=True,
             bubbles=[(14, 2, "·"), (32, 1, "°"), (46, 0, "o")],
-            stride_alt=True
+            stride_alt=True,
         ),
     ]
     return frames
 
 
-
 def play_runner_animation(
     console: Console,
-    theme: Optional[OctoTheme] = None,
+    theme: OctoTheme | None = None,
     cycles: int = 1,
     delay: float = 0.12,
     interactive: bool = False,
@@ -245,7 +260,7 @@ def play_runner_animation(
         pass
 
 
-def run_dino_game(console: Console, theme: Optional[OctoTheme] = None, auto_pilot: bool = True):
+def run_dino_game(console: Console, theme: OctoTheme | None = None, auto_pilot: bool = True):
     """
     Ultra-short, obstacle-free playful octopus moving left and right while jumping freely!
     - Travels smoothly across the extended platform (0 <-> 45)
@@ -298,15 +313,19 @@ def run_dino_game(console: Console, theme: Optional[OctoTheme] = None, auto_pilo
 
     try:
         frame = render_runner_frame(
-            theme, octo_x=int(octo_x), octo_y=0, is_jumping=False,
-            bubbles=bubbles
+            theme, octo_x=int(octo_x), octo_y=0, is_jumping=False, bubbles=bubbles
         )
         with Live(frame, console=console, refresh_per_second=24, screen=False) as live:
             while True:
                 key = check_key()
                 if key in ["q", "Q", "\x03", "esc"]:  # Q, Ctrl+C, or Esc
                     break
-                elif key in [" ", "w", "W", "up"]:  # Space, W, or Up arrow triggers an extra high leap
+                elif key in [
+                    " ",
+                    "w",
+                    "W",
+                    "up",
+                ]:  # Space, W, or Up arrow triggers an extra high leap
                     jump_timer = 0.8
                 elif key in ["a", "A", "h", "H", "left"]:  # Steer left
                     octo_dx = -1.5
@@ -320,7 +339,7 @@ def run_dino_game(console: Console, theme: Optional[OctoTheme] = None, auto_pilo
                     octo_dx = -1.2  # Reach far right end and turn left
                 elif octo_x <= 0.0:
                     octo_x = 0.0
-                    octo_dx = 1.2   # Reach far left end and turn right
+                    octo_dx = 1.2  # Reach far left end and turn right
 
                 # 2. Update playful jumping & floating motion
                 jump_timer += 0.16

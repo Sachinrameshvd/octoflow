@@ -10,21 +10,23 @@ Calibrated to histological cell counts and micro-CT volumes
 (J.Z. Young 1971; Hochner 2012; Budelmann 1995; Packard 1972).
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass
+from typing import Any
+
 import numpy as np
 
 
 @dataclass
 class NeuropilLobeDefinition:
     """Quantitative definition of a brain lobe in the adult octopus."""
+
     id: str
     name: str
     parent_mass: str  # 'supraesophageal', 'subesophageal', 'optic', 'brachial_arm'
     volume_mm3: float
     neuron_count: int
     cell_density_per_mm3: float
-    center_pos_mm: Tuple[float, float, float]
+    center_pos_mm: tuple[float, float, float]
     bounding_radius_mm: float
     primary_neurotransmitter: str
     is_plastic_associative: bool = False
@@ -37,7 +39,7 @@ class AdultOctopusAtlas:
     TOTAL_TARGET_NEURONS: int = 500_000_000
 
     def __init__(self):
-        self.lobes: Dict[str, NeuropilLobeDefinition] = {}
+        self.lobes: dict[str, NeuropilLobeDefinition] = {}
         self._build_atlas()
 
     def _build_atlas(self):
@@ -172,7 +174,7 @@ class AdultOctopusAtlas:
             angle = (arm_idx / 8.0) * 2.0 * np.pi
             r_center = 7.0
             cx = float(r_center * np.cos(angle))
-            cy = float(-1.0)
+            cy = -1.0
             cz = float(r_center * np.sin(angle))
 
             self.lobes[f"brachial_arm_{arm_idx}"] = NeuropilLobeDefinition(
@@ -188,7 +190,7 @@ class AdultOctopusAtlas:
                 is_motor_command=True,
             )
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Calculates total brain metrics."""
         total_neurons = sum(l.neuron_count for l in self.lobes.values())
         total_vol = sum(l.volume_mm3 for l in self.lobes.values())

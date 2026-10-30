@@ -13,13 +13,15 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union
-from pydantic import BaseModel
-import httpx
+from collections.abc import Callable
+from typing import Any
 
-from octoflow.config import OctoFlowConfig, LLMConfigEntry
-from octoflow.outcome import ProviderExhaustedError, OctoFlowError
+import httpx
+from pydantic import BaseModel
+
+from octoflow.config import LLMConfigEntry, OctoFlowConfig
 from octoflow.logging_config import get_logger
+from octoflow.outcome import ProviderExhaustedError
 from octoflow.usage import UsageLedger, estimate_tokens_from_chars
 
 logger = get_logger("provider")
@@ -30,19 +32,39 @@ def redact_secrets(text: str) -> str:
     if not text:
         return ""
     # Authorization header with Bearer token (e.g. Authorization: Bearer <token>)
-    text = re.sub(r'Authorization:\s*Bearer\s+\S+', 'Authorization: Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"Authorization:\s*Bearer\s+\S+",
+        "Authorization: Bearer [REDACTED_TOKEN]",
+        text,
+        flags=re.IGNORECASE,
+    )
     # Standalone Bearer tokens (e.g. Bearer <token>)
-    text = re.sub(r'(?<!Authorization:\s)(?<!Authorization:)\bBearer\s+[a-zA-Z0-9_\-\.]{10,}', 'Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"(?<!Authorization:\s)(?<!Authorization:)\bBearer\s+[a-zA-Z0-9_\-\.]{10,}",
+        "Bearer [REDACTED_TOKEN]",
+        text,
+        flags=re.IGNORECASE,
+    )
     # Non-bearer Authorization header values (e.g. Basic, Token, etc.)
-    text = re.sub(r'Authorization:\s*(?!\s*Bearer\s+\[REDACTED_TOKEN\])[^\r\n]+', 'Authorization: [REDACTED]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"Authorization:\s*(?!\s*Bearer\s+\[REDACTED_TOKEN\])[^\r\n]+",
+        "Authorization: [REDACTED]",
+        text,
+        flags=re.IGNORECASE,
+    )
     # API keys: Anthropic, OpenAI, Grok, etc. (sk-...)
-    text = re.sub(r'sk-[a-zA-Z0-9_\-]{16,}', '[REDACTED_KEY]', text)
+    text = re.sub(r"sk-[a-zA-Z0-9_\-]{16,}", "[REDACTED_KEY]", text)
     # Google AI keys (AIza...)
-    text = re.sub(r'AIza[0-9A-Za-z\-_]{30,}', '[REDACTED_KEY]', text)
+    text = re.sub(r"AIza[0-9A-Za-z\-_]{30,}", "[REDACTED_KEY]", text)
     # GitHub personal access tokens
-    text = re.sub(r'(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}', '[REDACTED_GITHUB_TOKEN]', text)
+    text = re.sub(r"(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}", "[REDACTED_GITHUB_TOKEN]", text)
     # Key-value query/header assignments
-    text = re.sub(r'(api_key|apikey|key|token|secret|password)=([^\s&"\']+)', r'\1=[REDACTED]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r'(api_key|apikey|key|token|secret|password)=([^\s&"\']+)',
+        r"\1=[REDACTED]",
+        text,
+        flags=re.IGNORECASE,
+    )
     return text
 
 
@@ -53,13 +75,13 @@ _sanitize_secret_text = redact_secrets
 # Provider Error Taxonomy (Re-parented from octoflow.errors)
 # ==============================================================================
 from octoflow.errors import (
-    ProviderError,
     ProviderAuthError,
-    ProviderRateLimitError,
-    ProviderTransientError,
-    ProviderRequestError,
-    ProviderUnavailableError,
+    ProviderError,
     ProviderExhaustedError,
+    ProviderRateLimitError,
+    ProviderRequestError,
+    ProviderTransientError,
+    ProviderUnavailableError,
 )
 
 
@@ -69,16 +91,16 @@ from octoflow.errors import (
 def classify_http_error(
     error_or_status: Any,
     provider: str = "unknown",
-    response: Optional[httpx.Response] = None,
-    body: Optional[str] = None,
-    headers: Optional[Dict[str, str]] = None,
-    model: Optional[str] = None,
+    response: httpx.Response | None = None,
+    body: str | None = None,
+    headers: dict[str, str] | None = None,
+    model: str | None = None,
 ) -> ProviderError:
     """Classifies an HTTP status code, response, or exception into the ProviderError taxonomy."""
     p_name = provider.lower().strip()
-    status_code: Optional[int] = None
+    status_code: int | None = None
     response_text: str = body or ""
-    resp_headers: Dict[str, str] = dict(headers or {})
+    resp_headers: dict[str, str] = dict(headers or {})
 
     if isinstance(error_or_status, httpx.HTTPStatusError):
         response = error_or_status.response
@@ -89,7 +111,9 @@ def classify_http_error(
             try:
                 response_text = response.text
             except Exception as e:
-                logger.debug("Unable to read response.text: %s", e)  # best-effort: response payload may not be text or already closed
+                logger.debug(
+                    "Unable to read response.text: %s", e
+                )  # best-effort: response payload may not be text or already closed
                 response_text = ""
         if not resp_headers:
             resp_headers = {k.lower(): v for k, v in response.headers.items()}
@@ -99,11 +123,11 @@ def classify_http_error(
         return error_or_status
     elif isinstance(error_or_status, Exception):
         if hasattr(error_or_status, "status_code"):
-            status_code = getattr(error_or_status, "status_code")
+            status_code = error_or_status.status_code
         elif hasattr(error_or_status, "status"):
-            status_code = getattr(error_or_status, "status")
+            status_code = error_or_status.status
         if status_code is None:
-            m = re.search(r'\b(4\d\d|5\d\d)\b', str(error_or_status))
+            m = re.search(r"\b(4\d\d|5\d\d)\b", str(error_or_status))
             if m:
                 status_code = int(m.group(1))
         if not response_text:
@@ -136,7 +160,9 @@ def classify_http_error(
         )
 
     clean_text = redact_secrets(response_text)
-    msg = clean_text or (str(error_or_status) if not isinstance(error_or_status, int) else f"HTTP {status_code}")
+    msg = clean_text or (
+        str(error_or_status) if not isinstance(error_or_status, int) else f"HTTP {status_code}"
+    )
     clean_msg = redact_secrets(msg)
 
     # 1. Ollama specific handling
@@ -162,11 +188,20 @@ def classify_http_error(
     # 3. Status 400 with invalid-key signature -> ProviderAuthError
     if status_code == 400:
         lower_body = clean_text.lower()
-        is_key_error = any(phrase in lower_body for phrase in [
-            "invalid_api_key", "invalid api key", "authentication_error",
-            "invalid_x_api_key", "api_key_invalid", "unauthorized",
-            "api key not valid", "incorrect api key", "key not found"
-        ])
+        is_key_error = any(
+            phrase in lower_body
+            for phrase in [
+                "invalid_api_key",
+                "invalid api key",
+                "authentication_error",
+                "invalid_x_api_key",
+                "api_key_invalid",
+                "unauthorized",
+                "api key not valid",
+                "incorrect api key",
+                "key not found",
+            ]
+        )
         if is_key_error:
             return ProviderAuthError(
                 clean_msg,
@@ -182,20 +217,29 @@ def classify_http_error(
         )
 
     # 4. Status 429 -> ProviderRateLimitError (with Retry-After extraction)
-    is_rate_limit = (
-        status_code == 429
-        or any(k in clean_text.lower() or k in clean_msg.lower() for k in [
-            "429", "rate limit", "rate_limit", "quota", "resource_exhausted",
-            "insufficient_quota", "credit", "exceeded", "too many requests"
-        ])
+    is_rate_limit = status_code == 429 or any(
+        k in clean_text.lower() or k in clean_msg.lower()
+        for k in [
+            "429",
+            "rate limit",
+            "rate_limit",
+            "quota",
+            "resource_exhausted",
+            "insufficient_quota",
+            "credit",
+            "exceeded",
+            "too many requests",
+        ]
     )
     if is_rate_limit:
-        retry_after: Optional[float] = None
+        retry_after: float | None = None
         if "retry-after" in norm_headers:
             try:
                 retry_after = float(norm_headers["retry-after"])
             except (ValueError, TypeError) as e:
-                logger.debug("Failed to parse numeric Retry-After header: %s", e)  # best-effort: non-numeric retry-after header
+                logger.debug(
+                    "Failed to parse numeric Retry-After header: %s", e
+                )  # best-effort: non-numeric retry-after header
         if retry_after is None and clean_text:
             try:
                 parsed = json.loads(clean_text)
@@ -204,7 +248,9 @@ def classify_http_error(
                     if ra:
                         retry_after = float(ra)
             except Exception as e:
-                logger.debug("Response body not JSON or missing retry_after: %s", e)  # best-effort: response may be plain text or HTML
+                logger.debug(
+                    "Response body not JSON or missing retry_after: %s", e
+                )  # best-effort: response may be plain text or HTML
 
         return ProviderRateLimitError(
             clean_msg,
@@ -254,8 +300,8 @@ DEFAULT_OLLAMA_TIMEOUT = httpx.Timeout(connect=5.0, read=300.0, write=30.0, pool
 
 
 def set_sleep_functions(
-    sync_sleep: Optional[Callable[[float], None]] = None,
-    async_sleep: Optional[Callable[[float], Any]] = None,
+    sync_sleep: Callable[[float], None] | None = None,
+    async_sleep: Callable[[float], Any] | None = None,
 ):
     """Inject global sleep functions for testing backoff and retries without real-time delays."""
     global _DEFAULT_SLEEP_FN, _DEFAULT_ASYNC_SLEEP_FN
@@ -278,8 +324,8 @@ def reset_sleep_functions():
 def execute_with_retry(
     fn: Callable[[], httpx.Response],
     provider: Any = "unknown",
-    model: Optional[str] = None,
-    sleep_fn: Optional[Callable[[float], None]] = None,
+    model: str | None = None,
+    sleep_fn: Callable[[float], None] | None = None,
 ) -> httpx.Response:
     """Executes an HTTP request honoring OctoFlow retry and backoff policy.
 
@@ -288,7 +334,11 @@ def execute_with_retry(
     - Transient errors: retries at most twice, using 0.5s and 1.5s delays plus jitter.
     - Request/Unavailable errors: 0 retries, raises immediately.
     """
-    provider_name = getattr(provider, "provider_name", str(provider)) if not isinstance(provider, str) else provider
+    provider_name = (
+        getattr(provider, "provider_name", str(provider))
+        if not isinstance(provider, str)
+        else provider
+    )
     model_name = model or getattr(provider, "model", None)
 
     if isinstance(provider, BaseLLMProvider) and getattr(provider, "is_disabled", False):
@@ -323,7 +373,9 @@ def execute_with_retry(
                     if err.retry_after is not None and err.retry_after > 0:
                         delay = min(err.retry_after, 30.0)
                     else:
-                        delay = min(1.0 * (2 ** (rate_limit_retries - 1)) + random.uniform(0.1, 0.4), 30.0)
+                        delay = min(
+                            1.0 * (2 ** (rate_limit_retries - 1)) + random.uniform(0.1, 0.4), 30.0
+                        )
                     actual_sleep(delay)
                     continue
                 raise err
@@ -344,11 +396,15 @@ def execute_with_retry(
 async def aexecute_with_retry(
     coro_fn: Callable[[], Any],
     provider: Any = "unknown",
-    model: Optional[str] = None,
-    asleep_fn: Optional[Callable[[float], Any]] = None,
+    model: str | None = None,
+    asleep_fn: Callable[[float], Any] | None = None,
 ) -> httpx.Response:
     """Asynchronously executes an HTTP request honoring OctoFlow retry and backoff policy."""
-    provider_name = getattr(provider, "provider_name", str(provider)) if not isinstance(provider, str) else provider
+    provider_name = (
+        getattr(provider, "provider_name", str(provider))
+        if not isinstance(provider, str)
+        else provider
+    )
     model_name = model or getattr(provider, "model", None)
 
     if isinstance(provider, BaseLLMProvider) and getattr(provider, "is_disabled", False):
@@ -391,7 +447,9 @@ async def aexecute_with_retry(
                     if err.retry_after is not None and err.retry_after > 0:
                         delay = min(err.retry_after, 30.0)
                     else:
-                        delay = min(1.0 * (2 ** (rate_limit_retries - 1)) + random.uniform(0.1, 0.4), 30.0)
+                        delay = min(
+                            1.0 * (2 ** (rate_limit_retries - 1)) + random.uniform(0.1, 0.4), 30.0
+                        )
                     await _do_sleep(delay)
                     continue
                 raise err
@@ -409,24 +467,29 @@ async def aexecute_with_retry(
                 raise err
 
 
-def retry_http_request(fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
+def retry_http_request(
+    fn: Callable[[], httpx.Response], max_retries: int = 3, base_delay: float = 1.0
+) -> httpx.Response:
     """Legacy helper: delegates to execute_with_retry."""
     return execute_with_retry(fn, provider="unknown")
 
 
-async def aretry_http_request(coro_fn: Callable[[], Any], max_retries: int = 3, base_delay: float = 1.0) -> httpx.Response:
+async def aretry_http_request(
+    coro_fn: Callable[[], Any], max_retries: int = 3, base_delay: float = 1.0
+) -> httpx.Response:
     """Legacy helper: delegates to aexecute_with_retry."""
     return await aexecute_with_retry(coro_fn, provider="unknown")
 
 
 class LLMResponse(BaseModel):
     """Normalized response from an LLM call."""
+
     content: str
     tokens_prompt: int = 0
     tokens_completion: int = 0
     total_tokens: int = 0
     estimated_cost_dollars: float = 0.0
-    tool_calls: List[Dict[str, Any]] = []
+    tool_calls: list[dict[str, Any]] = []
     estimated: bool = False
 
     @property
@@ -440,16 +503,17 @@ class LLMResponse(BaseModel):
 
 class BaseLLMProvider(ABC):
     """Abstract interface for LLM backends."""
+
     provider_name: str = "base"
     model: str = "default"
     is_disabled: bool = False
-    disabled_reason: Optional[str] = None
-    sleep_fn: Optional[Callable[[float], None]] = None
-    asleep_fn: Optional[Callable[[float], Any]] = None
-    timeout: Optional[httpx.Timeout] = None
-    usage_ledger: Optional[UsageLedger] = None
+    disabled_reason: str | None = None
+    sleep_fn: Callable[[float], None] | None = None
+    asleep_fn: Callable[[float], Any] | None = None
+    timeout: httpx.Timeout | None = None
+    usage_ledger: UsageLedger | None = None
 
-    def set_ledger(self, ledger: Optional[UsageLedger]) -> None:
+    def set_ledger(self, ledger: UsageLedger | None) -> None:
         """Attach a UsageLedger to accumulate token consumption."""
         self.usage_ledger = ledger
 
@@ -484,15 +548,19 @@ class BaseLLMProvider(ABC):
     ) -> LLMResponse:
         """Asynchronously generate an LLM completion."""
         import asyncio
-        return await asyncio.to_thread(self.generate, prompt, system_prompt, temperature, max_tokens)
+
+        return await asyncio.to_thread(
+            self.generate, prompt, system_prompt, temperature, max_tokens
+        )
 
 
 class MockLLMProvider(BaseLLMProvider):
     """Deterministic, zero-cost LLM provider for unit tests and local simulation."""
+
     provider_name = "mock"
     model = "mock"
 
-    def __init__(self, script_responses: Optional[Dict[str, str]] = None):
+    def __init__(self, script_responses: dict[str, str] | None = None):
         self.script_responses = script_responses or {}
         self.call_count = 0
         self.total_tokens_spent = 0
@@ -512,7 +580,7 @@ class MockLLMProvider(BaseLLMProvider):
             if pattern.lower() in prompt_lower:
                 tokens_in = estimate_tokens_from_chars(prompt)
                 tokens_out = estimate_tokens_from_chars(response)
-                self.total_tokens_spent += (tokens_in + tokens_out)
+                self.total_tokens_spent += tokens_in + tokens_out
                 resp = LLMResponse(
                     content=response,
                     tokens_prompt=tokens_in,
@@ -526,139 +594,168 @@ class MockLLMProvider(BaseLLMProvider):
 
         # Default intelligent mock responses for various agent roles
         if "developer question:" in prompt_lower or "inquiry:" in prompt_lower:
-            role_hint = system_prompt.split(" (Arm")[0].replace("You are ", "").strip() if "You are " in system_prompt else "Specialist"
+            role_hint = (
+                system_prompt.split(" (Arm")[0].replace("You are ", "").strip()
+                if "You are " in system_prompt
+                else "Specialist"
+            )
             content = (
                 f"As the {role_hint}, I analyzed this domain carefully. "
                 f"This decision enforces clean interface boundaries, high transaction concurrency, and robust data persistence. "
                 f"All components adhere to the project specifications and pass AST pre-flight validation."
             )
         elif "test" in prompt_lower or "pytest" in prompt_lower:
-            content = json.dumps({
-                "action": "run_command",
-                "command": "python -c 'print(\"1 passed in 0.01s\")'",
-                "explanation": "Running unit test suite to verify code contracts.",
-            })
-        elif "slidingwindowratelimiter" in prompt_lower or "limiter.py" in prompt_lower or "rate limiter" in prompt_lower:
-            content = json.dumps({
-                "action": "write_file",
-                "path": "limiter.py",
-                "content": (
-                    "import time\nimport threading\n\n"
-                    "class SlidingWindowRateLimiter:\n"
-                    "    def __init__(self):\n"
-                    "        self._lock = threading.Lock()\n"
-                    "        self._requests = {}\n\n"
-                    "    def allow_request(self, client_id: str, limit: int, window_sec: float) -> bool:\n"
-                    "        with self._lock:\n"
-                    "            now = time.time()\n"
-                    "            timestamps = self._requests.setdefault(client_id, [])\n"
-                    "            self._requests[client_id] = [t for t in timestamps if now - t < window_sec]\n"
-                    "            if len(self._requests[client_id]) < limit:\n"
-                    "                self._requests[client_id].append(now)\n"
-                    "                return True\n"
-                    "            return False\n"
-                ),
-                "explanation": "Implemented thread-safe SlidingWindowRateLimiter in limiter.py",
-            })
+            content = json.dumps(
+                {
+                    "action": "run_command",
+                    "command": "python -c 'print(\"1 passed in 0.01s\")'",
+                    "explanation": "Running unit test suite to verify code contracts.",
+                }
+            )
+        elif (
+            "slidingwindowratelimiter" in prompt_lower
+            or "limiter.py" in prompt_lower
+            or "rate limiter" in prompt_lower
+        ):
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "limiter.py",
+                    "content": (
+                        "import time\nimport threading\n\n"
+                        "class SlidingWindowRateLimiter:\n"
+                        "    def __init__(self):\n"
+                        "        self._lock = threading.Lock()\n"
+                        "        self._requests = {}\n\n"
+                        "    def allow_request(self, client_id: str, limit: int, window_sec: float) -> bool:\n"
+                        "        with self._lock:\n"
+                        "            now = time.time()\n"
+                        "            timestamps = self._requests.setdefault(client_id, [])\n"
+                        "            self._requests[client_id] = [t for t in timestamps if now - t < window_sec]\n"
+                        "            if len(self._requests[client_id]) < limit:\n"
+                        "                self._requests[client_id].append(now)\n"
+                        "                return True\n"
+                        "            return False\n"
+                    ),
+                    "explanation": "Implemented thread-safe SlidingWindowRateLimiter in limiter.py",
+                }
+            )
         elif "lrucache" in prompt_lower or "lru.py" in prompt_lower or "lru cache" in prompt_lower:
-            content = json.dumps({
-                "action": "write_file",
-                "path": "lru.py",
-                "content": (
-                    "from collections import OrderedDict\n\n"
-                    "class LRUCache:\n"
-                    "    def __init__(self, capacity: int):\n"
-                    "        self.capacity = capacity\n"
-                    "        self.cache = OrderedDict()\n\n"
-                    "    def get(self, key: int) -> int:\n"
-                    "        if key not in self.cache:\n"
-                    "            return -1\n"
-                    "        self.cache.move_to_end(key)\n"
-                    "        return self.cache[key]\n\n"
-                    "    def put(self, key: int, value: int) -> None:\n"
-                    "        if key in self.cache:\n"
-                    "            self.cache.move_to_end(key)\n"
-                    "        self.cache[key] = value\n"
-                    "        if len(self.cache) > self.capacity:\n"
-                    "            self.cache.popitem(last=False)\n"
-                ),
-                "explanation": "Implemented O(1) LRUCache in lru.py",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "lru.py",
+                    "content": (
+                        "from collections import OrderedDict\n\n"
+                        "class LRUCache:\n"
+                        "    def __init__(self, capacity: int):\n"
+                        "        self.capacity = capacity\n"
+                        "        self.cache = OrderedDict()\n\n"
+                        "    def get(self, key: int) -> int:\n"
+                        "        if key not in self.cache:\n"
+                        "            return -1\n"
+                        "        self.cache.move_to_end(key)\n"
+                        "        return self.cache[key]\n\n"
+                        "    def put(self, key: int, value: int) -> None:\n"
+                        "        if key in self.cache:\n"
+                        "            self.cache.move_to_end(key)\n"
+                        "        self.cache[key] = value\n"
+                        "        if len(self.cache) > self.capacity:\n"
+                        "            self.cache.popitem(last=False)\n"
+                    ),
+                    "explanation": "Implemented O(1) LRUCache in lru.py",
+                }
+            )
         elif "generate_token" in prompt_lower or "auth.py" in prompt_lower or "jwt" in prompt_lower:
-            content = json.dumps({
-                "action": "write_file",
-                "path": "auth.py",
-                "content": (
-                    "import hmac\nimport hashlib\nimport json\nimport base64\n\n"
-                    "def generate_token(payload: dict, secret: str) -> str:\n"
-                    "    payload_str = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()\n"
-                    "    signature = hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()\n"
-                    "    return f'{payload_str}.{signature}'\n\n"
-                    "def verify_token(token: str, secret: str) -> dict:\n"
-                    "    try:\n"
-                    "        parts = token.split('.')\n"
-                    "        if len(parts) != 2:\n"
-                    "            return None\n"
-                    "        payload_str, signature = parts\n"
-                    "        expected_sig = hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()\n"
-                    "        if not hmac.compare_digest(signature, expected_sig):\n"
-                    "            return None\n"
-                    "        return json.loads(base64.urlsafe_b64decode(payload_str.encode()).decode())\n"
-                    "    except Exception:\n"
-                    "        return None\n"
-                ),
-                "explanation": "Implemented HMAC-SHA256 JWT Tokenizer in auth.py",
-            })
-        elif "resolve_dependencies" in prompt_lower or "topo.py" in prompt_lower or "topological" in prompt_lower or "dag" in prompt_lower:
-            content = json.dumps({
-                "action": "write_file",
-                "path": "topo.py",
-                "content": (
-                    "def resolve_dependencies(nodes, edges):\n"
-                    "    from collections import defaultdict, deque\n"
-                    "    in_degree = {n: 0 for n in nodes}\n"
-                    "    adj = defaultdict(list)\n"
-                    "    for u, v in edges:\n"
-                    "        adj[v].append(u)\n"
-                    "        in_degree[u] += 1\n"
-                    "    queue = deque([n for n in nodes if in_degree[n] == 0])\n"
-                    "    order = []\n"
-                    "    while queue:\n"
-                    "        curr = queue.popleft()\n"
-                    "        order.append(curr)\n"
-                    "        for neighbor in adj[curr]:\n"
-                    "            in_degree[neighbor] -= 1\n"
-                    "            if in_degree[neighbor] == 0:\n"
-                    "                queue.append(neighbor)\n"
-                    "    if len(order) != len(nodes):\n"
-                    "        raise ValueError('Cycle detected in graph')\n"
-                    "    return order\n"
-                ),
-                "explanation": "Implemented Topological DAG Resolver in topo.py",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "auth.py",
+                    "content": (
+                        "import hmac\nimport hashlib\nimport json\nimport base64\n\n"
+                        "def generate_token(payload: dict, secret: str) -> str:\n"
+                        "    payload_str = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()\n"
+                        "    signature = hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()\n"
+                        "    return f'{payload_str}.{signature}'\n\n"
+                        "def verify_token(token: str, secret: str) -> dict:\n"
+                        "    try:\n"
+                        "        parts = token.split('.')\n"
+                        "        if len(parts) != 2:\n"
+                        "            return None\n"
+                        "        payload_str, signature = parts\n"
+                        "        expected_sig = hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()\n"
+                        "        if not hmac.compare_digest(signature, expected_sig):\n"
+                        "            return None\n"
+                        "        return json.loads(base64.urlsafe_b64decode(payload_str.encode()).decode())\n"
+                        "    except Exception:\n"
+                        "        return None\n"
+                    ),
+                    "explanation": "Implemented HMAC-SHA256 JWT Tokenizer in auth.py",
+                }
+            )
+        elif (
+            "resolve_dependencies" in prompt_lower
+            or "topo.py" in prompt_lower
+            or "topological" in prompt_lower
+            or "dag" in prompt_lower
+        ):
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "topo.py",
+                    "content": (
+                        "def resolve_dependencies(nodes, edges):\n"
+                        "    from collections import defaultdict, deque\n"
+                        "    in_degree = {n: 0 for n in nodes}\n"
+                        "    adj = defaultdict(list)\n"
+                        "    for u, v in edges:\n"
+                        "        adj[v].append(u)\n"
+                        "        in_degree[u] += 1\n"
+                        "    queue = deque([n for n in nodes if in_degree[n] == 0])\n"
+                        "    order = []\n"
+                        "    while queue:\n"
+                        "        curr = queue.popleft()\n"
+                        "        order.append(curr)\n"
+                        "        for neighbor in adj[curr]:\n"
+                        "            in_degree[neighbor] -= 1\n"
+                        "            if in_degree[neighbor] == 0:\n"
+                        "                queue.append(neighbor)\n"
+                        "    if len(order) != len(nodes):\n"
+                        "        raise ValueError('Cycle detected in graph')\n"
+                        "    return order\n"
+                    ),
+                    "explanation": "Implemented Topological DAG Resolver in topo.py",
+                }
+            )
         elif "write" in prompt_lower or "create" in prompt_lower:
-            content = json.dumps({
-                "action": "write_file",
-                "path": "test_output.py",
-                "content": "# Generated by OctoFlow Arm\ndef solve():\n    return True\n",
-                "explanation": "Creating initial implementation file.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "test_output.py",
+                    "content": "# Generated by OctoFlow Arm\ndef solve():\n    return True\n",
+                    "explanation": "Creating initial implementation file.",
+                }
+            )
         elif "error" in prompt_lower or "fix" in prompt_lower:
-            content = json.dumps({
-                "action": "write_file",
-                "path": "test_output.py",
-                "content": "# Patched by OctoFlow Arm\ndef solve():\n    return True\n",
-                "explanation": "Applying patch to resolve high sensory surprise error.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "test_output.py",
+                    "content": "# Patched by OctoFlow Arm\ndef solve():\n    return True\n",
+                    "explanation": "Applying patch to resolve high sensory surprise error.",
+                }
+            )
         else:
-            content = json.dumps({
-                "action": "mark_quiescent",
-                "explanation": "Task objectives satisfied in full.",
-            })
+            content = json.dumps(
+                {
+                    "action": "mark_quiescent",
+                    "explanation": "Task objectives satisfied in full.",
+                }
+            )
 
         tokens_in = estimate_tokens_from_chars(prompt)
         tokens_out = estimate_tokens_from_chars(content)
-        self.total_tokens_spent += (tokens_in + tokens_out)
+        self.total_tokens_spent += tokens_in + tokens_out
 
         resp = LLMResponse(
             content=content,
@@ -679,21 +776,23 @@ class MockLLMProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         import asyncio
+
         await asyncio.sleep(0.001)
         return self.generate(prompt, system_prompt, temperature, max_tokens)
 
 
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude API Provider (Claude 3.5 Sonnet / Opus)."""
+
     provider_name = "anthropic"
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model: str = "claude-3-5-sonnet-20241022",
-        timeout: Optional[httpx.Timeout] = None,
-        sleep_fn: Optional[Callable[[float], None]] = None,
-        asleep_fn: Optional[Callable[[float], Any]] = None,
+        timeout: httpx.Timeout | None = None,
+        sleep_fn: Callable[[float], None] | None = None,
+        asleep_fn: Callable[[float], Any] | None = None,
     ):
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
@@ -733,7 +832,11 @@ class AnthropicProvider(BaseLLMProvider):
 
         content = data["content"][0]["text"]
         usage = data.get("usage")
-        if usage and usage.get("input_tokens") is not None and usage.get("output_tokens") is not None:
+        if (
+            usage
+            and usage.get("input_tokens") is not None
+            and usage.get("output_tokens") is not None
+        ):
             in_toks = int(usage["input_tokens"])
             out_toks = int(usage["output_tokens"])
             estimated = False
@@ -785,7 +888,11 @@ class AnthropicProvider(BaseLLMProvider):
 
         content = data["content"][0]["text"]
         usage = data.get("usage")
-        if usage and usage.get("input_tokens") is not None and usage.get("output_tokens") is not None:
+        if (
+            usage
+            and usage.get("input_tokens") is not None
+            and usage.get("output_tokens") is not None
+        ):
             in_toks = int(usage["input_tokens"])
             out_toks = int(usage["output_tokens"])
             estimated = False
@@ -809,16 +916,17 @@ class AnthropicProvider(BaseLLMProvider):
 
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI API Provider (GPT-4o, GPT-4o-mini)."""
+
     provider_name = "openai"
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model: str = "gpt-4o",
-        base_url: Optional[str] = None,
-        timeout: Optional[httpx.Timeout] = None,
-        sleep_fn: Optional[Callable[[float], None]] = None,
-        asleep_fn: Optional[Callable[[float], Any]] = None,
+        base_url: str | None = None,
+        timeout: httpx.Timeout | None = None,
+        sleep_fn: Callable[[float], None] | None = None,
+        asleep_fn: Callable[[float], Any] | None = None,
     ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -865,7 +973,11 @@ class OpenAIProvider(BaseLLMProvider):
 
         content = data["choices"][0]["message"]["content"]
         usage = data.get("usage")
-        if usage and usage.get("prompt_tokens") is not None and usage.get("completion_tokens") is not None:
+        if (
+            usage
+            and usage.get("prompt_tokens") is not None
+            and usage.get("completion_tokens") is not None
+        ):
             in_toks = int(usage["prompt_tokens"])
             out_toks = int(usage["completion_tokens"])
             estimated = False
@@ -920,7 +1032,11 @@ class OpenAIProvider(BaseLLMProvider):
 
         content = data["choices"][0]["message"]["content"]
         usage = data.get("usage")
-        if usage and usage.get("prompt_tokens") is not None and usage.get("completion_tokens") is not None:
+        if (
+            usage
+            and usage.get("prompt_tokens") is not None
+            and usage.get("completion_tokens") is not None
+        ):
             in_toks = int(usage["prompt_tokens"])
             out_toks = int(usage["completion_tokens"])
             estimated = False
@@ -944,9 +1060,16 @@ class OpenAIProvider(BaseLLMProvider):
 
 class GeminiProvider(OpenAIProvider):
     """Google Gemini API Provider via OpenAI-compatible endpoint (Gemini 2.0 Flash / Pro)."""
+
     provider_name = "gemini"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash", base_url: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "gemini-2.0-flash",
+        base_url: str | None = None,
+        **kwargs,
+    ):
         key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable required.")
@@ -956,9 +1079,16 @@ class GeminiProvider(OpenAIProvider):
 
 class GrokProvider(OpenAIProvider):
     """xAI Grok API Provider (Grok 2 / Grok beta)."""
+
     provider_name = "grok"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "grok-2-1212", base_url: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "grok-2-1212",
+        base_url: str | None = None,
+        **kwargs,
+    ):
         key = api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
         if not key:
             raise ValueError("XAI_API_KEY or GROK_API_KEY environment variable required.")
@@ -968,9 +1098,16 @@ class GrokProvider(OpenAIProvider):
 
 class DeepSeekProvider(OpenAIProvider):
     """DeepSeek API Provider (DeepSeek-V3 / DeepSeek-R1)."""
+
     provider_name = "deepseek"
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "deepseek-chat", base_url: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "deepseek-chat",
+        base_url: str | None = None,
+        **kwargs,
+    ):
         key = api_key or os.getenv("DEEPSEEK_API_KEY")
         if not key:
             raise ValueError("DEEPSEEK_API_KEY environment variable required.")
@@ -980,15 +1117,16 @@ class DeepSeekProvider(OpenAIProvider):
 
 class OllamaProvider(BaseLLMProvider):
     """Local, offline, 100% free Ollama Provider (DeepSeek-Coder, Qwen2.5, Llama-3)."""
+
     provider_name = "ollama"
 
     def __init__(
         self,
         base_url: str = "http://localhost:11434",
         model: str = "qwen2.5-coder:7b",
-        timeout: Optional[httpx.Timeout] = None,
-        sleep_fn: Optional[Callable[[float], None]] = None,
-        asleep_fn: Optional[Callable[[float], Any]] = None,
+        timeout: httpx.Timeout | None = None,
+        sleep_fn: Callable[[float], None] | None = None,
+        asleep_fn: Callable[[float], Any] | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
@@ -1105,15 +1243,15 @@ class FailoverLLMProvider(BaseLLMProvider):
     def __init__(
         self,
         primary: BaseLLMProvider,
-        fallbacks: Optional[List[BaseLLMProvider]] = None,
-        on_failover: Optional[Callable[[str, str, Exception], None]] = None,
+        fallbacks: list[BaseLLMProvider] | None = None,
+        on_failover: Callable[[str, str, Exception], None] | None = None,
     ):
         self.primary = primary
         self.fallbacks = fallbacks or []
         self.on_failover = on_failover
-        self.failover_history: List[Dict[str, Any]] = []
+        self.failover_history: list[dict[str, Any]] = []
 
-    def set_ledger(self, ledger: Optional[UsageLedger]) -> None:
+    def set_ledger(self, ledger: UsageLedger | None) -> None:
         """Attach UsageLedger to self and all underlying cascade providers."""
         self.usage_ledger = ledger
         if hasattr(self.primary, "set_ledger"):
@@ -1149,7 +1287,9 @@ class FailoverLLMProvider(BaseLLMProvider):
                     max_tokens=max_tokens,
                 )
             except Exception as e:
-                err = classify_http_error(e, provider=prov_tag, model=getattr(provider, "model", None))
+                err = classify_http_error(
+                    e, provider=prov_tag, model=getattr(provider, "model", None)
+                )
                 if isinstance(err, ProviderAuthError):
                     provider.is_disabled = True
                     provider.disabled_reason = str(err)
@@ -1163,19 +1303,23 @@ class FailoverLLMProvider(BaseLLMProvider):
                     "reason": redact_secrets(str(err)),
                 }
                 failures.append(fail_record)
-                self.failover_history.append({
-                    "from": p_name,
-                    "to": next_p,
-                    "error_class": type(err).__name__,
-                    "hint": getattr(err, "hint", ""),
-                    "error": redact_secrets(str(err)),
-                    "timestamp": time.time(),
-                })
+                self.failover_history.append(
+                    {
+                        "from": p_name,
+                        "to": next_p,
+                        "error_class": type(err).__name__,
+                        "hint": getattr(err, "hint", ""),
+                        "error": redact_secrets(str(err)),
+                        "timestamp": time.time(),
+                    }
+                )
                 if self.on_failover:
                     try:
                         self.on_failover(p_name, next_p, err)
                     except Exception as e:
-                        logger.debug("on_failover callback raised exception: %s", e, exc_info=True)  # best-effort: callback error must not crash failover loop
+                        logger.debug(
+                            "on_failover callback raised exception: %s", e, exc_info=True
+                        )  # best-effort: callback error must not crash failover loop
 
         summary_items = []
         for f in failures:
@@ -1216,7 +1360,9 @@ class FailoverLLMProvider(BaseLLMProvider):
                     max_tokens=max_tokens,
                 )
             except Exception as e:
-                err = classify_http_error(e, provider=prov_tag, model=getattr(provider, "model", None))
+                err = classify_http_error(
+                    e, provider=prov_tag, model=getattr(provider, "model", None)
+                )
                 if isinstance(err, ProviderAuthError):
                     provider.is_disabled = True
                     provider.disabled_reason = str(err)
@@ -1230,19 +1376,23 @@ class FailoverLLMProvider(BaseLLMProvider):
                     "reason": redact_secrets(str(err)),
                 }
                 failures.append(fail_record)
-                self.failover_history.append({
-                    "from": p_name,
-                    "to": next_p,
-                    "error_class": type(err).__name__,
-                    "hint": getattr(err, "hint", ""),
-                    "error": redact_secrets(str(err)),
-                    "timestamp": time.time(),
-                })
+                self.failover_history.append(
+                    {
+                        "from": p_name,
+                        "to": next_p,
+                        "error_class": type(err).__name__,
+                        "hint": getattr(err, "hint", ""),
+                        "error": redact_secrets(str(err)),
+                        "timestamp": time.time(),
+                    }
+                )
                 if self.on_failover:
                     try:
                         self.on_failover(p_name, next_p, err)
                     except Exception as e:
-                        logger.debug("Async on_failover callback raised exception: %s", e, exc_info=True)  # best-effort: callback error must not crash failover loop
+                        logger.debug(
+                            "Async on_failover callback raised exception: %s", e, exc_info=True
+                        )  # best-effort: callback error must not crash failover loop
 
         summary_items = []
         for f in failures:
@@ -1270,7 +1420,14 @@ def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> Base
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
-                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+                failures=[
+                    {
+                        "name": entry.name,
+                        "provider": entry.provider,
+                        "model": model,
+                        "reason": "Missing API key",
+                    }
+                ],
             )
         return GeminiProvider(api_key=key, model=model)
     elif p_name in ["grok", "xai"]:
@@ -1280,7 +1437,14 @@ def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> Base
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
-                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+                failures=[
+                    {
+                        "name": entry.name,
+                        "provider": entry.provider,
+                        "model": model,
+                        "reason": "Missing API key",
+                    }
+                ],
             )
         return GrokProvider(api_key=key, model=model)
     elif p_name == "deepseek":
@@ -1290,17 +1454,35 @@ def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> Base
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
-                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+                failures=[
+                    {
+                        "name": entry.name,
+                        "provider": entry.provider,
+                        "model": model,
+                        "reason": "Missing API key",
+                    }
+                ],
             )
         return DeepSeekProvider(api_key=key, model=model)
     elif p_name == "anthropic":
-        model = entry.model if entry.model and entry.model != "default" else "claude-3-5-sonnet-20241022"
+        model = (
+            entry.model
+            if entry.model and entry.model != "default"
+            else "claude-3-5-sonnet-20241022"
+        )
         if not key:
             if is_dry:
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
-                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+                failures=[
+                    {
+                        "name": entry.name,
+                        "provider": entry.provider,
+                        "model": model,
+                        "reason": "Missing API key",
+                    }
+                ],
             )
         return AnthropicProvider(api_key=key, model=model)
     elif p_name == "openai":
@@ -1311,7 +1493,14 @@ def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> Base
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 f"Missing API key for provider '{entry.provider}'. Set {p_name.upper()}_API_KEY or use --dry-run.",
-                failures=[{"name": entry.name, "provider": entry.provider, "model": model, "reason": "Missing API key"}],
+                failures=[
+                    {
+                        "name": entry.name,
+                        "provider": entry.provider,
+                        "model": model,
+                        "reason": "Missing API key",
+                    }
+                ],
             )
         return OpenAIProvider(api_key=key, model=model, base_url=base_url)
     elif p_name == "ollama":
@@ -1327,19 +1516,33 @@ def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> Base
             return MockLLMProvider()
         raise ProviderExhaustedError(
             "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
-            failures=[{"name": entry.name, "provider": "mock", "model": "mock", "reason": "Mock provider requires --dry-run"}],
+            failures=[
+                {
+                    "name": entry.name,
+                    "provider": "mock",
+                    "model": "mock",
+                    "reason": "Mock provider requires --dry-run",
+                }
+            ],
         )
     if is_dry:
         return MockLLMProvider()
     raise ProviderExhaustedError(
         f"Unsupported provider backend '{p_name}'.",
-        failures=[{"name": entry.name, "provider": p_name, "model": getattr(entry, "model", "unknown"), "reason": "Unsupported provider backend"}],
+        failures=[
+            {
+                "name": entry.name,
+                "provider": p_name,
+                "model": getattr(entry, "model", "unknown"),
+                "reason": "Unsupported provider backend",
+            }
+        ],
     )
 
 
 class CascadePoolLLMProvider(BaseLLMProvider):
     """Multi-URL LLM Cascade with hot-swap token and rate-limit failover.
-    
+
     Users and developers can configure as many or as few LLMs/URLs as they choose.
     If 1 model runs out of tokens or hits a rate limit (429, QuotaExceeded, etc.),
     it dynamically falls back to the next model in the user's configured pool.
@@ -1347,49 +1550,53 @@ class CascadePoolLLMProvider(BaseLLMProvider):
 
     def __init__(
         self,
-        entries: List[LLMConfigEntry],
-        on_failover: Optional[Callable[[Dict[str, Any]], None]] = None,
+        entries: list[LLMConfigEntry],
+        on_failover: Callable[[dict[str, Any]], None] | None = None,
         dry_run: bool = False,
     ):
         self.entries = [e for e in sorted(entries, key=lambda x: x.priority) if e.enabled]
         self.on_failover = on_failover
         self.dry_run = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
         self.active_index = 0
-        self.providers: List[BaseLLMProvider] = []
-        self.telemetry: List[Dict[str, Any]] = []
+        self.providers: list[BaseLLMProvider] = []
+        self.telemetry: list[dict[str, Any]] = []
 
         for e in self.entries:
             try:
                 prov = _build_from_pool_entry(e, dry_run=self.dry_run)
                 self.providers.append(prov)
-                self.telemetry.append({
-                    "id": e.id,
-                    "name": e.name,
-                    "provider": e.provider,
-                    "model": e.model,
-                    "base_url": e.base_url or "",
-                    "status": "STANDBY",
-                    "tokens_used": 0,
-                    "failover_count": 0,
-                    "last_error": None,
-                })
+                self.telemetry.append(
+                    {
+                        "id": e.id,
+                        "name": e.name,
+                        "provider": e.provider,
+                        "model": e.model,
+                        "base_url": e.base_url or "",
+                        "status": "STANDBY",
+                        "tokens_used": 0,
+                        "failover_count": 0,
+                        "last_error": None,
+                    }
+                )
             except ProviderExhaustedError as pe:
-                self.telemetry.append({
-                    "id": e.id,
-                    "name": e.name,
-                    "provider": e.provider,
-                    "model": e.model,
-                    "base_url": e.base_url or "",
-                    "status": "EXHAUSTED",
-                    "tokens_used": 0,
-                    "failover_count": 0,
-                    "last_error": str(pe),
-                })
+                self.telemetry.append(
+                    {
+                        "id": e.id,
+                        "name": e.name,
+                        "provider": e.provider,
+                        "model": e.model,
+                        "base_url": e.base_url or "",
+                        "status": "EXHAUSTED",
+                        "tokens_used": 0,
+                        "failover_count": 0,
+                        "last_error": str(pe),
+                    }
+                )
 
         if self.telemetry:
             self.telemetry[0]["status"] = "ACTIVE"
 
-    def get_status_summary(self) -> List[Dict[str, Any]]:
+    def get_status_summary(self) -> list[dict[str, Any]]:
         """Return live telemetry snapshot of all configured LLMs in pool."""
         return list(self.telemetry)
 
@@ -1412,7 +1619,11 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 }
                 for t in self.telemetry
             ]
-            summary = "; ".join(f"{f['provider']}:{f['model']} ({f['reason']})" for f in failures) if failures else "no providers configured in cascade pool"
+            summary = (
+                "; ".join(f"{f['provider']}:{f['model']} ({f['reason']})" for f in failures)
+                if failures
+                else "no providers configured in cascade pool"
+            )
             raise ProviderExhaustedError(
                 f"All configured LLM providers in cascade pool exhausted: {summary}",
                 failures=failures,
@@ -1427,7 +1638,9 @@ class CascadePoolLLMProvider(BaseLLMProvider):
             provider = self.providers[idx]
             t = self.telemetry[idx]
 
-            if (getattr(provider, "is_disabled", False) or t["status"] in ["DISABLED", "EXHAUSTED"]) and attempt_offset < n - 1:
+            if (
+                getattr(provider, "is_disabled", False) or t["status"] in ["DISABLED", "EXHAUSTED"]
+            ) and attempt_offset < n - 1:
                 continue
 
             t["status"] = "ACTIVE"
@@ -1443,7 +1656,9 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 t["tokens_used"] += resp.total_tokens
                 return resp
             except Exception as e:
-                err = classify_http_error(e, provider=t.get("provider", "unknown"), model=t.get("model"))
+                err = classify_http_error(
+                    e, provider=t.get("provider", "unknown"), model=t.get("model")
+                )
                 last_err = err
                 err_str = redact_secrets(str(err))
                 if isinstance(err, ProviderAuthError):
@@ -1478,11 +1693,16 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                     try:
                         self.on_failover(failover_event)
                     except Exception as e:
-                        logger.debug("Cascade failover callback raised exception: %s", e, exc_info=True)  # best-effort: callback error must not interrupt cascade
+                        logger.debug(
+                            "Cascade failover callback raised exception: %s", e, exc_info=True
+                        )  # best-effort: callback error must not interrupt cascade
 
         if self.dry_run:
             import logging
-            logging.getLogger("octoflow").warning(f"All configured LLM providers in cascade pool exhausted ({last_err}). Falling back to cephalopod neural heuristic inference.")
+
+            logging.getLogger("octoflow").warning(
+                f"All configured LLM providers in cascade pool exhausted ({last_err}). Falling back to cephalopod neural heuristic inference."
+            )
             return MockLLMProvider().generate(prompt, system_prompt, temperature, max_tokens)
 
         failures = [
@@ -1490,7 +1710,9 @@ class CascadePoolLLMProvider(BaseLLMProvider):
                 "name": t.get("name", "unknown"),
                 "provider": t.get("provider", "unknown"),
                 "model": t.get("model", "unknown"),
-                "error_class": t.get("error_class", type(last_err).__name__ if last_err else "ProviderError"),
+                "error_class": t.get(
+                    "error_class", type(last_err).__name__ if last_err else "ProviderError"
+                ),
                 "hint": t.get("hint", getattr(last_err, "hint", "")),
                 "reason": t.get("last_error") or "exhausted or unavailable",
             }
@@ -1516,16 +1738,22 @@ class CascadePoolLLMProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         import asyncio
-        return await asyncio.to_thread(self.generate, prompt, system_prompt, temperature, max_tokens)
+
+        return await asyncio.to_thread(
+            self.generate, prompt, system_prompt, temperature, max_tokens
+        )
 
 
-def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Optional[str] = None, dry_run: bool = False) -> BaseLLMProvider:
+def _build_single_provider(
+    provider_name: str, config: OctoFlowConfig, tier: str | None = None, dry_run: bool = False
+) -> BaseLLMProvider:
     """Helper to instantiate an individual provider backend."""
     p_name = provider_name.lower().strip()
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
 
     if p_name in ("fake", "replay"):
         from octoflow.bench import FakeBenchmarkProvider
+
         return FakeBenchmarkProvider()
 
     if p_name == "mock":
@@ -1533,7 +1761,9 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
             return MockLLMProvider()
         raise ProviderExhaustedError(
             "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
-            failures=[{"provider": "mock", "model": "mock", "reason": "mock provider requires --dry-run"}],
+            failures=[
+                {"provider": "mock", "model": "mock", "reason": "mock provider requires --dry-run"}
+            ],
         )
 
     elif p_name == "anthropic":
@@ -1549,7 +1779,9 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 "Anthropic provider misconfigured: missing ANTHROPIC_API_KEY",
-                failures=[{"provider": "anthropic", "model": model, "reason": "missing ANTHROPIC_API_KEY"}],
+                failures=[
+                    {"provider": "anthropic", "model": model, "reason": "missing ANTHROPIC_API_KEY"}
+                ],
             )
         return AnthropicProvider(api_key=api_key, model=model)
 
@@ -1560,31 +1792,53 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
         elif tier == "frontier":
             model = config.frontier_model or "o3-mini"
         else:
-            model = config.model_name if ("gpt" in config.model_name or "o3" in config.model_name or "o1" in config.model_name) else "gpt-4o"
+            model = (
+                config.model_name
+                if (
+                    "gpt" in config.model_name
+                    or "o3" in config.model_name
+                    or "o1" in config.model_name
+                )
+                else "gpt-4o"
+            )
         base_url = config.base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
         if not api_key:
             if is_dry:
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 "OpenAI provider misconfigured: missing OPENAI_API_KEY",
-                failures=[{"provider": "openai", "model": model, "reason": "missing OPENAI_API_KEY"}],
+                failures=[
+                    {"provider": "openai", "model": model, "reason": "missing OPENAI_API_KEY"}
+                ],
             )
         return OpenAIProvider(api_key=api_key, model=model, base_url=base_url)
 
     elif p_name in ["gemini", "google"]:
-        api_key = config.gemini_api_key or config.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        api_key = (
+            config.gemini_api_key
+            or config.api_key
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("GOOGLE_API_KEY")
+        )
         model = config.model_name if "gemini" in config.model_name else "gemini-2.0-flash"
         if not api_key:
             if is_dry:
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 "Gemini provider misconfigured: missing GEMINI_API_KEY",
-                failures=[{"provider": "gemini", "model": model, "reason": "missing GEMINI_API_KEY"}],
+                failures=[
+                    {"provider": "gemini", "model": model, "reason": "missing GEMINI_API_KEY"}
+                ],
             )
         return GeminiProvider(api_key=api_key, model=model)
 
     elif p_name in ["grok", "xai"]:
-        api_key = config.grok_api_key or config.api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
+        api_key = (
+            config.grok_api_key
+            or config.api_key
+            or os.getenv("XAI_API_KEY")
+            or os.getenv("GROK_API_KEY")
+        )
         model = config.model_name if "grok" in config.model_name else "grok-2-1212"
         if not api_key:
             if is_dry:
@@ -1603,7 +1857,9 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
                 return MockLLMProvider()
             raise ProviderExhaustedError(
                 "DeepSeek provider misconfigured: missing DEEPSEEK_API_KEY",
-                failures=[{"provider": "deepseek", "model": model, "reason": "missing DEEPSEEK_API_KEY"}],
+                failures=[
+                    {"provider": "deepseek", "model": model, "reason": "missing DEEPSEEK_API_KEY"}
+                ],
             )
         return DeepSeekProvider(api_key=api_key, model=model)
 
@@ -1631,7 +1887,8 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
             else:
                 model = (
                     config.model_name
-                    if config.model_name and not any(k in config.model_name for k in ("claude", "gpt"))
+                    if config.model_name
+                    and not any(k in config.model_name for k in ("claude", "gpt"))
                     else "qwen2.5-coder:7b"
                 )
         return OllamaProvider(base_url=url, model=model)
@@ -1644,14 +1901,20 @@ def _build_single_provider(provider_name: str, config: OctoFlowConfig, tier: Opt
     )
 
 
-def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None, dry_run: bool = False) -> BaseLLMProvider:
+def get_llm_provider(
+    config: OctoFlowConfig, tier: str | None = None, dry_run: bool = False
+) -> BaseLLMProvider:
     """Factory creating configured LLM provider, optionally tailored by cognitive tier ('frontier', 'balanced', 'fast').
-    
+
     Supports dynamic multi-URL cascade pools with auto-failover, heterogeneous routing, and fallbacks.
     """
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
     force_live = (os.getenv("OCTOFLOW_FORCE_LIVE") == "1") or getattr(config, "force_live", False)
-    is_testing = not force_live and (("PYTEST_CURRENT_TEST" in os.environ) or ("pytest" in sys.modules) or (os.getenv("OCTOFLOW_TESTING") == "1"))
+    is_testing = not force_live and (
+        ("PYTEST_CURRENT_TEST" in os.environ)
+        or ("pytest" in sys.modules)
+        or (os.getenv("OCTOFLOW_TESTING") == "1")
+    )
 
     # 1. Determine target provider for requested cognitive tier
     provider_name = config.model_provider.lower()
@@ -1662,14 +1925,22 @@ def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None, dry_run
 
     if provider_name == "fake":
         from octoflow.bench import FakeBenchmarkProvider
+
         return FakeBenchmarkProvider()
 
     if provider_name == "mock":
-        if is_dry or is_testing or getattr(config, "allow_mock", False) or getattr(config, "is_bench", False):
+        if (
+            is_dry
+            or is_testing
+            or getattr(config, "allow_mock", False)
+            or getattr(config, "is_bench", False)
+        ):
             return MockLLMProvider()
         raise ProviderExhaustedError(
             "Mock LLM provider requested without --dry-run. Pass --dry-run or configure a real provider.",
-            failures=[{"provider": "mock", "model": "mock", "reason": "mock provider requires --dry-run"}],
+            failures=[
+                {"provider": "mock", "model": "mock", "reason": "mock provider requires --dry-run"}
+            ],
         )
 
     # 2. If user configured an LLM cascade pool and requested pool routing (or did not request a specific single provider)
@@ -1684,18 +1955,20 @@ def get_llm_provider(config: OctoFlowConfig, tier: Optional[str] = None, dry_run
 
     # If failover is enabled and primary is a cloud provider, configure fallbacks
     if getattr(config, "enable_failover", False) and provider_name not in ["mock"]:
-        fallbacks: List[BaseLLMProvider] = []
+        fallbacks: list[BaseLLMProvider] = []
         fb_names = getattr(config, "fallback_providers", ["openai", "ollama"])
         for fb_name in fb_names:
             if fb_name.lower() != provider_name:
                 try:
-                    fallbacks.append(_build_single_provider(fb_name, config, tier=tier, dry_run=is_dry))
+                    fallbacks.append(
+                        _build_single_provider(fb_name, config, tier=tier, dry_run=is_dry)
+                    )
                 except ProviderExhaustedError as e:
-                    logger.debug("Fallback candidate %s unavailable: %s", fb_name, e)  # best-effort: skip unconfigured fallback and check next
+                    logger.debug(
+                        "Fallback candidate %s unavailable: %s", fb_name, e
+                    )  # best-effort: skip unconfigured fallback and check next
 
         if fallbacks:
             return FailoverLLMProvider(primary=primary, fallbacks=fallbacks)
 
     return primary
-
-

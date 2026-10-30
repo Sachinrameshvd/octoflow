@@ -6,6 +6,7 @@ import typer
 def mcp_serve(workspace: str = typer.Option(".", "--dir", "-d", help="Workspace directory")):
     """Run OctoFlow as a Model Context Protocol (MCP) server for Claude Code and Cursor."""
     import asyncio
+
     from octoflow.mcp import OctoFlowMCPServer
 
     server = OctoFlowMCPServer(workspace_dir=workspace)
@@ -13,10 +14,13 @@ def mcp_serve(workspace: str = typer.Option(".", "--dir", "-d", help="Workspace 
 
 
 def mcp_cli_cmd(
-    workspace: str = typer.Option(".", "--dir", "-d", help="Workspace directory for the MCP server"),
+    workspace: str = typer.Option(
+        ".", "--dir", "-d", help="Workspace directory for the MCP server"
+    ),
 ):
     """Start OctoFlow as a Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for Claude Code and Cursor."""
     import asyncio
+
     from octoflow.mcp import OctoFlowMCPServer
 
     server = OctoFlowMCPServer(workspace_dir=workspace)

@@ -8,47 +8,41 @@ Validates:
 5. Cockpit-safe suppression of terminal logging during interactive raw mode / PTY sessions.
 """
 
+import logging
 import os
-import stat
-import sys
 import pty
 import select
-import logging
-import tempfile
-from pathlib import Path
+
 import pytest
 import typer
 from typer.testing import CliRunner
 
 pytestmark = pytest.mark.unit
 
-from octoflow.cli import OctoFlowGroup, app
+from octoflow.cli import OctoFlowGroup
 from octoflow.errors import (
-    OctoFlowError,
-    ConfigError,
-    UsageError,
-    ProviderError,
-    ProviderAuthError,
-    ProviderRateLimitError,
-    ProviderTransientError,
-    ProviderRequestError,
-    ProviderUnavailableError,
-    ProviderExhaustedError,
-    ToolError,
-    WorkspaceError,
     BudgetExceeded,
+    ConfigError,
+    OctoFlowError,
+    ProviderAuthError,
+    ProviderError,
+    ProviderExhaustedError,
+    ProviderRateLimitError,
+    ProviderRequestError,
+    ProviderTransientError,
+    ProviderUnavailableError,
+    ToolError,
+    UsageError,
+    WorkspaceError,
     redact_secrets,
 )
 from octoflow.logging_config import (
-    setup_logging,
-    get_logger,
-    get_log_dir,
-    get_log_file_path,
-    set_cockpit_active,
-    is_cockpit_active,
-    RedactionFilter,
     CockpitSuppressFilter,
     SecureRotatingFileHandler,
+    get_logger,
+    is_cockpit_active,
+    set_cockpit_active,
+    setup_logging,
 )
 
 
@@ -67,6 +61,7 @@ def temp_log_file(tmp_path):
 # =============================================================================
 # 1. Error Taxonomy & Exit Codes
 # =============================================================================
+
 
 def test_error_hierarchy():
     """Verify inheritance taxonomy for all OctoFlow error families."""
@@ -124,7 +119,10 @@ def test_cli_forced_config_error(runner):
 
     @test_app.command()
     def trigger_config_err():
-        raise ConfigError("Invalid model configuration", hint="Run 'octoflow setup' or check ~/.octoflow/config.json")
+        raise ConfigError(
+            "Invalid model configuration",
+            hint="Run 'octoflow setup' or check ~/.octoflow/config.json",
+        )
 
     result = runner.invoke(test_app, ["trigger-config-err"])
     assert result.exit_code == 3
@@ -139,7 +137,12 @@ def test_cli_forced_provider_error(runner):
 
     @test_app.command()
     def trigger_provider_err():
-        raise ProviderAuthError("Invalid API key provided", hint="Export ANTHROPIC_API_KEY with a valid key", provider="anthropic", status=401)
+        raise ProviderAuthError(
+            "Invalid API key provided",
+            hint="Export ANTHROPIC_API_KEY with a valid key",
+            provider="anthropic",
+            status=401,
+        )
 
     result = runner.invoke(test_app, ["trigger-provider-err"])
     assert result.exit_code == 2
@@ -216,6 +219,7 @@ def test_cli_debug_env_var_shows_traceback(runner, monkeypatch):
 # 2. Log File Creation, Rotation & Permissions
 # =============================================================================
 
+
 def test_log_file_creation_and_permissions(tmp_path):
     """Rotating log file is created with 0600 permissions and directory with 0700 permissions."""
     log_dir = tmp_path / "octoflow_test_logs"
@@ -266,6 +270,7 @@ def test_log_file_rotation_permissions(tmp_path):
 # 3. Secret Redaction
 # =============================================================================
 
+
 def test_secret_redaction_regexes():
     """Verify secrets are redacted in strings."""
     anthropic_key = "sk-" + "ant-api03-" + "abcdef1234567890abcdef12345"
@@ -311,6 +316,7 @@ def test_secret_redaction_in_octoflow_error():
 # =============================================================================
 # 4. Cockpit-Silent Logging
 # =============================================================================
+
 
 def test_cockpit_stderr_suppression(capsys):
     """Stderr logging is completely silenced when cockpit mode is active."""

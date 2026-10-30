@@ -1,33 +1,23 @@
 """Tests for P3.5 Run budgets and healing-loop limits."""
 
-import os
-import subprocess
-import time
-from pathlib import Path
-from typing import Optional
-from unittest.mock import MagicMock
-
 import pytest
-import typer
 from typer.testing import CliRunner
 
 pytestmark = pytest.mark.unit
 
-from octoflow.budget import RunBudget, BudgetTracker, format_k, format_hud_line
-from octoflow.config import OctoFlowConfig
+from octoflow.budget import BudgetTracker, RunBudget
+from octoflow.cockpit.render import build_hud_panel
+from octoflow.cockpit.session import CockpitSession
 from octoflow.conductor import SupraesophagealConductor
+from octoflow.config import OctoFlowConfig
 from octoflow.errors import BudgetExceeded
+from octoflow.healing import (
+    extract_failure_signature,
+    self_heal_workspace,
+)
 from octoflow.outcome import RunOutcome
 from octoflow.provider import BaseLLMProvider, LLMResponse
-from octoflow.healing import (
-    self_heal_workspace,
-    extract_failure_signature,
-    count_failing_tests,
-)
-from octoflow.settings import Settings, load_settings
-from octoflow.cockpit.session import CockpitSession
-from octoflow.cockpit.render import build_hud_panel
-
+from octoflow.settings import load_settings
 
 # ---------------------------------------------------------------------------
 # 1. RunBudget and BudgetTracker core mechanics
@@ -151,7 +141,9 @@ def test_hud_line_formatting():
 
     # unlimited formatting
     budget_unlimited = RunBudget(max_tokens=None, max_llm_calls=None)
-    tracker_unlimited = BudgetTracker(budget=budget_unlimited, tokens_consumed=5000, llm_calls_made=10)
+    tracker_unlimited = BudgetTracker(
+        budget=budget_unlimited, tokens_consumed=5000, llm_calls_made=10
+    )
     assert tracker_unlimited.format_hud_line() == "budget: tokens 5k/unlimited, calls 10/unlimited"
 
 
@@ -162,14 +154,19 @@ def test_hud_line_formatting():
 
 class EndlessToolCallFakeProvider(BaseLLMProvider):
     """Fake provider that endlessly produces tool calls to trigger LLM call limits."""
+
     provider_name = "endless_fake"
     model = "mock"
 
-    def generate(self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048) -> LLMResponse:
+    def generate(
+        self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048
+    ) -> LLMResponse:
         content = '{"action": "read_file", "target": "specs/readme.md", "explanation": "Analyzing specs..."}'
         return LLMResponse(content=content, tokens_prompt=10, tokens_completion=20, total_tokens=30)
 
-    async def agenerate(self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048) -> LLMResponse:
+    async def agenerate(
+        self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048
+    ) -> LLMResponse:
         return self.generate(prompt, system_prompt, temperature, max_tokens)
 
 
@@ -214,13 +211,27 @@ def test_wall_time_stops_stalled_fake_provider(tmp_path):
         provider_name = "stalling_fake"
         model = "mock"
 
-        def generate(self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048) -> LLMResponse:
+        def generate(
+            self,
+            prompt: str,
+            system_prompt: str = "",
+            temperature: float = 0.2,
+            max_tokens: int = 2048,
+        ) -> LLMResponse:
             nonlocal current_time
             current_time += 15.0  # Simulate 15s stall, exceeding 10s budget
             content = '{"action": "read_file", "target": "specs/readme.md", "explanation": "Stalled reading"}'
-            return LLMResponse(content=content, tokens_prompt=10, tokens_completion=20, total_tokens=30)
+            return LLMResponse(
+                content=content, tokens_prompt=10, tokens_completion=20, total_tokens=30
+            )
 
-        async def agenerate(self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048) -> LLMResponse:
+        async def agenerate(
+            self,
+            prompt: str,
+            system_prompt: str = "",
+            temperature: float = 0.2,
+            max_tokens: int = 2048,
+        ) -> LLMResponse:
             return self.generate(prompt, system_prompt, temperature, max_tokens)
 
     for arm in conductor.arms:
@@ -244,6 +255,7 @@ FAILED tests/test_calc.py::test_add - AssertionError: assert 4 == 5
 FAILED tests/test_auth.py::test_token - KeyError: 'token'
 """
     from octoflow.healing import parse_pytest_failures
+
     failures = parse_pytest_failures(pytest_out)
     sig = extract_failure_signature(failures, pytest_out)
     assert len(sig) == 2
@@ -269,10 +281,25 @@ def test_healing_repetition_detection_stops_sooner(tmp_path, monkeypatch):
     class DummyRepairProvider(BaseLLMProvider):
         provider_name = "repair_dummy"
         model = "mock"
-        def generate(self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048) -> LLMResponse:
-            return LLMResponse(content="```python\ndef test_fail(): pass\n```", tokens_prompt=10, tokens_completion=10, total_tokens=20)
 
-    monkeypatch.setattr("octoflow.provider.get_llm_provider", lambda cfg, tier="frontier", dry_run=False: DummyRepairProvider())
+        def generate(
+            self,
+            prompt: str,
+            system_prompt: str = "",
+            temperature: float = 0.2,
+            max_tokens: int = 2048,
+        ) -> LLMResponse:
+            return LLMResponse(
+                content="```python\ndef test_fail(): pass\n```",
+                tokens_prompt=10,
+                tokens_completion=10,
+                total_tokens=20,
+            )
+
+    monkeypatch.setattr(
+        "octoflow.provider.get_llm_provider",
+        lambda cfg, tier="frontier", dry_run=False: DummyRepairProvider(),
+    )
 
     res = self_heal_workspace(str(tmp_path), max_attempts=5)
     assert not res["success"]
@@ -304,10 +331,25 @@ def test_healing_no_progress_plateau_detection(tmp_path, monkeypatch):
     class DummyRepairProvider(BaseLLMProvider):
         provider_name = "repair_dummy"
         model = "mock"
-        def generate(self, prompt: str, system_prompt: str = "", temperature: float = 0.2, max_tokens: int = 2048) -> LLMResponse:
-            return LLMResponse(content="```python\ndef foo(): pass\n```", tokens_prompt=10, tokens_completion=10, total_tokens=20)
 
-    monkeypatch.setattr("octoflow.provider.get_llm_provider", lambda cfg, tier="frontier", dry_run=False: DummyRepairProvider())
+        def generate(
+            self,
+            prompt: str,
+            system_prompt: str = "",
+            temperature: float = 0.2,
+            max_tokens: int = 2048,
+        ) -> LLMResponse:
+            return LLMResponse(
+                content="```python\ndef foo(): pass\n```",
+                tokens_prompt=10,
+                tokens_completion=10,
+                total_tokens=20,
+            )
+
+    monkeypatch.setattr(
+        "octoflow.provider.get_llm_provider",
+        lambda cfg, tier="frontier", dry_run=False: DummyRepairProvider(),
+    )
 
     res = self_heal_workspace(str(tmp_path), max_attempts=5)
     assert not res["success"]
@@ -329,7 +371,9 @@ def test_cli_flag_override_precedence(tmp_path, monkeypatch):
 
     # 2. Settings file
     settings_file = tmp_path / "settings.json"
-    settings_file.write_text('{"budget": {"max_tokens": 150000, "max_llm_calls": 150}}', encoding="utf-8")
+    settings_file.write_text(
+        '{"budget": {"max_tokens": 150000, "max_llm_calls": 150}}', encoding="utf-8"
+    )
     s = load_settings(cfg_path=settings_file)
     assert s.budget.max_tokens == 150_000
     assert s.budget.max_llm_calls == 150
@@ -341,16 +385,36 @@ def test_cli_flag_override_precedence(tmp_path, monkeypatch):
 
     # 4. CLI flags override env and settings
     from octoflow.cli import app
+
     runner = CliRunner()
-    result = runner.invoke(app, ["run", "dummy goal", "--dir", str(tmp_path), "--dry-run", "--port", "0", "--max-tokens", "50000", "--max-calls", "25"])
+    result = runner.invoke(
+        app,
+        [
+            "run",
+            "dummy goal",
+            "--dir",
+            str(tmp_path),
+            "--dry-run",
+            "--port",
+            "0",
+            "--max-tokens",
+            "50000",
+            "--max-calls",
+            "25",
+        ],
+    )
     assert result.exit_code in (0, 1, 2)
 
 
 def test_no_limits_flag_prints_warning(tmp_path):
     """Acceptance criterion: Unlimited is explicit: --no-limits prints a warning line."""
     from octoflow.cli import app
+
     runner = CliRunner()
-    result = runner.invoke(app, ["run", "dummy goal", "--dir", str(tmp_path), "--dry-run", "--port", "0", "--no-limits"])
+    result = runner.invoke(
+        app,
+        ["run", "dummy goal", "--dir", str(tmp_path), "--dry-run", "--port", "0", "--no-limits"],
+    )
     assert "Warning: --no-limits enabled. Execution limits are disabled." in result.output
 
 
@@ -370,6 +434,7 @@ def test_cockpit_hud_shows_budget_line():
     )
     panel = build_hud_panel(session)
     from rich.console import Console
+
     console = Console()
     with console.capture() as capture:
         console.print(panel)

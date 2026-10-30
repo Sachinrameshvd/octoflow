@@ -12,6 +12,7 @@ def audit_cli_cmd(
 ):
     """Run 1-100 system readiness and security diagnostic across 5 cephalopod dimensions."""
     from octoflow.audit import evaluate_workspace, print_audit_report
+
     report = evaluate_workspace(workspace)
     if json_output:
         console.print_json(report.model_dump_json(indent=2))

@@ -9,13 +9,10 @@ Covers:
 """
 
 import os
-import sys
 import time
-import tempfile
-import pytest
-from pathlib import Path
 
-from octoflow.tools import WorkspaceSandbox, ToolResult
+import pytest
+from octoflow.tools import WorkspaceSandbox
 
 
 @pytest.fixture

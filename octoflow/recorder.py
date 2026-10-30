@@ -7,7 +7,7 @@ for sharing in GitHub pull requests, READMEs, and team documentation.
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TerminalRecorder:
@@ -17,8 +17,8 @@ class TerminalRecorder:
         self.width = width
         self.height = height
         self.title = title
-        self.start_time: Optional[float] = None
-        self.events: List[List[Any]] = []
+        self.start_time: float | None = None
+        self.events: list[list[Any]] = []
         self.is_recording = False
 
     def start(self) -> None:
@@ -67,7 +67,7 @@ class TerminalRecorder:
         return out_p
 
 
-_GLOBAL_RECORDER: Optional[TerminalRecorder] = None
+_GLOBAL_RECORDER: TerminalRecorder | None = None
 
 
 def get_global_recorder() -> TerminalRecorder:

@@ -11,28 +11,23 @@ Tests:
 8. Zero-emoji rule: verifies allowed glyphs only.
 """
 
-import os
-import re
+from unittest.mock import patch
+
 import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 from typer.testing import CliRunner
 
 pytestmark = pytest.mark.unit
 
 from octoflow.cli import app
-from octoflow.config import OctoFlowConfig
 from octoflow.conductor import SupraesophagealConductor
-from octoflow.outcome import RunMode, RunOutcome, RunResult, ProviderExhaustedError
+from octoflow.config import OctoFlowConfig
+from octoflow.mcp import OctoFlowMCPServer
+from octoflow.outcome import RunMode, RunOutcome
 from octoflow.provider import (
     BaseLLMProvider,
     LLMResponse,
-    MockLLMProvider,
-    get_llm_provider,
     _sanitize_secret_text,
 )
-from octoflow.mcp import OctoFlowMCPServer
-
 
 runner = CliRunner()
 
@@ -50,7 +45,17 @@ def test_misconfigured_providers_no_dry_run_exits_2_no_files(tmp_path, monkeypat
     target_dir = tmp_path / "target_ws"
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    result = runner.invoke(app, ["run", "Build an authentication service", "--dir", str(target_dir), "--model", "anthropic"])
+    result = runner.invoke(
+        app,
+        [
+            "run",
+            "Build an authentication service",
+            "--dir",
+            str(target_dir),
+            "--model",
+            "anthropic",
+        ],
+    )
     assert result.exit_code == 2
     assert "FAILED" in result.output or "missing ANTHROPIC_API_KEY" in result.output
     # Must write no files to target_dir
@@ -65,7 +70,18 @@ def test_dry_run_exits_0_prints_ribbon_no_target_files(tmp_path, monkeypatch):
     target_dir = tmp_path / "dry_ws"
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    result = runner.invoke(app, ["run", "Build microservice scaffold", "--dir", str(target_dir), "--dry-run", "--port", "18099"])
+    result = runner.invoke(
+        app,
+        [
+            "run",
+            "Build microservice scaffold",
+            "--dir",
+            str(target_dir),
+            "--dry-run",
+            "--port",
+            "18099",
+        ],
+    )
     assert result.exit_code == 0
     assert "DRY-RUN: no project files written" in result.output
     # Target directory must remain pristine
@@ -91,7 +107,9 @@ def test_live_mode_writing_files_exits_0_complete(tmp_path, monkeypatch):
             return LLMResponse(content="def hello(): return 'world'")
 
     with patch("octoflow.conductor.get_llm_provider", return_value=FileWritingProvider()):
-        cfg = OctoFlowConfig(workspace_dir=str(target_dir), model_provider="anthropic", dry_run=False)
+        cfg = OctoFlowConfig(
+            workspace_dir=str(target_dir), model_provider="anthropic", dry_run=False
+        )
         conductor = SupraesophagealConductor(config=cfg)
         # Simulate an arm step writing a real file
         res = conductor.sandbox.write_file("service.py", "def service(): pass\n")
@@ -125,7 +143,9 @@ def test_live_mode_zero_files_exits_2_failed(tmp_path, monkeypatch):
             return LLMResponse(content="Thinking deeply without calling write_file...")
 
     with patch("octoflow.conductor.get_llm_provider", return_value=PassiveProvider()):
-        cfg = OctoFlowConfig(workspace_dir=str(target_dir), model_provider="anthropic", dry_run=False)
+        cfg = OctoFlowConfig(
+            workspace_dir=str(target_dir), model_provider="anthropic", dry_run=False
+        )
         conductor = SupraesophagealConductor(config=cfg)
         # Ensure sandbox files_written remains empty
         conductor.sandbox.files_written.clear()
@@ -144,19 +164,21 @@ async def test_mcp_tool_result_contains_mode_and_outcome(tmp_path, anyio_backend
         pytest.skip("Test specifically covers asyncio")
 
     server = OctoFlowMCPServer(workspace_dir=str(tmp_path))
-    res = await server.handle_json_rpc_message({
-        "jsonrpc": "2.0",
-        "id": "1",
-        "method": "tools/call",
-        "params": {
-            "name": "octoflow_run_swarm",
-            "arguments": {
-                "objective": "Verify MCP response contracts",
-                "max_cycles": 1,
-                "dry_run": True,
+    res = await server.handle_json_rpc_message(
+        {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "octoflow_run_swarm",
+                "arguments": {
+                    "objective": "Verify MCP response contracts",
+                    "max_cycles": 1,
+                    "dry_run": True,
+                },
             },
-        },
-    })
+        }
+    )
     assert res is not None
     assert "result" in res
     content = res["result"]["content"]
@@ -176,18 +198,28 @@ def test_cli_exit_code_contracts(tmp_path, monkeypatch):
     assert bad_call.exit_code in (2, 3)
 
     # Dry run -> 0
-    dry_call = runner.invoke(app, ["run", "Dry run test", "--dir", str(tmp_path), "--dry-run", "--port", "18100"])
+    dry_call = runner.invoke(
+        app, ["run", "Dry run test", "--dir", str(tmp_path), "--dry-run", "--port", "18100"]
+    )
     assert dry_call.exit_code == 0
 
     # Mock in live without --dry-run -> 2
     monkeypatch.delenv("OCTOFLOW_DRY_RUN", raising=False)
-    mock_live_call = runner.invoke(app, ["run", "Mock in live test", "--dir", str(tmp_path), "--model", "mock"])
+    mock_live_call = runner.invoke(
+        app, ["run", "Mock in live test", "--dir", str(tmp_path), "--model", "mock"]
+    )
     assert mock_live_call.exit_code == 2
 
 
 def test_secret_sanitization_in_errors():
     """Criterion 7: Secrets and API keys must never be exposed in error messages."""
-    raw_error = "Failed with Anthropic key " + "sk-ant-" + "api03-1234567890abcdef12345 and OpenAI " + "sk-proj-" + "abcdef1234567890xyz"
+    raw_error = (
+        "Failed with Anthropic key "
+        + "sk-ant-"
+        + "api03-1234567890abcdef12345 and OpenAI "
+        + "sk-proj-"
+        + "abcdef1234567890xyz"
+    )
     sanitized = _sanitize_secret_text(raw_error)
     assert "sk-ant" not in sanitized
     assert "sk-proj" not in sanitized
@@ -197,7 +229,9 @@ def test_secret_sanitization_in_errors():
 def test_zero_emoji_rule_on_ribbons():
     """Criterion 8: Output ribbons must strictly adhere to allowed glyphs only."""
     allowed_glyphs = {"•", "·", "○", "◈", "✔", "✖"}
-    sample_complete = "◈ [LIVE: anthropic:claude-3-5-sonnet] COMPLETE, 3 files written\n  • app.py\n  • test.py"
+    sample_complete = (
+        "◈ [LIVE: anthropic:claude-3-5-sonnet] COMPLETE, 3 files written\n  • app.py\n  • test.py"
+    )
     sample_dry = "◈ [DRY-RUN: no project files written]"
     sample_failed = "✖ [FAILED] model produced no file changes"
 

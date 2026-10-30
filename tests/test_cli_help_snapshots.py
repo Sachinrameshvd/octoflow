@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
+
 import pytest
-from typer.testing import CliRunner
 from octoflow.cli import app, octos_app
+from typer.testing import CliRunner
 
 SNAPSHOT_DIR = Path(__file__).resolve().parent / "snapshots" / "help"
 
@@ -88,4 +89,3 @@ def test_config_subcommand_help_snapshots(runner, sub_cmd):
     assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
     expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
-

@@ -1,27 +1,23 @@
 """Automated Test Suite for OctoFlow Audit, Eject, Federation, and Claude Plugin."""
 
-import os
-import shutil
 import tempfile
 from pathlib import Path
-import pytest
 
-from octoflow.federation import (
-    FederationGuard,
-    GLOBAL_FEDERATION_GUARD,
-    PIIAction,
-    PeerTrustLevel,
-    PII_RULES,
-)
+import pytest
+from octoflow.audit import AuditReport, evaluate_workspace
 from octoflow.bus import InterBrachialBus
 from octoflow.consortium import InterOctopusSynapticBus
-from octoflow.audit import evaluate_workspace, AuditReport
 from octoflow.eject import eject_harness
+from octoflow.federation import (
+    FederationGuard,
+    PeerTrustLevel,
+    PIIAction,
+)
 
 
 def test_pii_rules_and_redaction():
     guard = FederationGuard(default_action=PIIAction.REDACT)
-    
+
     # Test OpenAI Key
     text = "Here is my sk-1234567890abcdef1234567890abcdef1234567890 key"
     cleaned, evts = guard.scan_and_sanitize(text)
@@ -63,8 +59,8 @@ def test_pii_payload_recursion():
         "user_email": "alice@domain.org",
         "nested": {
             "token": "ghp_123456789012345678901234567890123456",
-            "items": ["safe_string", "contact@domain.org"]
-        }
+            "items": ["safe_string", "contact@domain.org"],
+        },
     }
     clean_payload, evts = guard.sanitize_payload(payload)
     assert clean_payload["user_email"] == "[REDACTED_EMAIL]"
@@ -98,7 +94,7 @@ def test_bus_pii_integration():
         target_id=2,
         intent="COOPERATIVE_PULL",
         summary="Use sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890 for API calls",
-        payload={"secret": "AIzaSyD-1234567890abcdefghijklmnopqrstuv"}
+        payload={"secret": "AIzaSyD-1234567890abcdefghijklmnopqrstuv"},
     )
     assert "[REDACTED_ANTHROPIC_KEY]" in msg.summary
     assert "sk-ant-" not in msg.summary
@@ -113,7 +109,7 @@ def test_consortium_bus_pii_integration():
         event_type="API_CONTRACT",
         topic="auth",
         summary="Database password is password='SuperSecretPassword123'",
-        payload={"admin_email": "root@corp.com"}
+        payload={"admin_email": "root@corp.com"},
     )
     assert "[REDACTED_SECRET]" in evt.summary or "[REDACTED" in evt.summary
     assert evt.payload["admin_email"] == "[REDACTED_EMAIL]"
@@ -161,6 +157,7 @@ def test_claude_code_manifest_files():
     assert mcp_json.is_file()
 
     import json
+
     data = json.loads(plugin_json.read_text())
     assert data["name"] == "octoflow"
     assert "/octo" in data["commands"]
@@ -169,7 +166,8 @@ def test_claude_code_manifest_files():
 
 
 def test_manual_and_field_guide():
-    from octoflow.manual import MANUAL_SECTIONS, display_manual
+    from octoflow.manual import MANUAL_SECTIONS
+
     assert len(MANUAL_SECTIONS) >= 6
     for k in ["1", "2", "3", "4", "5", "6"]:
         assert k in MANUAL_SECTIONS
@@ -183,4 +181,3 @@ def test_manual_and_field_guide():
     assert "OctoFlow: The Master Cephalopod Manual" in content
     assert "The 8 Specialized Neural Arm Ganglia" in content
     assert "Active Inference" in content
-

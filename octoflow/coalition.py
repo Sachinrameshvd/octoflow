@@ -1,14 +1,15 @@
 """Coalition extraction and graph analysis tools for OctoFlow."""
 
-from typing import Dict, List, Set, Tuple, Any, Union
+from typing import Any
+
 import numpy as np
 
 
 def extract_coalitions_from_matrix(
-    coalition_matrix: Union[np.ndarray, Any],
+    coalition_matrix: np.ndarray | Any,
     threshold: float = 0.15,
     symmetric: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Extract discrete coalition clusters and connected components from attention weights.
 
     Args:
@@ -33,7 +34,7 @@ def extract_coalitions_from_matrix(
 
     # Build adjacency graph
     adj = {i: set() for i in range(n_modules)}
-    edge_list: List[Tuple[int, int, float]] = []
+    edge_list: list[tuple[int, int, float]] = []
 
     for i in range(n_modules):
         for j in range(i + 1, n_modules):
@@ -47,13 +48,13 @@ def extract_coalitions_from_matrix(
                 edge_list.append((i, j, max_w))
 
     # Connected component traversal (BFS)
-    visited: Set[int] = set()
-    multi_arm_coalitions: List[Set[int]] = []
-    isolated_modules: List[int] = []
+    visited: set[int] = set()
+    multi_arm_coalitions: list[set[int]] = []
+    isolated_modules: list[int] = []
 
     for node in range(n_modules):
         if node not in visited:
-            component: Set[int] = set()
+            component: set[int] = set()
             queue = [node]
             visited.add(node)
 

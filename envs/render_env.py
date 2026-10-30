@@ -7,24 +7,23 @@ Features:
 - Export to animated GIF or video
 """
 
-import sys
-import os
-import time
 import argparse
+import sys
+import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
 
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from matplotlib.animation import FuncAnimation, PillowWriter
-
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
 from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
+
 from envs.reach_and_avoid import ReachAndAvoidEnv
 
 
@@ -41,7 +40,7 @@ class EnvironmentVisualizer:
         step: int,
         reward: float,
         report_rate: float,
-        coalition_clusters: List[Any],
+        coalition_clusters: list[Any],
         clear_screen: bool = True,
     ) -> str:
         """Render ASCII representation of the grid arena and arm states."""
@@ -49,28 +48,43 @@ class EnvironmentVisualizer:
 
         # 1. Place Arm Bases
         for i, (bx, by) in enumerate(self.env.arm_bases):
-            ix, iy = int(np.clip(round(bx), 0, self.grid_size - 1)), int(np.clip(round(by), 0, self.grid_size - 1))
+            ix, iy = (
+                int(np.clip(round(bx), 0, self.grid_size - 1)),
+                int(np.clip(round(by), 0, self.grid_size - 1)),
+            )
             grid[iy][ix] = "b"
 
         # 2. Place Hazards
         for h in self.env.hazards:
-            ix, iy = int(np.clip(round(h[0]), 0, self.grid_size - 1)), int(np.clip(round(h[1]), 0, self.grid_size - 1))
+            ix, iy = (
+                int(np.clip(round(h[0]), 0, self.grid_size - 1)),
+                int(np.clip(round(h[1]), 0, self.grid_size - 1)),
+            )
             grid[iy][ix] = "X"
 
         # 3. Place Single Targets
         for st in self.env.single_targets:
-            ix, iy = int(np.clip(round(st[0]), 0, self.grid_size - 1)), int(np.clip(round(st[1]), 0, self.grid_size - 1))
+            ix, iy = (
+                int(np.clip(round(st[0]), 0, self.grid_size - 1)),
+                int(np.clip(round(st[1]), 0, self.grid_size - 1)),
+            )
             grid[iy][ix] = "*"
 
         # 4. Place Joint Targets
         for jt in self.env.joint_targets:
             if jt["active"]:
-                ix, iy = int(np.clip(round(jt["pos"][0]), 0, self.grid_size - 1)), int(np.clip(round(jt["pos"][1]), 0, self.grid_size - 1))
+                ix, iy = (
+                    int(np.clip(round(jt["pos"][0]), 0, self.grid_size - 1)),
+                    int(np.clip(round(jt["pos"][1]), 0, self.grid_size - 1)),
+                )
                 grid[iy][ix] = "J"
 
         # 5. Place Arm Tips
         for i, tip in enumerate(self.env.arm_tips):
-            ix, iy = int(np.clip(round(tip[0]), 0, self.grid_size - 1)), int(np.clip(round(tip[1]), 0, self.grid_size - 1))
+            ix, iy = (
+                int(np.clip(round(tip[0]), 0, self.grid_size - 1)),
+                int(np.clip(round(tip[1]), 0, self.grid_size - 1)),
+            )
             grid[iy][ix] = str(i)
 
         # Build output string
@@ -78,16 +92,23 @@ class EnvironmentVisualizer:
         if clear_screen:
             lines.append("\033[H\033[J")  # ANSI clear screen
 
-        lines.append(f"=== ReachAndAvoid Arena | Step: {step:02d} | Reward: {reward:+6.2f} | Report Rate: {report_rate*100:4.1f}% ===")
+        lines.append(
+            f"=== ReachAndAvoid Arena | Step: {step:02d} | Reward: {reward:+6.2f} | Report Rate: {report_rate * 100:4.1f}% ==="
+        )
         lines.append("+" + "---" * self.grid_size + "+")
         for row in reversed(grid):
             lines.append("|" + "".join(f" {cell} " for cell in row) + "|")
         lines.append("+" + "---" * self.grid_size + "+")
 
         # Coalition details
-        coalition_str = ", ".join(f"C{k}: {sorted(list(c))}" for k, c in enumerate(coalition_clusters)) or "None (Independent)"
+        coalition_str = (
+            ", ".join(f"C{k}: {sorted(list(c))}" for k, c in enumerate(coalition_clusters))
+            or "None (Independent)"
+        )
         lines.append(f"Active Ephemeral Coalitions: {coalition_str}")
-        lines.append("Legend: [0-7] Arm Tips | [b] Arm Bases | [*] Food | [J] Joint Target | [X] Hazard\n")
+        lines.append(
+            "Legend: [0-7] Arm Tips | [b] Arm Bases | [*] Food | [J] Joint Target | [X] Hazard\n"
+        )
 
         rendered = "\n".join(lines)
         return rendered
@@ -99,7 +120,7 @@ class EnvironmentVisualizer:
         reward: float,
         report_rate: float,
         coalition_matrix: np.ndarray,
-        active_edges: List[Tuple[int, int, float]],
+        active_edges: list[tuple[int, int, float]],
     ) -> None:
         """Render a single high-fidelity 2D frame on a matplotlib axis."""
         ax.clear()
@@ -110,8 +131,12 @@ class EnvironmentVisualizer:
 
         # Arena boundary
         rect = patches.Rectangle(
-            (0, 0), self.grid_size, self.grid_size,
-            linewidth=2, edgecolor="#334155", facecolor="#1e293b"
+            (0, 0),
+            self.grid_size,
+            self.grid_size,
+            linewidth=2,
+            edgecolor="#334155",
+            facecolor="#1e293b",
         )
         ax.add_patch(rect)
 
@@ -119,7 +144,16 @@ class EnvironmentVisualizer:
         for h in self.env.hazards:
             circle = patches.Circle((h[0], h[1]), 1.0, color="#ef4444", alpha=0.6, label="Hazard")
             ax.add_patch(circle)
-            ax.text(h[0], h[1], "X", color="white", ha="center", va="center", fontweight="bold", fontsize=9)
+            ax.text(
+                h[0],
+                h[1],
+                "X",
+                color="white",
+                ha="center",
+                va="center",
+                fontweight="bold",
+                fontsize=9,
+            )
 
         # 2. Draw Single Targets
         for st in self.env.single_targets:
@@ -129,22 +163,47 @@ class EnvironmentVisualizer:
         for jt in self.env.joint_targets:
             if jt["active"]:
                 pos = jt["pos"]
-                circle = patches.Circle(pos, 1.2, edgecolor="#06b6d4", facecolor="#0891b2", alpha=0.5, linewidth=2)
+                circle = patches.Circle(
+                    pos, 1.2, edgecolor="#06b6d4", facecolor="#0891b2", alpha=0.5, linewidth=2
+                )
                 ax.add_patch(circle)
-                ax.text(pos[0], pos[1], "JOINT", color="white", ha="center", va="center", fontsize=7, fontweight="bold")
+                ax.text(
+                    pos[0],
+                    pos[1],
+                    "JOINT",
+                    color="white",
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    fontweight="bold",
+                )
 
         # 4. Draw Active Coalition Binding Arcs between cooperating arms
         for i, j, weight in active_edges:
             tip_i = self.env.arm_tips[i]
             tip_j = self.env.arm_tips[j]
             ax.plot(
-                [tip_i[0], tip_j[0]], [tip_i[1], tip_j[1]],
-                color="#ec4899", linestyle="--", linewidth=max(1.5, weight * 4.0),
-                alpha=0.85, zorder=4, label="Coalition Link"
+                [tip_i[0], tip_j[0]],
+                [tip_i[1], tip_j[1]],
+                color="#ec4899",
+                linestyle="--",
+                linewidth=max(1.5, weight * 4.0),
+                alpha=0.85,
+                zorder=4,
+                label="Coalition Link",
             )
 
         # 5. Draw Arms (Base -> Tentacle -> Tip)
-        palette = ["#38bdf8", "#818cf8", "#a78bfa", "#f472b6", "#fb7185", "#34d399", "#4ade80", "#fbbf24"]
+        palette = [
+            "#38bdf8",
+            "#818cf8",
+            "#a78bfa",
+            "#f472b6",
+            "#fb7185",
+            "#34d399",
+            "#4ade80",
+            "#fbbf24",
+        ]
         for i in range(self.n_arms):
             base = self.env.arm_bases[i]
             tip = self.env.arm_tips[i]
@@ -154,21 +213,51 @@ class EnvironmentVisualizer:
             ax.plot(base[0], base[1], marker="s", markersize=8, color="#64748b", zorder=3)
 
             # Arm reach boundary circle
-            reach_circle = patches.Circle(base, self.env.arm_reach, color="#475569", fill=False, linestyle=":", alpha=0.3)
+            reach_circle = patches.Circle(
+                base, self.env.arm_reach, color="#475569", fill=False, linestyle=":", alpha=0.3
+            )
             ax.add_patch(reach_circle)
 
             # Arm body tentacle
-            ax.plot([base[0], tip[0]], [base[1], tip[1]], color=color, linewidth=3.5, alpha=0.8, zorder=3)
+            ax.plot(
+                [base[0], tip[0]],
+                [base[1], tip[1]],
+                color=color,
+                linewidth=3.5,
+                alpha=0.8,
+                zorder=3,
+            )
 
             # Arm tip
-            ax.plot(tip[0], tip[1], marker="o", markersize=10, color=color, markeredgecolor="white", markeredgewidth=1.5, zorder=5)
-            ax.text(tip[0], tip[1], str(i), color="black", ha="center", va="center", fontsize=7, fontweight="bold", zorder=6)
+            ax.plot(
+                tip[0],
+                tip[1],
+                marker="o",
+                markersize=10,
+                color=color,
+                markeredgecolor="white",
+                markeredgewidth=1.5,
+                zorder=5,
+            )
+            ax.text(
+                tip[0],
+                tip[1],
+                str(i),
+                color="black",
+                ha="center",
+                va="center",
+                fontsize=7,
+                fontweight="bold",
+                zorder=6,
+            )
 
         # Title & HUD
         ax.set_title(
-            f"octopus-brain | Step: {step:02d} | Cumulative Reward: {reward:+.2f} | Report Rate: {report_rate*100:.1f}%\n"
+            f"octopus-brain | Step: {step:02d} | Cumulative Reward: {reward:+.2f} | Report Rate: {report_rate * 100:.1f}%\n"
             f"Active Coalitions: {len(active_edges)} bindings active",
-            color="white", fontsize=10, pad=10
+            color="white",
+            fontsize=10,
+            pad=10,
         )
         ax.grid(True, linestyle="--", alpha=0.15, color="white")
         ax.tick_params(colors="gray")
@@ -177,7 +266,7 @@ class EnvironmentVisualizer:
 def run_visual_rollout(
     mode: str = "ascii",
     steps: int = 30,
-    save_path: Optional[str] = None,
+    save_path: str | None = None,
     fps: int = 4,
 ) -> None:
     """Execute a simulated rollout with full visual animation."""
@@ -237,7 +326,11 @@ def run_visual_rollout(
 
             actions = out["actions"][0].cpu().numpy()
             report_rate = out["report_rate"]
-            c_mat = out["coalition_matrix"][0].cpu().numpy() if out["coalition_matrix"].numel() > 0 else np.zeros((8, 8))
+            c_mat = (
+                out["coalition_matrix"][0].cpu().numpy()
+                if out["coalition_matrix"].numel() > 0
+                else np.zeros((8, 8))
+            )
             edges = out.get("active_coalitions", [])
 
             # Store snapshot
@@ -249,7 +342,9 @@ def run_visual_rollout(
                 "edges": edges,
                 "arm_tips": env.arm_tips.copy(),
                 "single_targets": [st.copy() for st in env.single_targets],
-                "joint_targets": [{"pos": jt["pos"].copy(), "active": jt["active"]} for jt in env.joint_targets],
+                "joint_targets": [
+                    {"pos": jt["pos"].copy(), "active": jt["active"]} for jt in env.joint_targets
+                ],
                 "hazards": [h.copy() for h in env.hazards],
             }
             frames_data.append(snapshot)
@@ -284,10 +379,18 @@ def run_visual_rollout(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OctopusBrain Visual Trajectory Animator")
-    parser.add_argument("--mode", type=str, default="ascii", choices=["ascii", "gif"], help="Rendering mode: ascii or gif")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="ascii",
+        choices=["ascii", "gif"],
+        help="Rendering mode: ascii or gif",
+    )
     parser.add_argument("--steps", type=int, default=25, help="Number of simulation steps")
     parser.add_argument("--fps", type=int, default=4, help="Frames per second")
-    parser.add_argument("--save", type=str, default="octopus_trajectory.gif", help="Path to save GIF animation")
+    parser.add_argument(
+        "--save", type=str, default="octopus_trajectory.gif", help="Path to save GIF animation"
+    )
     args = parser.parse_args()
 
     run_visual_rollout(mode=args.mode, steps=args.steps, save_path=args.save, fps=args.fps)

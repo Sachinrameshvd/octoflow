@@ -1,18 +1,14 @@
 """Tests for Cephalopod Micro-Connectome Architecture and Biophysical Simulation Engine."""
 
-import os
 import json
-import pytest
-import numpy as np
 
+import numpy as np
+from envs.soft_body_tentacle import SoftBodyTentacleEnv
+from octopus_brain.biophysics import BiophysicalConnectomeSimulator
 from octopus_brain.connectome import (
     CephalopodConnectome,
-    NeuronCategory,
-    Neurotransmitter,
 )
-from octopus_brain.biophysics import BiophysicalConnectomeSimulator
 from octopus_brain.connectome_controller import ConnectomeEmbodiedController
-from envs.soft_body_tentacle import SoftBodyTentacleEnv
 
 
 class TestCephalopodConnectome:
@@ -70,7 +66,7 @@ class TestCephalopodConnectome:
         connectome.export_json(str(export_file))
 
         assert export_file.exists()
-        with open(export_file, "r", encoding="utf-8") as f:
+        with open(export_file, encoding="utf-8") as f:
             data = json.load(f)
 
         assert "metadata" in data
@@ -91,7 +87,9 @@ class TestBiophysicalSimulator:
         # Step without external current
         for _ in range(50):
             spikes = sim.step(external_currents=None)
-            assert not spikes.any(), "Neurons should not spontaneously spike without current injection"
+            assert not spikes.any(), (
+                "Neurons should not spontaneously spike without current injection"
+            )
 
         # Membrane potential should remain at rest
         assert np.allclose(sim.v, sim.v_rest, atol=1e-3)

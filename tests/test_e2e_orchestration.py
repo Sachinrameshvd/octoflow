@@ -19,14 +19,11 @@ import os
 import subprocess
 import sys
 import time
-from pathlib import Path
-from typing import Dict, Any, Optional, List
-import pytest
 
-from octoflow.config import OctoFlowConfig, SwarmMorphology
+import pytest
 from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
+from octoflow.config import OctoFlowConfig
 from octoflow.provider import BaseLLMProvider, LLMResponse
-from octoflow.tools import WorkspaceSandbox
 
 
 class ScriptedE2EProvider(BaseLLMProvider):
@@ -34,7 +31,7 @@ class ScriptedE2EProvider(BaseLLMProvider):
 
     def __init__(self):
         super().__init__()
-        self.call_count: Dict[int, int] = {i: 0 for i in range(8)}
+        self.call_count: dict[int, int] = {i: 0 for i in range(8)}
         self.total_tokens_spent = 0
 
     def generate(
@@ -58,118 +55,134 @@ class ScriptedE2EProvider(BaseLLMProvider):
 
         # Artifact payloads
         if arm_id == 0:  # Architect
-            content = json.dumps({
-                "action": "write_file",
-                "path": "README.md",
-                "content": (
-                    "# Todo Service\n\n"
-                    "Authenticated SQLite Todo Microservice built with FastAPI.\n\n"
-                    "## Architecture\n"
-                    "- `database.py`: SQLite persistence layer\n"
-                    "- `main.py`: FastAPI endpoints\n"
-                    "- `test_todo_api.py`: Automated Pytest verification\n"
-                ),
-                "explanation": "Scaffolding system architecture and documentation.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "README.md",
+                    "content": (
+                        "# Todo Service\n\n"
+                        "Authenticated SQLite Todo Microservice built with FastAPI.\n\n"
+                        "## Architecture\n"
+                        "- `database.py`: SQLite persistence layer\n"
+                        "- `main.py`: FastAPI endpoints\n"
+                        "- `test_todo_api.py`: Automated Pytest verification\n"
+                    ),
+                    "explanation": "Scaffolding system architecture and documentation.",
+                }
+            )
         elif arm_id == 1:  # Database
-            content = json.dumps({
-                "action": "write_file",
-                "path": "database.py",
-                "content": (
-                    "import sqlite3\n"
-                    "from typing import List, Dict, Optional\n\n"
-                    "class TodoDatabase:\n"
-                    "    def __init__(self, db_path: str = ':memory:'):\n"
-                    "        self.conn = sqlite3.connect(db_path, check_same_thread=False)\n"
-                    "        self.create_tables()\n\n"
-                    "    def create_tables(self):\n"
-                    "        with self.conn:\n"
-                    "            self.conn.execute('''\n"
-                    "                CREATE TABLE IF NOT EXISTS todos (\n"
-                    "                    id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-                    "                    title TEXT NOT NULL,\n"
-                    "                    completed BOOLEAN DEFAULT 0\n"
-                    "                )\n"
-                    "            ''')\n\n"
-                    "    def add_todo(self, title: str) -> int:\n"
-                    "        with self.conn:\n"
-                    "            cur = self.conn.execute('INSERT INTO todos (title) VALUES (?)', (title,))\n"
-                    "            return cur.lastrowid\n\n"
-                    "    def get_todos(self) -> List[Dict]:\n"
-                    "        cur = self.conn.execute('SELECT id, title, completed FROM todos')\n"
-                    "        return [{'id': r[0], 'title': r[1], 'completed': bool(r[2])} for r in cur.fetchall()]\n"
-                ),
-                "explanation": "Created SQLite schema and CRUD database connector.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "database.py",
+                    "content": (
+                        "import sqlite3\n"
+                        "from typing import List, Dict, Optional\n\n"
+                        "class TodoDatabase:\n"
+                        "    def __init__(self, db_path: str = ':memory:'):\n"
+                        "        self.conn = sqlite3.connect(db_path, check_same_thread=False)\n"
+                        "        self.create_tables()\n\n"
+                        "    def create_tables(self):\n"
+                        "        with self.conn:\n"
+                        "            self.conn.execute('''\n"
+                        "                CREATE TABLE IF NOT EXISTS todos (\n"
+                        "                    id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+                        "                    title TEXT NOT NULL,\n"
+                        "                    completed BOOLEAN DEFAULT 0\n"
+                        "                )\n"
+                        "            ''')\n\n"
+                        "    def add_todo(self, title: str) -> int:\n"
+                        "        with self.conn:\n"
+                        "            cur = self.conn.execute('INSERT INTO todos (title) VALUES (?)', (title,))\n"
+                        "            return cur.lastrowid\n\n"
+                        "    def get_todos(self) -> List[Dict]:\n"
+                        "        cur = self.conn.execute('SELECT id, title, completed FROM todos')\n"
+                        "        return [{'id': r[0], 'title': r[1], 'completed': bool(r[2])} for r in cur.fetchall()]\n"
+                    ),
+                    "explanation": "Created SQLite schema and CRUD database connector.",
+                }
+            )
         elif arm_id == 2:  # Backend API
-            content = json.dumps({
-                "action": "write_file",
-                "path": "main.py",
-                "content": (
-                    "from database import TodoDatabase\n\n"
-                    "db = TodoDatabase()\n\n"
-                    "def create_todo(title: str):\n"
-                    "    if not title or len(title.strip()) == 0:\n"
-                    "        raise ValueError('Title cannot be empty')\n"
-                    "    todo_id = db.add_todo(title.strip())\n"
-                    "    return {'id': todo_id, 'title': title.strip(), 'completed': False}\n\n"
-                    "def list_todos():\n"
-                    "    return db.get_todos()\n"
-                ),
-                "explanation": "Implemented API controllers and validation.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "main.py",
+                    "content": (
+                        "from database import TodoDatabase\n\n"
+                        "db = TodoDatabase()\n\n"
+                        "def create_todo(title: str):\n"
+                        "    if not title or len(title.strip()) == 0:\n"
+                        "        raise ValueError('Title cannot be empty')\n"
+                        "    todo_id = db.add_todo(title.strip())\n"
+                        "    return {'id': todo_id, 'title': title.strip(), 'completed': False}\n\n"
+                        "def list_todos():\n"
+                        "    return db.get_todos()\n"
+                    ),
+                    "explanation": "Implemented API controllers and validation.",
+                }
+            )
         elif arm_id == 3:  # Frontend UI
-            content = json.dumps({
-                "action": "write_file",
-                "path": "index.html",
-                "content": "<!DOCTYPE html><html><body><h1>OctoFlow Todo</h1></body></html>",
-                "explanation": "Created frontend interface entrypoint.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "index.html",
+                    "content": "<!DOCTYPE html><html><body><h1>OctoFlow Todo</h1></body></html>",
+                    "explanation": "Created frontend interface entrypoint.",
+                }
+            )
         elif arm_id == 4:  # State / Optimization
-            content = json.dumps({
-                "action": "write_file",
-                "path": "config.py",
-                "content": "DB_TIMEOUT = 5.0\nMAX_PAGE_SIZE = 100\n",
-                "explanation": "Added performance optimization constants.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "config.py",
+                    "content": "DB_TIMEOUT = 5.0\nMAX_PAGE_SIZE = 100\n",
+                    "explanation": "Added performance optimization constants.",
+                }
+            )
         elif arm_id == 5:  # Integration QA & Tests
-            content = json.dumps({
-                "action": "write_file",
-                "path": "test_todo_api.py",
-                "content": (
-                    "import pytest\n"
-                    "from main import create_todo, list_todos\n\n"
-                    "def test_create_and_retrieve_todo():\n"
-                    "    todo = create_todo('Learn OctoFlow')\n"
-                    "    assert todo['id'] >= 1\n"
-                    "    assert todo['title'] == 'Learn OctoFlow'\n"
-                    "    assert todo['completed'] is False\n\n"
-                    "    all_todos = list_todos()\n"
-                    "    assert len(all_todos) >= 1\n"
-                    "    assert any(t['title'] == 'Learn OctoFlow' for t in all_todos)\n\n"
-                    "def test_empty_title_rejection():\n"
-                    "    with pytest.raises(ValueError):\n"
-                    "        create_todo('')\n"
-                ),
-                "explanation": "Created unit and integration tests with pytest.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "test_todo_api.py",
+                    "content": (
+                        "import pytest\n"
+                        "from main import create_todo, list_todos\n\n"
+                        "def test_create_and_retrieve_todo():\n"
+                        "    todo = create_todo('Learn OctoFlow')\n"
+                        "    assert todo['id'] >= 1\n"
+                        "    assert todo['title'] == 'Learn OctoFlow'\n"
+                        "    assert todo['completed'] is False\n\n"
+                        "    all_todos = list_todos()\n"
+                        "    assert len(all_todos) >= 1\n"
+                        "    assert any(t['title'] == 'Learn OctoFlow' for t in all_todos)\n\n"
+                        "def test_empty_title_rejection():\n"
+                        "    with pytest.raises(ValueError):\n"
+                        "        create_todo('')\n"
+                    ),
+                    "explanation": "Created unit and integration tests with pytest.",
+                }
+            )
         elif arm_id == 6:  # Security
-            content = json.dumps({
-                "action": "write_file",
-                "path": "security.py",
-                "content": (
-                    "def sanitize_string(s: str) -> str:\n"
-                    "    return s.strip().replace('<', '&lt;').replace('>', '&gt;')\n"
-                ),
-                "explanation": "Added HTML input sanitization utility.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "security.py",
+                    "content": (
+                        "def sanitize_string(s: str) -> str:\n"
+                        "    return s.strip().replace('<', '&lt;').replace('>', '&gt;')\n"
+                    ),
+                    "explanation": "Added HTML input sanitization utility.",
+                }
+            )
         else:  # Arm 7: DevOps
-            content = json.dumps({
-                "action": "write_file",
-                "path": "Dockerfile",
-                "content": "FROM python:3.12-slim\nWORKDIR /app\nCOPY . .\nCMD [\"python\", \"-m\", \"pytest\"]\n",
-                "explanation": "Created service Dockerfile container manifest.",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": "Dockerfile",
+                    "content": 'FROM python:3.12-slim\nWORKDIR /app\nCOPY . .\nCMD ["python", "-m", "pytest"]\n',
+                    "explanation": "Created service Dockerfile container manifest.",
+                }
+            )
 
         tokens = len(prompt) // 4 + len(content) // 4
         self.total_tokens_spent += tokens
@@ -213,7 +226,7 @@ async def test_e2e_deterministic_mock_build(tmp_path):
     for arm in conductor.arms:
         arm.provider = scripted_provider
 
-    telemetry_events: List[SwarmTelemetryEvent] = []
+    telemetry_events: list[SwarmTelemetryEvent] = []
     conductor.telemetry_callback = lambda evt: telemetry_events.append(evt)
 
     # 1. Execute swarm to global quiescence
@@ -224,7 +237,9 @@ async def test_e2e_deterministic_mock_build(tmp_path):
 
     # 2. Assert swarm completed cleanly
     assert result is not None
-    assert result["quiescent_arms"] == 8, f"Expected all 8 arms to reach quiescence, got {result['quiescent_arms']}"
+    assert result["quiescent_arms"] == 8, (
+        f"Expected all 8 arms to reach quiescence, got {result['quiescent_arms']}"
+    )
     assert result["status"] == "GLOBAL_QUIESCENCE"
     assert duration < 10.0, f"E2E swarm took {duration:.2f}s, expected < 10s"
 
@@ -252,7 +267,9 @@ async def test_e2e_deterministic_mock_build(tmp_path):
         text=True,
         timeout=10,
     )
-    assert test_run.returncode == 0, f"Generated test failed with output:\n{test_run.stdout}\n{test_run.stderr}"
+    assert test_run.returncode == 0, (
+        f"Generated test failed with output:\n{test_run.stdout}\n{test_run.stderr}"
+    )
     assert "passed" in test_run.stdout
 
     # 5. Telemetry & Instrumentation Assertions
@@ -305,7 +322,7 @@ async def test_e2e_failure_injection_and_recovery(tmp_path):
     arm.memory.consolidate(
         error_obs=obs.numpy(),
         error_name="CommandNotFoundError",
-        fix_guidance="Use verified system binaries from PATH."
+        fix_guidance="Use verified system binaries from PATH.",
     )
     recalled = arm.memory.recall(obs.numpy())
     assert recalled is not None
@@ -365,7 +382,9 @@ def test_e2e_real_llm_budgeted(tmp_path):
         max_budget_dollars=0.05,
     )
     conductor = SupraesophagealConductor(config=cfg)
-    result = asyncio.run(conductor.arun_swarm("Create a hello world module with a test.", max_cycles=2))
+    result = asyncio.run(
+        conductor.arun_swarm("Create a hello world module with a test.", max_cycles=2)
+    )
     assert result is not None
     assert conductor.total_cost <= 0.05
 
@@ -376,8 +395,12 @@ def test_e2e_resource_cleanup_audit(tmp_path):
     ps_res = subprocess.run(["ps", "aux"], capture_output=True, text=True)
     # Exclude the current pytest test runner itself and pre-existing user UI server
     lines = [
-        line for line in ps_res.stdout.splitlines()
-        if "octoflow" in line and "pytest" not in line and "antigravity" not in line and "ui --port" not in line
+        line
+        for line in ps_res.stdout.splitlines()
+        if "octoflow" in line
+        and "pytest" not in line
+        and "antigravity" not in line
+        and "ui --port" not in line
     ]
     # No rogue daemon/detached octoflow subprocesses
     assert len(lines) == 0, f"Found orphan octoflow processes: {lines}"

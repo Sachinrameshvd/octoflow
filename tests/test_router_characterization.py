@@ -4,8 +4,7 @@ Verifies that the extraction of classify_input into octoflow/router.py preserves
 existing routing semantics before hardening in P1.3.
 """
 
-import pytest
-from octoflow.router import classify_input, classify_input_legacy, RouteKind
+from octoflow.router import RouteKind, classify_input
 
 
 def test_characterization_empty_and_whitespace():

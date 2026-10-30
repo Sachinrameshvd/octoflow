@@ -7,29 +7,25 @@ under both gated and ungated (always_escalate) modes.
 
 from __future__ import annotations
 
-import ast
 import datetime
 import json
-import math
-import os
 import random
 import statistics
 import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 from rich.console import Console
 from rich.table import Table
 
-from octoflow.config import OctoFlowConfig
 from octoflow.conductor import SupraesophagealConductor
-from octoflow.provider import BaseLLMProvider, LLMResponse, get_llm_provider
-from octoflow.usage import UsageLedger, estimate_tokens_from_chars
+from octoflow.config import OctoFlowConfig
+from octoflow.provider import BaseLLMProvider, LLMResponse
 from octoflow.themes import get_theme
 
 
@@ -47,7 +43,7 @@ class BenchmarkTask:
 
 
 # Reference implementations and pytest acceptance suites for challenge tasks
-BENCHMARK_SUITE: List[BenchmarkTask] = [
+BENCHMARK_SUITE: list[BenchmarkTask] = [
     BenchmarkTask(
         id="rate_limiter",
         name="Sliding Window Rate Limiter",
@@ -265,7 +261,7 @@ print("VERIFICATION_PASSED")
         id="fastapi_todo",
         name="Tiny FastAPI Todo API",
         category="Web",
-        objective="Implement a tiny FastAPI todo API in app.py with Pydantic model Todo(id: Optional[int] = None, title: str) and routes: GET /todos (returns list of todos), POST /todos (accepts JSON {\"title\": str}, assigns integer id, returns item with id and title), and DELETE /todos/{todo_id} (checks if todo_id exists: if not found raises HTTPException(status_code=404), otherwise removes it and returns 200 or 204)",
+        objective='Implement a tiny FastAPI todo API in app.py with Pydantic model Todo(id: Optional[int] = None, title: str) and routes: GET /todos (returns list of todos), POST /todos (accepts JSON {"title": str}, assigns integer id, returns item with id and title), and DELETE /todos/{todo_id} (checks if todo_id exists: if not found raises HTTPException(status_code=404), otherwise removes it and returns 200 or 204)',
         target_file="app.py",
         reference_solution="""from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -356,7 +352,7 @@ class FakeBenchmarkProvider(BaseLLMProvider):
         prompt_tokens: int = 150,
         completion_tokens: int = 50,
         estimated: bool = False,
-        task_solutions: Optional[Dict[str, Tuple[str, str]]] = None,
+        task_solutions: dict[str, tuple[str, str]] | None = None,
     ):
         super().__init__()
         self.prompt_tokens_val = int(prompt_tokens)
@@ -366,7 +362,7 @@ class FakeBenchmarkProvider(BaseLLMProvider):
         self.written_files: set = set()
         self.task_solutions = task_solutions or {}
 
-    def _get_solution_for_prompt(self, prompt: str) -> Optional[Tuple[str, str]]:
+    def _get_solution_for_prompt(self, prompt: str) -> tuple[str, str] | None:
         p_lower = prompt.lower()
         if "limiter" in p_lower or "rate limit" in p_lower or "slidingwindow" in p_lower:
             task = next((t for t in BENCHMARK_SUITE if t.id == "rate_limiter"), None)
@@ -376,7 +372,12 @@ class FakeBenchmarkProvider(BaseLLMProvider):
             task = next((t for t in BENCHMARK_SUITE if t.id == "lru_cache"), None)
             if task:
                 return task.target_file, task.reference_solution
-        if "jwt" in p_lower or "auth.py" in p_lower or "generate_token" in p_lower or "hmac" in p_lower:
+        if (
+            "jwt" in p_lower
+            or "auth.py" in p_lower
+            or "generate_token" in p_lower
+            or "hmac" in p_lower
+        ):
             task = next((t for t in BENCHMARK_SUITE if t.id == "jwt_validator"), None)
             if task:
                 return task.target_file, task.reference_solution
@@ -398,24 +399,30 @@ class FakeBenchmarkProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         self.call_count += 1
-        solution = self._get_solution_for_prompt(prompt) or self._get_solution_for_prompt(system_prompt)
+        solution = self._get_solution_for_prompt(prompt) or self._get_solution_for_prompt(
+            system_prompt
+        )
 
         # Write solution file if not written yet
         if solution and solution[0] not in self.written_files:
             target_path, code = solution
             self.written_files.add(target_path)
-            content = json.dumps({
-                "action": "write_file",
-                "path": target_path,
-                "content": code,
-                "explanation": f"Writing verified implementation to {target_path}",
-            })
+            content = json.dumps(
+                {
+                    "action": "write_file",
+                    "path": target_path,
+                    "content": code,
+                    "explanation": f"Writing verified implementation to {target_path}",
+                }
+            )
         else:
-            content = json.dumps({
-                "action": "read_file",
-                "path": "README.md",
-                "explanation": "Inspecting workspace state.",
-            })
+            content = json.dumps(
+                {
+                    "action": "read_file",
+                    "path": "README.md",
+                    "explanation": "Inspecting workspace state.",
+                }
+            )
 
         resp = LLMResponse(
             content=content,
@@ -442,14 +449,14 @@ def run_single_benchmark_run(
     task: BenchmarkTask,
     mode: str = "gated",
     provider_name: str = "mock",
-    model_name: Optional[str] = None,
+    model_name: str | None = None,
     seed: int = 42,
     temperature: float = 0.0,
-    workspace_dir: Optional[str] = None,
-    custom_provider: Optional[BaseLLMProvider] = None,
+    workspace_dir: str | None = None,
+    custom_provider: BaseLLMProvider | None = None,
     max_cycles: int = 3,
-    record_cassette_dir: Optional[str] = None,
-) -> Dict[str, Any]:
+    record_cassette_dir: str | None = None,
+) -> dict[str, Any]:
     """Execute a single benchmark run in an isolated sandbox and record truthful telemetry."""
     normalized_mode = "always_escalate" if mode in ("ungated", "always_escalate") else "gated"
 
@@ -457,12 +464,13 @@ def run_single_benchmark_run(
     random.seed(seed)
     np.random.seed(seed)
 
-    def _execute(target_dir: str) -> Dict[str, Any]:
+    def _execute(target_dir: str) -> dict[str, Any]:
         t0 = time.time()
         cfg = OctoFlowConfig(
             workspace_dir=target_dir,
             model_provider=provider_name,
-            model_name=model_name or ("fake-eval-v1" if provider_name == "fake" else "claude-3-5-sonnet-20241022"),
+            model_name=model_name
+            or ("fake-eval-v1" if provider_name == "fake" else "claude-3-5-sonnet-20241022"),
             gate_mode=normalized_mode,
             temperature=temperature,
             dry_run=False,
@@ -479,6 +487,7 @@ def run_single_benchmark_run(
 
         if record_cassette_dir:
             from octoflow.cassette import CassetteRecorder
+
             rec = CassetteRecorder(
                 provider=conductor.provider,
                 cassette_dir=record_cassette_dir,
@@ -497,10 +506,13 @@ def run_single_benchmark_run(
 
         # Collect files written (excluding acceptance tests and internal files)
         target_path = Path(target_dir)
-        files_written = sorted([
-            p.name for p in target_path.glob("*.py")
-            if not p.name.startswith("test_") and not p.name.startswith("_")
-        ])
+        files_written = sorted(
+            [
+                p.name
+                for p in target_path.glob("*.py")
+                if not p.name.startswith("test_") and not p.name.startswith("_")
+            ]
+        )
 
         # Write and run the pytest acceptance file in the sandbox
         acc_file = target_path / task.acceptance_test_file
@@ -516,7 +528,7 @@ def run_single_benchmark_run(
                 text=True,
                 timeout=15,
             )
-            test_passed = (res.returncode == 0)
+            test_passed = res.returncode == 0
         except Exception:
             test_passed = False
 
@@ -560,8 +572,8 @@ def run_single_benchmark_run(
 
 
 def generate_summary_markdown(
-    runs_data: List[Dict[str, Any]],
-    out_path: Union[str, Path],
+    runs_data: list[dict[str, Any]],
+    out_path: str | Path,
 ) -> str:
     """Compute aggregate statistics and generate comprehensive summary.md."""
     if not runs_data:
@@ -577,7 +589,7 @@ def generate_summary_markdown(
     seed = runs_data[0].get("seed", 42)
 
     # Group runs by (task, mode)
-    grouped: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
     tasks_seen = {}
     for r in runs_data:
         t_id = r["task"]
@@ -586,7 +598,7 @@ def generate_summary_markdown(
         grouped.setdefault(key, []).append(r)
 
     # Compute task-level metrics
-    task_stats: Dict[str, Dict[str, Any]] = {}
+    task_stats: dict[str, dict[str, Any]] = {}
     for t_id, t_name in tasks_seen.items():
         task_stats[t_id] = {"name": t_name}
         for mode in ("gated", "always_escalate"):
@@ -649,7 +661,9 @@ def generate_summary_markdown(
                 "Token consumption claims must reflect measured evidence rather than theoretical extrapolations."
             )
     else:
-        verdict_text = "Comparative reduction ratio requires evaluating both `gated` and `ungated` modes."
+        verdict_text = (
+            "Comparative reduction ratio requires evaluating both `gated` and `ungated` modes."
+        )
 
     # Build Markdown table rows
     table_rows = []
@@ -660,7 +674,11 @@ def generate_summary_markdown(
             if not m_data:
                 continue
             mode_label = "Gated" if mode == "gated" else "Ungated (always_escalate)"
-            ratio_str = f"{data['savings_pct']}% reduction" if (data.get("savings_pct") is not None and mode == "gated") else "-"
+            ratio_str = (
+                f"{data['savings_pct']}% reduction"
+                if (data.get("savings_pct") is not None and mode == "gated")
+                else "-"
+            )
             table_rows.append(
                 f"| `{t_id}` | {t_name} | {mode_label} | "
                 f"{m_data['calls_min']} / {m_data['calls_med']:.1f} / {m_data['calls_max']} | "
@@ -695,7 +713,7 @@ def generate_summary_markdown(
 ## 1. Executive Summary & Headline Claim Verification
 
 - **Headline Claim Evaluated:** *"80-90% fewer tokens with event-triggered surprise gating"*
-- **Measured Median Token Reduction:** {f'**{overall_reduction}%**' if overall_reduction is not None else 'N/A'}
+- **Measured Median Token Reduction:** {f"**{overall_reduction}%**" if overall_reduction is not None else "N/A"}
 - **Empirical Verdict:** {verdict_text}
 
 ---
@@ -753,15 +771,15 @@ def run_benchmark_harness(
     task: str = "all",
     mode: str = "both",
     provider: str = "mock",
-    model: Optional[str] = None,
+    model: str | None = None,
     runs: int = 3,
     seed: int = 42,
     temperature: float = 0.0,
     out_dir: str = "benchmarks/results",
-    custom_provider: Optional[BaseLLMProvider] = None,
-    console: Optional[Console] = None,
-    record_cassette: Optional[str] = None,
-) -> Dict[str, Any]:
+    custom_provider: BaseLLMProvider | None = None,
+    console: Console | None = None,
+    record_cassette: str | None = None,
+) -> dict[str, Any]:
     """Primary entry point for running the honest benchmark harness."""
     c = console or Console()
     th = get_theme("tokyo_night")
@@ -772,7 +790,11 @@ def run_benchmark_harness(
     else:
         # Match task ID or alias (handling hyphens and underscores interchangeably)
         norm_task = task.lower().replace("-", "_")
-        matched = [t for t in BENCHMARK_SUITE if t.id == task or task in t.id or norm_task == t.id.replace("-", "_")]
+        matched = [
+            t
+            for t in BENCHMARK_SUITE
+            if t.id == task or task in t.id or norm_task == t.id.replace("-", "_")
+        ]
         if not matched:
             valid_ids = [t.id for t in BENCHMARK_SUITE]
             raise ValueError(f"Unknown task '{task}'. Available: {valid_ids}")
@@ -790,15 +812,19 @@ def run_benchmark_harness(
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
-    all_runs: List[Dict[str, Any]] = []
+    all_runs: list[dict[str, Any]] = []
 
     c.print(f"\n[{th.rich_primary}]◈ OctoFlow Reproducible Benchmark Harness[/{th.rich_primary}]")
-    c.print(f"[dim]Provider: {provider} | Tasks: {len(selected_tasks)} | Modes: {eval_modes} | Runs per mode: {runs}[/dim]\n")
+    c.print(
+        f"[dim]Provider: {provider} | Tasks: {len(selected_tasks)} | Modes: {eval_modes} | Runs per mode: {runs}[/dim]\n"
+    )
 
     for t in selected_tasks:
         for m in eval_modes:
             mode_display = "Gated" if m == "gated" else "Ungated"
-            c.print(f"[{th.rich_secondary}]► Running {t.name} ({mode_display})...[/{th.rich_secondary}]")
+            c.print(
+                f"[{th.rich_secondary}]► Running {t.name} ({mode_display})...[/{th.rich_secondary}]"
+            )
             for run_idx in range(1, runs + 1):
                 run_seed = seed + run_idx - 1
                 res = run_single_benchmark_run(
@@ -817,7 +843,11 @@ def run_benchmark_harness(
                 run_file = out_path / f"{t.id}_{m}_run_{run_idx}.json"
                 run_file.write_text(json.dumps(res, indent=2), encoding="utf-8")
 
-                status_mark = f"[{th.rich_success}]✔ PASS[/]" if res["acceptance_test_passed"] else f"[{th.rich_danger}]✖ FAIL[/]"
+                status_mark = (
+                    f"[{th.rich_success}]✔ PASS[/]"
+                    if res["acceptance_test_passed"]
+                    else f"[{th.rich_danger}]✖ FAIL[/]"
+                )
                 c.print(
                     f"  [dim]Run {run_idx}/{runs}:[/dim] {status_mark} • "
                     f"Calls: [white]{res['llm_calls']}[/white] • "
@@ -829,7 +859,9 @@ def run_benchmark_harness(
     # Generate summary.md
     summary_md_path = out_path / "summary.md"
     generate_summary_markdown(all_runs, summary_md_path)
-    c.print(f"\n[{th.rich_success}]✔ Benchmark complete. Summary written to {summary_md_path}[/{th.rich_success}]\n")
+    c.print(
+        f"\n[{th.rich_success}]✔ Benchmark complete. Summary written to {summary_md_path}[/{th.rich_success}]\n"
+    )
 
     return {
         "runs": all_runs,
@@ -840,15 +872,17 @@ def run_benchmark_harness(
 
 def run_single_benchmark(
     task: Any,
-    config: Optional[OctoFlowConfig] = None,
+    config: OctoFlowConfig | None = None,
     mode: str = "balanced",
-    workspace_dir: Optional[str] = None,
-) -> Dict[str, Any]:
+    workspace_dir: str | None = None,
+) -> dict[str, Any]:
     """Legacy compatibility helper."""
     if isinstance(task, str):
         matching = [t for t in BENCHMARK_SUITE if t.id == task]
         if not matching:
-            raise ValueError(f"Unknown benchmark task '{task}'. Available: {[t.id for t in BENCHMARK_SUITE]}")
+            raise ValueError(
+                f"Unknown benchmark task '{task}'. Available: {[t.id for t in BENCHMARK_SUITE]}"
+            )
         selected_task = matching[0]
     else:
         selected_task = task
@@ -878,13 +912,13 @@ def run_single_benchmark(
 
 
 def run_swarm_benchmark_suite(
-    tasks: Optional[Union[List[str], str]] = None,
-    task_key: Optional[str] = None,
+    tasks: list[str] | str | None = None,
+    task_key: str | None = None,
     mode: str = "balanced",
-    workspace_dir: Optional[str] = None,
-    config: Optional[OctoFlowConfig] = None,
-    console: Optional[Console] = None,
-) -> Dict[str, Any]:
+    workspace_dir: str | None = None,
+    config: OctoFlowConfig | None = None,
+    console: Console | None = None,
+) -> dict[str, Any]:
     """Legacy compatibility suite wrapper."""
     c = console or Console()
     th = get_theme("tokyo_night")
@@ -898,9 +932,11 @@ def run_swarm_benchmark_suite(
         filter_keys.update(tasks)
 
     suite = [t for t in BENCHMARK_SUITE if (not filter_keys or t.id in filter_keys)]
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
 
-    c.print(f"\n[{th.rich_primary}]◈ OctoFlow Swarm Evaluation: Running {len(suite)} benchmark challenges...[/{th.rich_primary}]\n")
+    c.print(
+        f"\n[{th.rich_primary}]◈ OctoFlow Swarm Evaluation: Running {len(suite)} benchmark challenges...[/{th.rich_primary}]\n"
+    )
 
     for task in suite:
         res = run_single_benchmark(task, config=config, mode=mode, workspace_dir=workspace_dir)
@@ -913,7 +949,9 @@ def run_swarm_benchmark_suite(
     total_cost = sum(r["cost_dollars"] for r in results)
     avg_latency = round(sum(r["duration_sec"] for r in results) / max(total_tasks, 1), 2)
 
-    t = Table(title="OctoFlow Swarm Benchmark Suite Results", border_style=th.rich_border, expand=True)
+    t = Table(
+        title="OctoFlow Swarm Benchmark Suite Results", border_style=th.rich_border, expand=True
+    )
     t.add_column("Task ID", style="bold white", width=16)
     t.add_column("Category", style=th.rich_secondary, width=14)
     t.add_column("Verdict", width=12)
@@ -922,11 +960,22 @@ def run_swarm_benchmark_suite(
     t.add_column("Cost", style="dim")
 
     for r in results:
-        v_str = f"[{th.rich_success}]✔ PASSED[/]" if r["passed"] else f"[{th.rich_danger}]✖ FAILED[/]"
-        t.add_row(r["task_id"], r["category"], v_str, f"{r['duration_sec']}s", f"{r['tokens_spent']:,}", f"${r['cost_dollars']:.4f}")
+        v_str = (
+            f"[{th.rich_success}]✔ PASSED[/]" if r["passed"] else f"[{th.rich_danger}]✖ FAILED[/]"
+        )
+        t.add_row(
+            r["task_id"],
+            r["category"],
+            v_str,
+            f"{r['duration_sec']}s",
+            f"{r['tokens_spent']:,}",
+            f"${r['cost_dollars']:.4f}",
+        )
 
     c.print(t)
-    c.print(f"\n[{th.rich_success}]✔ Overall Pass@1 Rate:[/{th.rich_success}] [bold white]{pass_rate_pct}% ({passed_tasks}/{total_tasks})[/bold white]\n")
+    c.print(
+        f"\n[{th.rich_success}]✔ Overall Pass@1 Rate:[/{th.rich_success}] [bold white]{pass_rate_pct}% ({passed_tasks}/{total_tasks})[/bold white]\n"
+    )
 
     return {
         "pass_rate_pct": pass_rate_pct,

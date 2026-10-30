@@ -16,14 +16,13 @@ semantic prototypes:
 - AUTONOMOUS_EXPLORATION: Routine local sensory sampling without urgent distress.
 """
 
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Any
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from octopus_brain.config import OctopusBrainConfig
-from octoflow.bus import MessageIntent, INTENT_METADATA
+from octoflow.bus import INTENT_METADATA, MessageIntent
 
 
 class InterBrachialLexiconDecoder(nn.Module):
@@ -49,7 +48,7 @@ class InterBrachialLexiconDecoder(nn.Module):
         prototypes = prototypes / np.linalg.norm(prototypes, axis=-1, keepdims=True)
         self.register_buffer("prototypes", torch.tensor(prototypes))
 
-    def decode_vector(self, msg_tensor: torch.Tensor) -> Tuple[str, float, Dict[str, Any]]:
+    def decode_vector(self, msg_tensor: torch.Tensor) -> tuple[str, float, dict[str, Any]]:
         """Decode a single (message_dim,) message vector into semantic intent.
 
         Args:
@@ -81,9 +80,9 @@ class InterBrachialLexiconDecoder(nn.Module):
 
     def decode_all_arms(
         self,
-        messages: Union[np.ndarray, torch.Tensor],
-        report_flags: Optional[Union[np.ndarray, torch.Tensor, List[bool]]] = None,
-    ) -> List[Dict[str, Any]]:
+        messages: np.ndarray | torch.Tensor,
+        report_flags: np.ndarray | torch.Tensor | list[bool] | None = None,
+    ) -> list[dict[str, Any]]:
         """Decode all N arm messages simultaneously.
 
         Args:
@@ -111,15 +110,17 @@ class InterBrachialLexiconDecoder(nn.Module):
                 meta = INTENT_METADATA[intent]
                 conf = 0.95
 
-            results.append({
-                "arm_index": i,
-                "intent": intent,
-                "label": meta["label"],
-                "icon": meta["icon"],
-                "color": meta["color"],
-                "description": meta["description"],
-                "confidence": conf,
-                "is_reporting": is_reporting,
-            })
+            results.append(
+                {
+                    "arm_index": i,
+                    "intent": intent,
+                    "label": meta["label"],
+                    "icon": meta["icon"],
+                    "color": meta["color"],
+                    "description": meta["description"],
+                    "confidence": conf,
+                    "is_reporting": is_reporting,
+                }
+            )
 
         return results

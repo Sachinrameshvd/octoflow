@@ -1,14 +1,10 @@
 """Tests for OctosFlow Multi-Cephalopod Swarm Consortium (Triad & Octopolis)."""
 
 import pytest
-import asyncio
 from octoflow.config import OctoFlowConfig
 from octoflow.consortium import (
-    OctosConsortium,
     InterOctopusSynapticBus,
-    SynapticContractEvent,
-    TRIAD_GUILDS,
-    OCTOPOLIS_GUILDS,
+    OctosConsortium,
     estimate_elastic_octopus_count,
 )
 
@@ -21,20 +17,25 @@ def anyio_backend():
 def test_elastic_autoscaler():
     """Verify dynamic cognitive load autoscaler assigns optimal octopus counts."""
     # 1. Micro utility script -> 1 Octopus
-    count_micro, reason_micro = estimate_elastic_octopus_count("Write a python script to parse CSV files")
+    count_micro, reason_micro = estimate_elastic_octopus_count(
+        "Write a python script to parse CSV files"
+    )
     assert count_micro == 1
     assert "utility" in reason_micro.lower()
 
     # 2. Fullstack interactive web application -> 3 Octopuses
-    count_fs, reason_fs = estimate_elastic_octopus_count("Build a JARVIS assistant with FastAPI backend and React frontend")
+    count_fs, reason_fs = estimate_elastic_octopus_count(
+        "Build a JARVIS assistant with FastAPI backend and React frontend"
+    )
     assert count_fs == 3
     assert "fullstack" in reason_fs.lower()
 
     # 3. Enterprise distributed platform -> 8 Octopuses
-    count_ent, reason_ent = estimate_elastic_octopus_count("Build an enterprise multi-tenant microservices analytics platform with Docker and Kubernetes")
+    count_ent, reason_ent = estimate_elastic_octopus_count(
+        "Build an enterprise multi-tenant microservices analytics platform with Docker and Kubernetes"
+    )
     assert count_ent == 8
     assert "enterprise" in reason_ent.lower()
-
 
 
 def test_inter_octopus_synaptic_bus():
@@ -160,21 +161,27 @@ def test_domain_adaptive_morphology_and_guilds():
     from octoflow.consortium import detect_morphology_from_objective, get_consortium_guilds
 
     # 1. Pure AI/ML Research
-    m_aiml = detect_morphology_from_objective("Train a PyTorch neural network on CIFAR-10 with custom loss and ONNX export")
+    m_aiml = detect_morphology_from_objective(
+        "Train a PyTorch neural network on CIFAR-10 with custom loss and ONNX export"
+    )
     assert m_aiml == SwarmMorphology.AIML_RESEARCH
     guilds_aiml = get_consortium_guilds(m_aiml, 3)
     assert any("ETL" in g.title or "Dataset" in g.title for g in guilds_aiml)
     assert any("Training" in g.title for g in guilds_aiml)
 
     # 2. Hybrid Fullstack AI (e.g. AI Resume Analyzer)
-    m_fullstack_ai = detect_morphology_from_objective("Build AI Resume & ATS Match Analyzer with FastAPI, 0-100 score gauge, and dark mode UI")
+    m_fullstack_ai = detect_morphology_from_objective(
+        "Build AI Resume & ATS Match Analyzer with FastAPI, 0-100 score gauge, and dark mode UI"
+    )
     assert m_fullstack_ai == SwarmMorphology.FULLSTACK_AI
     guilds_fs = get_consortium_guilds(m_fullstack_ai, 3)
     assert any("LLM" in g.title or "Backend" in g.title for g in guilds_fs)
     assert any("Interactive UI" in g.title or "Experience" in g.title for g in guilds_fs)
 
     # 3. Pure Software Engineering
-    m_sw = detect_morphology_from_objective("Build a high performance microservice with Docker and PostgreSQL")
+    m_sw = detect_morphology_from_objective(
+        "Build a high performance microservice with Docker and PostgreSQL"
+    )
     assert m_sw == SwarmMorphology.SOFTWARE_DEV
     guilds_sw = get_consortium_guilds(m_sw, 3)
     assert any("Genesis" in g.title for g in guilds_sw)

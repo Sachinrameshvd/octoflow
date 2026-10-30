@@ -1,26 +1,21 @@
 """Unit tests for OctoFlow benchmark harness, usage accounting, and gate mode baselines."""
 
 import json
-import os
 import tempfile
 from pathlib import Path
-
-import pytest
-from typer.testing import CliRunner
 
 from octoflow.bench import (
     BENCHMARK_SUITE,
     FakeBenchmarkProvider,
-    run_single_benchmark_run,
     generate_summary_markdown,
     run_benchmark_harness,
+    run_single_benchmark_run,
 )
 from octoflow.cli import app
 from octoflow.gate import SurpriseGate
-from octoflow.provider import LLMResponse
 from octoflow.tools import ToolResult
 from octoflow.usage import UsageLedger, estimate_tokens_from_chars
-
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -32,7 +27,13 @@ def test_usage_ledger_accounting():
     assert not ledger.is_estimated
 
     # Record measured API call
-    ledger.record(prompt_tokens=100, completion_tokens=50, estimated=False, provider="anthropic", model="claude-3-5-sonnet")
+    ledger.record(
+        prompt_tokens=100,
+        completion_tokens=50,
+        estimated=False,
+        provider="anthropic",
+        model="claude-3-5-sonnet",
+    )
     assert ledger.total_calls == 1
     assert ledger.prompt_tokens == 100
     assert ledger.completion_tokens == 50
@@ -42,7 +43,9 @@ def test_usage_ledger_accounting():
     assert ledger.estimated_calls == 0
 
     # Record estimated call
-    ledger.record(prompt_tokens=40, completion_tokens=20, estimated=True, provider="mock", model="mock")
+    ledger.record(
+        prompt_tokens=40, completion_tokens=20, estimated=True, provider="mock", model="mock"
+    )
     assert ledger.total_calls == 2
     assert ledger.total_tokens == 210
     assert ledger.is_estimated  # Any estimated call marks ledger as estimated
@@ -73,7 +76,9 @@ def test_gate_mode_always_escalate_vs_gated():
 
     # Successful tool result with zero error
     dummy_obs = [0.0] * 16
-    tool_res = ToolResult(tool_name="write_file", target="app.py", success=True, returncode=0, stdout="ok")
+    tool_res = ToolResult(
+        tool_name="write_file", target="app.py", success=True, returncode=0, stdout="ok"
+    )
 
     # In gated mode, clean execution does not escalate
     esc_gated, surprise_g, _ = gated_gate.evaluate(actual_obs=dummy_obs, tool_result=tool_res)
@@ -108,7 +113,9 @@ def test_single_benchmark_run_gated_vs_ungated():
 
     with tempfile.TemporaryDirectory() as tmp_gated:
         # Run gated mode with fake provider
-        fake_provider_g = FakeBenchmarkProvider(prompt_tokens=100, completion_tokens=25, estimated=False)
+        fake_provider_g = FakeBenchmarkProvider(
+            prompt_tokens=100, completion_tokens=25, estimated=False
+        )
         res_g = run_single_benchmark_run(
             task=task,
             mode="gated",
@@ -128,7 +135,9 @@ def test_single_benchmark_run_gated_vs_ungated():
 
     with tempfile.TemporaryDirectory() as tmp_ungated:
         # Run always_escalate mode with fake provider
-        fake_provider_u = FakeBenchmarkProvider(prompt_tokens=100, completion_tokens=25, estimated=False)
+        fake_provider_u = FakeBenchmarkProvider(
+            prompt_tokens=100, completion_tokens=25, estimated=False
+        )
         res_u = run_single_benchmark_run(
             task=task,
             mode="always_escalate",
@@ -163,7 +172,12 @@ def test_summary_markdown_statistics():
             "temperature": 0.0,
             "wall_time_seconds": 1.2,
             "llm_calls": 8,
-            "tokens": {"prompt_tokens": 800, "completion_tokens": 200, "total_tokens": 1000, "estimated": False},
+            "tokens": {
+                "prompt_tokens": 800,
+                "completion_tokens": 200,
+                "total_tokens": 1000,
+                "estimated": False,
+            },
             "acceptance_test_passed": True,
         },
         {
@@ -176,7 +190,12 @@ def test_summary_markdown_statistics():
             "temperature": 0.0,
             "wall_time_seconds": 1.1,
             "llm_calls": 8,
-            "tokens": {"prompt_tokens": 800, "completion_tokens": 200, "total_tokens": 1000, "estimated": False},
+            "tokens": {
+                "prompt_tokens": 800,
+                "completion_tokens": 200,
+                "total_tokens": 1000,
+                "estimated": False,
+            },
             "acceptance_test_passed": True,
         },
         {
@@ -189,7 +208,12 @@ def test_summary_markdown_statistics():
             "temperature": 0.0,
             "wall_time_seconds": 1.3,
             "llm_calls": 8,
-            "tokens": {"prompt_tokens": 800, "completion_tokens": 200, "total_tokens": 1000, "estimated": False},
+            "tokens": {
+                "prompt_tokens": 800,
+                "completion_tokens": 200,
+                "total_tokens": 1000,
+                "estimated": False,
+            },
             "acceptance_test_passed": True,
         },
         # Ungated runs (3 runs)
@@ -203,7 +227,12 @@ def test_summary_markdown_statistics():
             "temperature": 0.0,
             "wall_time_seconds": 2.5,
             "llm_calls": 24,
-            "tokens": {"prompt_tokens": 2400, "completion_tokens": 600, "total_tokens": 3000, "estimated": False},
+            "tokens": {
+                "prompt_tokens": 2400,
+                "completion_tokens": 600,
+                "total_tokens": 3000,
+                "estimated": False,
+            },
             "acceptance_test_passed": True,
         },
         {
@@ -216,7 +245,12 @@ def test_summary_markdown_statistics():
             "temperature": 0.0,
             "wall_time_seconds": 2.4,
             "llm_calls": 24,
-            "tokens": {"prompt_tokens": 2400, "completion_tokens": 600, "total_tokens": 3000, "estimated": False},
+            "tokens": {
+                "prompt_tokens": 2400,
+                "completion_tokens": 600,
+                "total_tokens": 3000,
+                "estimated": False,
+            },
             "acceptance_test_passed": True,
         },
         {
@@ -229,7 +263,12 @@ def test_summary_markdown_statistics():
             "temperature": 0.0,
             "wall_time_seconds": 2.6,
             "llm_calls": 24,
-            "tokens": {"prompt_tokens": 2400, "completion_tokens": 600, "total_tokens": 3000, "estimated": False},
+            "tokens": {
+                "prompt_tokens": 2400,
+                "completion_tokens": 600,
+                "total_tokens": 3000,
+                "estimated": False,
+            },
             "acceptance_test_passed": True,
         },
     ]
@@ -303,7 +342,9 @@ def test_fastapi_todo_task_execution():
     assert task.acceptance_test_file == "test_app.py"
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        fake_provider = FakeBenchmarkProvider(prompt_tokens=120, completion_tokens=80, estimated=False)
+        fake_provider = FakeBenchmarkProvider(
+            prompt_tokens=120, completion_tokens=80, estimated=False
+        )
         res = run_single_benchmark_run(
             task=task,
             mode="gated",
@@ -317,4 +358,3 @@ def test_fastapi_todo_task_execution():
         assert res["task"] == "fastapi_todo"
         assert res["acceptance_test_passed"] is True
         assert "app.py" in res["files_written"]
-

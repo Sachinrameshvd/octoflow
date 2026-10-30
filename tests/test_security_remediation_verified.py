@@ -8,10 +8,9 @@ have been strictly remediated and verified:
    constant-time comparison, and disables dangerous Flask debug=True in production.
 """
 
-import os
 import re
 from pathlib import Path
-import pytest
+
 from octoflow.tools import WorkspaceSandbox
 
 
@@ -50,7 +49,18 @@ def test_remediated_torch_load_weights_only():
     for py_file in codebase_dir.glob("**/*.py"):
         # Ignore tests, virtualenvs, and mission scratch logs
         parts = py_file.parts
-        if any(p in parts for p in ("tests", ".octoflow-mission", ".venv", "venv", "node_modules", "build", "dist")):
+        if any(
+            p in parts
+            for p in (
+                "tests",
+                ".octoflow-mission",
+                ".venv",
+                "venv",
+                "node_modules",
+                "build",
+                "dist",
+            )
+        ):
             continue
         try:
             content = py_file.read_text(encoding="utf-8")

@@ -1,22 +1,22 @@
 """Targeted unit tests for octoflow/settings.py to exceed 80% line coverage."""
-import json
-import os
-from pathlib import Path
-import pytest
-from pydantic import SecretStr
 
+import json
+from pathlib import Path
+
+import pytest
 from octoflow.settings import (
     ConfigurationError,
     Settings,
-    get_default_config_dir,
-    get_default_config_path,
-    mask_secret_value,
-    load_settings,
-    save_settings,
-    set_config_value,
     _apply_cli_overrides,
     _warn_extras_once,
+    get_default_config_dir,
+    get_default_config_path,
+    load_settings,
+    mask_secret_value,
+    save_settings,
+    set_config_value,
 )
+from pydantic import SecretStr
 
 
 @pytest.mark.unit
@@ -119,7 +119,10 @@ def test_corrupted_config_file_raises_error(tmp_path):
     bad_cfg = tmp_path / "bad_config.json"
     bad_cfg.write_text("{ this is broken json }", encoding="utf-8")
 
-    with pytest.raises(ConfigurationError, match="(Failed to load config file|Failed to read existing configuration)"):
+    with pytest.raises(
+        ConfigurationError,
+        match="(Failed to load config file|Failed to read existing configuration)",
+    ):
         load_settings(cfg_path=bad_cfg)
 
 
@@ -134,7 +137,9 @@ def test_validation_error_hints(tmp_path):
     assert exc_port.value.hint == "Ports must be between 1 and 65535"
 
     # Invalid provider
-    cfg_file.write_text(json.dumps({"defaults": {"default_provider": "unknown_ai"}}), encoding="utf-8")
+    cfg_file.write_text(
+        json.dumps({"defaults": {"default_provider": "unknown_ai"}}), encoding="utf-8"
+    )
     with pytest.raises(ConfigurationError) as exc_prov:
         load_settings(cfg_path=cfg_file)
     assert "Allowed providers" in (exc_prov.value.hint or "")

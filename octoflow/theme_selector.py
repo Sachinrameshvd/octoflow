@@ -5,24 +5,22 @@ Theme colors update live in real-time as you navigate.
 Press [ENTER] to confirm and persist, or [ESC]/[Q] to cancel.
 """
 
-from dataclasses import asdict
 import select
 import sys
-import time
-from typing import Optional
+from dataclasses import asdict
 
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-from rich.live import Live
 
 from octoflow.themes import (
     THEMES,
     OctoTheme,
     load_saved_theme,
-    save_theme_preference,
     render_octoflow_3d_banner,
+    save_theme_preference,
 )
 
 
@@ -44,7 +42,7 @@ def render_theme_selector_panel(selected_idx: int, themes_list: list) -> Panel:
     table.add_column("Description", style="dim")
 
     for idx, (t_id, t_obj) in enumerate(themes_list):
-        is_selected = (idx == selected_idx)
+        is_selected = idx == selected_idx
         if is_selected:
             cursor = f"[{t_obj.rich_primary}]❯[/]"
             theme_id_str = f"[bold {t_obj.rich_primary}]{t_id}[/]"
@@ -98,7 +96,7 @@ def render_theme_selector_panel(selected_idx: int, themes_list: list) -> Panel:
 
 def run_interactive_theme_picker(
     console: Console,
-    initial_theme: Optional[OctoTheme] = None,
+    initial_theme: OctoTheme | None = None,
     broadcaster=None,
 ) -> OctoTheme:
     """
@@ -165,11 +163,13 @@ def run_interactive_theme_picker(
                     selected_theme = themes_list[selected_idx][1]
                     save_theme_preference(selected_theme.id)
                     if broadcaster:
-                        broadcaster.broadcast_raw({
-                            "type": "THEME_CHANGE",
-                            "theme_id": selected_theme.id,
-                            "tokens": asdict(selected_theme),
-                        })
+                        broadcaster.broadcast_raw(
+                            {
+                                "type": "THEME_CHANGE",
+                                "theme_id": selected_theme.id,
+                                "tokens": asdict(selected_theme),
+                            }
+                        )
                     return selected_theme
 
                 elif ch in ["q", "Q", "\x03"]:  # Q or Ctrl+C -> Cancel
@@ -178,11 +178,13 @@ def run_interactive_theme_picker(
                 # Broadcast live preview to 3D visualizer while navigating!
                 preview_theme = themes_list[selected_idx][1]
                 if broadcaster:
-                    broadcaster.broadcast_raw({
-                        "type": "THEME_CHANGE",
-                        "theme_id": preview_theme.id,
-                        "tokens": asdict(preview_theme),
-                    })
+                    broadcaster.broadcast_raw(
+                        {
+                            "type": "THEME_CHANGE",
+                            "theme_id": preview_theme.id,
+                            "tokens": asdict(preview_theme),
+                        }
+                    )
 
                 # Update live terminal UI
                 live.update(render_theme_selector_panel(selected_idx, themes_list))

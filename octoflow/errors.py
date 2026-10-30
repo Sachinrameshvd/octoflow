@@ -10,29 +10,50 @@ Exit code contract:
 """
 
 from __future__ import annotations
+
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
-def redact_secrets(text: Optional[str]) -> str:
+def redact_secrets(text: str | None) -> str:
     """Sanitize secrets, API keys, and Bearer tokens from text, exceptions, and logs."""
     if not text:
         return ""
     text = str(text)
     # Authorization header with Bearer token (e.g. Authorization: Bearer <token>)
-    text = re.sub(r'Authorization:\s*Bearer\s+\S+', 'Authorization: Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"Authorization:\s*Bearer\s+\S+",
+        "Authorization: Bearer [REDACTED_TOKEN]",
+        text,
+        flags=re.IGNORECASE,
+    )
     # Standalone Bearer tokens (e.g. Bearer <token>)
-    text = re.sub(r'(?<!Authorization:\s)(?<!Authorization:)\bBearer\s+[a-zA-Z0-9_\-\.]{10,}', 'Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"(?<!Authorization:\s)(?<!Authorization:)\bBearer\s+[a-zA-Z0-9_\-\.]{10,}",
+        "Bearer [REDACTED_TOKEN]",
+        text,
+        flags=re.IGNORECASE,
+    )
     # Non-bearer Authorization header values (e.g. Basic, Token, etc.)
-    text = re.sub(r'Authorization:\s*(?!\s*Bearer\s+\[REDACTED_TOKEN\])[^\r\n]+', 'Authorization: [REDACTED]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"Authorization:\s*(?!\s*Bearer\s+\[REDACTED_TOKEN\])[^\r\n]+",
+        "Authorization: [REDACTED]",
+        text,
+        flags=re.IGNORECASE,
+    )
     # API keys: Anthropic, OpenAI, Grok, etc. (sk-...)
-    text = re.sub(r'sk-[a-zA-Z0-9_\-]{16,}', '[REDACTED_KEY]', text)
+    text = re.sub(r"sk-[a-zA-Z0-9_\-]{16,}", "[REDACTED_KEY]", text)
     # Google AI keys (AIza...)
-    text = re.sub(r'AIza[0-9A-Za-z\-_]{30,}', '[REDACTED_KEY]', text)
+    text = re.sub(r"AIza[0-9A-Za-z\-_]{30,}", "[REDACTED_KEY]", text)
     # GitHub personal access tokens
-    text = re.sub(r'(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}', '[REDACTED_GITHUB_TOKEN]', text)
+    text = re.sub(r"(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}", "[REDACTED_GITHUB_TOKEN]", text)
     # Key-value query/header assignments
-    text = re.sub(r'(api_key|apikey|key|token|secret|password)=([^\s&"\']+)', r'\1=[REDACTED]', text, flags=re.IGNORECASE)
+    text = re.sub(
+        r'(api_key|apikey|key|token|secret|password)=([^\s&"\']+)',
+        r"\1=[REDACTED]",
+        text,
+        flags=re.IGNORECASE,
+    )
     return text
 
 
@@ -48,7 +69,7 @@ class OctoFlowError(Exception):
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 1,
     ):
         self.message = redact_secrets(message)
@@ -81,9 +102,9 @@ class ConfigError(OctoFlowError):
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 3,
-        loc: Optional[str] = None,
+        loc: str | None = None,
     ):
         self.loc = loc or ""
         clean_msg = message
@@ -102,7 +123,7 @@ class UsageError(OctoFlowError):
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 3,
     ):
         super().__init__(message, hint=hint, exit_code=exit_code)
@@ -114,9 +135,9 @@ class ToolError(OctoFlowError):
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 1,
-        tool_name: Optional[str] = None,
+        tool_name: str | None = None,
     ):
         self.tool_name = tool_name
         super().__init__(message, hint=hint, exit_code=exit_code)
@@ -128,9 +149,9 @@ class WorkspaceError(OctoFlowError):
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 1,
-        path: Optional[str] = None,
+        path: str | None = None,
     ):
         self.path = path
         super().__init__(message, hint=hint, exit_code=exit_code)
@@ -142,13 +163,13 @@ class BudgetExceeded(OctoFlowError):
     def __init__(
         self,
         limit_name: str = "budget",
-        used: Optional[Any] = None,
-        limit: Optional[Any] = None,
-        message: Optional[str] = None,
-        hint: Optional[str] = None,
+        used: Any | None = None,
+        limit: Any | None = None,
+        message: str | None = None,
+        hint: str | None = None,
         exit_code: int = 1,
-        budget: Optional[float] = None,
-        cost: Optional[float] = None,
+        budget: float | None = None,
+        cost: float | None = None,
     ):
         self.limit_name = limit_name
         self.used = used
@@ -172,16 +193,17 @@ class BudgetExceeded(OctoFlowError):
 # Provider Error Family (Re-parented P1.2 classes with exit code 2)
 # -----------------------------------------------------------------------------
 
+
 class ProviderError(OctoFlowError):
     """Base error for all LLM provider failures (exit code 2)."""
 
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 2,
         provider: str = "unknown",
-        status: Optional[int] = None,
+        status: int | None = None,
         **kwargs: Any,
     ):
         # Support legacy positional / keyword arguments
@@ -209,6 +231,7 @@ class ProviderError(OctoFlowError):
 
 class ProviderAuthError(ProviderError):
     """Authentication or authorization failure: 401, 403, or invalid API key."""
+
     pass
 
 
@@ -218,11 +241,11 @@ class ProviderRateLimitError(ProviderError):
     def __init__(
         self,
         message: str,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         exit_code: int = 2,
         provider: str = "unknown",
-        status: Optional[int] = 429,
-        retry_after: Optional[float] = None,
+        status: int | None = 429,
+        retry_after: float | None = None,
         **kwargs: Any,
     ):
         self.retry_after = retry_after
@@ -238,16 +261,19 @@ class ProviderRateLimitError(ProviderError):
 
 class ProviderTransientError(ProviderError):
     """Transient service disruptions: 5xx errors, timeouts, and network drops."""
+
     pass
 
 
 class ProviderRequestError(ProviderError):
     """Client request errors: 4xx errors, invalid payload, or context window exceeded."""
+
     pass
 
 
 class ProviderUnavailableError(ProviderError):
     """Daemon or endpoint unavailable: Ollama daemon offline or model missing."""
+
     pass
 
 
@@ -257,8 +283,8 @@ class ProviderExhaustedError(ProviderError):
     def __init__(
         self,
         message: str,
-        failures: Optional[List[Dict[str, Any]]] = None,
-        hint: Optional[str] = None,
+        failures: list[dict[str, Any]] | None = None,
+        hint: str | None = None,
         exit_code: int = 2,
     ):
         self.failures = failures or []
@@ -279,7 +305,8 @@ class ProviderExhaustedError(ProviderError):
 
         super().__init__(
             full_msg,
-            hint=hint or "Check API keys in ~/.octoflow/config.json or pass --dry-run for mock simulation.",
+            hint=hint
+            or "Check API keys in ~/.octoflow/config.json or pass --dry-run for mock simulation.",
             exit_code=exit_code,
             provider="all",
         )

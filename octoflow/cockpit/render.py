@@ -9,20 +9,20 @@ Renders rich terminal UI components for the interactive cockpit:
 """
 
 import subprocess
-from typing import Any, Optional
+from typing import Any
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from octoflow.themes import (
-    OctoTheme,
-    get_banner_loop_frame,
-    render_octoflow_3d_banner,
-    play_banner_animation,
-)
-from octoflow.runner import render_runner_frame
 from octoflow.cockpit.session import CockpitSession, Theme
+from octoflow.runner import render_runner_frame
+from octoflow.themes import (
+    get_banner_loop_frame,
+    play_banner_animation,
+    render_octoflow_3d_banner,
+)
 
 
 def build_hud_panel(session: CockpitSession) -> Panel:
@@ -46,17 +46,24 @@ def build_hud_panel(session: CockpitSession) -> Panel:
     hud_table.add_column(style=theme.rich_primary, width=16)
     hud_table.add_column(style="white")
     hud_table.add_row("◈ WORKSPACE", f"{session.workspace}  [dim]({git_branch})[/dim]")
-    hud_table.add_row("◈ LLM CORE", f"{session.current_model.upper()}  [dim](Budget: ${session.current_budget:.2f})[/dim]")
+    hud_table.add_row(
+        "◈ LLM CORE",
+        f"{session.current_model.upper()}  [dim](Budget: ${session.current_budget:.2f})[/dim]",
+    )
     budget_line = getattr(session, "budget_line", None)
     if not budget_line and getattr(session, "budget_tracker", None):
         budget_line = session.budget_tracker.format_hud_line()
     if not budget_line:
-        from octoflow.budget import RunBudget, BudgetTracker
+        from octoflow.budget import BudgetTracker, RunBudget
+
         budget = getattr(session, "budget", None) or RunBudget()
         tracker = BudgetTracker(budget=budget)
         budget_line = tracker.format_hud_line()
     hud_table.add_row("◈ BUDGET", f"{budget_line}")
-    hud_table.add_row("◈ SWARM TIER", f"Octopuses: {session.current_octos.upper()}  [dim](Cross-Ring Synaptic Bus)[/dim]")
+    hud_table.add_row(
+        "◈ SWARM TIER",
+        f"Octopuses: {session.current_octos.upper()}  [dim](Cross-Ring Synaptic Bus)[/dim]",
+    )
     hud_table.add_row(
         "◈ PALETTE",
         f"[{theme.rich_primary}]●[/{theme.rich_primary}] [{theme.rich_secondary}]●[/{theme.rich_secondary}] [{theme.rich_success}]●[/{theme.rich_success}] {theme.name} [dim]({theme.description})[/dim]",

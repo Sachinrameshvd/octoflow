@@ -4,21 +4,20 @@
 3. Existing codebase safety, branch protection, and AST scanning
 4. Heterogeneous model routing (fast vs frontier tiers)
 """
-import ast
+
 import json
 import os
-import tempfile
 from pathlib import Path
-import pytest
 
-from octoflow.config import OctoFlowConfig, SOFTWARE_DEV_ROSTER, AIML_RESEARCH_ROSTER
-from octoflow.conductor import scan_codebase_topology, SupraesophagealConductor
-from octoflow.provider import get_llm_provider, MockLLMProvider, AnthropicProvider, OpenAIProvider
+from octoflow.conductor import SupraesophagealConductor, scan_codebase_topology
+from octoflow.config import SOFTWARE_DEV_ROSTER, OctoFlowConfig
+from octoflow.provider import AnthropicProvider, MockLLMProvider, OpenAIProvider, get_llm_provider
 
 
 def test_pypi_dist_bundling():
     """Verify that pre-compiled visualizer assets exist inside the octoflow package directory."""
     import octoflow
+
     pkg_dir = Path(octoflow.__file__).parent
     dist_dir = pkg_dir / "dist"
 
@@ -179,6 +178,7 @@ def test_cross_provider_heterogeneous_routing():
 def test_doctor_diagnostics(tmp_path):
     """Verify that run_doctor executes cleanly across all subsystem health checks."""
     from octoflow.cli import run_doctor
+
     # Should run with no unhandled exceptions
     run_doctor(workspace=str(tmp_path), fix=True)
     # With fix=True, git repo should be initialized if missing
@@ -202,10 +202,10 @@ def test_plan_decomposition_blueprint():
 def test_custom_guild_and_roster_loader(tmp_path, monkeypatch):
     """Verify loading, listing, and exporting custom 8-arm community guilds."""
     from octoflow.config import (
+        SOFTWARE_DEV_ROSTER,
         list_available_guilds,
         load_custom_guild,
         save_custom_guild,
-        SOFTWARE_DEV_ROSTER,
     )
 
     fake_home = tmp_path / "home"
@@ -243,11 +243,14 @@ def test_custom_guild_and_roster_loader(tmp_path, monkeypatch):
 def test_precommit_swarm_guard_and_hooks(tmp_path):
     """Verify that octos install-hooks and guard block secrets & AST syntax errors."""
     import subprocess
-    from octoflow.cli import run_guard, install_git_hooks
+
+    from octoflow.cli import install_git_hooks, run_guard
 
     # 1. Initialize a clean git repository
     subprocess.run(["git", "init"], cwd=str(tmp_path), check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@octoflow.dev"], cwd=str(tmp_path), check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@octoflow.dev"], cwd=str(tmp_path), check=True
+    )
     subprocess.run(["git", "config", "user.name", "OctoFlow Tester"], cwd=str(tmp_path), check=True)
 
     # 2. Install hooks
@@ -269,7 +272,9 @@ def test_precommit_swarm_guard_and_hooks(tmp_path):
     subprocess.run(["git", "rm", "-f", "broken.py"], cwd=str(tmp_path), capture_output=True)
 
     # 5. Secret leak (API Key) triggers guard block
-    (tmp_path / "config.env").write_text("ANTHROPIC_KEY=sk-" + "ant-api03-abcdef1234567890abcdef1234567890\n", encoding="utf-8")
+    (tmp_path / "config.env").write_text(
+        "ANTHROPIC_KEY=sk-" + "ant-api03-abcdef1234567890abcdef1234567890\n", encoding="utf-8"
+    )
     subprocess.run(["git", "add", "config.env"], cwd=str(tmp_path), check=True)
     assert run_guard(str(tmp_path)) is False
 
@@ -285,14 +290,14 @@ def test_episodic_codebase_vector_rag(tmp_path):
         "def verify_jwt_token(raw_token):\n"
         "    '''Verify signature of incoming bearer token.'''\n"
         "    return raw_token == 'valid'\n",
-        encoding="utf-8"
+        encoding="utf-8",
     )
     (src_dir / "database.py").write_text(
         "class ConnectionPool:\n"
         "    '''Manage PostgreSQL connection handles and pooling.'''\n"
         "    def get_conn(self):\n"
         "        pass\n",
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     # 2. Index workspace with EpisodicCodebaseRAG
@@ -346,27 +351,37 @@ def test_direct_arm_interrogation_and_conversational_reflex():
 
     # 2. Conversational Intent Classification: Questions auto-route to the right specialist
     # Database question -> Arm 1
-    intent_db = conductor.classify_conversational_intent("Why did you choose PostgreSQL over SQLite for this service?")
+    intent_db = conductor.classify_conversational_intent(
+        "Why did you choose PostgreSQL over SQLite for this service?"
+    )
     assert intent_db["intent"] == "INQUIRY"
     assert intent_db["primary_arm_id"] == 1
 
     # Security question -> Arm 6
-    intent_sec = conductor.classify_conversational_intent("Are there any SQL injection or CSRF risks in api/auth.py?")
+    intent_sec = conductor.classify_conversational_intent(
+        "Are there any SQL injection or CSRF risks in api/auth.py?"
+    )
     assert intent_sec["intent"] == "INQUIRY"
     assert intent_sec["primary_arm_id"] == 6
 
     # QA / Test question -> Arm 5
-    intent_qa = conductor.classify_conversational_intent("Why is the test coverage for the token refresh endpoint failing?")
+    intent_qa = conductor.classify_conversational_intent(
+        "Why is the test coverage for the token refresh endpoint failing?"
+    )
     assert intent_qa["intent"] == "INQUIRY"
     assert intent_qa["primary_arm_id"] == 5
 
     # Architecture question -> Arm 0
-    intent_arch = conductor.classify_conversational_intent("How did you structure the folder topology and interface boundaries?")
+    intent_arch = conductor.classify_conversational_intent(
+        "How did you structure the folder topology and interface boundaries?"
+    )
     assert intent_arch["intent"] == "INQUIRY"
     assert intent_arch["primary_arm_id"] == 0
 
     # 3. Action Directives classify as ACTION (not inquiry)
-    intent_action = conductor.classify_conversational_intent("Build an asynchronous real-time chat service")
+    intent_action = conductor.classify_conversational_intent(
+        "Build an asynchronous real-time chat service"
+    )
     assert intent_action["intent"] == "ACTION"
 
     intent_patch = conductor.classify_conversational_intent("Patch the CSRF issue in api/auth.py")
@@ -383,6 +398,7 @@ def test_direct_arm_interrogation_and_conversational_reflex():
 def test_omni_ide_auto_onboarding(tmp_path, monkeypatch):
     """Verify 1-command Omni-IDE onboarding across Cursor, Claude, VS Code, and Git."""
     import subprocess
+
     from octoflow.onboarding import onboard_ide
 
     fake_home = tmp_path / "home"
@@ -438,7 +454,9 @@ def test_omni_ide_auto_onboarding(tmp_path, monkeypatch):
     claude_data["mcpServers"]["custom_tool"] = {"command": "custom", "args": []}
     claude_cfg.write_text(json.dumps(claude_data), encoding="utf-8")
     # Custom task in .vscode/tasks.json
-    tasks_data["tasks"].append({"label": "User Custom Build", "type": "shell", "command": "npm run build"})
+    tasks_data["tasks"].append(
+        {"label": "User Custom Build", "type": "shell", "command": "npm run build"}
+    )
     tasks_file.write_text(json.dumps(tasks_data), encoding="utf-8")
 
     # Re-run onboarding
@@ -475,12 +493,17 @@ def test_generate_github_action_workflow(tmp_path):
 def test_review_pull_request_clean(tmp_path):
     """Verify that review_pull_request approves clean PRs with zero merge hazards."""
     import subprocess
+
     from octoflow.ci import review_pull_request
 
     # Setup git repo
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True
+    )
 
     # Initial commit
     init_file = tmp_path / "hello.py"
@@ -492,7 +515,9 @@ def test_review_pull_request_clean(tmp_path):
     init_file.write_text("def hello():\n    return 'octoflow'\n", encoding="utf-8")
     test_file = tmp_path / "test_hello.py"
     test_file.write_text("def test_hello():\n    assert True\n", encoding="utf-8")
-    subprocess.run(["git", "add", "hello.py", "test_hello.py"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "add", "hello.py", "test_hello.py"], cwd=str(tmp_path), capture_output=True
+    )
     subprocess.run(["git", "commit", "-m", "update hello"], cwd=str(tmp_path), capture_output=True)
 
     res = review_pull_request(workspace=str(tmp_path), base_ref="HEAD~1", write_summary=False)
@@ -504,11 +529,16 @@ def test_review_pull_request_clean(tmp_path):
 def test_review_pull_request_secret_leak_block(tmp_path):
     """Verify that Arm 6 detects secret leaks in diff and issues a hard block (exit code 1)."""
     import subprocess
+
     from octoflow.ci import review_pull_request
 
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True
+    )
 
     init_file = tmp_path / "app.py"
     init_file.write_text("# initial\n", encoding="utf-8")
@@ -516,7 +546,9 @@ def test_review_pull_request_secret_leak_block(tmp_path):
     subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True)
 
     # Leak secret in next commit
-    init_file.write_text("API_KEY = 'sk-" + "ant-api03-abcdefghijklmnopqrstuvwxyz12345'\n", encoding="utf-8")
+    init_file.write_text(
+        "API_KEY = 'sk-" + "ant-api03-abcdefghijklmnopqrstuvwxyz12345'\n", encoding="utf-8"
+    )
     subprocess.run(["git", "add", "app.py"], cwd=str(tmp_path), capture_output=True)
     subprocess.run(["git", "commit", "-m", "leak secret"], cwd=str(tmp_path), capture_output=True)
 
@@ -530,11 +562,16 @@ def test_review_pull_request_secret_leak_block(tmp_path):
 def test_review_pull_request_ast_syntax_error_block(tmp_path):
     """Verify that Arm 5 detects invalid Python AST syntax in diff and hard blocks."""
     import subprocess
+
     from octoflow.ci import review_pull_request
 
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True
+    )
 
     init_file = tmp_path / "service.py"
     init_file.write_text("def serve():\n    pass\n", encoding="utf-8")
@@ -555,11 +592,16 @@ def test_review_pull_request_ast_syntax_error_block(tmp_path):
 def test_review_pull_request_github_step_summary(tmp_path, monkeypatch):
     """Verify that review_pull_request writes markdown to $GITHUB_STEP_SUMMARY."""
     import subprocess
+
     from octoflow.ci import review_pull_request
 
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci@octoflow.dev"], cwd=str(tmp_path), capture_output=True
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "OctoBot"], cwd=str(tmp_path), capture_output=True
+    )
 
     init_file = tmp_path / "index.js"
     init_file.write_text("console.log('init');\n", encoding="utf-8")
@@ -591,7 +633,13 @@ def test_generate_html_audit_report(tmp_path):
     (tmp_path / "test_app.py").write_text("def test_run():\n    assert True\n", encoding="utf-8")
 
     sample_telemetry = [
-        {"timestamp": 0.5, "arm_id": 0, "role": "Architect", "event_type": "STEP", "surprise": 0.04},
+        {
+            "timestamp": 0.5,
+            "arm_id": 0,
+            "role": "Architect",
+            "event_type": "STEP",
+            "surprise": 0.04,
+        },
         {"timestamp": 1.2, "arm_id": 1, "role": "Database", "event_type": "STEP", "surprise": 0.05},
         {"timestamp": 2.1, "arm_id": 6, "role": "Security", "event_type": "STEP", "surprise": 0.02},
     ]
@@ -604,7 +652,9 @@ def test_generate_html_audit_report(tmp_path):
     )
 
     out_file = tmp_path / "mission_audit.html"
-    res_path = generate_html_audit_report(m_data, output_path=str(out_file), theme_id="bioluminescence")
+    res_path = generate_html_audit_report(
+        m_data, output_path=str(out_file), theme_id="bioluminescence"
+    )
 
     assert res_path.exists()
     assert res_path == out_file
@@ -626,7 +676,7 @@ def test_generate_html_audit_report(tmp_path):
     # 3. Interactive SVG Connectome & Scrubber
     assert '<svg class="connectome-svg"' in html
     assert 'id="timelineScrubber"' in html
-    assert 'renderConnectome' in html
+    assert "renderConnectome" in html
 
     # 4. All 8 Ganglia Arms present
     for i in range(8):
@@ -649,7 +699,8 @@ def test_export_cli_cmd(tmp_path):
 def test_provider_rate_limit_failover():
     """Verify that FailoverLLMProvider gracefully switches backends upon rate limit or 5xx errors."""
     import asyncio
-    from octoflow.provider import BaseLLMProvider, LLMResponse, MockLLMProvider, FailoverLLMProvider
+
+    from octoflow.provider import BaseLLMProvider, FailoverLLMProvider
 
     class FailingProvider(BaseLLMProvider):
         def generate(self, prompt, system_prompt="", temperature=0.2, max_tokens=2048):
@@ -662,10 +713,13 @@ def test_provider_rate_limit_failover():
     fallback = MockLLMProvider()
 
     failover_log = []
+
     def log_callback(prev, nxt, err):
         failover_log.append((prev, nxt, str(err)))
 
-    failover_prov = FailoverLLMProvider(primary=primary, fallbacks=[fallback], on_failover=log_callback)
+    failover_prov = FailoverLLMProvider(
+        primary=primary, fallbacks=[fallback], on_failover=log_callback
+    )
 
     # 1. Synchronous generation failover
     resp = failover_prov.generate("test prompt")
@@ -718,11 +772,18 @@ FAILED tests/test_math.py::test_calc - AssertionError: assert 4 == 5
 def test_diff_triage_inspector(tmp_path):
     """Verify interactive git diff triage, AST checking, and automatic staging."""
     import subprocess
+
     from octoflow.triage import get_workspace_diff_items, triage_workspace_diffs
 
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "triage@octoflow.dev"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "TriageBot"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "triage@octoflow.dev"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "TriageBot"], cwd=str(tmp_path), capture_output=True
+    )
 
     # Initial file
     init_f = tmp_path / "api.py"
@@ -749,7 +810,11 @@ def test_diff_triage_inspector(tmp_path):
 
 def test_slack_discord_webhook_formatting():
     """Verify rich payload formatting for Slack and Discord webhooks."""
-    from octoflow.notify import format_slack_payload, format_discord_payload, send_mission_notification
+    from octoflow.notify import (
+        format_discord_payload,
+        format_slack_payload,
+        send_mission_notification,
+    )
 
     sample_mission = {
         "objective": "Build Distributed Consensus Engine",
@@ -785,11 +850,10 @@ def test_slack_discord_webhook_formatting():
 def test_synaptic_context_compaction(tmp_path):
     """Verify that arm.compact_context() condenses early history while preserving recent observations."""
     from octoflow.arm import ArmAgent
-    from octoflow.config import ArmRoleConfig
-    from octoflow.tools import WorkspaceSandbox
-    from octoflow.provider import MockLLMProvider
     from octoflow.bus import InterBrachialBus
+    from octoflow.config import ArmRoleConfig
     from octoflow.memory import VerticalLobeMemory
+    from octoflow.tools import WorkspaceSandbox
 
     role = ArmRoleConfig(arm_id=2, name="backend", title="Backend API", description="API server")
     sandbox = WorkspaceSandbox(str(tmp_path))
@@ -800,12 +864,14 @@ def test_synaptic_context_compaction(tmp_path):
 
     # Populate 10 historical cycles in saccade_buffer
     for cycle in range(10):
-        arm.saccade_buffer.append({
-            "step": cycle,
-            "action": f"write_file(api/v{cycle}.py)",
-            "summary": f"Successfully created route v{cycle}",
-            "success": True,
-        })
+        arm.saccade_buffer.append(
+            {
+                "step": cycle,
+                "action": f"write_file(api/v{cycle}.py)",
+                "summary": f"Successfully created route v{cycle}",
+                "success": True,
+            }
+        )
 
     assert len(arm.saccade_buffer) == 10
 
@@ -836,7 +902,7 @@ def test_docker_sandbox_execution_and_fallback(tmp_path):
 
 def test_swarm_benchmark_harness(tmp_path):
     """Verify the 8-arm benchmark suite definitions and single task execution harness."""
-    from octoflow.bench import BENCHMARK_SUITE, run_single_benchmark, run_swarm_benchmark_suite
+    from octoflow.bench import BENCHMARK_SUITE, run_single_benchmark
 
     assert len(BENCHMARK_SUITE) == 5
     suite_ids = [t.id for t in BENCHMARK_SUITE]
@@ -862,19 +928,27 @@ def test_monorepo_topology_scanner(tmp_path):
     from octoflow.monorepo import scan_monorepo_topology
 
     # Create pnpm monorepo layout
-    (tmp_path / "pnpm-workspace.yaml").write_text("packages:\n  - 'apps/*'\n  - 'packages/*'\n", encoding="utf-8")
+    (tmp_path / "pnpm-workspace.yaml").write_text(
+        "packages:\n  - 'apps/*'\n  - 'packages/*'\n", encoding="utf-8"
+    )
 
     web_dir = tmp_path / "apps" / "web"
     web_dir.mkdir(parents=True)
-    (web_dir / "package.json").write_text('{"name": "@octo/web", "dependencies": {"react": "^19.0.0"}}', encoding="utf-8")
+    (web_dir / "package.json").write_text(
+        '{"name": "@octo/web", "dependencies": {"react": "^19.0.0"}}', encoding="utf-8"
+    )
 
     api_dir = tmp_path / "apps" / "api"
     api_dir.mkdir(parents=True)
-    (api_dir / "package.json").write_text('{"name": "@octo/api", "dependencies": {"fastify": "^4.0.0"}}', encoding="utf-8")
+    (api_dir / "package.json").write_text(
+        '{"name": "@octo/api", "dependencies": {"fastify": "^4.0.0"}}', encoding="utf-8"
+    )
 
     db_dir = tmp_path / "packages" / "database"
     db_dir.mkdir(parents=True)
-    (db_dir / "package.json").write_text('{"name": "@octo/db", "dependencies": {"prisma": "^5.0.0"}}', encoding="utf-8")
+    (db_dir / "package.json").write_text(
+        '{"name": "@octo/db", "dependencies": {"prisma": "^5.0.0"}}', encoding="utf-8"
+    )
 
     topo = scan_monorepo_topology(str(tmp_path))
 
@@ -895,12 +969,19 @@ def test_monorepo_topology_scanner(tmp_path):
 def test_shadow_ci_mode(tmp_path):
     """Verify that shadow_mode in review_pull_request returns exit_code=0 even with hard blocks."""
     import subprocess
+
     from octoflow.ci import review_pull_request
 
     # Setup git repo with a secret leak
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "shadow@octoflow.dev"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "ShadowBot"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "shadow@octoflow.dev"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "ShadowBot"], cwd=str(tmp_path), capture_output=True
+    )
 
     f = tmp_path / "config.py"
     f.write_text("# initial\n", encoding="utf-8")
@@ -913,7 +994,9 @@ def test_shadow_ci_mode(tmp_path):
     subprocess.run(["git", "commit", "-m", "leak secret"], cwd=str(tmp_path), capture_output=True)
 
     # Standard mode blocks with exit_code=1
-    blocking_res = review_pull_request(workspace=str(tmp_path), base_ref="HEAD~1", shadow_mode=False)
+    blocking_res = review_pull_request(
+        workspace=str(tmp_path), base_ref="HEAD~1", shadow_mode=False
+    )
     assert blocking_res["hard_block"] is True
     assert blocking_res["exit_code"] == 1
 
@@ -958,10 +1041,3 @@ def test_asciinema_terminal_recorder(tmp_path):
     ev2 = json.loads(lines[2])
     assert ev2[1] == "i"
     assert "octos run" in ev2[2]
-
-
-
-
-
-
-

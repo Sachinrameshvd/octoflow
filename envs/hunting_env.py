@@ -8,8 +8,10 @@ In this underwater reef environment:
 - The environment conforms to the standard OctopusBrain observation (16D) and action (5D) spaces.
 """
 
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Any
+
 import numpy as np
+
 # Optional torch import for environments; fallback to None if unavailable
 try:
     import torch  # noqa: F401
@@ -24,7 +26,7 @@ class CooperativeHuntingEnv:
 
     def __init__(
         self,
-        config: Optional[EnvConfig] = None,
+        config: EnvConfig | None = None,
         prey_speed: float = 0.6,
         evasion_radius: float = 2.5,
         capture_radius: float = 1.3,
@@ -54,25 +56,28 @@ class CooperativeHuntingEnv:
             ]
 
         # Action deltas: 0: Stay, 1: Up, 2: Down, 3: Left, 4: Right
-        self.action_deltas = np.array([
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [0.0, -1.0],
-            [-1.0, 0.0],
-            [1.0, 0.0],
-        ], dtype=np.float32)
+        self.action_deltas = np.array(
+            [
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [0.0, -1.0],
+                [-1.0, 0.0],
+                [1.0, 0.0],
+            ],
+            dtype=np.float32,
+        )
 
         self.rng = np.random.RandomState(42)
         self.current_step = 0
         self.arm_tips = np.zeros((self.n_arms, 2), dtype=np.float32)
 
         # Entities
-        self.solitary_prey: List[np.ndarray] = []
-        self.evasive_prey: List[Dict[str, Any]] = []
-        self.hazards: List[np.ndarray] = []
-        self.hazard_velocities: List[np.ndarray] = []
+        self.solitary_prey: list[np.ndarray] = []
+        self.evasive_prey: list[dict[str, Any]] = []
+        self.hazards: list[np.ndarray] = []
+        self.hazard_velocities: list[np.ndarray] = []
 
-    def seed(self, seed: Optional[int] = None) -> None:
+    def seed(self, seed: int | None = None) -> None:
         """Set random seed."""
         if seed is not None:
             self.rng = np.random.RandomState(seed)
@@ -98,12 +103,14 @@ class CooperativeHuntingEnv:
             mid = (self.arm_bases[arm_a] + self.arm_bases[arm_b]) / 2.0
             jitter = self.rng.uniform(-0.6, 0.6, size=2)
             pos = np.clip(mid + jitter, 1.0, self.grid_size - 2.0)
-            self.evasive_prey.append({
-                "pos": pos.astype(np.float32),
-                "target_arms": (arm_a, arm_b),
-                "active": True,
-                "encircle_count": 0,
-            })
+            self.evasive_prey.append(
+                {
+                    "pos": pos.astype(np.float32),
+                    "target_arms": (arm_a, arm_b),
+                    "active": True,
+                    "encircle_count": 0,
+                }
+            )
 
         # 3. Dynamic marine hazards (e.g. predators)
         self.hazards = []
@@ -114,7 +121,7 @@ class CooperativeHuntingEnv:
             self.hazards.append(pos)
             self.hazard_velocities.append(vel)
 
-    def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         """Reset the environment to start a new hunting episode."""
         if seed is not None:
             self.seed(seed)
@@ -220,13 +227,17 @@ class CooperativeHuntingEnv:
             obs[i, 14] = (right_tip[0] - tip[0]) / float(self.grid_size)
 
             # 6. Environmental sensory cue
-            obs[i, 15] = 1.0 if (len(active_evasive) > 0 and active_evasive[0]["encircle_count"] >= 2) else 0.0
+            obs[i, 15] = (
+                1.0
+                if (len(active_evasive) > 0 and active_evasive[0]["encircle_count"] >= 2)
+                else 0.0
+            )
 
         return obs
 
     def step(
-        self, actions: Union[np.ndarray, Any]
-    ) -> Tuple[np.ndarray, np.ndarray, bool, bool, Dict[str, Any]]:
+        self, actions: np.ndarray | Any
+    ) -> tuple[np.ndarray, np.ndarray, bool, bool, dict[str, Any]]:
         """Advance simulation by one time step."""
         if torch is not None and isinstance(actions, torch.Tensor):
             actions = actions.detach().cpu().numpy()
@@ -291,7 +302,8 @@ class CooperativeHuntingEnv:
 
             # Check how many arms are within capture radius
             close_arms = [
-                i for i in range(self.n_arms)
+                i
+                for i in range(self.n_arms)
                 if np.linalg.norm(self.arm_tips[i] - ep["pos"]) <= self.capture_radius
             ]
 
@@ -302,7 +314,7 @@ class CooperativeHuntingEnv:
                 coop_captures += 1
 
                 # Respawn evasive prey
-                arm_a = (self.rng.randint(0, self.n_arms))
+                arm_a = self.rng.randint(0, self.n_arms)
                 arm_b = (arm_a + 1) % self.n_arms
                 mid = (self.arm_bases[arm_a] + self.arm_bases[arm_b]) / 2.0
                 jitter = self.rng.uniform(-0.6, 0.6, size=2)

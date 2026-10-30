@@ -8,7 +8,9 @@ conductor when sensory surprise exceeds the adaptive threshold θ.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, Optional, Tuple, Union
+
+from typing import Any
+
 import numpy as np
 
 from octoflow.tools import ToolResult
@@ -23,7 +25,7 @@ class SurpriseGate:
         obs_dim: int = 16,
         initial_threshold: float = 0.50,
         adaptation_rate: float = 0.05,
-        forward_model: Optional[Any] = None,
+        forward_model: Any | None = None,
         backend: str = "numpy",
         gate_mode: str = "gated",
     ):
@@ -33,7 +35,11 @@ class SurpriseGate:
         self.adaptation_rate = adaptation_rate
         self.forward_model = forward_model
         self.backend = backend.strip().lower() if isinstance(backend, str) else "numpy"
-        self.gate_mode = "always_escalate" if str(gate_mode).strip().lower() in ("always_escalate", "ungated") else "gated"
+        self.gate_mode = (
+            "always_escalate"
+            if str(gate_mode).strip().lower() in ("always_escalate", "ungated")
+            else "gated"
+        )
 
         # Running statistics
         self.total_steps = 0
@@ -43,10 +49,10 @@ class SurpriseGate:
 
     def compute_surprise(
         self,
-        actual_obs: Union[Any, np.ndarray],
-        expected_obs: Optional[Union[Any, np.ndarray]] = None,
-        hidden_state: Optional[Any] = None,
-        action_vector: Optional[Any] = None,
+        actual_obs: Any | np.ndarray,
+        expected_obs: Any | np.ndarray | None = None,
+        hidden_state: Any | None = None,
+        action_vector: Any | None = None,
     ) -> float:
         """Compute the scalar sensory surprise ΔS_i = (1/D) * ||o_t - ô_t||²."""
         if self.backend == "torch":
@@ -65,7 +71,11 @@ class SurpriseGate:
             if torch.isnan(actual_t).any() or torch.isinf(actual_t).any():
                 return 1.0
 
-            if self.forward_model is not None and hidden_state is not None and action_vector is not None:
+            if (
+                self.forward_model is not None
+                and hidden_state is not None
+                and action_vector is not None
+            ):
                 with torch.no_grad():
                     fwd_in = torch.cat([hidden_state, action_vector], dim=-1)
                     predicted_t = self.forward_model(fwd_in).squeeze()
@@ -88,7 +98,7 @@ class SurpriseGate:
                 predicted_t = predicted_t.view(-1)[:min_dim]
 
             diff = actual_t - predicted_t
-            surprise = float(torch.mean(diff ** 2).item())
+            surprise = float(torch.mean(diff**2).item())
             return float(max(0.0, min(1.0, surprise * 4.0)))
 
         # NumPy path (default, lightweight)
@@ -102,8 +112,13 @@ class SurpriseGate:
             return 1.0
 
         # If forward model is provided, compute predicted observation ô_t from (h_t, action)
-        if self.forward_model is not None and hidden_state is not None and action_vector is not None:
+        if (
+            self.forward_model is not None
+            and hidden_state is not None
+            and action_vector is not None
+        ):
             import torch
+
             with torch.no_grad():
                 fwd_in = torch.cat([hidden_state, action_vector], dim=-1)
                 predicted_t = self.forward_model(fwd_in).squeeze()
@@ -132,7 +147,7 @@ class SurpriseGate:
 
         # Mean squared sensory prediction error across D dimensions
         diff = actual_arr - predicted_arr
-        surprise = float(np.mean(diff ** 2))
+        surprise = float(np.mean(diff**2))
 
         # Scale surprise into [0.0, 1.0] range
         surprise_norm = float(np.clip(surprise * 4.0, 0.0, 1.0))
@@ -140,10 +155,10 @@ class SurpriseGate:
 
     def evaluate(
         self,
-        actual_obs: Union[Any, np.ndarray],
+        actual_obs: Any | np.ndarray,
         tool_result: ToolResult,
-        expected_obs: Optional[Union[Any, np.ndarray]] = None,
-    ) -> Tuple[bool, float, Dict[str, float]]:
+        expected_obs: Any | np.ndarray | None = None,
+    ) -> tuple[bool, float, dict[str, float]]:
         """Evaluate whether to escalate or remain silent.
 
         Returns:
@@ -163,7 +178,7 @@ class SurpriseGate:
         if self.gate_mode == "always_escalate":
             should_escalate = True
         else:
-            should_escalate = (surprise > self.threshold)
+            should_escalate = surprise > self.threshold
 
         if should_escalate:
             self.escalation_count += 1
@@ -190,7 +205,7 @@ class SurpriseGate:
         return should_escalate, surprise, telemetry
 
     @staticmethod
-    def compute_generation_parameters(surprise: float) -> Tuple[float, float]:
+    def compute_generation_parameters(surprise: float) -> tuple[float, float]:
         """Modulate LLM generation temperature & top_p based on biophysical surprise.
 
         Low surprise (< 0.3) -> deterministic, grounded generation (temperature ~0.15 - 0.25).

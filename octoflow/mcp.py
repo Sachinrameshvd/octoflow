@@ -11,31 +11,38 @@ import asyncio
 import json
 import os
 import sys
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
-from octoflow.config import OctoFlowConfig, SwarmMorphology
 from octoflow.conductor import SupraesophagealConductor
+from octoflow.config import OctoFlowConfig, SwarmMorphology
 from octoflow.tools import ToolResult
 
 
 class MCPToolSchema(BaseModel):
     """Specification of an MCP tool following the Anthropic MCP specification."""
+
     name: str
     description: str
-    inputSchema: Dict[str, Any] = Field(default_factory=lambda: {"type": "object", "properties": {}})
+    inputSchema: dict[str, Any] = Field(
+        default_factory=lambda: {"type": "object", "properties": {}}
+    )
 
 
 class MCPToolCallRequest(BaseModel):
     """Request to invoke an MCP tool."""
+
     name: str
-    arguments: Dict[str, Any] = Field(default_factory=dict)
+    arguments: dict[str, Any] = Field(default_factory=dict)
 
 
 class MCPToolCallResult(BaseModel):
     """Standardized result of an MCP tool invocation."""
-    content: List[Dict[str, Any]]
+
+    content: list[dict[str, Any]]
     isError: bool = False
 
 
@@ -43,27 +50,31 @@ class MCPRegistry:
     """Central registry of MCP tools accessible to OctoFlow arms."""
 
     def __init__(self):
-        self._tools: Dict[str, MCPToolSchema] = {}
-        self._handlers: Dict[str, Callable[[Dict[str, Any]], Coroutine[Any, Any, MCPToolCallResult]]] = {}
+        self._tools: dict[str, MCPToolSchema] = {}
+        self._handlers: dict[
+            str, Callable[[dict[str, Any]], Coroutine[Any, Any, MCPToolCallResult]]
+        ] = {}
 
     def register_tool(
         self,
         schema: MCPToolSchema,
-        handler: Callable[[Dict[str, Any]], Coroutine[Any, Any, MCPToolCallResult]],
+        handler: Callable[[dict[str, Any]], Coroutine[Any, Any, MCPToolCallResult]],
     ) -> None:
         """Register a new MCP tool with its async invocation handler."""
         self._tools[schema.name] = schema
         self._handlers[schema.name] = handler
 
-    def list_tools(self) -> List[MCPToolSchema]:
+    def list_tools(self) -> list[MCPToolSchema]:
         """Return all registered MCP tools."""
         return list(self._tools.values())
 
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> MCPToolCallResult:
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> MCPToolCallResult:
         """Dispatch tool invocation to the registered handler."""
         if name not in self._handlers:
             return MCPToolCallResult(
-                content=[{"type": "text", "text": f"Error: Tool '{name}' not found in MCP registry."}],
+                content=[
+                    {"type": "text", "text": f"Error: Tool '{name}' not found in MCP registry."}
+                ],
                 isError=True,
             )
         try:
@@ -86,7 +97,7 @@ class OctoFlowMCPServer:
     def __init__(self, workspace_dir: str = "."):
         self.workspace_dir = str(Path(workspace_dir).expanduser().resolve())
         self.registry = MCPRegistry()
-        self.conductor: Optional[SupraesophagealConductor] = None
+        self.conductor: SupraesophagealConductor | None = None
         self._setup_core_tools()
 
     def _setup_core_tools(self) -> None:
@@ -158,18 +169,22 @@ class OctoFlowMCPServer:
             handler=self._handle_recall_memory,
         )
 
-    def _get_conductor(self, morphology: str = "software_dev", dry_run: bool = False) -> SupraesophagealConductor:
+    def _get_conductor(
+        self, morphology: str = "software_dev", dry_run: bool = False
+    ) -> SupraesophagealConductor:
         is_dry = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
         config = OctoFlowConfig(
             workspace_dir=self.workspace_dir,
             morphology=SwarmMorphology(morphology),
-            model_provider="mock" if is_dry else ("anthropic" if os.getenv("ANTHROPIC_API_KEY") else "mock"),
+            model_provider="mock"
+            if is_dry
+            else ("anthropic" if os.getenv("ANTHROPIC_API_KEY") else "mock"),
             dry_run=is_dry,
         )
         self.conductor = SupraesophagealConductor(config=config)
         return self.conductor
 
-    async def _handle_run_swarm(self, args: Dict[str, Any]) -> MCPToolCallResult:
+    async def _handle_run_swarm(self, args: dict[str, Any]) -> MCPToolCallResult:
         objective = args["objective"]
         morphology = args.get("morphology", "software_dev")
         max_cycles = int(args.get("max_cycles", 10))
@@ -178,11 +193,21 @@ class OctoFlowMCPServer:
         conductor = self._get_conductor(morphology, dry_run=dry_run)
         result = await conductor.arun_swarm(objective=objective, max_cycles=max_cycles)
 
-        mode_val = result["mode"] if "mode" in result else (RunMode.DRY_RUN.value if dry_run else RunMode.LIVE.value)
-        outcome_val = result["outcome"] if "outcome" in result else ("complete" if result.get("success") else "failed")
+        mode_val = (
+            result["mode"]
+            if "mode" in result
+            else (RunMode.DRY_RUN.value if dry_run else RunMode.LIVE.value)
+        )
+        outcome_val = (
+            result["outcome"]
+            if "outcome" in result
+            else ("complete" if result.get("success") else "failed")
+        )
         files_written = result.get("files_written", [])
 
-        status_glyph = "✔" if outcome_val == "complete" else ("◈" if outcome_val == "partial" else "✖")
+        status_glyph = (
+            "✔" if outcome_val == "complete" else ("◈" if outcome_val == "partial" else "✖")
+        )
         text = (
             f"◈ OctoFlow Cephalopod Swarm Run Completed:\n"
             f"• Objective: {result.get('objective', objective)}\n"
@@ -212,7 +237,7 @@ class OctoFlowMCPServer:
             isError=(outcome_val == "failed"),
         )
 
-    async def _handle_inspect_arms(self, args: Dict[str, Any]) -> MCPToolCallResult:
+    async def _handle_inspect_arms(self, args: dict[str, Any]) -> MCPToolCallResult:
         if self.conductor is None:
             self._get_conductor()
 
@@ -226,12 +251,14 @@ class OctoFlowMCPServer:
         text = "◈ Cephalopod Arm Ganglia Status:\n" + "\n".join(arm_reports)
         return MCPToolCallResult(content=[{"type": "text", "text": text}])
 
-    async def _handle_recall_memory(self, args: Dict[str, Any]) -> MCPToolCallResult:
+    async def _handle_recall_memory(self, args: dict[str, Any]) -> MCPToolCallResult:
         if self.conductor is None:
             self._get_conductor()
 
         error_text = args["error_text"]
-        dummy_res = ToolResult(tool_name="shell", target="", success=False, returncode=1, stderr=error_text)
+        dummy_res = ToolResult(
+            tool_name="shell", target="", success=False, returncode=1, stderr=error_text
+        )
         obs = self.conductor.arms[0].encoder.encode(dummy_res, as_tensor=False)
         match = self.conductor.memory.recall(obs)
 
@@ -243,7 +270,7 @@ class OctoFlowMCPServer:
 
         return MCPToolCallResult(content=[{"type": "text", "text": text}])
 
-    async def handle_json_rpc_message(self, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def handle_json_rpc_message(self, message: dict[str, Any]) -> dict[str, Any] | None:
         """Process a single MCP JSON-RPC 2.0 message."""
         msg_id = message.get("id")
         method = message.get("method")

@@ -9,6 +9,7 @@ Verifies:
 """
 
 import math
+
 import numpy as np
 import pytest
 
@@ -30,7 +31,7 @@ def test_gate_zero_error_hand_calculated():
 
 def test_gate_known_error_hand_calculated():
     """Verify known difference matches exact formula.
-    
+
     Formula: MSE = (1/D) * sum((actual - expected)^2)
     For D=4, diff = [0.2, 0.2, 0.2, 0.2]
     MSE = (0.04 * 4) / 4 = 0.04
@@ -65,7 +66,7 @@ def test_gate_nan_inf_handling():
     """Verify NaN/Inf in observations is handled safely without returning NaN or silent false-negatives."""
     gate = SurpriseGate(arm_id=2, obs_dim=4)
     actual_nan = np.array([np.nan, 0.0, 0.0, 0.0], dtype=np.float32)
-    
+
     surprise = gate.compute_surprise(actual_nan)
     # A corrupted NaN input must NOT produce a NaN surprise that slips past thresholds
     assert not math.isnan(surprise), "Surprise calculation must never return NaN"
@@ -89,7 +90,9 @@ def test_gate_threshold_boundary_and_adaptation():
     assert gate.threshold <= init_thresh, "Threshold should decay slightly on silent steps"
 
     # Failing tool result must escalate
-    res_fail = ToolResult(tool_name="cmd", target="", success=False, returncode=1, stderr="Syntax error")
+    res_fail = ToolResult(
+        tool_name="cmd", target="", success=False, returncode=1, stderr="Syntax error"
+    )
     should_esc_fail, s_fail, tele_fail = gate.evaluate(actual_clean, res_fail)
     assert should_esc_fail, "Failing tool result must escalate"
     assert gate.escalation_count == 1

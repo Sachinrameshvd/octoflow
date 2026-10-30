@@ -7,24 +7,23 @@ CRITICAL PROTOCOL:
 Logs report rate and coalition statistics BEFORE reporting any task-performance numbers.
 """
 
-import sys
-import os
 import argparse
+import os
+import sys
 from pathlib import Path
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from typing import Dict, List, Tuple, Optional
 import numpy as np
 import torch
 import torch.optim as optim
-
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
-from octopus_brain.losses import OctopusLoss
 from envs.reach_and_avoid import ReachAndAvoidEnv
-from experiments.baselines import DenseCentralizedBaseline, AlwaysLocalBaseline
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
+from octopus_brain.losses import OctopusLoss
+
+from experiments.baselines import DenseCentralizedBaseline
 
 
 def run_episode(
@@ -34,7 +33,7 @@ def run_episode(
     kill_step: int = 15,
     seed: int = 42,
     device: torch.device = torch.device("cpu"),
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Execute one rollout with random module knockout mid-episode."""
     obs_np, info = env.reset(seed=seed)
     n_modules = env.n_arms
@@ -138,7 +137,9 @@ def train_quick_policy(
             log_probs_list.append(out["action_log_probs"])
             entropies_list.append(out["action_entropies"])
             values_list.append(out["values"])
-            rewards_list.append(torch.tensor(rewards, dtype=torch.float32, device=device).unsqueeze(0))
+            rewards_list.append(
+                torch.tensor(rewards, dtype=torch.float32, device=device).unsqueeze(0)
+            )
             report_probs_list.append(out["report_probs"])
             pred_obs_list.append(out["pred_next_obs"])
             actual_obs_list.append(next_obs)
@@ -183,12 +184,14 @@ def train_quick_policy(
 def run_fault_tolerance_experiment(
     num_trials: int = 15,
     train_steps: int = 40,
-    checkpoint_path: Optional[str] = "checkpoints/best_octopus_brain.pt",
+    checkpoint_path: str | None = "checkpoints/best_octopus_brain.pt",
 ) -> None:
     """Run fault tolerance evaluation across different module knockout counts."""
     print("=" * 80)
     print("OCTOPUS-BRAIN: FAULT TOLERANCE & MODULE KNOCKOUT EXPERIMENT")
-    print(f"Checkpoint: {checkpoint_path if (checkpoint_path and os.path.exists(checkpoint_path)) else 'Quick Calibration'}")
+    print(
+        f"Checkpoint: {checkpoint_path if (checkpoint_path and os.path.exists(checkpoint_path)) else 'Quick Calibration'}"
+    )
     print("=" * 80)
 
     device = torch.device("cpu")
@@ -236,7 +239,9 @@ def run_fault_tolerance_experiment(
     pre_diag = run_episode(env, octopus_model, num_killed=0, seed=100, device=device)
     report_rate_pct = pre_diag["mean_report_rate"] * 100.0
     print(f"[*] OctopusBrain Initial Report Rate: {report_rate_pct:.2f}%")
-    print(f"[*] OctopusBrain Mean Coalition Size: {pre_diag['mean_coalition_size']:.2f} active bindings/step")
+    print(
+        f"[*] OctopusBrain Mean Coalition Size: {pre_diag['mean_coalition_size']:.2f} active bindings/step"
+    )
 
     if report_rate_pct <= 0.01:
         print("[WARNING] DEGENERATE GATE DETECTED: Report rate is 0.0% (Never triggering)!")
@@ -257,7 +262,9 @@ def run_fault_tolerance_experiment(
 
     # 3. Print Results Table
     print("\n" + "=" * 80)
-    print(f"{'Modules Killed':<15}{'OctopusBrain Reward':<22}{'Dense Central Reward':<22}{'Octopus Retained %':<20}")
+    print(
+        f"{'Modules Killed':<15}{'OctopusBrain Reward':<22}{'Dense Central Reward':<22}{'Octopus Retained %':<20}"
+    )
     print("=" * 80)
 
     base_oct_rew = np.mean([r["reward"] for r in results_octopus[0]])
@@ -271,7 +278,9 @@ def run_fault_tolerance_experiment(
         oct_retention = (oct_mean / max(base_oct_rew, 1e-4)) * 100.0 if base_oct_rew > 0 else 100.0
         dns_retention = (dns_mean / max(base_dns_rew, 1e-4)) * 100.0 if base_dns_rew > 0 else 100.0
 
-        print(f"{k:<15}{oct_mean:>8.2f} (std {np.std(oct_rews):.2f})    {dns_mean:>8.2f} (std {np.std(dns_rews):.2f})    {oct_retention:>6.1f}% vs {dns_retention:>5.1f}%")
+        print(
+            f"{k:<15}{oct_mean:>8.2f} (std {np.std(oct_rews):.2f})    {dns_mean:>8.2f} (std {np.std(dns_rews):.2f})    {oct_retention:>6.1f}% vs {dns_retention:>5.1f}%"
+        )
 
     print("=" * 80)
     print("Fault Tolerance summary complete.\n")
@@ -279,9 +288,21 @@ def run_fault_tolerance_experiment(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run OctopusBrain Fault Tolerance Experiment")
-    parser.add_argument("--trials", type=int, default=15, help="Number of trials per knockout condition")
-    parser.add_argument("--train-steps", type=int, default=30, help="Number of baseline calibration training episodes")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/best_octopus_brain.pt", help="Path to trained OctopusBrain checkpoint")
+    parser.add_argument(
+        "--trials", type=int, default=15, help="Number of trials per knockout condition"
+    )
+    parser.add_argument(
+        "--train-steps",
+        type=int,
+        default=30,
+        help="Number of baseline calibration training episodes",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="checkpoints/best_octopus_brain.pt",
+        help="Path to trained OctopusBrain checkpoint",
+    )
     args = parser.parse_args()
 
     run_fault_tolerance_experiment(

@@ -110,6 +110,7 @@ OctopusBrain is fully exportable to a single, standalone 1.9 MB ONNX model (`che
 
 ```python
 import onnxruntime as ort
+
 session = ort.InferenceSession("checkpoints/octopus_brain.onnx")
 # Runs on any CPU, C++, ROS2 robot, or in WebAssembly inside the browser!
 ```

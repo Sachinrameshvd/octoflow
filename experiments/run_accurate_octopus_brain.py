@@ -8,11 +8,11 @@ Demonstrates the 4 advanced biological systems:
 """
 
 import numpy as np
-from octopus_brain.hodgkin_huxley import CephalopodHodgkinHuxley
-from octopus_brain.vertical_lobe_ltp import VerticalLobeAssociativeMemory
-from octopus_brain.bend_propagation import StereotypicBendWaveController
-from octopus_brain.neuromodulation import CephalopodNeuromodulation
 from envs.soft_body_tentacle import SoftBodyTentacleEnv
+from octopus_brain.bend_propagation import StereotypicBendWaveController
+from octopus_brain.hodgkin_huxley import CephalopodHodgkinHuxley
+from octopus_brain.neuromodulation import CephalopodNeuromodulation
+from octopus_brain.vertical_lobe_ltp import VerticalLobeAssociativeMemory
 
 
 def main():
@@ -60,17 +60,23 @@ def main():
     stats = vl.get_synaptic_stats()
 
     print(f"  ✓ Pre-training Attack Drive:  {initial_attack_drive:.3f}")
-    print(f"  ✓ Post-training Attack Drive: {trained_attack_drive:.3f} (+{((trained_attack_drive - initial_attack_drive)/max(1e-4, initial_attack_drive))*100:.1f}% Potentiation)")
+    print(
+        f"  ✓ Post-training Attack Drive: {trained_attack_drive:.3f} (+{((trained_attack_drive - initial_attack_drive) / max(1e-4, initial_attack_drive)) * 100:.1f}% Potentiation)"
+    )
     print(f"  ✓ Mean Synaptic Weight:       {stats['mean_synaptic_strength']:.3f}")
     print(f"  ✓ Total LTP Inductions:       {stats['total_ltp_inductions']}")
 
     # 3. Stereotypic Bend-Propagation Traveling Waves
     print("\n[Stage 3] Launching Stereotypic Travelling Bend Waves Along Soft Tentacles...")
-    wave_controller = StereotypicBendWaveController(n_segments=5, conduction_velocity_ms=2.2, arm_nominal_length_m=0.5)
+    wave_controller = StereotypicBendWaveController(
+        n_segments=5, conduction_velocity_ms=2.2, arm_nominal_length_m=0.5
+    )
     env = SoftBodyTentacleEnv(n_arms=8, max_steps=30)
 
     # Trigger strike on Arm #2 toward target
-    wave_controller.trigger_reach(arm_idx=2, target_pitch_theta=0.8, target_yaw_phi=-0.3, amplitude=1.0)
+    wave_controller.trigger_reach(
+        arm_idx=2, target_pitch_theta=0.8, target_yaw_phi=-0.3, amplitude=1.0
+    )
 
     actions_history = []
     for step in range(15):
@@ -78,9 +84,13 @@ def main():
         env.step(wave_actions)
         actions_history.append(wave_actions[2].copy())
 
-    print(f"  ✓ Traveling Wave Speed:       2.2 m/s (Biological invariant)")
-    print(f"  ✓ Arm 2 Peak Muscular Bend:   pitch={max(a[0] for a in actions_history):.2f}, yaw={min(a[1] for a in actions_history):.2f}")
-    print(f"  ✓ Terminal Suction Trigger:   {'Activated' if any(a[3] > 0 for a in actions_history) else 'Pending'}")
+    print("  ✓ Traveling Wave Speed:       2.2 m/s (Biological invariant)")
+    print(
+        f"  ✓ Arm 2 Peak Muscular Bend:   pitch={max(a[0] for a in actions_history):.2f}, yaw={min(a[1] for a in actions_history):.2f}"
+    )
+    print(
+        f"  ✓ Terminal Suction Trigger:   {'Activated' if any(a[3] > 0 for a in actions_history) else 'Pending'}"
+    )
 
     # 4. Cephalopod Neuromodulation Profile
     print("\n[Stage 4] Testing Cephalopod Neuromodulatory Dynamics...")

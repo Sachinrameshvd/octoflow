@@ -18,7 +18,7 @@ Overall coverage is reported for visibility but not gated.
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any
 
 MODULE_FLOOR_PCT = 80.0
 
@@ -35,7 +35,7 @@ REQUIRED_MODULES = [
 ]
 
 
-def load_coverage_data(json_path: Path) -> Dict[str, Any]:
+def load_coverage_data(json_path: Path) -> dict[str, Any]:
     if not json_path.exists():
         print(f"Error: Coverage JSON file not found at {json_path}")
         print("Run: pytest --cov=octoflow --cov-report=json:coverage.json")
@@ -47,7 +47,9 @@ def load_coverage_data(json_path: Path) -> Dict[str, Any]:
         sys.exit(1)
 
 
-def find_file_entry(files_dict: Dict[str, Any], target_rel: str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+def find_file_entry(
+    files_dict: dict[str, Any], target_rel: str
+) -> tuple[Optional[str], Optional[dict[str, Any]]]:
     norm_target = target_rel.replace("\\", "/").lstrip("./")
     for file_key, data in files_dict.items():
         norm_key = file_key.replace("\\", "/").lstrip("./")
@@ -71,7 +73,7 @@ def main() -> None:
     print(f"{'Module':<32} {'Coverage':<12} {'Floor':<10} {'Status':<10}")
     print("-" * 72)
 
-    failed_modules: List[Tuple[str, float]] = []
+    failed_modules: list[tuple[str, float]] = []
 
     for mod in REQUIRED_MODULES:
         key, entry = find_file_entry(files_data, mod)
@@ -100,7 +102,9 @@ def main() -> None:
             print(f"  • {mod}: {pct:.1f}% (required: {MODULE_FLOOR_PCT:.1f}%)")
         sys.exit(1)
 
-    print(f"\n[PASSED] All {len(REQUIRED_MODULES)} core modules met or exceeded the {MODULE_FLOOR_PCT}% floor.")
+    print(
+        f"\n[PASSED] All {len(REQUIRED_MODULES)} core modules met or exceeded the {MODULE_FLOOR_PCT}% floor."
+    )
     sys.exit(0)
 
 

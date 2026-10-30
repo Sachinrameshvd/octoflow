@@ -5,13 +5,10 @@ with zero heavyweight dependencies, ready to be embedded into any repository or
 Docker container.
 """
 
-import os
-import sys
 from pathlib import Path
-from typing import Optional
+
 from rich.console import Console
 from rich.panel import Panel
-
 
 STANDALONE_PII_GUARD = '''"""Standalone Zero-Trust PII & Secret Redaction Pipeline."""
 import re
@@ -257,7 +254,7 @@ Add to your `claude_desktop_config.json` or `.mcp.json`:
 """
 
 
-def eject_harness(output_dir: str = "./octo-harness", console: Optional[Console] = None) -> Path:
+def eject_harness(output_dir: str = "./octo-harness", console: Console | None = None) -> Path:
     """Generate and write the complete standalone harness files."""
     con = console or Console()
     out = Path(output_dir).resolve()
@@ -279,14 +276,16 @@ def eject_harness(output_dir: str = "./octo-harness", console: Optional[Console]
         if filename.endswith(".py"):
             file_path.chmod(0o755)
 
-    con.print(Panel(
-        f"[bold green]✓ Standalone Cephalopod Harness successfully ejected![/bold green]\n\n"
-        f"  [dim]Directory:[/dim] [bold cyan]{out}[/bold cyan]\n"
-        f"  [dim]Files Generated:[/dim] {', '.join(files.keys())}\n\n"
-        f"Run [bold white]python {out / 'run.py'} 'your goal'[/bold white] to test immediately.",
-        title="[bold green]OctoFlow Eject Complete[/bold green]",
-        border_style="green",
-        padding=(1, 2)
-    ))
+    con.print(
+        Panel(
+            f"[bold green]✓ Standalone Cephalopod Harness successfully ejected![/bold green]\n\n"
+            f"  [dim]Directory:[/dim] [bold cyan]{out}[/bold cyan]\n"
+            f"  [dim]Files Generated:[/dim] {', '.join(files.keys())}\n\n"
+            f"Run [bold white]python {out / 'run.py'} 'your goal'[/bold white] to test immediately.",
+            title="[bold green]OctoFlow Eject Complete[/bold green]",
+            border_style="green",
+            padding=(1, 2),
+        )
+    )
 
     return out

@@ -7,11 +7,10 @@ Rich terminal consoles and 3D WebGL visualizer synchronization.
 """
 
 import json
-from dataclasses import dataclass, asdict
-from pathlib import Path
 import sys
 import time
-from typing import Dict, Optional, Tuple, List, Set
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
 from rich.console import Console
 from rich.live import Live
@@ -21,6 +20,7 @@ from rich.text import Text
 @dataclass
 class OctoTheme:
     """Color palette and visual tokens for terminal cockpit and visualizer."""
+
     id: str
     name: str
     description: str
@@ -47,7 +47,7 @@ class OctoTheme:
     rich_border: str
 
 
-THEMES: Dict[str, OctoTheme] = {
+THEMES: dict[str, OctoTheme] = {
     "abyssal": OctoTheme(
         id="abyssal",
         name="Abyssal Cyber",
@@ -247,7 +247,7 @@ _CONFIG_DIR = Path.home() / ".octoflow"
 _THEME_FILE = _CONFIG_DIR / "theme.json"
 
 
-def get_theme(name_or_alias: Optional[str] = None) -> OctoTheme:
+def get_theme(name_or_alias: str | None = None) -> OctoTheme:
     """Retrieve an OctoTheme by id or alias, falling back to saved preference or 'abyssal'."""
     if not name_or_alias:
         return load_saved_theme()
@@ -298,45 +298,117 @@ def save_theme_preference(theme_id: str) -> bool:
         return False
 
 
-def list_themes() -> Dict[str, OctoTheme]:
+def list_themes() -> dict[str, OctoTheme]:
     """Return all available registered themes."""
     return THEMES
 
 
-def get_theme_banner_colors(theme: OctoTheme) -> Tuple[List[str], str]:
+def get_theme_banner_colors(theme: OctoTheme) -> tuple[list[str], str]:
     """Return the tailored 8-letter color palette and 3D shadow color for a given theme."""
-    THEME_PALETTES: Dict[str, Tuple[List[str], str]] = {
+    THEME_PALETTES: dict[str, tuple[list[str], str]] = {
         "abyssal": (
-            ['#00f0ff', '#22d3ee', '#38bdf8', '#60a5fa', '#818cf8', '#a855f7', '#c084fc', '#ff007f'],
-            '#78350f',
+            [
+                "#00f0ff",
+                "#22d3ee",
+                "#38bdf8",
+                "#60a5fa",
+                "#818cf8",
+                "#a855f7",
+                "#c084fc",
+                "#ff007f",
+            ],
+            "#78350f",
         ),
         "catppuccin": (
-            ['#cba6f7', '#b4befe', '#89b4fa', '#74c7ec', '#89dceb', '#a6e3a1', '#f9e2af', '#fab387'],
-            '#78350f',
+            [
+                "#cba6f7",
+                "#b4befe",
+                "#89b4fa",
+                "#74c7ec",
+                "#89dceb",
+                "#a6e3a1",
+                "#f9e2af",
+                "#fab387",
+            ],
+            "#78350f",
         ),
         "tokyo-night": (
-            ['#7dcfff', '#7aa2f7', '#2ac3de', '#bb9af7', '#9d7cd8', '#f7768e', '#ff9e64', '#e0af68'],
-            '#78350f',
+            [
+                "#7dcfff",
+                "#7aa2f7",
+                "#2ac3de",
+                "#bb9af7",
+                "#9d7cd8",
+                "#f7768e",
+                "#ff9e64",
+                "#e0af68",
+            ],
+            "#78350f",
         ),
         "dracula": (
-            ['#bd93f9', '#8be9fd', '#50fa7b', '#f1fa8c', '#ffb86c', '#ff5555', '#ff79c6', '#bd93f9'],
-            '#78350f',
+            [
+                "#bd93f9",
+                "#8be9fd",
+                "#50fa7b",
+                "#f1fa8c",
+                "#ffb86c",
+                "#ff5555",
+                "#ff79c6",
+                "#bd93f9",
+            ],
+            "#78350f",
         ),
         "cyberpunk": (
-            ['#ffe600', '#fbbf24', '#ff5500', '#ff0055', '#ff007f', '#c026d3', '#8b5cf6', '#00ffff'],
-            '#78350f',
+            [
+                "#ffe600",
+                "#fbbf24",
+                "#ff5500",
+                "#ff0055",
+                "#ff007f",
+                "#c026d3",
+                "#8b5cf6",
+                "#00ffff",
+            ],
+            "#78350f",
         ),
         "nord": (
-            ['#88c0d0', '#81a1c1', '#5e81ac', '#8fbcbb', '#a3be8c', '#ebcb8b', '#d08770', '#b48ead'],
-            '#78350f',
+            [
+                "#88c0d0",
+                "#81a1c1",
+                "#5e81ac",
+                "#8fbcbb",
+                "#a3be8c",
+                "#ebcb8b",
+                "#d08770",
+                "#b48ead",
+            ],
+            "#78350f",
         ),
         "gruvbox": (
-            ['#fb4934', '#fe8019', '#fabd2f', '#b8bb26', '#8ec07c', '#83a598', '#d3869b', '#fabd2f'],
-            '#78350f',
+            [
+                "#fb4934",
+                "#fe8019",
+                "#fabd2f",
+                "#b8bb26",
+                "#8ec07c",
+                "#83a598",
+                "#d3869b",
+                "#fabd2f",
+            ],
+            "#78350f",
         ),
         "minimalist": (
-            ['#ffffff', '#f4f4f5', '#e4e4e7', '#d4d4d8', '#a1a1aa', '#50fa7b', '#34d399', '#ffffff'],
-            '#78350f',
+            [
+                "#ffffff",
+                "#f4f4f5",
+                "#e4e4e7",
+                "#d4d4d8",
+                "#a1a1aa",
+                "#50fa7b",
+                "#34d399",
+                "#ffffff",
+            ],
+            "#78350f",
         ),
     }
 
@@ -358,45 +430,47 @@ def get_theme_banner_colors(theme: OctoTheme) -> Tuple[List[str], str]:
 
 
 OCTOFLOW_3D_LETTERS = {
-    'O': [' ▄██▄  ', '██  ██▌', '██  ██▌', ' ▀██▀ ▌', '  ▀▀▀  '],
-    'C': [' ▄███  ', '██    ▌', '██    ▌', ' ▀███ ▌', '  ▀▀▀  '],
-    'T': ['█████  ', '  █   ▌', '  █   ▌', '  █   ▌', '  ▀    '],
-    'O2':[' ▄██▄  ', '██  ██▌', '██  ██▌', ' ▀██▀ ▌', '  ▀▀▀  '],
-    'F': ['█████  ', '██▀▀  ▌', '██    ▌', '██    ▌', '▀      '],
-    'L': ['██     ', '██    ▌', '██    ▌', '█████ ▌', ' ▀▀▀▀  '],
-    'O3':[' ▄██▄  ', '██  ██▌', '██  ██▌', ' ▀██▀ ▌', '  ▀▀▀  '],
-    'W': ['█   █  ', '█ █ █ ▌', '██ ██ ▌', ' █ █  ▌', '  ▀ ▀  '],
+    "O": [" ▄██▄  ", "██  ██▌", "██  ██▌", " ▀██▀ ▌", "  ▀▀▀  "],
+    "C": [" ▄███  ", "██    ▌", "██    ▌", " ▀███ ▌", "  ▀▀▀  "],
+    "T": ["█████  ", "  █   ▌", "  █   ▌", "  █   ▌", "  ▀    "],
+    "O2": [" ▄██▄  ", "██  ██▌", "██  ██▌", " ▀██▀ ▌", "  ▀▀▀  "],
+    "F": ["█████  ", "██▀▀  ▌", "██    ▌", "██    ▌", "▀      "],
+    "L": ["██     ", "██    ▌", "██    ▌", "█████ ▌", " ▀▀▀▀  "],
+    "O3": [" ▄██▄  ", "██  ██▌", "██  ██▌", " ▀██▀ ▌", "  ▀▀▀  "],
+    "W": ["█   █  ", "█ █ █ ▌", "██ ██ ▌", " █ █  ▌", "  ▀ ▀  "],
 }
-WORD_LETTERS = ['O', 'C', 'T', 'O2', 'F', 'L', 'O3', 'W']
+WORD_LETTERS = ["O", "C", "T", "O2", "F", "L", "O3", "W"]
 
 
 def render_octoflow_3d_banner(
     theme: OctoTheme,
-    active_indices: Optional[Set[int]] = None,
+    active_indices: set[int] | None = None,
     spark_idx: int = -1,
-    subtitle: Optional[str] = None,
+    subtitle: str | None = None,
 ) -> Text:
     """Render the volumetric 3D extruded OCTOFLOW banner styled dynamically in the theme's palette."""
     banner_text = Text()
     colors, _ = get_theme_banner_colors(theme)
-    banner_text.append("  ◈ OCTOFLOW // CEPHALOPOD NEURAL SWARM CONSOLE\n\n", style=f"dim {colors[0]}")
+    banner_text.append(
+        "  ◈ OCTOFLOW // CEPHALOPOD NEURAL SWARM CONSOLE\n\n", style=f"dim {colors[0]}"
+    )
 
     for y in range(5):
         banner_text.append("  ")
         for i, ch in enumerate(WORD_LETTERS):
             s = OCTOFLOW_3D_LETTERS[ch][y]
-            is_spark = (i == spark_idx)
+            is_spark = i == spark_idx
             is_active = (active_indices is None) or (i in active_indices)
 
             for char in s:
-                if char in ['█', '▄', '▀'] and y < 4:
+                if char in ["█", "▄", "▀"] and y < 4:
                     if is_spark:
                         banner_text.append(char, style="bold white")
                     elif is_active:
                         banner_text.append(char, style=f"bold {colors[i]}")
                     else:
                         banner_text.append(char, style=f"dim {colors[i]}")
-                elif char in ['▌', '▀']:
+                elif char in ["▌", "▀"]:
                     if is_spark:
                         banner_text.append(char, style="white")
                     elif is_active:
@@ -411,13 +485,16 @@ def render_octoflow_3d_banner(
     if subtitle is not None:
         banner_text.append(Text.from_markup(f"\n  {subtitle}\n"))
     else:
-        banner_text.append(f"\n  ● v1.0.0 • 8-64 Ganglia • Active Inference • Theme: {theme.name}\n", style="dim white")
+        banner_text.append(
+            f"\n  ● v1.0.0 • 8-64 Ganglia • Active Inference • Theme: {theme.name}\n",
+            style="dim white",
+        )
     return banner_text
 
 
-def get_banner_animation_frames(theme: OctoTheme) -> List[Text]:
+def get_banner_animation_frames(theme: OctoTheme) -> list[Text]:
     """Generate signature theme-specific animation frames for the 3D banner."""
-    frames: List[Text] = []
+    frames: list[Text] = []
     tid = theme.id
 
     if tid == "cyberpunk":
@@ -427,7 +504,11 @@ def get_banner_animation_frames(theme: OctoTheme) -> List[Text]:
         frames.append(render_octoflow_3d_banner(theme, active_indices=set()))
         frames.append(render_octoflow_3d_banner(theme, active_indices={0, 2, 4, 6}, spark_idx=4))
         for step in range(8):
-            frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(step + 1)), spark_idx=step))
+            frames.append(
+                render_octoflow_3d_banner(
+                    theme, active_indices=set(range(step + 1)), spark_idx=step
+                )
+            )
         frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(8)), spark_idx=-1))
 
     elif tid == "dracula":
@@ -435,7 +516,9 @@ def get_banner_animation_frames(theme: OctoTheme) -> List[Text]:
         frames.append(render_octoflow_3d_banner(theme, active_indices=set()))
         frames.append(render_octoflow_3d_banner(theme, active_indices={0, 7}, spark_idx=0))
         frames.append(render_octoflow_3d_banner(theme, active_indices={0, 1, 6, 7}, spark_idx=7))
-        frames.append(render_octoflow_3d_banner(theme, active_indices={0, 1, 2, 5, 6, 7}, spark_idx=2))
+        frames.append(
+            render_octoflow_3d_banner(theme, active_indices={0, 1, 2, 5, 6, 7}, spark_idx=2)
+        )
         frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(8)), spark_idx=3))
         frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(8)), spark_idx=-1))
 
@@ -454,7 +537,11 @@ def get_banner_animation_frames(theme: OctoTheme) -> List[Text]:
         # Abyssal / Catppuccin / Nord / Gruvbox / Minimalist:
         # Bioluminescent wave pulse flowing smoothly left-to-right
         for step in range(8):
-            frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(step + 1)), spark_idx=step))
+            frames.append(
+                render_octoflow_3d_banner(
+                    theme, active_indices=set(range(step + 1)), spark_idx=step
+                )
+            )
         # Radiant glow lock-in
         frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(8)), spark_idx=4))
         frames.append(render_octoflow_3d_banner(theme, active_indices=set(range(8)), spark_idx=-1))
@@ -465,7 +552,7 @@ def get_banner_animation_frames(theme: OctoTheme) -> List[Text]:
 def get_banner_loop_frame(
     theme: OctoTheme,
     tick: int,
-    subtitle: Optional[str] = None,
+    subtitle: str | None = None,
 ) -> Text:
     """Generate fluid continuous looping animation frame for the 3D banner."""
     tid = theme.id
@@ -528,10 +615,12 @@ def get_banner_loop_frame(
             active = set(range(8))
             spark = -1
 
-    return render_octoflow_3d_banner(theme, active_indices=active, spark_idx=spark, subtitle=subtitle)
+    return render_octoflow_3d_banner(
+        theme, active_indices=active, spark_idx=spark, subtitle=subtitle
+    )
 
 
-def play_banner_animation(console: Console, theme: Optional[OctoTheme] = None, delay: float = 0.05):
+def play_banner_animation(console: Console, theme: OctoTheme | None = None, delay: float = 0.05):
     """Play the animated 3D banner in the terminal (with automatic headless fallback)."""
     if theme is None:
         theme = load_saved_theme()
@@ -554,9 +643,9 @@ def play_banner_animation(console: Console, theme: Optional[OctoTheme] = None, d
 
 def play_banner_continuous(
     console: Console,
-    theme: Optional[OctoTheme] = None,
+    theme: OctoTheme | None = None,
     delay: float = 0.045,
-    max_ticks: Optional[int] = None,
+    max_ticks: int | None = None,
     prompt_message: str = "Press [Enter] or any key to enter Cockpit • [Ctrl+C to exit]",
 ) -> None:
     """Continuously play the ambient animated 3D banner until a key is pressed or max_ticks reached."""
@@ -567,9 +656,9 @@ def play_banner_continuous(
         console.print(render_octoflow_3d_banner(theme))
         return
 
+    import select
     import termios
     import tty
-    import select
 
     fd = sys.stdin.fileno()
     old_settings = None
@@ -583,7 +672,12 @@ def play_banner_continuous(
     tick = 0
     sub = f"[{theme.rich_primary}]● LIVE AMBIENT HUD[/{theme.rich_primary}] [dim]• {prompt_message}[/dim]"
     try:
-        with Live(get_banner_loop_frame(theme, 0, subtitle=sub), console=console, refresh_per_second=24, transient=True) as live:
+        with Live(
+            get_banner_loop_frame(theme, 0, subtitle=sub),
+            console=console,
+            refresh_per_second=24,
+            transient=True,
+        ) as live:
             while True:
                 rlist, _, _ = select.select([sys.stdin], [], [], delay)
                 if rlist:
@@ -613,5 +707,3 @@ def play_banner_continuous(
                 pass
 
     console.print(render_octoflow_3d_banner(theme))
-
-

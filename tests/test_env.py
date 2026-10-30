@@ -1,10 +1,8 @@
 """Unit tests for ReachAndAvoid multi-arm gridworld environment."""
 
-import pytest
 import numpy as np
-
-from octopus_brain.config import EnvConfig
 from envs.reach_and_avoid import ReachAndAvoidEnv
+from octopus_brain.config import EnvConfig
 
 
 def test_env_initialization_and_reset():

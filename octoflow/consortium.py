@@ -6,27 +6,30 @@ scaffolding to fullstack construction and autonomous live-run verification.
 """
 
 import asyncio
-from pathlib import Path
 import time
-from typing import Callable, Dict, List, Optional, Any, Set
-from pydantic import BaseModel, Field
-import numpy as np
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
-from octoflow.config import OctoFlowConfig, SwarmMorphology, ArmRoleConfig
+from pydantic import BaseModel, Field
+
 from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
-from octoflow.bus import InterBrachialBus
-from octoflow.ignition import ProjectIgniter, LiveServiceManifest
+from octoflow.config import OctoFlowConfig, SwarmMorphology
+from octoflow.ignition import ProjectIgniter
 
 
 class SynapticContractEvent(BaseModel):
     """Event broadcasted across the consortium when an octopus establishes a contract or deliverable."""
+
     timestamp: float = Field(default_factory=time.time)
     sender_octopus_id: int
     sender_octopus_title: str
-    event_type: str  # "SCAFFOLD_READY", "API_CONTRACT", "SCHEMA_DEFINED", "UI_MOUNT_READY", "VERIFY_PASS"
+    event_type: (
+        str  # "SCAFFOLD_READY", "API_CONTRACT", "SCHEMA_DEFINED", "UI_MOUNT_READY", "VERIFY_PASS"
+    )
     topic: str
     summary: str = ""
-    payload: Dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
@@ -35,10 +38,10 @@ from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
 class InterOctopusSynapticBus:
     """High-level bus interconnecting multiple independent octopus conductors with zero-trust PII sanitization."""
 
-    def __init__(self, guard: Optional[FederationGuard] = None):
+    def __init__(self, guard: FederationGuard | None = None):
         self.guard = guard or GLOBAL_FEDERATION_GUARD
-        self.events: List[SynapticContractEvent] = []
-        self._subscribers: Dict[str, List[Callable[[SynapticContractEvent], None]]] = {}
+        self.events: list[SynapticContractEvent] = []
+        self._subscribers: dict[str, list[Callable[[SynapticContractEvent], None]]] = {}
 
     def broadcast(
         self,
@@ -47,10 +50,12 @@ class InterOctopusSynapticBus:
         event_type: str,
         topic: str,
         summary: str = "",
-        payload: Optional[Dict[str, Any]] = None,
+        payload: dict[str, Any] | None = None,
     ) -> SynapticContractEvent:
         clean_summary, _ = self.guard.scan_and_sanitize(summary) if self.guard else (summary, [])
-        clean_payload, _ = self.guard.sanitize_payload(payload or {}) if self.guard else (payload or {}, [])
+        clean_payload, _ = (
+            self.guard.sanitize_payload(payload or {}) if self.guard else (payload or {}, [])
+        )
 
         event = SynapticContractEvent(
             sender_octopus_id=sender_id,
@@ -82,6 +87,7 @@ class InterOctopusSynapticBus:
 
 class OctopusGuildConfig(BaseModel):
     """Configuration for an individual octopus in the consortium."""
+
     octopus_id: int
     name: str
     title: str
@@ -93,7 +99,7 @@ class OctopusGuildConfig(BaseModel):
 
 
 # Standard 3-Octopus Consortium (The Triad: 24 Arms Total)
-TRIAD_GUILDS: List[OctopusGuildConfig] = [
+TRIAD_GUILDS: list[OctopusGuildConfig] = [
     OctopusGuildConfig(
         octopus_id=0,
         name="genesis",
@@ -124,7 +130,7 @@ TRIAD_GUILDS: List[OctopusGuildConfig] = [
 ]
 
 # Full 8-Octopus Consortium (The Octopolis: 64 Arms Total)
-OCTOPOLIS_GUILDS: List[OctopusGuildConfig] = [
+OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
     OctopusGuildConfig(
         octopus_id=0,
         name="architect",
@@ -200,7 +206,7 @@ OCTOPOLIS_GUILDS: List[OctopusGuildConfig] = [
 ]
 
 # AI/ML Research Consortium Roster (The AI Triad: 24 Arms Total)
-AIML_TRIAD_GUILDS: List[OctopusGuildConfig] = [
+AIML_TRIAD_GUILDS: list[OctopusGuildConfig] = [
     OctopusGuildConfig(
         octopus_id=0,
         name="data_etl",
@@ -231,19 +237,83 @@ AIML_TRIAD_GUILDS: List[OctopusGuildConfig] = [
 ]
 
 # AI/ML Research Full Consortium (The AI Octopolis: 64 Arms Total)
-AIML_OCTOPOLIS_GUILDS: List[OctopusGuildConfig] = [
-    OctopusGuildConfig(octopus_id=0, name="data_prep", title="Data & Dataset ETL", description="Data loading, transforms, and splits.", color_hex="#00F0FF", icon="📊", focus_domain="data"),
-    OctopusGuildConfig(octopus_id=1, name="model_arch", title="Model Architect", description="PyTorch layers, attention heads, and weights.", color_hex="#A855F7", icon="🧠", focus_domain="architecture"),
-    OctopusGuildConfig(octopus_id=2, name="training_loop", title="Training & Loss Loop", description="Forward/backward passes and AMP.", color_hex="#EF4444", icon="🔥", focus_domain="training"),
-    OctopusGuildConfig(octopus_id=3, name="hpo_tuner", title="HPO & Schedulers", description="Hyperparameter optimization and tuning.", color_hex="#3B82F6", icon="🎛️", focus_domain="hpo"),
-    OctopusGuildConfig(octopus_id=4, name="eval_bench", title="Evaluation & Benchmark", description="Accuracy, ROC curves, and ablations.", color_hex="#F59E0B", icon="📈", focus_domain="evaluation"),
-    OctopusGuildConfig(octopus_id=5, name="quant_export", title="Quantization & ONNX", description="INT8 quantization and ONNX graph export.", color_hex="#EC4899", icon="⚡", focus_domain="export"),
-    OctopusGuildConfig(octopus_id=6, name="inference_api", title="Inference & Triton API", description="FastAPI model serving and batching.", color_hex="#10B981", icon="🚀", focus_domain="serving"),
-    OctopusGuildConfig(octopus_id=7, name="mlops_docs", title="MLOps & Governance", description="Model cards, reproducibility, and logging.", color_hex="#EAB308", icon="📋", focus_domain="mlops"),
+AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
+    OctopusGuildConfig(
+        octopus_id=0,
+        name="data_prep",
+        title="Data & Dataset ETL",
+        description="Data loading, transforms, and splits.",
+        color_hex="#00F0FF",
+        icon="📊",
+        focus_domain="data",
+    ),
+    OctopusGuildConfig(
+        octopus_id=1,
+        name="model_arch",
+        title="Model Architect",
+        description="PyTorch layers, attention heads, and weights.",
+        color_hex="#A855F7",
+        icon="🧠",
+        focus_domain="architecture",
+    ),
+    OctopusGuildConfig(
+        octopus_id=2,
+        name="training_loop",
+        title="Training & Loss Loop",
+        description="Forward/backward passes and AMP.",
+        color_hex="#EF4444",
+        icon="🔥",
+        focus_domain="training",
+    ),
+    OctopusGuildConfig(
+        octopus_id=3,
+        name="hpo_tuner",
+        title="HPO & Schedulers",
+        description="Hyperparameter optimization and tuning.",
+        color_hex="#3B82F6",
+        icon="🎛️",
+        focus_domain="hpo",
+    ),
+    OctopusGuildConfig(
+        octopus_id=4,
+        name="eval_bench",
+        title="Evaluation & Benchmark",
+        description="Accuracy, ROC curves, and ablations.",
+        color_hex="#F59E0B",
+        icon="📈",
+        focus_domain="evaluation",
+    ),
+    OctopusGuildConfig(
+        octopus_id=5,
+        name="quant_export",
+        title="Quantization & ONNX",
+        description="INT8 quantization and ONNX graph export.",
+        color_hex="#EC4899",
+        icon="⚡",
+        focus_domain="export",
+    ),
+    OctopusGuildConfig(
+        octopus_id=6,
+        name="inference_api",
+        title="Inference & Triton API",
+        description="FastAPI model serving and batching.",
+        color_hex="#10B981",
+        icon="🚀",
+        focus_domain="serving",
+    ),
+    OctopusGuildConfig(
+        octopus_id=7,
+        name="mlops_docs",
+        title="MLOps & Governance",
+        description="Model cards, reproducibility, and logging.",
+        color_hex="#EAB308",
+        icon="📋",
+        focus_domain="mlops",
+    ),
 ]
 
 # Hybrid Full-Stack AI Consortium (The Fullstack AI Triad: 24 Arms Total)
-FULLSTACK_AI_TRIAD_GUILDS: List[OctopusGuildConfig] = [
+FULLSTACK_AI_TRIAD_GUILDS: list[OctopusGuildConfig] = [
     OctopusGuildConfig(
         octopus_id=0,
         name="genesis_data",
@@ -274,15 +344,79 @@ FULLSTACK_AI_TRIAD_GUILDS: List[OctopusGuildConfig] = [
 ]
 
 # Hybrid Full-Stack AI Consortium (The Fullstack AI Octopolis: 64 Arms Total)
-FULLSTACK_AI_OCTOPOLIS_GUILDS: List[OctopusGuildConfig] = [
-    OctopusGuildConfig(octopus_id=0, name="foundation", title="Foundation & Topology", description="Monorepo structure, schemas, and contracts.", color_hex="#00F0FF", icon="📐", focus_domain="architecture"),
-    OctopusGuildConfig(octopus_id=1, name="data_prep", title="Data & Feature Pipeline", description="Dataset preprocessing and feature extraction.", color_hex="#A855F7", icon="📊", focus_domain="data"),
-    OctopusGuildConfig(octopus_id=2, name="cognitive_core", title="Model & Cognitive Engine", description="Inference pipeline, weights, and scoring.", color_hex="#3B82F6", icon="🧠", focus_domain="ai"),
-    OctopusGuildConfig(octopus_id=3, name="backend_api", title="FastAPI Backend Engine", description="High-throughput REST/WebSocket endpoints.", color_hex="#10B981", icon="⚡", focus_domain="backend"),
-    OctopusGuildConfig(octopus_id=4, name="frontend_ui", title="Interactive Web UI & HUD", description="Dark-mode dashboard, gauges, and state stores.", color_hex="#EC4899", icon="🎨", focus_domain="frontend"),
-    OctopusGuildConfig(octopus_id=5, name="security_guard", title="Security & Zero-Trust Guard", description="PII redaction and input validation.", color_hex="#EF4444", icon="🛡️", focus_domain="security"),
-    OctopusGuildConfig(octopus_id=6, name="qa_benchmark", title="QA & Benchmark Suite", description="Integration tests and latency assertions.", color_hex="#F59E0B", icon="🧪", focus_domain="testing"),
-    OctopusGuildConfig(octopus_id=7, name="devops_deploy", title="DevOps & Docker Deploy", description="Containerization, runner verification, and live ignition.", color_hex="#EAB308", icon="🚀", focus_domain="devops"),
+FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
+    OctopusGuildConfig(
+        octopus_id=0,
+        name="foundation",
+        title="Foundation & Topology",
+        description="Monorepo structure, schemas, and contracts.",
+        color_hex="#00F0FF",
+        icon="📐",
+        focus_domain="architecture",
+    ),
+    OctopusGuildConfig(
+        octopus_id=1,
+        name="data_prep",
+        title="Data & Feature Pipeline",
+        description="Dataset preprocessing and feature extraction.",
+        color_hex="#A855F7",
+        icon="📊",
+        focus_domain="data",
+    ),
+    OctopusGuildConfig(
+        octopus_id=2,
+        name="cognitive_core",
+        title="Model & Cognitive Engine",
+        description="Inference pipeline, weights, and scoring.",
+        color_hex="#3B82F6",
+        icon="🧠",
+        focus_domain="ai",
+    ),
+    OctopusGuildConfig(
+        octopus_id=3,
+        name="backend_api",
+        title="FastAPI Backend Engine",
+        description="High-throughput REST/WebSocket endpoints.",
+        color_hex="#10B981",
+        icon="⚡",
+        focus_domain="backend",
+    ),
+    OctopusGuildConfig(
+        octopus_id=4,
+        name="frontend_ui",
+        title="Interactive Web UI & HUD",
+        description="Dark-mode dashboard, gauges, and state stores.",
+        color_hex="#EC4899",
+        icon="🎨",
+        focus_domain="frontend",
+    ),
+    OctopusGuildConfig(
+        octopus_id=5,
+        name="security_guard",
+        title="Security & Zero-Trust Guard",
+        description="PII redaction and input validation.",
+        color_hex="#EF4444",
+        icon="🛡️",
+        focus_domain="security",
+    ),
+    OctopusGuildConfig(
+        octopus_id=6,
+        name="qa_benchmark",
+        title="QA & Benchmark Suite",
+        description="Integration tests and latency assertions.",
+        color_hex="#F59E0B",
+        icon="🧪",
+        focus_domain="testing",
+    ),
+    OctopusGuildConfig(
+        octopus_id=7,
+        name="devops_deploy",
+        title="DevOps & Docker Deploy",
+        description="Containerization, runner verification, and live ignition.",
+        color_hex="#EAB308",
+        icon="🚀",
+        focus_domain="devops",
+    ),
 ]
 
 
@@ -290,17 +424,55 @@ def detect_morphology_from_objective(objective: str) -> SwarmMorphology:
     """Automatically detect project morphology (Software Dev, AI/ML Research, or Fullstack AI) from goal signals."""
     text = objective.lower()
     aiml_signals = [
-        "train", "training", "pytorch", "tensorflow", "dataset", "etl", "loss",
-        "hpo", "hyperparameter", "onnx", "quantization", "model card", "epoch",
-        "weights", "lora", "fine-tune", "embedding"
+        "train",
+        "training",
+        "pytorch",
+        "tensorflow",
+        "dataset",
+        "etl",
+        "loss",
+        "hpo",
+        "hyperparameter",
+        "onnx",
+        "quantization",
+        "model card",
+        "epoch",
+        "weights",
+        "lora",
+        "fine-tune",
+        "embedding",
     ]
     ai_product_signals = [
-        "ai", "llm", "gpt", "claude", "nlp", "resume", "ats", "analyzer",
-        "chatbot", "assistant", "jarvis", "agent", "rag", "vector", "vision"
+        "ai",
+        "llm",
+        "gpt",
+        "claude",
+        "nlp",
+        "resume",
+        "ats",
+        "analyzer",
+        "chatbot",
+        "assistant",
+        "jarvis",
+        "agent",
+        "rag",
+        "vector",
+        "vision",
     ]
     web_signals = [
-        "fastapi", "react", "frontend", "ui", "dashboard", "html", "web",
-        "css", "score gauge", "gauge", "views", "fullstack", "full-stack"
+        "fastapi",
+        "react",
+        "frontend",
+        "ui",
+        "dashboard",
+        "html",
+        "web",
+        "css",
+        "score gauge",
+        "gauge",
+        "views",
+        "fullstack",
+        "full-stack",
     ]
 
     aiml_count = sum(1 for s in aiml_signals if s in text)
@@ -319,7 +491,9 @@ def detect_morphology_from_objective(objective: str) -> SwarmMorphology:
     return SwarmMorphology.SOFTWARE_DEV
 
 
-def get_consortium_guilds(morphology: SwarmMorphology, octopus_count: int) -> List[OctopusGuildConfig]:
+def get_consortium_guilds(
+    morphology: SwarmMorphology, octopus_count: int
+) -> list[OctopusGuildConfig]:
     """Retrieve specialist department guilds dynamically adapted to project morphology."""
     if morphology == SwarmMorphology.AIML_RESEARCH:
         roster = AIML_OCTOPOLIS_GUILDS if octopus_count >= 8 else AIML_TRIAD_GUILDS
@@ -329,7 +503,11 @@ def get_consortium_guilds(morphology: SwarmMorphology, octopus_count: int) -> Li
         roster = OCTOPOLIS_GUILDS if octopus_count >= 8 else TRIAD_GUILDS
 
     if octopus_count == 1:
-        prefix = "AI/ML" if morphology == SwarmMorphology.AIML_RESEARCH else ("Fullstack AI" if morphology == SwarmMorphology.FULLSTACK_AI else "Software")
+        prefix = (
+            "AI/ML"
+            if morphology == SwarmMorphology.AIML_RESEARCH
+            else ("Fullstack AI" if morphology == SwarmMorphology.FULLSTACK_AI else "Software")
+        )
         return [
             OctopusGuildConfig(
                 octopus_id=0,
@@ -349,9 +527,9 @@ class OctosConsortium:
 
     def __init__(
         self,
-        config: Optional[OctoFlowConfig] = None,
+        config: OctoFlowConfig | None = None,
         octopus_count: int = 3,
-        telemetry_callback: Optional[Callable[[SwarmTelemetryEvent], None]] = None,
+        telemetry_callback: Callable[[SwarmTelemetryEvent], None] | None = None,
     ):
         self.config = config or OctoFlowConfig()
         self.octopus_count = max(1, min(octopus_count, 8))
@@ -362,7 +540,7 @@ class OctosConsortium:
         self.guilds = get_consortium_guilds(self.config.morphology, self.octopus_count)
 
         # Instantiate N identical, proven SupraesophagealConductor instances
-        self.conductors: List[SupraesophagealConductor] = []
+        self.conductors: list[SupraesophagealConductor] = []
         for guild in self.guilds:
             # Clone config with guild-specific settings if necessary
             cond_cfg = self.config.model_copy()
@@ -393,15 +571,20 @@ class OctosConsortium:
         objective: str,
         cycles_per_octopus: int = 5,
         open_browser: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute the multi-octopus consortium across synchronized phase gates."""
         t_start = time.time()
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
 
         if self.octopus_count == 1:
             # Single octopus execution
             res = await self.conductors[0].arun_swarm(objective, max_cycles=cycles_per_octopus)
-            return {"tier": "solo", "total_arms": 8, "results": [res], "execution_time": time.time() - t_start}
+            return {
+                "tier": "solo",
+                "total_arms": 8,
+                "results": [res],
+                "execution_time": time.time() - t_start,
+            }
 
         # ---------------------------------------------------------------------
         # PHASE GATE 1: Genesis & Scaffolding (Octopus 0)
@@ -411,7 +594,9 @@ class OctosConsortium:
             f"Phase 1 Foundation: Scaffold project folder topology, package.json, "
             f"vite.config.js, index.html, requirements.txt, and schemas for: {objective}"
         )
-        genesis_res = await genesis_cond.arun_swarm(genesis_goal, max_cycles=max(2, cycles_per_octopus // 2))
+        genesis_res = await genesis_cond.arun_swarm(
+            genesis_goal, max_cycles=max(2, cycles_per_octopus // 2)
+        )
         results["genesis"] = genesis_res
 
         self.synaptic_bus.broadcast(
@@ -431,7 +616,9 @@ class OctosConsortium:
                     f"Build complete, production-grade {cond.octopus_title} deliverables for: {objective}. "
                     f"Adhere strictly to established project architecture and connect with sibling modules."
                 )
-                construction_tasks.append(cond.arun_swarm(domain_goal, max_cycles=cycles_per_octopus))
+                construction_tasks.append(
+                    cond.arun_swarm(domain_goal, max_cycles=cycles_per_octopus)
+                )
 
             if construction_tasks:
                 parallel_results = await asyncio.gather(*construction_tasks, return_exceptions=True)
@@ -442,6 +629,7 @@ class OctosConsortium:
         # Checkpoint state to .octoflow/checkpoint.json (Q32)
         try:
             import json
+
             ckpt_dir = Path(self.config.workspace_dir) / ".octoflow"
             ckpt_dir.mkdir(parents=True, exist_ok=True)
             ckpt_file = ckpt_dir / "checkpoint.json"
@@ -492,7 +680,9 @@ class OctosConsortium:
                         threshold=0.5,
                         summary=f"⚡ LIVE APP DEPLOYED: {ignition_manifest.primary_url}",
                         octopus_id=7 if self.octopus_count >= 8 else 0,
-                        octopus_title="OCTO_7 RUNNER" if self.octopus_count >= 8 else "Cephalopod Core",
+                        octopus_title="OCTO_7 RUNNER"
+                        if self.octopus_count >= 8
+                        else "Cephalopod Core",
                         color_hex="#EAB308",
                         service_url=ignition_manifest.primary_url,
                         api_docs_url=ignition_manifest.api_docs_url,
@@ -527,7 +717,7 @@ class OctosConsortium:
         objective: str,
         cycles_per_octopus: int = 5,
         open_browser: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Synchronously execute consortium across all Python 3.10-3.14+ loop environments."""
         try:
             loop = asyncio.get_running_loop()
@@ -536,8 +726,11 @@ class OctosConsortium:
 
         if loop is not None and loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self.arun_consortium(objective, cycles_per_octopus, open_browser)).result()
+                return pool.submit(
+                    asyncio.run, self.arun_consortium(objective, cycles_per_octopus, open_browser)
+                ).result()
         else:
             return asyncio.run(self.arun_consortium(objective, cycles_per_octopus, open_browser))
 
@@ -546,14 +739,20 @@ def get_system_ram_gb() -> float:
     """Detect available physical RAM in GB safely across OS platforms."""
     try:
         import os
-        if hasattr(os, "sysconf") and "SC_PAGE_SIZE" in os.sysconf_names and "SC_PHYS_PAGES" in os.sysconf_names:
-            return (os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")) / (1024 ** 3)
+
+        if (
+            hasattr(os, "sysconf")
+            and "SC_PAGE_SIZE" in os.sysconf_names
+            and "SC_PHYS_PAGES" in os.sysconf_names
+        ):
+            return (os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")) / (1024**3)
     except Exception:
         pass
     try:
         import subprocess
+
         out = subprocess.check_output(["sysctl", "-n", "hw.memsize"], text=True).strip()
-        return int(out) / (1024 ** 3)
+        return int(out) / (1024**3)
     except Exception:
         pass
     return 16.0  # safe default fallback
@@ -569,18 +768,56 @@ def estimate_elastic_octopus_count(objective: str, model_provider: str = "mock")
 
     # 1. Complexity Signals
     enterprise_signals = [
-        "enterprise", "multi-tenant", "microservices", "kubernetes", "k8s",
-        "distributed", "analytics engine", "streaming platform", "oauth",
-        "billing", "stripe", "chaos", "pipeline", "cluster", "production-grade"
+        "enterprise",
+        "multi-tenant",
+        "microservices",
+        "kubernetes",
+        "k8s",
+        "distributed",
+        "analytics engine",
+        "streaming platform",
+        "oauth",
+        "billing",
+        "stripe",
+        "chaos",
+        "pipeline",
+        "cluster",
+        "production-grade",
     ]
     fullstack_signals = [
-        "full-stack", "fullstack", "web app", "frontend", "react", "vue", "dashboard",
-        "fastapi", "rest api", "websocket", "database", "sqlite", "postgres",
-        "assistant", "jarvis", "ui", "hud", "holographic", "interface", "node"
+        "full-stack",
+        "fullstack",
+        "web app",
+        "frontend",
+        "react",
+        "vue",
+        "dashboard",
+        "fastapi",
+        "rest api",
+        "websocket",
+        "database",
+        "sqlite",
+        "postgres",
+        "assistant",
+        "jarvis",
+        "ui",
+        "hud",
+        "holographic",
+        "interface",
+        "node",
     ]
     micro_signals = [
-        "script", "utility", "cli tool", "convert", "parser", "regex", "one file",
-        "mini", "simple", "clean up", "calculate"
+        "script",
+        "utility",
+        "cli tool",
+        "convert",
+        "parser",
+        "regex",
+        "one file",
+        "mini",
+        "simple",
+        "clean up",
+        "calculate",
     ]
 
     enterprise_score = sum(1 for s in enterprise_signals if s in text)
@@ -611,4 +848,3 @@ def estimate_elastic_octopus_count(objective: str, model_provider: str = "mock")
         tier_reason += f" (capped at 2 octopuses for stability on {ram_gb:.0f}GB RAM)"
 
     return raw_count, tier_reason
-

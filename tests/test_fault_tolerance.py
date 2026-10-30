@@ -1,13 +1,13 @@
 """Unit tests for Arm Knockout Fault Tolerance and Graceful Degradation."""
 
-import pytest
 import numpy as np
+import pytest
 
 torch = pytest.importorskip("torch")
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
 from envs.reach_and_avoid import ReachAndAvoidEnv
 from experiments.run_fault_tolerance import run_episode
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
 
 
 def test_amputation_resilience():

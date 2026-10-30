@@ -9,22 +9,19 @@ CRITICAL PROTOCOL:
 Logs report rate and coalition statistics BEFORE reporting any task-performance numbers.
 """
 
-import sys
-import os
 import argparse
+import sys
 from pathlib import Path
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from typing import Dict, List, Tuple
 import numpy as np
 import torch
-import scipy.stats as stats
-
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
 from envs.reach_and_avoid import ReachAndAvoidEnv
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
+
 from experiments.baselines import AlwaysLocalBaseline
 
 
@@ -35,13 +32,13 @@ def evaluate_coalition_correlation(
     threshold: float = 0.15,
     seed: int = 42,
     device: torch.device = torch.device("cpu"),
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate alignment between physical joint-task requirements and neural coalition attention."""
-    y_true_all: List[int] = []
-    y_pred_all: List[int] = []
-    y_scores_all: List[float] = []
-    report_rates: List[float] = []
-    coalition_counts: List[float] = []
+    y_true_all: list[int] = []
+    y_pred_all: list[int] = []
+    y_scores_all: list[float] = []
+    report_rates: list[float] = []
+    coalition_counts: list[float] = []
     total_joint_completed = 0
     total_single_completed = 0
 
@@ -108,7 +105,9 @@ def evaluate_coalition_correlation(
     fp_shuf = np.sum((y_true == 0) & (shuffled_pred == 1))
     fn_shuf = np.sum((y_true == 1) & (shuffled_pred == 0))
     tn_shuf = np.sum((y_true == 0) & (shuffled_pred == 0))
-    denom_shuf = np.sqrt(float((tp_shuf + fp_shuf) * (tp_shuf + fn_shuf) * (tn_shuf + fp_shuf) * (tn_shuf + fn_shuf)))
+    denom_shuf = np.sqrt(
+        float((tp_shuf + fp_shuf) * (tp_shuf + fn_shuf) * (tn_shuf + fp_shuf) * (tn_shuf + fn_shuf))
+    )
     phi_chance = ((tp_shuf * tn_shuf) - (fp_shuf * fn_shuf)) / max(denom_shuf, 1e-8)
 
     return {
@@ -155,7 +154,9 @@ def run_coalition_analysis_experiment(
     )
     report_rate_pct = eval_oct["mean_report_rate"] * 100.0
     print(f"[*] OctopusBrain Mean Report Rate:   {report_rate_pct:.2f}%")
-    print(f"[*] OctopusBrain Mean Active Coalitions: {eval_oct['mean_coalition_freq']:.2f} per step")
+    print(
+        f"[*] OctopusBrain Mean Active Coalitions: {eval_oct['mean_coalition_freq']:.2f} per step"
+    )
 
     if report_rate_pct <= 0.01:
         print("[WARNING] DEGENERATE GATE: Report rate is 0%!")
@@ -175,19 +176,31 @@ def run_coalition_analysis_experiment(
     print("\n" + "=" * 80)
     print("COALITION DETECTION & TASK ALIGNMENT METRICS")
     print("=" * 80)
-    print(f"{'Metric':<30}{'OctopusBrain':<20}{'Chance (Shuffled)':<20}{'Always Local (Ablation 3)':<20}")
+    print(
+        f"{'Metric':<30}{'OctopusBrain':<20}{'Chance (Shuffled)':<20}{'Always Local (Ablation 3)':<20}"
+    )
     print("-" * 80)
-    print(f"{'Report Rate':<30}{eval_oct['mean_report_rate']*100:>6.1f}%{'N/A':>20}{'0.0%':>20}")
-    print(f"{'Precision':<30}{eval_oct['precision']:>6.3f}{'N/A':>20}{eval_local['precision']:>6.3f}")
+    print(f"{'Report Rate':<30}{eval_oct['mean_report_rate'] * 100:>6.1f}%{'N/A':>20}{'0.0%':>20}")
+    print(
+        f"{'Precision':<30}{eval_oct['precision']:>6.3f}{'N/A':>20}{eval_local['precision']:>6.3f}"
+    )
     print(f"{'Recall':<30}{eval_oct['recall']:>6.3f}{'N/A':>20}{eval_local['recall']:>6.3f}")
     print(f"{'F1 Score':<30}{eval_oct['f1']:>6.3f}{'N/A':>20}{eval_local['f1']:>6.3f}")
-    print(f"{'Phi Correlation (r_phi)':<30}{eval_oct['phi_correlation']:>+6.3f}{eval_oct['phi_chance']:>+15.3f}{eval_local['phi_correlation']:>+15.3f}")
-    print(f"{'Joint Tasks Completed':<30}{eval_oct['joint_completed']:>6d}{'N/A':>20}{eval_local['joint_completed']:>6d}")
-    print(f"{'Single Tasks Completed':<30}{eval_oct['single_completed']:>6d}{'N/A':>20}{eval_local['single_completed']:>6d}")
+    print(
+        f"{'Phi Correlation (r_phi)':<30}{eval_oct['phi_correlation']:>+6.3f}{eval_oct['phi_chance']:>+15.3f}{eval_local['phi_correlation']:>+15.3f}"
+    )
+    print(
+        f"{'Joint Tasks Completed':<30}{eval_oct['joint_completed']:>6d}{'N/A':>20}{eval_local['joint_completed']:>6d}"
+    )
+    print(
+        f"{'Single Tasks Completed':<30}{eval_oct['single_completed']:>6d}{'N/A':>20}{eval_local['single_completed']:>6d}"
+    )
     print("=" * 80)
 
     if eval_oct["phi_correlation"] > eval_oct["phi_chance"] + 0.05:
-        print("[CONCLUSION] Hypothesis supported: Coalition formation correlates with joint subtasks above chance.")
+        print(
+            "[CONCLUSION] Hypothesis supported: Coalition formation correlates with joint subtasks above chance."
+        )
     else:
         print("[CONCLUSION] Neutral / early result: Gating policy requires additional task tuning.")
     print("Coalition analysis experiment complete.\n")
@@ -199,6 +212,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run_coalition_analysis_experiment(num_episodes=args.episodes)
-
-
-

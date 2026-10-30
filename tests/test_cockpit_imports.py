@@ -13,17 +13,9 @@ import pty
 import select
 from pathlib import Path
 
-import pytest
-from rich.console import Console
-
 from octoflow.cockpit import (
     CockpitInput,
     CockpitSession,
-    build_cockpit_grid,
-    build_confirm_grid,
-    build_hud_panel,
-    build_prompt_text,
-    build_topology_text,
     clean_bracketed_paste,
     confirm_live_cockpit,
     execute_cockpit_shell,
@@ -31,23 +23,36 @@ from octoflow.cockpit import (
     get_live_wizard_input,
     interactive_cockpit,
     print_welcome_banner,
-    raw_terminal_mode,
-    restore_terminal_mode,
     run_cockpit,
 )
 from octoflow.router import Route, RouteKind
+from rich.console import Console
 
 
 def test_cli_backward_compatibility_reexports():
     """Assert all extracted symbols are safely re-exported from octoflow.cli."""
     from octoflow.cli import (
         CockpitInput as CliCockpitInput,
+    )
+    from octoflow.cli import (
         CockpitSession as CliCockpitSession,
+    )
+    from octoflow.cli import (
         confirm_live_cockpit as cli_confirm_live_cockpit,
+    )
+    from octoflow.cli import (
         get_live_cockpit_input as cli_get_live_cockpit_input,
+    )
+    from octoflow.cli import (
         get_live_wizard_input as cli_get_live_wizard_input,
+    )
+    from octoflow.cli import (
         interactive_cockpit as cli_interactive_cockpit,
+    )
+    from octoflow.cli import (
         print_welcome_banner as cli_print_welcome_banner,
+    )
+    from octoflow.cli import (
         run_cockpit as cli_run_cockpit,
     )
 

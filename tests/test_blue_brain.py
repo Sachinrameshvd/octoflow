@@ -1,13 +1,11 @@
 """Tests for Blue Brain 500M-Neuron Adult Cephalopod Connectomics Pipeline."""
 
-import pytest
 import numpy as np
-
+from envs.soft_body_tentacle import SoftBodyTentacleEnv
 from octopus_brain.blue_brain.atlas import AdultOctopusAtlas
+from octopus_brain.blue_brain.hybrid_simulator import AdultOctopusHybridSimulator
 from octopus_brain.blue_brain.microcircuits import CephalopodMicrocircuitLibrary
 from octopus_brain.blue_brain.sparse_synthesizer import AdultOctopusConnectomeSynthesizer
-from octopus_brain.blue_brain.hybrid_simulator import AdultOctopusHybridSimulator
-from envs.soft_body_tentacle import SoftBodyTentacleEnv
 
 
 class TestAdultOctopusAtlas:
@@ -64,9 +62,13 @@ class TestConnectomeSynthesizer:
         assert "position_mm" in chunk["nodes"][0]
 
         # Verify reproducibility with same seed
-        chunk_repeat = synthesizer.synthesize_microcircuit_chunk("vertical_lobe", n_sample_neurons=100, chunk_seed=123)
+        chunk_repeat = synthesizer.synthesize_microcircuit_chunk(
+            "vertical_lobe", n_sample_neurons=100, chunk_seed=123
+        )
         assert chunk["edges_count"] == chunk_repeat["edges_count"]
-        assert np.allclose(chunk["nodes"][0]["position_mm"], chunk_repeat["nodes"][0]["position_mm"])
+        assert np.allclose(
+            chunk["nodes"][0]["position_mm"], chunk_repeat["nodes"][0]["position_mm"]
+        )
 
 
 class TestHybridSimulator:

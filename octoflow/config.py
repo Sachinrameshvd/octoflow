@@ -4,12 +4,12 @@ Defines the 8-arm cephalopod agent roles across Software Development,
 AI/ML Research, and Hybrid Full-Stack AI project domains.
 """
 
-import os
-import sys
 import json
+import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from octoflow.budget import RunBudget
@@ -17,6 +17,7 @@ from octoflow.budget import RunBudget
 
 class SwarmMorphology(str, Enum):
     """Cephalopod swarm operational morphology presets."""
+
     SOFTWARE_DEV = "software_dev"
     AIML_RESEARCH = "aiml_research"
     FULLSTACK_AI = "fullstack_ai"
@@ -25,11 +26,12 @@ class SwarmMorphology(str, Enum):
 
 class ArmRoleConfig(BaseModel):
     """Configuration for an individual autonomous arm agent."""
+
     arm_id: int
     name: str
     title: str
     description: str
-    workspace_domain: List[str] = Field(default_factory=list)
+    workspace_domain: list[str] = Field(default_factory=list)
     initial_threshold: float = 0.50
     system_prompt: str = ""
     icon: str = "🐙"
@@ -37,7 +39,7 @@ class ArmRoleConfig(BaseModel):
 
 
 # Default 8-Arm Roster for Full-Stack Software Engineering
-SOFTWARE_DEV_ROSTER: List[ArmRoleConfig] = [
+SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
     ArmRoleConfig(
         arm_id=0,
         name="architect",
@@ -71,7 +73,15 @@ SOFTWARE_DEV_ROSTER: List[ArmRoleConfig] = [
         name="frontend",
         title="Frontend UI",
         description="User interface views, React/Vue components, package.json scaffolding, styling, layout, and visual presentation.",
-        workspace_domain=["frontend/", "frontend/package.json", "frontend/index.html", "frontend/vite.config.js", "frontend/src/components/", "frontend/src/views/", "frontend/styles/"],
+        workspace_domain=[
+            "frontend/",
+            "frontend/package.json",
+            "frontend/index.html",
+            "frontend/vite.config.js",
+            "frontend/src/components/",
+            "frontend/src/views/",
+            "frontend/styles/",
+        ],
         initial_threshold=0.55,
         icon="🎨",
     ),
@@ -117,7 +127,7 @@ SOFTWARE_DEV_ROSTER: List[ArmRoleConfig] = [
 ]
 
 # Default 8-Arm Roster for AI/ML Research & Model Training
-AIML_RESEARCH_ROSTER: List[ArmRoleConfig] = [
+AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
     ArmRoleConfig(
         arm_id=0,
         name="data_engineer",
@@ -193,7 +203,7 @@ AIML_RESEARCH_ROSTER: List[ArmRoleConfig] = [
 ]
 
 # Default 8-Arm Roster for Hybrid Full-Stack AI Products
-FULLSTACK_AI_ROSTER: List[ArmRoleConfig] = [
+FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
     ArmRoleConfig(
         arm_id=0,
         name="data_pipeline",
@@ -226,7 +236,14 @@ FULLSTACK_AI_ROSTER: List[ArmRoleConfig] = [
         name="frontend_ui",
         title="Frontend UI",
         description="Interactive web dashboard, package.json build manifests, canvas/drag-and-drop inference upload, and result visualization.",
-        workspace_domain=["frontend/", "frontend/package.json", "frontend/index.html", "frontend/vite.config.js", "frontend/src/components/", "frontend/src/views/"],
+        workspace_domain=[
+            "frontend/",
+            "frontend/package.json",
+            "frontend/index.html",
+            "frontend/vite.config.js",
+            "frontend/src/components/",
+            "frontend/src/views/",
+        ],
         initial_threshold=0.55,
         icon="🎨",
     ),
@@ -271,11 +288,12 @@ FULLSTACK_AI_ROSTER: List[ArmRoleConfig] = [
 
 class LLMConfigEntry(BaseModel):
     """Configuration for an individual model in the failover cascade pool."""
+
     id: str
     provider: str  # "gemini", "grok", "deepseek", "openai", "anthropic", "ollama", "custom"
     name: str  # e.g. "Google Gemini 2.0 Flash"
-    base_url: Optional[str] = None
-    api_key: Optional[str] = None
+    base_url: str | None = None
+    api_key: str | None = None
     model: str = "default"
     enabled: bool = True
     priority: int = 1
@@ -304,16 +322,19 @@ def harden_permissions_if_looser(path: Path, expected_mode: int, kind: str = "fi
         # Looser if any bits outside expected_mode are set (e.g. group/other read/write)
         if (current_mode & ~expected_mode) != 0:
             path.chmod(expected_mode)
-            print(f"Notice: Hardened permissions on {path} to {oct(expected_mode)} (was {oct(current_mode)}).")
+            print(
+                f"Notice: Hardened permissions on {path} to {oct(expected_mode)} (was {oct(current_mode)})."
+            )
             return True
     except OSError:
         pass
     return False
 
 
-def load_secure_config(cfg_path: Optional[Path] = None) -> dict:
+def load_secure_config(cfg_path: Path | None = None) -> dict:
     """Load configuration from ~/.octoflow/config.json with permission hardening."""
     from octoflow.settings import get_default_config_path, load_settings
+
     p = cfg_path or get_default_config_path()
     if not p.exists():
         return {}
@@ -322,27 +343,27 @@ def load_secure_config(cfg_path: Optional[Path] = None) -> dict:
         data = settings.to_dict(mask_secrets=False)
         # Flatten for legacy callers expecting top-level fields
         legacy_compat = dict(data.get("extras", {}))
-        legacy_compat.update({
-            "schema_version": settings.schema_version,
-            "default_provider": settings.defaults.default_provider,
-            "default_model": settings.defaults.default_model,
-            "default_scale": settings.defaults.default_scale,
-            "default_theme": settings.ui.theme,
-            "theme": settings.ui.theme,
-            "host": settings.server.host,
-            "ws_port": settings.server.ws_port,
-            "telemetry_port": settings.server.ws_port,
-            "http_port": settings.server.http_port,
-            "webhook_url": settings.webhook_url,
-            "llm_pool": settings.llm_pool,
-        })
+        legacy_compat.update(
+            {
+                "schema_version": settings.schema_version,
+                "default_provider": settings.defaults.default_provider,
+                "default_model": settings.defaults.default_model,
+                "default_scale": settings.defaults.default_scale,
+                "default_theme": settings.ui.theme,
+                "theme": settings.ui.theme,
+                "host": settings.server.host,
+                "ws_port": settings.server.ws_port,
+                "telemetry_port": settings.server.ws_port,
+                "http_port": settings.server.http_port,
+                "webhook_url": settings.webhook_url,
+                "llm_pool": settings.llm_pool,
+            }
+        )
         for p_name, p_val in settings.providers.items():
             if p_val.api_key:
                 raw_k = p_val.api_key
                 legacy_compat[f"{p_name}_api_key"] = (
-                    raw_k.get_secret_value()
-                    if hasattr(raw_k, "get_secret_value")
-                    else str(raw_k)
+                    raw_k.get_secret_value() if hasattr(raw_k, "get_secret_value") else str(raw_k)
                 )
             if p_name == "ollama" and p_val.base_url:
                 legacy_compat["ollama_base_url"] = p_val.base_url
@@ -352,14 +373,15 @@ def load_secure_config(cfg_path: Optional[Path] = None) -> dict:
         return {}
 
 
-def save_secure_config(data: dict, cfg_path: Optional[Path] = None) -> Path:
+def save_secure_config(data: dict, cfg_path: Path | None = None) -> Path:
     """Write configuration to ~/.octoflow/config.json with mode 0600."""
     from octoflow.settings import (
+        Settings,
         atomic_write_config,
         get_default_config_path,
         transform_legacy_config_data,
-        Settings,
     )
+
     p = cfg_path or get_default_config_path()
     try:
         if data.get("schema_version") == 1 and "defaults" in data:
@@ -375,7 +397,7 @@ def save_secure_config(data: dict, cfg_path: Optional[Path] = None) -> Path:
     return p
 
 
-def mask_credential(key: Optional[str]) -> str:
+def mask_credential(key: str | None) -> str:
     """Mask credentials for display, showing first 3 characters followed by ****."""
     if not key:
         return ""
@@ -387,38 +409,43 @@ def mask_credential(key: Optional[str]) -> str:
 
 class OctoFlowConfig(BaseModel):
     """Global configuration for an OctoFlow Swarm execution."""
+
     # Swarm Morphology & Custom Guilds
     morphology: SwarmMorphology = SwarmMorphology.SOFTWARE_DEV
-    guild: Optional[str] = None  # Custom community guild name in ~/.octoflow/guilds/
-    custom_roster: Optional[List[ArmRoleConfig]] = None
+    guild: str | None = None  # Custom community guild name in ~/.octoflow/guilds/
+    custom_roster: list[ArmRoleConfig] | None = None
 
     # LLM Settings
-    model_provider: str = "mock"  # "mock", "anthropic", "openai", "gemini", "grok", "deepseek", "ollama"
+    model_provider: str = (
+        "mock"  # "mock", "anthropic", "openai", "gemini", "grok", "deepseek", "ollama"
+    )
     model_name: str = "claude-3-5-sonnet-20241022"
-    api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    gemini_api_key: Optional[str] = None
-    grok_api_key: Optional[str] = None
-    deepseek_api_key: Optional[str] = None
-    base_url: Optional[str] = None
+    api_key: str | None = None
+    anthropic_api_key: str | None = None
+    openai_api_key: str | None = None
+    gemini_api_key: str | None = None
+    grok_api_key: str | None = None
+    deepseek_api_key: str | None = None
+    base_url: str | None = None
     temperature: float = 0.2
 
     # Dynamic Multi-LLM Cascade & Token Failover Pool
-    llm_pool: List[LLMConfigEntry] = Field(default_factory=list)
+    llm_pool: list[LLMConfigEntry] = Field(default_factory=list)
 
     # Cross-Provider Heterogeneous Routing
-    frontier_provider: Optional[str] = None  # e.g. "anthropic"
-    fast_provider: Optional[str] = None      # e.g. "openai" or "ollama"
-    frontier_model: Optional[str] = None     # e.g. "claude-3-7-sonnet-20250219" or "o3-mini"
-    fast_model: Optional[str] = None         # e.g. "gpt-4o-mini" or "claude-3-5-haiku-20241022" or "qwen2.5-coder:7b"
+    frontier_provider: str | None = None  # e.g. "anthropic"
+    fast_provider: str | None = None  # e.g. "openai" or "ollama"
+    frontier_model: str | None = None  # e.g. "claude-3-7-sonnet-20250219" or "o3-mini"
+    fast_model: str | None = (
+        None  # e.g. "gpt-4o-mini" or "claude-3-5-haiku-20241022" or "qwen2.5-coder:7b"
+    )
 
     # Provider Failover & High Availability
     enable_failover: bool = False
-    fallback_providers: List[str] = Field(default_factory=lambda: ["openai", "ollama", "mock"])
+    fallback_providers: list[str] = Field(default_factory=lambda: ["openai", "ollama", "mock"])
 
     # Webhook Alerts (Slack / Discord / CI)
-    webhook_url: Optional[str] = None
+    webhook_url: str | None = None
 
     # Workspace & Execution Settings
     workspace_dir: str = "."
@@ -439,7 +466,7 @@ class OctoFlowConfig(BaseModel):
     telemetry_port: int = 8088
 
     # Biological Neural Core Settings
-    neural_checkpoint_path: Optional[str] = None
+    neural_checkpoint_path: str | None = None
     obs_dim: int = 16
     action_dim: int = 8
     message_dim: int = 32
@@ -450,15 +477,29 @@ class OctoFlowConfig(BaseModel):
         if user_cfg:
             try:
                 if not self.anthropic_api_key:
-                    self.anthropic_api_key = user_cfg.get("anthropic_api_key") or os.getenv("ANTHROPIC_API_KEY")
+                    self.anthropic_api_key = user_cfg.get("anthropic_api_key") or os.getenv(
+                        "ANTHROPIC_API_KEY"
+                    )
                 if not self.openai_api_key:
-                    self.openai_api_key = user_cfg.get("openai_api_key") or os.getenv("OPENAI_API_KEY")
+                    self.openai_api_key = user_cfg.get("openai_api_key") or os.getenv(
+                        "OPENAI_API_KEY"
+                    )
                 if not self.gemini_api_key:
-                    self.gemini_api_key = user_cfg.get("gemini_api_key") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+                    self.gemini_api_key = (
+                        user_cfg.get("gemini_api_key")
+                        or os.getenv("GEMINI_API_KEY")
+                        or os.getenv("GOOGLE_API_KEY")
+                    )
                 if not self.grok_api_key:
-                    self.grok_api_key = user_cfg.get("grok_api_key") or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
+                    self.grok_api_key = (
+                        user_cfg.get("grok_api_key")
+                        or os.getenv("XAI_API_KEY")
+                        or os.getenv("GROK_API_KEY")
+                    )
                 if not self.deepseek_api_key:
-                    self.deepseek_api_key = user_cfg.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY")
+                    self.deepseek_api_key = user_cfg.get("deepseek_api_key") or os.getenv(
+                        "DEEPSEEK_API_KEY"
+                    )
 
                 if not self.frontier_provider:
                     self.frontier_provider = user_cfg.get("frontier_provider")
@@ -469,7 +510,11 @@ class OctoFlowConfig(BaseModel):
                 if not self.fast_model:
                     self.fast_model = user_cfg.get("fast_model")
 
-                if not self.llm_pool and "llm_pool" in user_cfg and isinstance(user_cfg["llm_pool"], list):
+                if (
+                    not self.llm_pool
+                    and "llm_pool" in user_cfg
+                    and isinstance(user_cfg["llm_pool"], list)
+                ):
                     for entry_data in user_cfg["llm_pool"]:
                         try:
                             self.llm_pool.append(LLMConfigEntry(**entry_data))
@@ -491,11 +536,16 @@ class OctoFlowConfig(BaseModel):
                 if not self.base_url and self.model_provider == "ollama":
                     self.base_url = user_cfg.get("ollama_base_url") or "http://localhost:11434"
                 if not self.webhook_url:
-                    self.webhook_url = user_cfg.get("webhook_url") or os.getenv("OCTOFLOW_WEBHOOK_URL") or os.getenv("SLACK_WEBHOOK_URL") or os.getenv("DISCORD_WEBHOOK_URL")
+                    self.webhook_url = (
+                        user_cfg.get("webhook_url")
+                        or os.getenv("OCTOFLOW_WEBHOOK_URL")
+                        or os.getenv("SLACK_WEBHOOK_URL")
+                        or os.getenv("DISCORD_WEBHOOK_URL")
+                    )
             except Exception:
                 pass
 
-    def get_roster(self) -> List[ArmRoleConfig]:
+    def get_roster(self) -> list[ArmRoleConfig]:
         """Retrieve the 8-arm configuration for current morphology or custom community guild."""
         if self.guild:
             custom = load_custom_guild(self.guild)
@@ -519,7 +569,7 @@ def get_guilds_dir() -> Path:
     return guild_dir
 
 
-def list_available_guilds() -> Dict[str, str]:
+def list_available_guilds() -> dict[str, str]:
     """List all built-in and community-installed 8-arm specialist guilds."""
     guilds = {
         "software_dev": "Full-Stack Software Engineering Guild (Arch, DB, API, UI, State, QA, Sec, DevOps)",
@@ -530,6 +580,7 @@ def list_available_guilds() -> Dict[str, str]:
     for f in sorted(guild_dir.glob("*.json")):
         try:
             import json
+
             data = json.loads(f.read_text(encoding="utf-8"))
             desc = data.get("description", "Community 8-Arm Custom Guild")
             guilds[f.stem] = desc
@@ -538,7 +589,7 @@ def list_available_guilds() -> Dict[str, str]:
     return guilds
 
 
-def load_custom_guild(guild_name: str) -> Optional[List[ArmRoleConfig]]:
+def load_custom_guild(guild_name: str) -> list[ArmRoleConfig] | None:
     """Load a custom 8-arm roster from ~/.octoflow/guilds/<guild_name>.json."""
     clean_name = guild_name.strip().lower()
     if clean_name in ["software_dev", "software-dev"]:
@@ -559,9 +610,10 @@ def load_custom_guild(guild_name: str) -> Optional[List[ArmRoleConfig]]:
 
     try:
         import json
+
         payload = json.loads(guild_file.read_text(encoding="utf-8"))
         roster_data = payload.get("roster", payload if isinstance(payload, list) else [])
-        roles: List[ArmRoleConfig] = []
+        roles: list[ArmRoleConfig] = []
         for item in roster_data:
             roles.append(ArmRoleConfig(**item))
         if len(roles) == 8:
@@ -571,9 +623,10 @@ def load_custom_guild(guild_name: str) -> Optional[List[ArmRoleConfig]]:
         return None
 
 
-def save_custom_guild(name: str, roster: List[ArmRoleConfig], description: str = "") -> Path:
+def save_custom_guild(name: str, roster: list[ArmRoleConfig], description: str = "") -> Path:
     """Export or save an 8-arm roster to ~/.octoflow/guilds/<name>.json."""
     import json
+
     guild_file = get_guilds_dir() / f"{name.strip().lower()}.json"
     payload = {
         "name": name,

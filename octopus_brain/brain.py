@@ -1,14 +1,12 @@
 """OctopusBrain: Complete modular neural architecture integrating peripheral modules and central system."""
 
-from typing import Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from octopus_brain.config import OctopusBrainConfig
-from octopus_brain.modules import PeripheralModule
 from octopus_brain.central import CentralSystem
 from octopus_brain.coalition import extract_coalitions_from_matrix
+from octopus_brain.config import OctopusBrainConfig
+from octopus_brain.modules import PeripheralModule
 
 
 class OctopusBrain(nn.Module):
@@ -17,7 +15,7 @@ class OctopusBrain(nn.Module):
     and sparse, asynchronous central coalition consolidation.
     """
 
-    def __init__(self, config: Optional[OctopusBrainConfig] = None):
+    def __init__(self, config: OctopusBrainConfig | None = None):
         super().__init__()
         self.config = config or OctopusBrainConfig()
         self.n_modules = self.config.n_modules
@@ -27,31 +25,28 @@ class OctopusBrain(nn.Module):
         self.message_dim = self.config.message_dim
 
         # Peripheral arm modules
-        self.modules_list = nn.ModuleList([
-            PeripheralModule(module_id=i, config=self.config)
-            for i in range(self.n_modules)
-        ])
+        self.modules_list = nn.ModuleList(
+            [PeripheralModule(module_id=i, config=self.config) for i in range(self.n_modules)]
+        )
 
         # Central consolidation system
         self.central_system = CentralSystem(config=self.config)
 
         # Internal state tracking for episodic execution
-        self.hidden_states: Optional[List[torch.Tensor]] = None
-        self.central_state: Optional[torch.Tensor] = None
-        self.prev_actions: Optional[torch.Tensor] = None
-        self.prev_pred_obs: Optional[torch.Tensor] = None
-        self.prev_neighbor_msgs: Optional[torch.Tensor] = None
-        self.prev_central_feedback: Optional[torch.Tensor] = None
+        self.hidden_states: list[torch.Tensor] | None = None
+        self.central_state: torch.Tensor | None = None
+        self.prev_actions: torch.Tensor | None = None
+        self.prev_pred_obs: torch.Tensor | None = None
+        self.prev_neighbor_msgs: torch.Tensor | None = None
+        self.prev_central_feedback: torch.Tensor | None = None
         self.step_count: int = 0
 
-    def reset(self, batch_size: int = 1, device: Optional[torch.device] = None) -> None:
+    def reset(self, batch_size: int = 1, device: torch.device | None = None) -> None:
         """Reset internal recurrent states and buffers at episode boundaries."""
         if device is None:
             device = next(self.parameters()).device
 
-        self.hidden_states = [
-            mod.init_hidden(batch_size, device) for mod in self.modules_list
-        ]
+        self.hidden_states = [mod.init_hidden(batch_size, device) for mod in self.modules_list]
         self.central_state = self.central_system.init_central_state(batch_size, device)
         self.prev_actions = torch.zeros(batch_size, self.n_modules, self.action_dim, device=device)
         self.prev_actions[:, :, 0] = 1.0  # Default one-hot action (stay)
@@ -97,11 +92,11 @@ class OctopusBrain(nn.Module):
     def step(
         self,
         obs: torch.Tensor,
-        active_mask: Optional[torch.Tensor] = None,
+        active_mask: torch.Tensor | None = None,
         deterministic: bool = False,
         disable_central: bool = False,
         force_report_all: bool = False,
-    ) -> Dict[str, Union[torch.Tensor, float, bool, List]]:
+    ) -> dict[str, torch.Tensor | float | bool | list]:
         """Perform one synchronous environment step across all distributed modules.
 
         Args:
@@ -149,26 +144,49 @@ class OctopusBrain(nn.Module):
 
         # 3. Collate module outputs
         actions = torch.stack([out["action"] for out in module_outputs], dim=1)  # (B, N)
-        actions_onehot = torch.stack([out["action_onehot"] for out in module_outputs], dim=1)  # (B, N, action_dim)
-        action_logits = torch.stack([out["action_logits"] for out in module_outputs], dim=1)  # (B, N, action_dim)
-        action_log_probs = torch.stack([out["action_log_prob"] for out in module_outputs], dim=1)  # (B, N)
-        action_entropies = torch.stack([out["action_entropy"] for out in module_outputs], dim=1)  # (B, N)
+        actions_onehot = torch.stack(
+            [out["action_onehot"] for out in module_outputs], dim=1
+        )  # (B, N, action_dim)
+        action_logits = torch.stack(
+            [out["action_logits"] for out in module_outputs], dim=1
+        )  # (B, N, action_dim)
+        action_log_probs = torch.stack(
+            [out["action_log_prob"] for out in module_outputs], dim=1
+        )  # (B, N)
+        action_entropies = torch.stack(
+            [out["action_entropy"] for out in module_outputs], dim=1
+        )  # (B, N)
         values = torch.stack([out["value"] for out in module_outputs], dim=1)  # (B, N, 1)
-        surprises = torch.stack([out["surprise"] for out in module_outputs], dim=1).squeeze(-1)  # (B, N)
-        report_probs = torch.stack([out["report_prob"] for out in module_outputs], dim=1).squeeze(-1)  # (B, N)
-        report_flags = torch.stack([out["report_flag"] for out in module_outputs], dim=1).squeeze(-1)  # (B, N)
-        central_msgs = torch.stack([out["message_to_central"] for out in module_outputs], dim=1)  # (B, N, msg_dim)
-        neighbor_msgs = torch.stack([out["neighbor_message"] for out in module_outputs], dim=1)  # (B, N, msg_dim)
-        pred_next_obs = torch.stack([out["pred_next_obs"] for out in module_outputs], dim=1)  # (B, N, obs_dim)
+        surprises = torch.stack([out["surprise"] for out in module_outputs], dim=1).squeeze(
+            -1
+        )  # (B, N)
+        report_probs = torch.stack([out["report_prob"] for out in module_outputs], dim=1).squeeze(
+            -1
+        )  # (B, N)
+        report_flags = torch.stack([out["report_flag"] for out in module_outputs], dim=1).squeeze(
+            -1
+        )  # (B, N)
+        central_msgs = torch.stack(
+            [out["message_to_central"] for out in module_outputs], dim=1
+        )  # (B, N, msg_dim)
+        neighbor_msgs = torch.stack(
+            [out["neighbor_message"] for out in module_outputs], dim=1
+        )  # (B, N, msg_dim)
+        pred_next_obs = torch.stack(
+            [out["pred_next_obs"] for out in module_outputs], dim=1
+        )  # (B, N, obs_dim)
 
         if force_report_all:
             # Baseline 2: Synchronous always-communicating architecture
             report_flags = torch.ones_like(report_flags)
             # Central messages generated unconditionally
-            central_msgs = torch.stack([
-                self.modules_list[i].central_msg_proj(module_outputs[i]["h_next"])
-                for i in range(self.n_modules)
-            ], dim=1)
+            central_msgs = torch.stack(
+                [
+                    self.modules_list[i].central_msg_proj(module_outputs[i]["h_next"])
+                    for i in range(self.n_modules)
+                ],
+                dim=1,
+            )
 
         # 4. Central System Execution
         central_out = self.central_system(
@@ -186,7 +204,11 @@ class OctopusBrain(nn.Module):
         consolidation_loss = central_out["consolidation_loss"]
 
         # 5. Extract Discrete Coalition Graphs & Connected Components
-        coalition_graph_info = {"active_coalitions": [], "isolated_modules": list(range(self.n_modules)), "edge_list": []}
+        coalition_graph_info = {
+            "active_coalitions": [],
+            "isolated_modules": list(range(self.n_modules)),
+            "edge_list": [],
+        }
         active_coalition_pairs = []
         if coalition_matrix.numel() > 0:
             mean_coalition = coalition_matrix.mean(dim=0).detach().cpu().numpy()  # (N, N)
@@ -231,11 +253,11 @@ class OctopusBrain(nn.Module):
     def forward(
         self,
         obs: torch.Tensor,
-        active_mask: Optional[torch.Tensor] = None,
+        active_mask: torch.Tensor | None = None,
         deterministic: bool = False,
         disable_central: bool = False,
         force_report_all: bool = False,
-    ) -> Dict[str, Union[torch.Tensor, float, bool, List]]:
+    ) -> dict[str, torch.Tensor | float | bool | list]:
         """PyTorch nn.Module forward pass alias routing to step."""
         return self.step(
             obs=obs,

@@ -1,18 +1,20 @@
 """Unit tests for Coalition Attention and Graph Clustering Algorithms."""
 
-import pytest
 import numpy as np
+import pytest
 from octoflow.coalition import extract_coalitions_from_matrix
 
 
 def test_extract_coalitions_from_matrix():
     # 4-node matrix with two clear clusters: (0, 1) and (2, 3)
-    c_matrix = np.array([
-        [0.0, 0.6, 0.0, 0.0],
-        [0.6, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.7],
-        [0.0, 0.0, 0.7, 0.0],
-    ])
+    c_matrix = np.array(
+        [
+            [0.0, 0.6, 0.0, 0.0],
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.7],
+            [0.0, 0.0, 0.7, 0.0],
+        ]
+    )
 
     graph_info = extract_coalitions_from_matrix(c_matrix, threshold=0.3)
     clusters = graph_info["active_coalitions"]

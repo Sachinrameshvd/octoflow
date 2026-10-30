@@ -10,7 +10,6 @@ Calibrated to squid and octopus giant axon electrophysiological recordings
 - Generates true biological continuous action potential waveforms (~100 mV peak-to-peak).
 """
 
-from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
 
 
@@ -20,16 +19,16 @@ class CephalopodHodgkinHuxley:
     def __init__(
         self,
         n_neurons: int,
-        c_m_uf: float = 1.0,           # Membrane capacitance (uF/cm^2)
-        g_na_max: float = 120.0,       # Maximal Sodium conductance (mS/cm^2)
-        g_k_max: float = 36.0,         # Maximal Delayed Rectifier Potassium conductance (mS/cm^2)
-        g_a_max: float = 20.0,         # Maximal A-type Potassium conductance (mS/cm^2)
-        g_l: float = 0.3,              # Leak conductance (mS/cm^2)
-        e_na_mv: float = 55.0,         # Sodium reversal potential (mV)
-        e_k_mv: float = -77.0,         # Potassium reversal potential (mV)
-        e_l_mv: float = -65.0,         # Leak reversal potential (mV)
-        temp_celsius: float = 16.0,    # Seawater temperature (°C)
-        dt_ms: float = 0.025,          # Integration time step (ms)
+        c_m_uf: float = 1.0,  # Membrane capacitance (uF/cm^2)
+        g_na_max: float = 120.0,  # Maximal Sodium conductance (mS/cm^2)
+        g_k_max: float = 36.0,  # Maximal Delayed Rectifier Potassium conductance (mS/cm^2)
+        g_a_max: float = 20.0,  # Maximal A-type Potassium conductance (mS/cm^2)
+        g_l: float = 0.3,  # Leak conductance (mS/cm^2)
+        e_na_mv: float = 55.0,  # Sodium reversal potential (mV)
+        e_k_mv: float = -77.0,  # Potassium reversal potential (mV)
+        e_l_mv: float = -65.0,  # Leak reversal potential (mV)
+        temp_celsius: float = 16.0,  # Seawater temperature (°C)
+        dt_ms: float = 0.025,  # Integration time step (ms)
     ):
         self.n = n_neurons
         self.c_m = c_m_uf
@@ -60,11 +59,13 @@ class CephalopodHodgkinHuxley:
         self.time_ms: float = 0.0
         self.spike_threshold_mv: float = 0.0
         self.last_v = self.v.copy()
-        self.spike_history: List[Tuple[float, int]] = []
+        self.spike_history: list[tuple[float, int]] = []
 
     def _alpha_m(self, v: np.ndarray) -> np.ndarray:
         v_diff = -(v + 40.0)
-        return self.phi * np.where(np.abs(v_diff) < 1e-4, 1.0, 0.1 * v_diff / (np.exp(v_diff / 10.0) - 1.0))
+        return self.phi * np.where(
+            np.abs(v_diff) < 1e-4, 1.0, 0.1 * v_diff / (np.exp(v_diff / 10.0) - 1.0)
+        )
 
     def _beta_m(self, v: np.ndarray) -> np.ndarray:
         return self.phi * 4.0 * np.exp(-(v + 65.0) / 18.0)
@@ -77,14 +78,18 @@ class CephalopodHodgkinHuxley:
 
     def _alpha_n(self, v: np.ndarray) -> np.ndarray:
         v_diff = -(v + 55.0)
-        return self.phi * np.where(np.abs(v_diff) < 1e-4, 0.1, 0.01 * v_diff / (np.exp(v_diff / 10.0) - 1.0))
+        return self.phi * np.where(
+            np.abs(v_diff) < 1e-4, 0.1, 0.01 * v_diff / (np.exp(v_diff / 10.0) - 1.0)
+        )
 
     def _beta_n(self, v: np.ndarray) -> np.ndarray:
         return self.phi * 0.125 * np.exp(-(v + 65.0) / 80.0)
 
     # Invertebrate A-type transient Potassium channel gates
     def _a_inf(self, v: np.ndarray) -> np.ndarray:
-        return (0.0761 * np.exp((v + 94.22) / 31.84) / (1.0 + np.exp((v + 1.17) / 28.93))) ** (1.0 / 3.0)
+        return (0.0761 * np.exp((v + 94.22) / 31.84) / (1.0 + np.exp((v + 1.17) / 28.93))) ** (
+            1.0 / 3.0
+        )
 
     def _b_inf(self, v: np.ndarray) -> np.ndarray:
         return (1.0 / (1.0 + np.exp((v + 53.3) / 14.54))) ** 4.0
@@ -115,7 +120,7 @@ class CephalopodHodgkinHuxley:
         self.time_ms = 0.0
         self.spike_history.clear()
 
-    def step(self, i_inj_ua: Optional[np.ndarray] = None) -> np.ndarray:
+    def step(self, i_inj_ua: np.ndarray | None = None) -> np.ndarray:
         """Advances membrane potentials and gating states by dt_ms.
 
         Args:
@@ -153,9 +158,9 @@ class CephalopodHodgkinHuxley:
         self.b += self.dt * db
 
         # Compute ionic currents
-        i_na = self.g_na_max * (self.m ** 3) * self.h * (v - self.e_na)
-        i_k = self.g_k_max * (self.n_gate ** 4) * (v - self.e_k)
-        i_a = self.g_a_max * (self.a ** 3) * self.b * (v - self.e_k)
+        i_na = self.g_na_max * (self.m**3) * self.h * (v - self.e_na)
+        i_k = self.g_k_max * (self.n_gate**4) * (v - self.e_k)
+        i_a = self.g_a_max * (self.a**3) * self.b * (v - self.e_k)
         i_leak = self.g_l * (v - self.e_l)
 
         # Membrane potential integration

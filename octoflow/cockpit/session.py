@@ -6,7 +6,8 @@ active workspace, theme, model selection, budget, port, and history.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
+
 from octoflow.themes import OctoTheme, load_saved_theme
 
 if TYPE_CHECKING:
@@ -18,8 +19,9 @@ Theme = OctoTheme
 @dataclass
 class CockpitSession:
     """Encapsulates all interactive session state without module-level globals."""
+
     workspace: Path = field(default_factory=lambda: Path.cwd().resolve())
-    previous_workspace: Optional[Path] = None
+    previous_workspace: Path | None = None
     theme: OctoTheme = field(default_factory=load_saved_theme)
     current_model: str = "anthropic"
     current_octos: str = "auto"
@@ -30,7 +32,7 @@ class CockpitSession:
     visualizer_url: str = "http://localhost:8088"
     broadcaster: Optional["TelemetryBroadcaster"] = None
     running: bool = True
-    active_run: Optional[Any] = None
-    history: List[str] = field(default_factory=list)
-    budget_tracker: Optional[Any] = None
-    budget_line: Optional[str] = None
+    active_run: Any | None = None
+    history: list[str] = field(default_factory=list)
+    budget_tracker: Any | None = None
+    budget_line: str | None = None

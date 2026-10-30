@@ -12,26 +12,24 @@ import select
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 from rich.console import Console
 from rich.live import Live
 
+from octoflow.cockpit.input import raw_terminal_mode
+from octoflow.cockpit.render import build_confirm_grid
+from octoflow.cockpit.session import CockpitSession
 from octoflow.router import (
     Route,
-    RouteKind,
     execute_shell_route,
     log_command_history,
 )
-from octoflow.cockpit.session import CockpitSession
-from octoflow.cockpit.input import raw_terminal_mode
-from octoflow.cockpit.render import build_confirm_grid
 
 
 def confirm_live_cockpit(
     route: Route,
-    session: Optional[CockpitSession] = None,
-    console: Optional[Console] = None,
+    session: CockpitSession | None = None,
+    console: Console | None = None,
 ) -> bool:
     """Non-blocking cockpit confirmation prompt maintaining the 20 FPS runner animation.
 
@@ -126,34 +124,50 @@ def execute_cockpit_shell(
             target_path = Path(os.path.expanduser(target_arg)).resolve()
 
         if not target_path.exists():
-            console.print(f"[{theme.rich_danger}]cd: no such file or directory: {target_arg}[/{theme.rich_danger}]\n")
+            console.print(
+                f"[{theme.rich_danger}]cd: no such file or directory: {target_arg}[/{theme.rich_danger}]\n"
+            )
             log_command_history(shell_cmd, workspace=session.workspace, success=False, kind="CD")
             return
         if not target_path.is_dir():
-            console.print(f"[{theme.rich_danger}]cd: not a directory: {target_arg}[/{theme.rich_danger}]\n")
+            console.print(
+                f"[{theme.rich_danger}]cd: not a directory: {target_arg}[/{theme.rich_danger}]\n"
+            )
             log_command_history(shell_cmd, workspace=session.workspace, success=False, kind="CD")
             return
 
         session.previous_workspace = session.workspace
         session.workspace = target_path
         log_command_history(shell_cmd, workspace=session.workspace, success=True, kind="CD")
-        console.print(f"[{theme.rich_success}]✔ Active workspace switched to:[/{theme.rich_success}] [bold]{session.workspace}[/bold]\n")
+        console.print(
+            f"[{theme.rich_success}]✔ Active workspace switched to:[/{theme.rich_success}] [bold]{session.workspace}[/bold]\n"
+        )
         return
 
     console.print(f"[{theme.rich_primary}]⚡ Shell:[/{theme.rich_primary}] [dim]{shell_cmd}[/dim]")
     try:
-        returncode, stdout, stderr = execute_shell_route(route, workspace=session.workspace, timeout=60)
+        returncode, stdout, stderr = execute_shell_route(
+            route, workspace=session.workspace, timeout=60
+        )
         if stdout:
             console.print(stdout.rstrip())
         if stderr:
             console.print(f"[{theme.rich_danger}]{stderr.rstrip()}[/{theme.rich_danger}]")
         if returncode == 0 and not stdout:
-            console.print(f"[{theme.rich_success}]✔ Command executed successfully.[/{theme.rich_success}]")
+            console.print(
+                f"[{theme.rich_success}]✔ Command executed successfully.[/{theme.rich_success}]"
+            )
     except subprocess.TimeoutExpired:
-        console.print(f"[{theme.rich_danger}]✖ Command timed out after 60 seconds.[/{theme.rich_danger}]")
-        log_command_history(shell_cmd, workspace=session.workspace, success=False, kind=route.kind.value)
+        console.print(
+            f"[{theme.rich_danger}]✖ Command timed out after 60 seconds.[/{theme.rich_danger}]"
+        )
+        log_command_history(
+            shell_cmd, workspace=session.workspace, success=False, kind=route.kind.value
+        )
     except Exception as ex:
         console.print(f"[{theme.rich_danger}]✖ Command execution error: {ex}[/{theme.rich_danger}]")
-        log_command_history(shell_cmd, workspace=session.workspace, success=False, kind=route.kind.value)
+        log_command_history(
+            shell_cmd, workspace=session.workspace, success=False, kind=route.kind.value
+        )
 
     console.print()

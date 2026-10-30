@@ -8,26 +8,25 @@ controlled environments, and secret redaction.
 import asyncio
 import contextlib
 import os
-import re
 import shlex
 import shutil
-import signal
 import subprocess
 import sys
 import threading
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Union
-from pydantic import BaseModel, Field
 
-from octoflow.provider import redact_secrets
+from pydantic import BaseModel
+
 from octoflow.logging_config import get_logger
+from octoflow.provider import redact_secrets
 
 logger = get_logger("tools")
 
 
 class ToolResult(BaseModel):
     """Normalized result of an arm tool execution."""
+
     tool_name: str
     target: str
     success: bool
@@ -36,43 +35,95 @@ class ToolResult(BaseModel):
     stderr: str = ""
     execution_time_ms: float = 0.0
     diff_lines: int = 0
-    error: Optional[str] = None
+    error: str | None = None
 
 
-DEFAULT_ALLOWED_COMMANDS: Set[str] = {
+DEFAULT_ALLOWED_COMMANDS: set[str] = {
     # Core language runtimes, test runners, linters & formatters
-    "python", "python3", "pytest", "coverage", "mypy", "ruff", "flake8", "black",
-    "node", "npm", "npx", "vite", "cargo", "rustc", "go",
+    "python",
+    "python3",
+    "pytest",
+    "coverage",
+    "mypy",
+    "ruff",
+    "flake8",
+    "black",
+    "node",
+    "npm",
+    "npx",
+    "vite",
+    "cargo",
+    "rustc",
+    "go",
     # Version control
     "git",
     # Safe inspect & text processing tools
-    "ls", "cat", "echo", "pwd", "grep", "find", "mkdir", "touch",
-    "cp", "mv", "which", "diff", "head", "tail", "wc", "sort", "uniq",
+    "ls",
+    "cat",
+    "echo",
+    "pwd",
+    "grep",
+    "find",
+    "mkdir",
+    "touch",
+    "cp",
+    "mv",
+    "which",
+    "diff",
+    "head",
+    "tail",
+    "wc",
+    "sort",
+    "uniq",
     # Build tools
-    "make", "docker",
+    "make",
+    "docker",
 }
 
 DEFAULT_TIMEOUT_SECONDS: float = 60.0
 MAX_TIMEOUT_SECONDS: float = 300.0
 MAX_CAPTURE_BYTES: int = 64 * 1024  # 64 KB
 
-SAFE_ENV_PASSTHROUGH: Set[str] = {
+SAFE_ENV_PASSTHROUGH: set[str] = {
     # System execution paths
-    "PATH", "SYSTEMROOT", "COMSPEC", "PATHEXT", "WINDIR",
+    "PATH",
+    "SYSTEMROOT",
+    "COMSPEC",
+    "PATHEXT",
+    "WINDIR",
     # User / Shell info
-    "HOME", "USER", "LOGNAME", "SHELL", "TERM",
+    "HOME",
+    "USER",
+    "LOGNAME",
+    "SHELL",
+    "TERM",
     # Temporary directory paths
-    "TMPDIR", "TEMP", "TMP",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
     # Locale & encoding
-    "LANG", "LC_ALL", "LC_CTYPE", "LC_MESSAGES", "PYTHONIOENCODING", "PYTHONUTF8",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "LC_MESSAGES",
+    "PYTHONIOENCODING",
+    "PYTHONUTF8",
     # Python & runtime environment
-    "PYTHONPATH", "VIRTUAL_ENV", "PYTHONDONTWRITEBYTECODE",
+    "PYTHONPATH",
+    "VIRTUAL_ENV",
+    "PYTHONDONTWRITEBYTECODE",
     # Node environment
-    "NODE_PATH", "NODE_ENV", "NPM_CONFIG_PREFIX",
+    "NODE_PATH",
+    "NODE_ENV",
+    "NPM_CONFIG_PREFIX",
     # Cargo / Rust / Go paths
-    "CARGO_HOME", "RUSTUP_HOME", "GOPATH", "GOROOT",
+    "CARGO_HOME",
+    "RUSTUP_HOME",
+    "GOPATH",
+    "GOROOT",
     # CI detection flags
-    "CI", "GITHUB_ACTIONS",
+    "CI",
+    "GITHUB_ACTIONS",
 }
 
 
@@ -82,7 +133,9 @@ def _is_subpath(target: Path, base: Path) -> bool:
         return target.resolve().is_relative_to(base.resolve())
     except (ValueError, AttributeError):
         try:
-            return os.path.commonpath([str(base.resolve()), str(target.resolve())]) == str(base.resolve())
+            return os.path.commonpath([str(base.resolve()), str(target.resolve())]) == str(
+                base.resolve()
+            )
         except ValueError:
             return False
 
@@ -140,7 +193,7 @@ class WorkspaceSandbox:
         sandbox_mode: str = "local",
         docker_image: str = "python:3.12-slim",
         dry_run: bool = False,
-        allowed_commands: Optional[Set[str]] = None,
+        allowed_commands: set[str] | None = None,
         default_timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         max_timeout_seconds: float = MAX_TIMEOUT_SECONDS,
         max_capture_bytes: int = MAX_CAPTURE_BYTES,
@@ -157,19 +210,23 @@ class WorkspaceSandbox:
             self.root.mkdir(parents=True, exist_ok=True)
         self.sandbox_mode = sandbox_mode.lower()
         self.docker_image = docker_image
-        self.allowed_commands = set(allowed_commands) if allowed_commands is not None else set(DEFAULT_ALLOWED_COMMANDS)
+        self.allowed_commands = (
+            set(allowed_commands) if allowed_commands is not None else set(DEFAULT_ALLOWED_COMMANDS)
+        )
         self.default_timeout_seconds = default_timeout_seconds
         self.max_timeout_seconds = max_timeout_seconds
         self.max_capture_bytes = max_capture_bytes
-        self.allow_unrestricted = allow_unrestricted or (os.getenv("OCTOFLOW_UNRESTRICTED_TOOLS") == "1")
+        self.allow_unrestricted = allow_unrestricted or (
+            os.getenv("OCTOFLOW_UNRESTRICTED_TOOLS") == "1"
+        )
 
         # Advisory locks: file_path_str -> holding_arm_id
-        self._locks: Dict[str, int] = {}
+        self._locks: dict[str, int] = {}
         self._lock_mutex = threading.RLock()
-        self.files_written: List[str] = []
-        self.budget_tracker: Optional[Any] = None
+        self.files_written: list[str] = []
+        self.budget_tracker: Any | None = None
 
-    def set_budget_tracker(self, tracker: Optional[Any]) -> None:
+    def set_budget_tracker(self, tracker: Any | None) -> None:
         """Attach a BudgetTracker to enforce file writing limits."""
         self.budget_tracker = tracker
 
@@ -196,14 +253,18 @@ class WorkspaceSandbox:
         if path_obj.is_absolute():
             resolved = path_obj.resolve()
             if not _is_subpath(resolved, self.root):
-                raise ValueError(f"Path traversal detected: '{rel_path}' resolves outside workspace root '{self.root}'")
+                raise ValueError(
+                    f"Path traversal detected: '{rel_path}' resolves outside workspace root '{self.root}'"
+                )
             # Verify all existing ancestors are also confined
             curr = path_obj
             while curr != self.root and curr != curr.parent:
                 if curr.exists():
                     curr_res = curr.resolve()
                     if not _is_subpath(curr_res, self.root):
-                        raise ValueError(f"Symlink traversal detected: ancestor '{curr}' resolves outside workspace root '{self.root}'")
+                        raise ValueError(
+                            f"Symlink traversal detected: ancestor '{curr}' resolves outside workspace root '{self.root}'"
+                        )
                 curr = curr.parent
             return resolved
 
@@ -213,7 +274,9 @@ class WorkspaceSandbox:
         resolved = candidate.resolve()
 
         if not _is_subpath(resolved, self.root):
-            raise ValueError(f"Path traversal detected: '{rel_path}' resolves outside workspace root '{self.root}'")
+            raise ValueError(
+                f"Path traversal detected: '{rel_path}' resolves outside workspace root '{self.root}'"
+            )
 
         # Verify all existing ancestors along the candidate path
         curr = candidate
@@ -221,14 +284,16 @@ class WorkspaceSandbox:
             if curr.exists():
                 curr_res = curr.resolve()
                 if not _is_subpath(curr_res, self.root):
-                    raise ValueError(f"Symlink traversal detected: ancestor '{curr}' resolves outside workspace root '{self.root}'")
+                    raise ValueError(
+                        f"Symlink traversal detected: ancestor '{curr}' resolves outside workspace root '{self.root}'"
+                    )
             curr = curr.parent
 
         return resolved
 
-    def _get_controlled_environment(self) -> Dict[str, str]:
+    def _get_controlled_environment(self) -> dict[str, str]:
         """Produce a minimal, sanitized environment for subprocess execution."""
-        clean_env: Dict[str, str] = {}
+        clean_env: dict[str, str] = {}
         for var in SAFE_ENV_PASSTHROUGH:
             val = os.environ.get(var)
             if val is not None:
@@ -262,7 +327,9 @@ class WorkspaceSandbox:
                     return True
                 return False
         except Exception as e:
-            logger.debug("Failed acquiring lock on %s: %s", rel_path, e)  # best-effort: safe path resolution or invalid path
+            logger.debug(
+                "Failed acquiring lock on %s: %s", rel_path, e
+            )  # best-effort: safe path resolution or invalid path
             return False
 
     def release_lock(self, rel_path: str, arm_id: int) -> bool:
@@ -275,7 +342,9 @@ class WorkspaceSandbox:
                     return True
                 return False
         except Exception as e:
-            logger.debug("Failed releasing lock on %s: %s", rel_path, e)  # best-effort: lock resolution or key missing
+            logger.debug(
+                "Failed releasing lock on %s: %s", rel_path, e
+            )  # best-effort: lock resolution or key missing
             return False
 
     @contextlib.contextmanager
@@ -348,7 +417,9 @@ class WorkspaceSandbox:
                 execution_time_ms=(time.time() - t0) * 1000,
             )
 
-    def write_file(self, rel_path: str, content: str, arm_id: int = -1, validate_syntax: bool = True) -> ToolResult:
+    def write_file(
+        self, rel_path: str, content: str, arm_id: int = -1, validate_syntax: bool = True
+    ) -> ToolResult:
         """Write content to a file inside the sandbox, creating parent dirs if needed.
 
         Performs pre-flight path validation, symlink traversal prevention, AST syntax
@@ -378,6 +449,7 @@ class WorkspaceSandbox:
             if validate_syntax:
                 if target.suffix == ".py":
                     import ast
+
                     try:
                         ast.parse(content, filename=rel_path)
                     except SyntaxError as syn_err:
@@ -392,6 +464,7 @@ class WorkspaceSandbox:
                         )
                 elif target.suffix == ".json":
                     import json
+
                     try:
                         json.loads(content)
                     except json.JSONDecodeError as json_err:
@@ -462,7 +535,7 @@ class WorkspaceSandbox:
     def run_command(
         self,
         command: str,
-        timeout_seconds: Optional[float] = None,
+        timeout_seconds: float | None = None,
         allow_unrestricted: bool = False,
     ) -> ToolResult:
         """Execute a shell command inside the workspace directory with sandboxed boundaries.
@@ -478,7 +551,9 @@ class WorkspaceSandbox:
         - 64 KB bounded output capture and secret redaction on stdout/stderr.
         """
         t0 = time.time()
-        timeout = float(timeout_seconds) if timeout_seconds is not None else self.default_timeout_seconds
+        timeout = (
+            float(timeout_seconds) if timeout_seconds is not None else self.default_timeout_seconds
+        )
         timeout = min(max(timeout, 0.1), self.max_timeout_seconds)
 
         # 1. Security sanitization: block known destructive root-level patterns
@@ -495,7 +570,11 @@ class WorkspaceSandbox:
                     execution_time_ms=(time.time() - t0) * 1000,
                 )
 
-        is_unrestricted = allow_unrestricted or self.allow_unrestricted or (os.getenv("OCTOFLOW_UNRESTRICTED_TOOLS") == "1")
+        is_unrestricted = (
+            allow_unrestricted
+            or self.allow_unrestricted
+            or (os.getenv("OCTOFLOW_UNRESTRICTED_TOOLS") == "1")
+        )
 
         # 2. Strict command parse and allowlist policy (unless explicitly unrestricted)
         if not is_unrestricted:
@@ -560,7 +639,12 @@ class WorkspaceSandbox:
                     prev_token = arg
                     continue
                 # Allowed system paths / URLs
-                if arg in ("/dev/null", "/dev/zero", "/dev/stdout", "/dev/stderr") or arg.startswith(("http://", "https://", "git://", "ssh://")):
+                if arg in (
+                    "/dev/null",
+                    "/dev/zero",
+                    "/dev/stdout",
+                    "/dev/stderr",
+                ) or arg.startswith(("http://", "https://", "git://", "ssh://")):
                     prev_token = arg
                     continue
 
@@ -578,14 +662,18 @@ class WorkspaceSandbox:
                                 execution_time_ms=(time.time() - t0) * 1000,
                             )
                     except Exception as e:
-                        logger.debug("Path resolution failed for arg %s: %s", arg, e)  # best-effort: malformed path argument
+                        logger.debug(
+                            "Path resolution failed for arg %s: %s", arg, e
+                        )  # best-effort: malformed path argument
                 prev_token = arg
         else:
             # Unrestricted opt-in mode
             try:
                 argv = shlex.split(command)
             except Exception as e:
-                logger.debug("shlex.split failed for command %r: %s", command, e)  # best-effort: fallback to split on unclosed quotes
+                logger.debug(
+                    "shlex.split failed for command %r: %s", command, e
+                )  # best-effort: fallback to split on unclosed quotes
                 argv = command.split()
 
         # 3. Check executable existence on PATH
@@ -610,9 +698,13 @@ class WorkspaceSandbox:
                 chk = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=5)
                 if chk.returncode == 0:
                     docker_exec = [
-                        "docker", "run", "--rm",
-                        "-v", f"{self.root}:/workspace",
-                        "-w", "/workspace",
+                        "docker",
+                        "run",
+                        "--rm",
+                        "-v",
+                        f"{self.root}:/workspace",
+                        "-w",
+                        "/workspace",
                         self.docker_image,
                     ] + argv
                     proc = subprocess.run(
@@ -650,16 +742,20 @@ class WorkspaceSandbox:
 
             # Bounded output capture (64 KB limit)
             if len(stdout.encode("utf-8", errors="ignore")) > self.max_capture_bytes:
-                stdout = stdout[:self.max_capture_bytes] + "\n... [OUTPUT TRUNCATED AT 64 KB] ..."
+                stdout = stdout[: self.max_capture_bytes] + "\n... [OUTPUT TRUNCATED AT 64 KB] ..."
             if len(stderr.encode("utf-8", errors="ignore")) > self.max_capture_bytes:
-                stderr = stderr[:self.max_capture_bytes] + "\n... [STDERR TRUNCATED AT 64 KB] ..."
+                stderr = stderr[: self.max_capture_bytes] + "\n... [STDERR TRUNCATED AT 64 KB] ..."
 
             # Redact secrets from output
             stdout = redact_secrets(stdout)
             stderr = redact_secrets(stderr)
 
-            success = (proc.returncode == 0)
-            err_msg = None if success else (stderr.strip() or f"Command failed with exit code {proc.returncode}")
+            success = proc.returncode == 0
+            err_msg = (
+                None
+                if success
+                else (stderr.strip() or f"Command failed with exit code {proc.returncode}")
+            )
 
             return ToolResult(
                 tool_name="run_command",
@@ -739,13 +835,22 @@ class WorkspaceSandbox:
         """Asynchronously read a file from the workspace sandbox."""
         return await asyncio.to_thread(self.read_file, rel_path)
 
-    async def awrite_file(self, rel_path: str, content: str, arm_id: int = -1, validate_syntax: bool = True) -> ToolResult:
+    async def awrite_file(
+        self, rel_path: str, content: str, arm_id: int = -1, validate_syntax: bool = True
+    ) -> ToolResult:
         """Asynchronously write a file to the workspace sandbox."""
         return await asyncio.to_thread(self.write_file, rel_path, content, arm_id, validate_syntax)
 
-    async def arun_command(self, command: str, timeout_seconds: Optional[float] = None, allow_unrestricted: bool = False) -> ToolResult:
+    async def arun_command(
+        self,
+        command: str,
+        timeout_seconds: float | None = None,
+        allow_unrestricted: bool = False,
+    ) -> ToolResult:
         """Asynchronously run a command inside the workspace sandbox."""
-        return await asyncio.to_thread(self.run_command, command, timeout_seconds, allow_unrestricted)
+        return await asyncio.to_thread(
+            self.run_command, command, timeout_seconds, allow_unrestricted
+        )
 
     async def alist_dir(self, rel_path: str = ".") -> ToolResult:
         """Asynchronously list directory contents."""

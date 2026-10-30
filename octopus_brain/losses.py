@@ -7,8 +7,6 @@ Components:
 - Slow Central Consolidation Loss (Applied only at consolidation events)
 """
 
-from typing import Dict, Optional, Tuple
-import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -34,7 +32,7 @@ class AdaptiveGateBudgeter(nn.Module):
         """Current clamped dual multiplier lambda = exp(log_lambda)."""
         return torch.exp(torch.clamp(self.log_lambda, -6.0, 6.0))
 
-    def compute_penalty(self, report_probs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_penalty(self, report_probs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute Lagrangian penalty loss and dual loss.
 
         Args:
@@ -46,7 +44,7 @@ class AdaptiveGateBudgeter(nn.Module):
         mean_rate = report_probs.mean()
         diff = mean_rate - self.target_rate
         # Primal penalty term for the policy
-        primal_penalty = self.lambda_val.detach() * diff + (diff ** 2)
+        primal_penalty = self.lambda_val.detach() * diff + (diff**2)
         # Dual loss for updating lambda (gradient ascent on multiplier)
         dual_loss = -self.log_lambda * diff.detach()
         return primal_penalty, dual_loss
@@ -63,7 +61,7 @@ class AdaptiveGateBudgeter(nn.Module):
 class OctopusLoss(nn.Module):
     """Unified loss criterion for OctopusBrain training with optional adaptive budgeting."""
 
-    def __init__(self, config: Optional[OctopusBrainConfig] = None):
+    def __init__(self, config: OctopusBrainConfig | None = None):
         super().__init__()
         self.config = config or OctopusBrainConfig()
         self.message_penalty_coef = self.config.message_penalty_coef
@@ -90,11 +88,11 @@ class OctopusLoss(nn.Module):
         action_entropies: torch.Tensor,
         values: torch.Tensor,
         returns: torch.Tensor,
-        old_action_log_probs: Optional[torch.Tensor] = None,
+        old_action_log_probs: torch.Tensor | None = None,
         clip_eps: float = 0.2,
-        advantages: Optional[torch.Tensor] = None,
+        advantages: torch.Tensor | None = None,
         normalize_adv: bool = True,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Compute Actor-Critic policy gradient / PPO clipped loss, value, and entropy losses.
 
         Args:
@@ -140,7 +138,9 @@ class OctopusLoss(nn.Module):
 
         return policy_loss, value_loss, entropy_loss
 
-    def compute_message_penalty(self, report_probs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_message_penalty(
+        self, report_probs: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute message-rate penalty loss using Lagrangian dual optimization."""
         if self.adaptive_budgeting and self.gate_budgeter is not None:
             return self.gate_budgeter.compute_penalty(report_probs)
@@ -153,7 +153,7 @@ class OctopusLoss(nn.Module):
         self,
         pred_obs: torch.Tensor,
         actual_obs: torch.Tensor,
-        active_mask: Optional[torch.Tensor] = None,
+        active_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Compute forward-model observation prediction MSE loss.
 
@@ -179,15 +179,15 @@ class OctopusLoss(nn.Module):
         values: torch.Tensor,
         returns: torch.Tensor,
         report_probs: torch.Tensor,
-        pred_obs: Optional[torch.Tensor] = None,
-        actual_next_obs: Optional[torch.Tensor] = None,
-        consolidation_loss: Optional[torch.Tensor] = None,
+        pred_obs: torch.Tensor | None = None,
+        actual_next_obs: torch.Tensor | None = None,
+        consolidation_loss: torch.Tensor | None = None,
         is_consolidation_step: bool = False,
-        old_action_log_probs: Optional[torch.Tensor] = None,
+        old_action_log_probs: torch.Tensor | None = None,
         clip_eps: float = 0.2,
-        advantages: Optional[torch.Tensor] = None,
+        advantages: torch.Tensor | None = None,
         normalize_adv: bool = True,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Compute total weighted training loss and breakdown metrics."""
         # 1. Task / RL losses
         policy_loss, value_loss, entropy_loss = self.compute_policy_loss(
@@ -228,9 +228,7 @@ class OctopusLoss(nn.Module):
         )
 
         current_lambda = (
-            float(self.gate_budgeter.lambda_val.item())
-            if (self.gate_budgeter is not None)
-            else 1.0
+            float(self.gate_budgeter.lambda_val.item()) if (self.gate_budgeter is not None) else 1.0
         )
 
         return {

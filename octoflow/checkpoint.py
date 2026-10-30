@@ -5,14 +5,15 @@ runs on an isolated octoflow/run-<id> branch, commits all generated changes (or 
 and can be cleanly and safely undone in one command without risking user data.
 """
 
-import os
-import sys
-import time
 import json
-import uuid
+import os
 import subprocess
+import time
+import uuid
+from collections.abc import Callable
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Union, Callable
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from octoflow.logging_config import get_logger
@@ -33,6 +34,7 @@ def get_runs_dir() -> Path:
 
 class RunMetadata(BaseModel):
     """Metadata describing a single OctoFlow execution run and its git provenance."""
+
     run_id: str
     goal: str
     mode: str = "software_dev"
@@ -40,22 +42,23 @@ class RunMetadata(BaseModel):
     created_at: float = Field(default_factory=time.time)
     workspace_dir: str
     is_git: bool = True
-    original_branch: Optional[str] = None
-    original_head: Optional[str] = None
-    run_branch: Optional[str] = None
-    stash_hash: Optional[str] = None
+    original_branch: str | None = None
+    original_head: str | None = None
+    run_branch: str | None = None
+    stash_hash: str | None = None
     status: str = "INITIALIZED"  # INITIALIZED, RUNNING, COMPLETED, WIP, FAILED, UNDONE, NO_CHANGES
-    commit_hash: Optional[str] = None
-    files_written: List[str] = Field(default_factory=list)
+    commit_hash: str | None = None
+    files_written: list[str] = Field(default_factory=list)
 
 
 # -----------------------------------------------------------------------------
 # Low-Level Git Operations (Safe, Local Only, Never Destructive to User Branches)
 # -----------------------------------------------------------------------------
 
+
 def run_git_cmd(
-    args: List[str],
-    cwd: Union[str, Path],
+    args: list[str],
+    cwd: str | Path,
     check: bool = False,
     capture: bool = True,
 ) -> subprocess.CompletedProcess:
@@ -81,7 +84,7 @@ def run_git_cmd(
         raise
 
 
-def is_git_repo(workspace: Union[str, Path]) -> bool:
+def is_git_repo(workspace: str | Path) -> bool:
     """Check if the target directory is inside an active git working tree."""
     ws = Path(workspace)
     if not ws.exists():
@@ -90,7 +93,7 @@ def is_git_repo(workspace: Union[str, Path]) -> bool:
     return res.returncode == 0 and res.stdout.strip().lower() == "true"
 
 
-def get_git_root(workspace: Union[str, Path]) -> Optional[Path]:
+def get_git_root(workspace: str | Path) -> Path | None:
     """Return the root path of the git repository."""
     res = run_git_cmd(["rev-parse", "--show-toplevel"], cwd=workspace)
     if res.returncode == 0 and res.stdout.strip():
@@ -98,7 +101,7 @@ def get_git_root(workspace: Union[str, Path]) -> Optional[Path]:
     return None
 
 
-def get_current_head(workspace: Union[str, Path]) -> Optional[str]:
+def get_current_head(workspace: str | Path) -> str | None:
     """Return the full 40-character commit hash of HEAD."""
     res = run_git_cmd(["rev-parse", "HEAD"], cwd=workspace)
     if res.returncode == 0 and res.stdout.strip():
@@ -106,7 +109,7 @@ def get_current_head(workspace: Union[str, Path]) -> Optional[str]:
     return None
 
 
-def get_current_branch(workspace: Union[str, Path]) -> str:
+def get_current_branch(workspace: str | Path) -> str:
     """Return the name of the current git branch, or HEAD commit if detached."""
     res = run_git_cmd(["symbolic-ref", "--short", "HEAD"], cwd=workspace)
     if res.returncode == 0 and res.stdout.strip():
@@ -115,15 +118,15 @@ def get_current_branch(workspace: Union[str, Path]) -> str:
     return head or "HEAD"
 
 
-def is_working_tree_clean(workspace: Union[str, Path]) -> bool:
+def is_working_tree_clean(workspace: str | Path) -> bool:
     """Check if the working tree has no staged, unstaged, or untracked changes."""
     res = run_git_cmd(["status", "--porcelain"], cwd=workspace)
     return res.returncode == 0 and len(res.stdout.strip()) == 0
 
 
-def create_stash_snapshot(workspace: Union[str, Path]) -> Optional[str]:
+def create_stash_snapshot(workspace: str | Path) -> str | None:
     """Create a stash-like snapshot of dirty changes without modifying the working tree.
-    
+
     Uses 'git stash create' which writes a stash commit object and prints its hash
     without updating refs/stash. Stages untracked files temporarily so untracked user files
     are preserved, creates the stash commit, and immediately resets the index.
@@ -140,7 +143,7 @@ def create_stash_snapshot(workspace: Union[str, Path]) -> Optional[str]:
     return stash_hash
 
 
-def init_git_repo(workspace: Union[str, Path]) -> bool:
+def init_git_repo(workspace: str | Path) -> bool:
     """Initialize a git repository in workspace. Ensures at least one commit exists."""
     ws = Path(workspace)
     res = run_git_cmd(["init"], cwd=ws)
@@ -149,17 +152,19 @@ def init_git_repo(workspace: Union[str, Path]) -> bool:
     # If repo has no commits, create an initial empty commit so HEAD and branches exist
     head = get_current_head(ws)
     if not head:
-        run_git_cmd(["commit", "--allow-empty", "-m", "chore: initial repository structure"], cwd=ws)
+        run_git_cmd(
+            ["commit", "--allow-empty", "-m", "chore: initial repository structure"], cwd=ws
+        )
     return True
 
 
-def branch_exists(workspace: Union[str, Path], branch_name: str) -> bool:
+def branch_exists(workspace: str | Path, branch_name: str) -> bool:
     """Check if a specific branch ref exists in the repository."""
     res = run_git_cmd(["rev-parse", "--verify", f"refs/heads/{branch_name}"], cwd=workspace)
     return res.returncode == 0
 
 
-def get_diff_summary(workspace: Union[str, Path], from_ref: str, to_ref: Optional[str] = None) -> str:
+def get_diff_summary(workspace: str | Path, from_ref: str, to_ref: str | None = None) -> str:
     """Return a human-readable stat summary of changes between two git refs."""
     range_spec = f"{from_ref}..{to_ref}" if to_ref else from_ref
     res = run_git_cmd(["diff", "--stat", range_spec], cwd=workspace)
@@ -171,6 +176,7 @@ def get_diff_summary(workspace: Union[str, Path], from_ref: str, to_ref: Optiona
 # -----------------------------------------------------------------------------
 # Metadata Persistence
 # -----------------------------------------------------------------------------
+
 
 def save_run_metadata(meta: RunMetadata) -> Path:
     """Save run metadata to ~/.octoflow/runs/<run_id>/meta.json."""
@@ -185,7 +191,7 @@ def save_run_metadata(meta: RunMetadata) -> Path:
     return meta_file
 
 
-def load_run_metadata(run_id: str) -> Optional[RunMetadata]:
+def load_run_metadata(run_id: str) -> RunMetadata | None:
     """Load run metadata from ~/.octoflow/runs/<run_id>/meta.json."""
     meta_file = get_runs_dir() / run_id / "meta.json"
     if not meta_file.exists():
@@ -198,20 +204,20 @@ def load_run_metadata(run_id: str) -> Optional[RunMetadata]:
         return None
 
 
-def get_latest_run_metadata(workspace: Optional[Union[str, Path]] = None) -> Optional[RunMetadata]:
+def get_latest_run_metadata(workspace: str | Path | None = None) -> RunMetadata | None:
     """Retrieve metadata for the most recent run, optionally filtered by workspace."""
     runs = list_runs(workspace_dir=workspace, limit=1)
     return runs[0] if runs else None
 
 
-def list_runs(workspace_dir: Optional[Union[str, Path]] = None, limit: int = 20) -> List[RunMetadata]:
+def list_runs(workspace_dir: str | Path | None = None, limit: int = 20) -> list[RunMetadata]:
     """List recent runs in descending order of creation time."""
     runs_dir = get_runs_dir()
     if not runs_dir.exists():
         return []
 
     target_ws = str(Path(workspace_dir).resolve()) if workspace_dir else None
-    metas: List[RunMetadata] = []
+    metas: list[RunMetadata] = []
 
     for child in runs_dir.iterdir():
         if child.is_dir() and (child / "meta.json").exists():
@@ -234,8 +240,9 @@ def list_runs(workspace_dir: Optional[Union[str, Path]] = None, limit: int = 20)
 # Pre-Flight, Checkpoint Creation & Run Finalization
 # -----------------------------------------------------------------------------
 
+
 def preflight_and_start_run(
-    workspace_dir: Union[str, Path],
+    workspace_dir: str | Path,
     goal: str,
     mode: str = "software_dev",
     model: str = "mock",
@@ -244,10 +251,10 @@ def preflight_and_start_run(
     init_git: bool = False,
     no_checkpoint: bool = False,
     interactive: bool = False,
-    interactive_confirm: Optional[Callable[[str], bool]] = None,
-) -> Optional[RunMetadata]:
+    interactive_confirm: Callable[[str], bool] | None = None,
+) -> RunMetadata | None:
     """Perform pre-flight verification, record checkpoint, and create isolated run branch.
-    
+
     Dry runs skip checkpointing and return None.
     In git workspaces, verifies clean tree (or captures stash snapshot with --allow-dirty)
     and switches to branch octoflow/run-<id>.
@@ -326,7 +333,9 @@ def preflight_and_start_run(
     run_branch = f"octoflow/run-{run_id}"
 
     if branch_exists(ws, run_branch):
-        raise ValueError(f"Run branch '{run_branch}' already exists. Aborting to prevent branch collision.")
+        raise ValueError(
+            f"Run branch '{run_branch}' already exists. Aborting to prevent branch collision."
+        )
 
     orig_head = get_current_head(ws)
     orig_branch = get_current_branch(ws)
@@ -334,7 +343,9 @@ def preflight_and_start_run(
     # 4. Switch to new run branch
     checkout_res = run_git_cmd(["checkout", "-b", run_branch], cwd=ws)
     if checkout_res.returncode != 0:
-        raise RuntimeError(f"Failed to create run branch '{run_branch}': {checkout_res.stderr.strip()}")
+        raise RuntimeError(
+            f"Failed to create run branch '{run_branch}': {checkout_res.stderr.strip()}"
+        )
 
     # 5. Record metadata
     meta = RunMetadata(
@@ -356,13 +367,13 @@ def preflight_and_start_run(
 
 
 def finalize_run(
-    meta: Optional[RunMetadata],
+    meta: RunMetadata | None,
     success: bool,
-    files_written: Optional[List[str]] = None,
-    goal: Optional[str] = None,
-) -> Optional[RunMetadata]:
+    files_written: list[str] | None = None,
+    goal: str | None = None,
+) -> RunMetadata | None:
     """Commit generated workspace changes at the end of a run (or as WIP if failed).
-    
+
     Does not touch branches if meta is None or not in a git repository.
     """
     if meta is None or not meta.is_git:
@@ -400,14 +411,15 @@ def finalize_run(
 # Undo / Rollback
 # -----------------------------------------------------------------------------
 
+
 def undo_run(
-    workspace_dir: Union[str, Path],
-    run_id: Optional[str] = None,
+    workspace_dir: str | Path,
+    run_id: str | None = None,
     confirm: bool = True,
-    interactive_confirm: Optional[Callable[[str, str], bool]] = None,
-) -> Dict[str, Any]:
+    interactive_confirm: Callable[[str, str], bool] | None = None,
+) -> dict[str, Any]:
     """Undo an OctoFlow run by checking out the original branch and deleting the run branch.
-    
+
     SAFETY CONSTRAINTS:
     - Only deletes branches matching 'octoflow/run-*'.
     - Only deletes branches confirmed to be created by OctoFlow via meta.json.
@@ -431,7 +443,9 @@ def undo_run(
             raise ValueError("No prior OctoFlow runs found to undo for this workspace.")
 
     if not meta.is_git:
-        raise ValueError(f"Run '{meta.run_id}' was executed without git checkpointing and cannot be undone via git.")
+        raise ValueError(
+            f"Run '{meta.run_id}' was executed without git checkpointing and cannot be undone via git."
+        )
 
     # 2. Strict ownership verification
     run_branch = meta.run_branch
@@ -464,7 +478,9 @@ def undo_run(
     # 5. Switch back to original branch
     checkout_res = run_git_cmd(["checkout", meta.original_branch], cwd=ws)
     if checkout_res.returncode != 0:
-        raise RuntimeError(f"Failed to checkout original branch '{meta.original_branch}': {checkout_res.stderr.strip()}")
+        raise RuntimeError(
+            f"Failed to checkout original branch '{meta.original_branch}': {checkout_res.stderr.strip()}"
+        )
 
     # 6. Delete the run branch safely (-D only on octoflow/run-* owned by metadata)
     del_res = run_git_cmd(["branch", "-D", run_branch], cwd=ws)
@@ -475,7 +491,7 @@ def undo_run(
     restored_stash = False
     if meta.stash_hash:
         stash_res = run_git_cmd(["stash", "apply", meta.stash_hash], cwd=ws)
-        restored_stash = (stash_res.returncode == 0)
+        restored_stash = stash_res.returncode == 0
 
     # 8. Mark metadata as undone
     meta.status = "UNDONE"

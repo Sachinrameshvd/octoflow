@@ -19,30 +19,22 @@ import os
 import random
 import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import pytest
-import numpy as np
+from unittest.mock import MagicMock, patch
 
-from octoflow.config import OctoFlowConfig
+import pytest
+from octoflow.bus import InterBrachialBus
 from octoflow.conductor import SupraesophagealConductor
-from octoflow.tools import WorkspaceSandbox, ToolResult
-from octoflow.bus import InterBrachialBus, BrachialMessage
-from octoflow.memory import VerticalLobeMemory
-from octoflow.provider import (
-    get_llm_provider,
-    MockLLMProvider,
-    BaseLLMProvider,
-    LLMResponse,
-    CascadePoolLLMProvider,
-    LLMConfigEntry,
-    ProviderExhaustedError,
-)
+from octoflow.config import OctoFlowConfig
 from octoflow.federation import (
-    GLOBAL_FEDERATION_GUARD,
-    PIIAction,
-    SecretSanitizingLogFilter,
     get_safe_logger,
 )
+from octoflow.memory import VerticalLobeMemory
+from octoflow.provider import (
+    MockLLMProvider,
+    ProviderExhaustedError,
+    get_llm_provider,
+)
+from octoflow.tools import WorkspaceSandbox
 
 
 # ==============================================================================
@@ -65,7 +57,9 @@ async def test_race_conditions_concurrent_file_locks(tmp_path):
             with sandbox.file_lock(target_file, arm_id=worker_id):
                 # Critical section: simulate work
                 await asyncio.sleep(0.005)
-                sandbox.write_file(target_file, json.dumps({"worker": worker_id, "timestamp": time.time()}))
+                sandbox.write_file(
+                    target_file, json.dumps({"worker": worker_id, "timestamp": time.time()})
+                )
                 write_count += 1
         except RuntimeError:
             lock_fail_count += 1
@@ -85,7 +79,7 @@ async def test_race_conditions_concurrent_file_locks(tmp_path):
 # ==============================================================================
 def test_graceful_degradation_missing_credentials(monkeypatch):
     """Decision D1: Missing API credentials in LIVE mode must raise ProviderExhaustedError.
-    
+
     In explicit DRY-RUN mode, missing credentials cleanly degrade to MockLLMProvider.
     """
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
@@ -93,13 +87,17 @@ def test_graceful_degradation_missing_credentials(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
 
     # 1. LIVE Mode (Decision D1): Must raise ProviderExhaustedError rather than silently faking success
-    cfg_live = OctoFlowConfig(model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[], dry_run=False)
+    cfg_live = OctoFlowConfig(
+        model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[], dry_run=False
+    )
     with pytest.raises(ProviderExhaustedError) as exc_info:
         get_llm_provider(cfg_live)
     assert "missing ANTHROPIC_API_KEY" in str(exc_info.value)
 
     # 2. DRY-RUN Mode: Cleanly degrades to MockLLMProvider
-    cfg_dry = OctoFlowConfig(model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[], dry_run=True)
+    cfg_dry = OctoFlowConfig(
+        model_provider="anthropic", anthropic_api_key=None, api_key=None, llm_pool=[], dry_run=True
+    )
     provider_dry = get_llm_provider(cfg_dry)
     assert isinstance(provider_dry, MockLLMProvider)
     resp = provider_dry.generate("Test prompt")
@@ -133,8 +131,8 @@ def subprocess_result(returncode=0, stdout="", stderr=""):
 def test_graceful_degradation_no_gpu():
     """Neural policy and connectome must run smoothly on CPU when no GPU is available."""
     torch = pytest.importorskip("torch")
-    from octopus_brain.config import OctopusBrainConfig
     from octopus_brain.brain import OctopusBrain
+    from octopus_brain.config import OctopusBrainConfig
 
     cfg = OctopusBrainConfig(n_modules=8, obs_dim=16, action_dim=5)
     brain = OctopusBrain(cfg)

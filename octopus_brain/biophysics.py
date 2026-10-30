@@ -9,10 +9,11 @@ Simulates the cephalopod connectome using biologically realistic dynamics:
 - Voltage trace, spike raster, and instantaneous population firing rate tracking.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
+
 import numpy as np
 
-from octopus_brain.connectome import CephalopodConnectome, Neurotransmitter
+from octopus_brain.connectome import CephalopodConnectome
 
 
 class BiophysicalConnectomeSimulator:
@@ -60,14 +61,16 @@ class BiophysicalConnectomeSimulator:
 
         # Telemetry and recording
         self.current_time_ms: float = 0.0
-        self.spike_history: List[Tuple[float, int]] = []  # (time_ms, neuron_id)
-        self.voltage_traces: Dict[int, List[float]] = {}  # neuron_id -> trace
-        self.time_points: List[float] = []
+        self.spike_history: list[tuple[float, int]] = []  # (time_ms, neuron_id)
+        self.voltage_traces: dict[int, list[float]] = {}  # neuron_id -> trace
+        self.time_points: list[float] = []
 
     def reset(self, randomize_v: bool = True):
         """Resets all membrane potentials and conductance states."""
         if randomize_v:
-            self.v = self.v_rest + np.random.uniform(-3.0, 3.0, size=self.n_neurons).astype(np.float32)
+            self.v = self.v_rest + np.random.uniform(-3.0, 3.0, size=self.n_neurons).astype(
+                np.float32
+            )
         else:
             self.v.fill(self.v_rest)
         self.g_exc.fill(0.0)
@@ -79,11 +82,11 @@ class BiophysicalConnectomeSimulator:
         self.voltage_traces.clear()
         self.time_points.clear()
 
-    def set_monitored_neurons(self, neuron_ids: List[int]):
+    def set_monitored_neurons(self, neuron_ids: list[int]):
         """Selects specific neuron IDs to record continuous membrane potential traces."""
         self.voltage_traces = {nid: [] for nid in neuron_ids}
 
-    def step(self, external_currents: Optional[np.ndarray] = None) -> np.ndarray:
+    def step(self, external_currents: np.ndarray | None = None) -> np.ndarray:
         """Advances the biophysical network by a single time step dt.
 
         Args:
@@ -148,7 +151,7 @@ class BiophysicalConnectomeSimulator:
 
         return spikes
 
-    def run_sim(self, duration_ms: float, current_stimulus_fn: Optional[Any] = None) -> Dict[str, Any]:
+    def run_sim(self, duration_ms: float, current_stimulus_fn: Any | None = None) -> dict[str, Any]:
         """Runs the simulation for a given duration.
 
         Args:
@@ -168,22 +171,24 @@ class BiophysicalConnectomeSimulator:
         return {
             "duration_ms": duration_ms,
             "total_spikes": len(self.spike_history),
-            "mean_firing_rate_hz": (len(self.spike_history) / (self.n_neurons * (duration_ms / 1000.0))),
+            "mean_firing_rate_hz": (
+                len(self.spike_history) / (self.n_neurons * (duration_ms / 1000.0))
+            ),
             "spike_matrix": spike_matrix,
         }
 
-    def get_population_firing_rates(self, time_window_ms: float = 50.0) -> Dict[str, float]:
+    def get_population_firing_rates(self, time_window_ms: float = 50.0) -> dict[str, float]:
         """Computes instantaneous firing rate (Hz) grouped by brain regions."""
         cutoff_time = max(0.0, self.current_time_ms - time_window_ms)
         recent_spikes = [nid for (t, nid) in self.spike_history if t >= cutoff_time]
 
-        spike_counts: Dict[str, int] = {}
+        spike_counts: dict[str, int] = {}
         for nid in recent_spikes:
             region = self.connectome.node_by_id[nid].region
             spike_counts[region] = spike_counts.get(region, 0) + 1
 
         window_sec = time_window_ms / 1000.0
-        rates_hz: Dict[str, float] = {}
+        rates_hz: dict[str, float] = {}
         for region, node_ids in self.connectome.region_node_ids.items():
             n_cells = len(node_ids)
             total_spikes = spike_counts.get(region, 0)

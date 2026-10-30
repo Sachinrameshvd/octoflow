@@ -4,11 +4,11 @@ Renders real-time reactive dashboards with live surprise gauges, active
 coalition links, and token savings metrics for single-octopus and multi-octopus swarms.
 """
 
-from typing import Optional, List, Dict, Any
 from rich import box
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+
 from octoflow.config import get_octoflow_dir, load_secure_config
 from octoflow.themes import OctoTheme, load_saved_theme
 
@@ -23,7 +23,7 @@ def render_consortium_dashboard(
     elapsed_seconds: float = 0.0,
     total_arms: int = 24,
     tier_name: str = "TRIAD",
-    theme: Optional[OctoTheme] = None,
+    theme: OctoTheme | None = None,
 ) -> Panel:
     """Render the multi-octopus consortium dashboard using Rich."""
     if theme is None:
@@ -36,7 +36,9 @@ def render_consortium_dashboard(
     status_text = Text()
     status_text.append(" ◈ OCTOSFLOW v1.0.0", style=theme.rich_primary)
     status_text.append(f" | Tier: {tier_name}", style=theme.rich_secondary)
-    status_text.append(f" | Swarm: {len(octopus_states)} Octopuses ({total_arms} Arms)", style=theme.rich_success)
+    status_text.append(
+        f" | Swarm: {len(octopus_states)} Octopuses ({total_arms} Arms)", style=theme.rich_success
+    )
 
     badge_text = Text()
     badge_text.append(f"Cost: ${total_cost:.3f} ", style="bold white")
@@ -53,7 +55,10 @@ def render_consortium_dashboard(
     )
 
     visualizer_banner = Panel(
-        Text(f" ● Live 3D Constellation Visualizer: {visualizer_url}  (Cmd+Click link to watch all {len(octopus_states)} octopuses fire live)", style=theme.rich_primary),
+        Text(
+            f" ● Live 3D Constellation Visualizer: {visualizer_url}  (Cmd+Click link to watch all {len(octopus_states)} octopuses fire live)",
+            style=theme.rich_primary,
+        ),
         border_style=theme.rich_border,
     )
 
@@ -75,8 +80,12 @@ def render_consortium_dashboard(
             filled = int(round((pct / 100.0) * bar_width))
             filled = max(0, min(bar_width, filled))
             empty = bar_width - filled
-            bar_color = "bold green" if pct >= 100 else ("bold cyan" if pct >= 50 else "bold yellow")
-            prog_bar = f"[{bar_color}]{'█' * filled}[/{bar_color}][dim]{'░' * empty}[/dim] {int(pct):>3}%"
+            bar_color = (
+                "bold green" if pct >= 100 else ("bold cyan" if pct >= 50 else "bold yellow")
+            )
+            prog_bar = (
+                f"[{bar_color}]{'█' * filled}[/{bar_color}][dim]{'░' * empty}[/dim] {int(pct):>3}%"
+            )
             action_disp = data.get("action", "Coordinating domain arms...")
             if len(action_disp) > 55:
                 action_disp = action_disp[:52] + "..."
@@ -124,12 +133,16 @@ def render_consortium_dashboard(
                 llm_table.add_column("Endpoint URL", style="dim", width=36)
                 llm_table.add_column("Cascade State", style="bold green", width=18)
                 for idx, p in enumerate(pool):
-                    p_stat = "[bold green]ACTIVE[/bold green]" if idx == 0 else "[dim]STANDBY (Hot-Swap)[/dim]"
+                    p_stat = (
+                        "[bold green]ACTIVE[/bold green]"
+                        if idx == 0
+                        else "[dim]STANDBY (Hot-Swap)[/dim]"
+                    )
                     url_disp = p.get("base_url") or "Default Cloud"
                     if len(url_disp) > 34:
                         url_disp = url_disp[:32] + "..."
                     p_name = f"{p.get('name', 'Model')} ({p.get('model', 'default')})"
-                    llm_table.add_row(f"[#{idx+1}]", p_name, url_disp, p_stat)
+                    llm_table.add_row(f"[#{idx + 1}]", p_name, url_disp, p_stat)
                 llm_cascade_panel = Panel(
                     llm_table,
                     title="[bold cyan]Neural LLM Cascade & Token Failover Pool (Auto-Hot-Swap)[/bold cyan]",
@@ -147,7 +160,11 @@ def render_consortium_dashboard(
     if llm_cascade_panel:
         full_layout.add_row(llm_cascade_panel)
 
-    return Panel(full_layout, border_style=theme.rich_border, title=f"[{theme.rich_primary}]OctosFlow Cephalopod Consortium ({total_arms} Neural Arms)[/{theme.rich_primary}]")
+    return Panel(
+        full_layout,
+        border_style=theme.rich_border,
+        title=f"[{theme.rich_primary}]OctosFlow Cephalopod Consortium ({total_arms} Neural Arms)[/{theme.rich_primary}]",
+    )
 
 
 def render_dashboard(
@@ -164,8 +181,8 @@ def render_dashboard(
     max_cycles: int = 10,
     quiescent_count: int = 0,
     elapsed_seconds: float = 0.0,
-    theme: Optional[OctoTheme] = None,
-    budget_line: Optional[str] = None,
+    theme: OctoTheme | None = None,
+    budget_line: str | None = None,
 ) -> Panel:
     """Render the reactive cephalopod terminal dashboard using Rich."""
     if theme is None:
@@ -200,7 +217,13 @@ def render_dashboard(
     filled = min(bar_width, max(0, filled))
     bar_str = "█" * filled + "░" * (bar_width - filled)
 
-    prog_color = theme.rich_success if progress_pct >= 85.0 else theme.rich_primary if progress_pct >= 40.0 else theme.rich_warning
+    prog_color = (
+        theme.rich_success
+        if progress_pct >= 85.0
+        else theme.rich_primary
+        if progress_pct >= 40.0
+        else theme.rich_warning
+    )
     progress_bar_display = f"[{prog_color}][{bar_str}] {progress_pct:.1f}%[/{prog_color}]"
 
     if progress_pct >= 5.0 and progress_pct < 100.0:
@@ -251,13 +274,16 @@ def render_dashboard(
     }
 
     for arm_id in range(8):
-        st = arm_states.get(arm_id, {
-            "role": f"Arm {arm_id}",
-            "status": "IDLE",
-            "surprise": 0.0,
-            "threshold": 0.50,
-            "action": "Waiting...",
-        })
+        st = arm_states.get(
+            arm_id,
+            {
+                "role": f"Arm {arm_id}",
+                "status": "IDLE",
+                "surprise": 0.0,
+                "threshold": 0.50,
+                "action": "Waiting...",
+            },
+        )
 
         surp = st["surprise"]
         thresh = st["threshold"]
@@ -284,7 +310,10 @@ def render_dashboard(
         coalition_desc = " ⇄ ".join([f"Coalition {c}" for c in active_coalitions])
 
     coalition_panel = Panel(
-        Text(f"⇄ Active Attention Coalitions: {coalition_desc}\n⚡ Event Stream: {last_event_msg}", style=theme.rich_primary),
+        Text(
+            f"⇄ Active Attention Coalitions: {coalition_desc}\n⚡ Event Stream: {last_event_msg}",
+            style=theme.rich_primary,
+        ),
         title=f"[{theme.rich_secondary}]Dynamic Neural Binding[/{theme.rich_secondary}]",
         border_style=theme.rich_secondary,
     )
@@ -296,4 +325,8 @@ def render_dashboard(
     full_layout.add_row(grid)
     full_layout.add_row(coalition_panel)
 
-    return Panel(full_layout, border_style=theme.rich_border, title=f"[{theme.rich_primary}]Cephalopod Neural Swarm[/{theme.rich_primary}]")
+    return Panel(
+        full_layout,
+        border_style=theme.rich_border,
+        title=f"[{theme.rich_primary}]Cephalopod Neural Swarm[/{theme.rich_primary}]",
+    )

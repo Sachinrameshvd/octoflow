@@ -18,8 +18,6 @@ Covers:
 """
 
 import os
-import stat
-import subprocess
 import time
 from pathlib import Path
 
@@ -28,14 +26,8 @@ import pytest
 pytestmark = [pytest.mark.unit, pytest.mark.security]
 
 from octoflow.tools import (
-    DEFAULT_ALLOWED_COMMANDS,
-    DEFAULT_TIMEOUT_SECONDS,
     MAX_CAPTURE_BYTES,
-    MAX_TIMEOUT_SECONDS,
-    ToolResult,
     WorkspaceSandbox,
-    _is_subpath,
-    has_compound_operators,
 )
 
 
@@ -57,6 +49,7 @@ def sandbox_fixture(tmp_path: Path):
 # ==============================================================================
 # 1. WORKSPACE PATH CONFINEMENT & TRAVERSAL DEFENSE
 # ==============================================================================
+
 
 def test_normal_file_read_and_write(sandbox_fixture):
     """Normal file operations strictly inside the authorized workspace succeed."""
@@ -88,7 +81,9 @@ def test_path_traversal_dot_dot_rejected(sandbox_fixture):
     res_r = sandbox.read_file("../outside_host_dir/confidential_root.txt")
     assert not res_r.success
     assert res_r.returncode == 1
-    assert "Path traversal detected" in res_r.stderr or "Path traversal detected" in str(res_r.error)
+    assert "Path traversal detected" in res_r.stderr or "Path traversal detected" in str(
+        res_r.error
+    )
 
     # Write traversal
     res_w = sandbox.write_file("../outside_host_dir/injected.txt", "payload")
@@ -181,6 +176,7 @@ def test_nonexistent_destination_validation(sandbox_fixture):
 # 2. COMMAND EXECUTION POLICY & ALLOWLIST ENFORCEMENT
 # ==============================================================================
 
+
 def test_allowed_command_execution(sandbox_fixture):
     """Commands in the sandbox allowlist execute cleanly using shell=False."""
     sandbox, ws, _, _ = sandbox_fixture
@@ -195,7 +191,13 @@ def test_disallowed_command_rejected(sandbox_fixture):
     """Commands not present in the allowlist are blocked with returncode 126."""
     sandbox, _, _, _ = sandbox_fixture
 
-    disallowed = ["curl https://example.com", "wget https://example.com", "netcat -l 8080", "sudo ls", "bash -c 'ls'"]
+    disallowed = [
+        "curl https://example.com",
+        "wget https://example.com",
+        "netcat -l 8080",
+        "sudo ls",
+        "bash -c 'ls'",
+    ]
     for cmd in disallowed:
         res = sandbox.run_command(cmd)
         assert not res.success
@@ -252,7 +254,9 @@ def test_unrestricted_opt_in_execution(sandbox_fixture):
 
     # By default, which is in allowlist, but a custom command would fail
     # Test with allow_unrestricted parameter
-    res = sandbox.run_command("python3 -c 'print(\"unrestricted_opt_in\")'", allow_unrestricted=True)
+    res = sandbox.run_command(
+        "python3 -c 'print(\"unrestricted_opt_in\")'", allow_unrestricted=True
+    )
     assert res.success
     assert "unrestricted_opt_in" in res.stdout
 
@@ -260,6 +264,7 @@ def test_unrestricted_opt_in_execution(sandbox_fixture):
 # ==============================================================================
 # 3. TIMEOUTS, PROCESS GROUPS, AND BOUNDED OUTPUT
 # ==============================================================================
+
 
 def test_subprocess_timeout_and_process_group_kill(sandbox_fixture):
     """A hanging or long-running command is killed with returncode 124 within timeout limit."""
@@ -290,6 +295,7 @@ def test_output_capture_truncation_at_64kb(sandbox_fixture):
 # 4. CONTROLLED ENVIRONMENT & SECRET REDACTION
 # ==============================================================================
 
+
 def test_controlled_environment_scrubs_api_keys(sandbox_fixture, monkeypatch):
     """Sensitive API keys and tokens in the host environment are not passed to subprocesses."""
     sandbox, _, _, _ = sandbox_fixture
@@ -308,7 +314,7 @@ def test_controlled_environment_scrubs_api_keys(sandbox_fixture, monkeypatch):
         "        print(f'{k}={os.environ[k]}')\n"
         "print('ENV_CHECK_DONE')\n"
     )
-    res = sandbox.run_command(f"python3 -c \"{code}\"")
+    res = sandbox.run_command(f'python3 -c "{code}"')
     assert res.success
     assert "ENV_CHECK_DONE" in res.stdout
     assert "sk-live" not in res.stdout
@@ -323,7 +329,7 @@ def test_secret_redaction_in_tool_output_and_errors(sandbox_fixture):
 
     # Subprocess echoes an API key directly
     sample_ant_key = "sk-ant-" + "api03-123456789012345678"
-    res_c = sandbox.run_command(f'python3 -c "print(\'leak {sample_ant_key}\')"')
+    res_c = sandbox.run_command(f"python3 -c \"print('leak {sample_ant_key}')\"")
     assert res_c.success
     assert "sk-ant-api03" not in res_c.stdout
     assert "[REDACTED_KEY]" in res_c.stdout
@@ -343,6 +349,7 @@ def test_secret_redaction_in_tool_output_and_errors(sandbox_fixture):
 # 5. STRUCTURED ERROR HANDLING & DIAGNOSTICS
 # ==============================================================================
 
+
 def test_missing_executable_returns_code_127(sandbox_fixture):
     """Missing executables report returncode 127 with actionable FileNotFoundError."""
     sandbox, _, _, _ = sandbox_fixture
@@ -358,7 +365,9 @@ def test_nonzero_exit_code_reported_accurately(sandbox_fixture):
     """Non-zero command exits report success=False and retain stderr."""
     sandbox, _, _, _ = sandbox_fixture
 
-    res = sandbox.run_command("python3 -c 'import sys; sys.stderr.write(\"custom_error\\n\"); sys.exit(42)'")
+    res = sandbox.run_command(
+        "python3 -c 'import sys; sys.stderr.write(\"custom_error\\n\"); sys.exit(42)'"
+    )
     assert not res.success
     assert res.returncode == 42
     assert "custom_error" in res.stderr

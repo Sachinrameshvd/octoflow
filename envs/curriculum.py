@@ -9,8 +9,10 @@ isolated motor control to multi-arm cooperative hunting under high hazard pressu
   and delayed context cues requiring central memory retention.
 """
 
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Any
+
 import numpy as np
+
 # Optional torch import for environments; fallback to None if unavailable
 try:
     import torch  # noqa: F401
@@ -18,8 +20,9 @@ except ImportError:
     torch = None
 
 from octopus_brain.config import EnvConfig
-from envs.reach_and_avoid import ReachAndAvoidEnv
+
 from envs.hunting_env import CooperativeHuntingEnv
+from envs.reach_and_avoid import ReachAndAvoidEnv
 
 
 class CurriculumScheduler:
@@ -34,8 +37,8 @@ class CurriculumScheduler:
     def __init__(
         self,
         window_size: int = 10,
-        advance_reward_thresholds: Optional[List[float]] = None,
-        max_hazard_thresholds: Optional[List[float]] = None,
+        advance_reward_thresholds: list[float] | None = None,
+        max_hazard_thresholds: list[float] | None = None,
     ):
         self.window_size = window_size
         self.stage = 0
@@ -44,9 +47,9 @@ class CurriculumScheduler:
         self.advance_reward_thresholds = advance_reward_thresholds or [8.0, 14.0]
         self.max_hazard_thresholds = max_hazard_thresholds or [1.0, 3.0]
 
-        self.reward_history: List[float] = []
-        self.hazard_history: List[float] = []
-        self.stage_transitions: List[Dict[str, Any]] = []
+        self.reward_history: list[float] = []
+        self.hazard_history: list[float] = []
+        self.stage_transitions: list[dict[str, Any]] = []
 
     def record_episode(self, reward: float, hazard_hits: float, episode_idx: int) -> bool:
         """Record episode outcome and check if agent should graduate to next stage."""
@@ -69,12 +72,14 @@ class CurriculumScheduler:
                 self.stage += 1
                 self.reward_history.clear()
                 self.hazard_history.clear()
-                self.stage_transitions.append({
-                    "to_stage": self.stage,
-                    "at_episode": episode_idx,
-                    "mean_reward": mean_rew,
-                    "mean_hazards": mean_haz,
-                })
+                self.stage_transitions.append(
+                    {
+                        "to_stage": self.stage,
+                        "at_episode": episode_idx,
+                        "mean_reward": mean_rew,
+                        "mean_hazards": mean_haz,
+                    }
+                )
                 return True
         return False
 
@@ -94,8 +99,8 @@ class CurriculumEnv:
 
     def __init__(
         self,
-        base_config: Optional[EnvConfig] = None,
-        scheduler: Optional[CurriculumScheduler] = None,
+        base_config: EnvConfig | None = None,
+        scheduler: CurriculumScheduler | None = None,
     ):
         self.base_config = base_config or EnvConfig()
         self.scheduler = scheduler or CurriculumScheduler()
@@ -134,7 +139,7 @@ class CurriculumEnv:
         self.envs = [self.env_stage0, self.env_stage1, self.env_stage2]
 
     @property
-    def active_env(self) -> Union[ReachAndAvoidEnv, CooperativeHuntingEnv]:
+    def active_env(self) -> ReachAndAvoidEnv | CooperativeHuntingEnv:
         return self.envs[self.scheduler.stage]
 
     @property
@@ -153,19 +158,19 @@ class CurriculumEnv:
     def grid_size(self) -> int:
         return self.active_env.grid_size
 
-    def seed(self, seed: Optional[int] = None) -> None:
+    def seed(self, seed: int | None = None) -> None:
         for e in self.envs:
             e.seed(seed)
 
-    def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         obs, info = self.active_env.reset(seed=seed)
         info["curriculum_stage"] = self.scheduler.stage
         info["curriculum_stage_name"] = self.scheduler.current_stage_name
         return obs, info
 
     def step(
-        self, actions: Union[np.ndarray, Any]
-    ) -> Tuple[np.ndarray, np.ndarray, bool, bool, Dict[str, Any]]:
+        self, actions: np.ndarray | Any
+    ) -> tuple[np.ndarray, np.ndarray, bool, bool, dict[str, Any]]:
         obs, rewards, term, trunc, info = self.active_env.step(actions)
         info["curriculum_stage"] = self.scheduler.stage
         info["curriculum_stage_name"] = self.scheduler.current_stage_name

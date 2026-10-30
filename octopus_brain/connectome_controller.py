@@ -10,12 +10,13 @@ the 3D continuous soft-body muscular hydrostat tentacle environment:
 - Closes the real-time sensorimotor loop in 3D physics.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
-import numpy as np
+from typing import Any
 
-from octopus_brain.connectome import CephalopodConnectome, NeuronCategory
-from octopus_brain.biophysics import BiophysicalConnectomeSimulator
+import numpy as np
 from envs.soft_body_tentacle import SoftBodyTentacleEnv
+
+from octopus_brain.biophysics import BiophysicalConnectomeSimulator
+from octopus_brain.connectome import CephalopodConnectome, NeuronCategory
 
 
 class ConnectomeEmbodiedController:
@@ -23,7 +24,7 @@ class ConnectomeEmbodiedController:
 
     def __init__(
         self,
-        connectome: Optional[CephalopodConnectome] = None,
+        connectome: CephalopodConnectome | None = None,
         dt_sim_ms: float = 0.5,
         steps_per_env_tick: int = 20,  # 20 * 0.5ms = 10ms neural integration per physics tick
     ):
@@ -33,9 +34,9 @@ class ConnectomeEmbodiedController:
         self.n_neurons = len(self.connectome.nodes)
 
         # Cache arm sensory and motor neuron IDs
-        self.arm_sensory_chemo: Dict[int, List[int]] = {i: [] for i in range(8)}
-        self.arm_sensory_mech: Dict[int, List[int]] = {i: [] for i in range(8)}
-        self.arm_motoneurons: Dict[int, List[int]] = {i: [] for i in range(8)}
+        self.arm_sensory_chemo: dict[int, list[int]] = {i: [] for i in range(8)}
+        self.arm_sensory_mech: dict[int, list[int]] = {i: [] for i in range(8)}
+        self.arm_motoneurons: dict[int, list[int]] = {i: [] for i in range(8)}
 
         for node in self.connectome.nodes:
             if node.arm_index >= 0:
@@ -99,7 +100,9 @@ class ConnectomeEmbodiedController:
             # Firing rates of segmental motoneurons
             segment_rates = [spike_accumulator[nid] / total_time_sec for nid in m_ids]
             mean_rate = float(np.mean(segment_rates))
-            rate_gradient = float(segment_rates[-1] - segment_rates[0]) if len(segment_rates) > 1 else 0.0
+            rate_gradient = (
+                float(segment_rates[-1] - segment_rates[0]) if len(segment_rates) > 1 else 0.0
+            )
 
             # Decode pitch (d_theta) from basal vs distal motoneuron balance
             d_theta = np.clip(rate_gradient / 20.0, -1.0, 1.0)
@@ -107,8 +110,12 @@ class ConnectomeEmbodiedController:
             # Decode yaw (d_phi) from lateral interbrachial asymmetry
             left_arm = (arm_idx - 1) % 8
             right_arm = (arm_idx + 1) % 8
-            left_rate = float(np.mean([spike_accumulator[nid] for nid in self.arm_motoneurons[left_arm]]))
-            right_rate = float(np.mean([spike_accumulator[nid] for nid in self.arm_motoneurons[right_arm]]))
+            left_rate = float(
+                np.mean([spike_accumulator[nid] for nid in self.arm_motoneurons[left_arm]])
+            )
+            right_rate = float(
+                np.mean([spike_accumulator[nid] for nid in self.arm_motoneurons[right_arm]])
+            )
             d_phi = np.clip((right_rate - left_rate) / 15.0, -1.0, 1.0)
 
             # Decode elongation from overall axial motoneuron drive
@@ -125,7 +132,7 @@ class ConnectomeEmbodiedController:
         self,
         env: SoftBodyTentacleEnv,
         max_steps: int = 50,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Runs a complete closed-loop sensorimotor episode in 3D soft-body physics."""
         self.reset()
         reset_res = env.reset()
@@ -148,11 +155,13 @@ class ConnectomeEmbodiedController:
             pop_rates = self.sim.get_population_firing_rates(time_window_ms=20.0)
             firing_telemetry.append(pop_rates)
 
-            trajectory.append({
-                "step": step_idx,
-                "reward": float(np.sum(rewards)),
-                "actions_mean": float(np.mean(actions)),
-            })
+            trajectory.append(
+                {
+                    "step": step_idx,
+                    "reward": float(np.sum(rewards)),
+                    "actions_mean": float(np.mean(actions)),
+                }
+            )
             obs = next_obs
             if done:
                 break

@@ -1,8 +1,9 @@
 """Script to capture CLI help snapshots for all octoflow commands with COLUMNS=100."""
-import os
+
 from pathlib import Path
-from typer.testing import CliRunner
+
 from octoflow.cli import app, octos_app
+from typer.testing import CliRunner
 
 SNAPSHOT_DIR = Path(__file__).resolve().parent.parent / "tests" / "snapshots" / "help"
 
@@ -36,7 +37,9 @@ def capture_all():
     for cmd in octos_app.registered_commands:
         cmd_name = cmd.name or cmd.callback.__name__
         cmd_help = runner.invoke(octos_app, [cmd_name, "--help"], prog_name="octos")
-        assert cmd_help.exit_code == 0, f"Octos command help failed for {cmd_name}: {cmd_help.exit_code}"
+        assert cmd_help.exit_code == 0, (
+            f"Octos command help failed for {cmd_name}: {cmd_help.exit_code}"
+        )
         filename = f"octos__{cmd_name}.txt"
         (SNAPSHOT_DIR / filename).write_text(cmd_help.output, encoding="utf-8")
         print(f"Captured {filename} ({len(cmd_help.output)} bytes)")

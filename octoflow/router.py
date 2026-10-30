@@ -17,7 +17,6 @@ Implements safety gates for:
 - OCTOFLOW_LEGACY_ROUTER=1 escape hatch
 """
 
-import json
 import logging
 import os
 import re
@@ -28,7 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger("octoflow.router")
 
@@ -44,7 +43,7 @@ class RouteKind(str, Enum):
 @dataclass
 class Route:
     kind: RouteKind
-    argv: List[str] = field(default_factory=list)
+    argv: list[str] = field(default_factory=list)
     destructive: bool = False
     compound: bool = False
     reason: str = ""
@@ -55,46 +54,202 @@ class Route:
     paste_line_count: int = 1
 
 
-PREFIXES_TO_STRIP: List[str] = [
-    "octos ❯", "octos >", "octos:", "octo ❯", "octo >", "❯", ">", "#",
-    "./octos ", "./octo ", "octos ", "octo ",
+PREFIXES_TO_STRIP: list[str] = [
+    "octos ❯",
+    "octos >",
+    "octos:",
+    "octo ❯",
+    "octo >",
+    "❯",
+    ">",
+    "#",
+    "./octos ",
+    "./octo ",
+    "octos ",
+    "octo ",
 ]
 
-KNOWN_SLASH_COMMANDS: Set[str] = {
-    "help", "manual", "docs", "setup", "doctor", "init", "init-ide",
-    "init-action", "ci", "review-pr", "heal", "triage", "notify", "audit",
-    "eject", "federation", "install-claude", "plan", "ask", "talk", "theme",
-    "model", "octos", "guild", "bench", "monorepo", "record", "runner",
-    "guard", "hooks", "rag", "budget", "ignite", "diff", "commit", "rollback",
-    "undo", "ui", "memory", "status", "llm", "clear", "exit", "quit",
-    "screensaver", "banner", "play"
+KNOWN_SLASH_COMMANDS: set[str] = {
+    "help",
+    "manual",
+    "docs",
+    "setup",
+    "doctor",
+    "init",
+    "init-ide",
+    "init-action",
+    "ci",
+    "review-pr",
+    "heal",
+    "triage",
+    "notify",
+    "audit",
+    "eject",
+    "federation",
+    "install-claude",
+    "plan",
+    "ask",
+    "talk",
+    "theme",
+    "model",
+    "octos",
+    "guild",
+    "bench",
+    "monorepo",
+    "record",
+    "runner",
+    "guard",
+    "hooks",
+    "rag",
+    "budget",
+    "ignite",
+    "diff",
+    "commit",
+    "rollback",
+    "undo",
+    "ui",
+    "memory",
+    "status",
+    "llm",
+    "clear",
+    "exit",
+    "quit",
+    "screensaver",
+    "banner",
+    "play",
 }
 
-ALLOWED_SIMPLE_SHELL_COMMANDS: Set[str] = {
-    "mkdir", "touch", "ls", "pwd", "cat", "open", "rm", "cp", "mv",
-    "echo", "which", "find", "grep", "curl", "chmod", "kill", "ps", "cd", "git", "rmdir"
+ALLOWED_SIMPLE_SHELL_COMMANDS: set[str] = {
+    "mkdir",
+    "touch",
+    "ls",
+    "pwd",
+    "cat",
+    "open",
+    "rm",
+    "cp",
+    "mv",
+    "echo",
+    "which",
+    "find",
+    "grep",
+    "curl",
+    "chmod",
+    "kill",
+    "ps",
+    "cd",
+    "git",
+    "rmdir",
 }
 
-DESTRUCTIVE_COMMANDS: Set[str] = {
-    "rm", "rmdir", "mv", "chown", "dd", "mkfs", "sudo"
-}
+DESTRUCTIVE_COMMANDS: set[str] = {"rm", "rmdir", "mv", "chown", "dd", "mkfs", "sudo"}
 
-PROSE_CHECK_COMMANDS: Set[str] = {
-    "mkdir", "touch", "rm", "ls", "cd", "cat", "open", "find", "grep", "make"
+PROSE_CHECK_COMMANDS: set[str] = {
+    "mkdir",
+    "touch",
+    "rm",
+    "ls",
+    "cd",
+    "cat",
+    "open",
+    "find",
+    "grep",
+    "make",
 }
 
 # English prose stopwords indicating natural-language intent rather than shell arguments
-PROSE_WORDS: Set[str] = {
-    "a", "an", "the", "my", "your", "our", "all", "some", "any", "this", "that",
-    "these", "those", "up", "down", "in", "out", "on", "off", "for", "with",
-    "about", "to", "from", "into", "through", "during", "before", "after",
-    "above", "below", "between", "under", "again", "further", "then", "once",
-    "here", "there", "when", "where", "why", "how", "code", "requirements",
-    "issues", "analyzer", "files", "everything", "something", "project", "app",
-    "model", "data", "test", "please", "can", "could", "would", "should", "want",
-    "need", "like", "me", "us", "them", "it", "is", "are", "was", "were", "be",
-    "been", "being", "have", "has", "had", "do", "does", "did", "and", "or",
-    "but", "if", "because", "as", "until", "while", "of", "at", "by"
+PROSE_WORDS: set[str] = {
+    "a",
+    "an",
+    "the",
+    "my",
+    "your",
+    "our",
+    "all",
+    "some",
+    "any",
+    "this",
+    "that",
+    "these",
+    "those",
+    "up",
+    "down",
+    "in",
+    "out",
+    "on",
+    "off",
+    "for",
+    "with",
+    "about",
+    "to",
+    "from",
+    "into",
+    "through",
+    "during",
+    "before",
+    "after",
+    "above",
+    "below",
+    "between",
+    "under",
+    "again",
+    "further",
+    "then",
+    "once",
+    "here",
+    "there",
+    "when",
+    "where",
+    "why",
+    "how",
+    "code",
+    "requirements",
+    "issues",
+    "analyzer",
+    "files",
+    "everything",
+    "something",
+    "project",
+    "app",
+    "model",
+    "data",
+    "test",
+    "please",
+    "can",
+    "could",
+    "would",
+    "should",
+    "want",
+    "need",
+    "like",
+    "me",
+    "us",
+    "them",
+    "it",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "and",
+    "or",
+    "but",
+    "if",
+    "because",
+    "as",
+    "until",
+    "while",
+    "of",
+    "at",
+    "by",
 }
 
 COMPOUND_REGEX = re.compile(r"(\|{1,2}|&&|;|`|\$\(|\r|\n|>|<|&)")
@@ -103,7 +258,7 @@ COMPOUND_REGEX = re.compile(r"(\|{1,2}|&&|;|`|\$\(|\r|\n|>|<|&)")
 MAX_CAPTURE_BYTES = 64 * 1024
 
 # In-memory session command history
-SESSION_COMMAND_HISTORY: List[Dict[str, Any]] = []
+SESSION_COMMAND_HISTORY: list[dict[str, Any]] = []
 
 
 def strip_prompt_prefixes(line: str) -> str:
@@ -113,7 +268,7 @@ def strip_prompt_prefixes(line: str) -> str:
         prev_len = len(cleaned)
         for prefix in PREFIXES_TO_STRIP:
             if cleaned.startswith(prefix):
-                cleaned = cleaned[len(prefix):].strip()
+                cleaned = cleaned[len(prefix) :].strip()
         if len(cleaned) == prev_len:
             break
     return cleaned
@@ -171,9 +326,9 @@ def is_prose_argument(token: str) -> bool:
 
 def is_destructive_command(
     command: str,
-    argv: Optional[List[str]] = None,
-    workspace: Optional[Union[str, Path]] = None,
-) -> Tuple[bool, str]:
+    argv: list[str] | None = None,
+    workspace: str | Path | None = None,
+) -> tuple[bool, str]:
     """Evaluates whether a command contains destructive operations requiring y/N confirmation.
 
     Returns (is_destructive, reason).
@@ -194,19 +349,22 @@ def is_destructive_command(
     for t in cleaned_tokens:
         t_low = t.lower()
         if t_low in DESTRUCTIVE_COMMANDS or t_low.startswith("mkfs."):
-            return True, f"command contains '{t_low}' which modifies or deletes filesystem resources"
+            return (
+                True,
+                f"command contains '{t_low}' which modifies or deletes filesystem resources",
+            )
 
     # 2. Recursive copy: cp -r, cp -R, cp --recursive
     if "cp" in [t.lower() for t in cleaned_tokens]:
         cp_idx = [t.lower() for t in cleaned_tokens].index("cp")
-        for t in cleaned_tokens[cp_idx + 1:]:
+        for t in cleaned_tokens[cp_idx + 1 :]:
             if t in ["-r", "-R", "--recursive"] or (t.startswith("-") and ("r" in t or "R" in t)):
                 return True, "recursive copy ('cp -r') may overwrite files"
 
     # 3. Recursive permissions: chmod -R
     if "chmod" in [t.lower() for t in cleaned_tokens]:
         chmod_idx = [t.lower() for t in cleaned_tokens].index("chmod")
-        for t in cleaned_tokens[chmod_idx + 1:]:
+        for t in cleaned_tokens[chmod_idx + 1 :]:
             if t in ["-R", "--recursive"] or (t.startswith("-") and "R" in t):
                 return True, "recursive permissions ('chmod -R') modifies filesystem permissions"
 
@@ -214,7 +372,7 @@ def is_destructive_command(
     for idx, t in enumerate(cleaned_tokens):
         if t.lower() == "git" and idx + 1 < len(cleaned_tokens):
             git_sub = cleaned_tokens[idx + 1].lower()
-            git_args = [x.lower() for x in cleaned_tokens[idx + 2:]]
+            git_args = [x.lower() for x in cleaned_tokens[idx + 2 :]]
 
             if git_sub == "reset" and ("--hard" in git_args):
                 return True, "'git reset --hard' discards uncommitted workspace changes"
@@ -222,10 +380,14 @@ def is_destructive_command(
             if git_sub == "clean":
                 return True, "'git clean' permanently removes untracked files"
 
-            if git_sub == "push" and any(a in ["--force", "-f", "--force-with-lease"] for a in git_args):
+            if git_sub == "push" and any(
+                a in ["--force", "-f", "--force-with-lease"] for a in git_args
+            ):
                 return True, "'git push --force' overwrites remote history"
 
-            if git_sub in ["checkout", "restore"] and any(a in [".", "-- .", "-f", "--force"] for a in git_args):
+            if git_sub in ["checkout", "restore"] and any(
+                a in [".", "-- .", "-f", "--force"] for a in git_args
+            ):
                 return True, f"'git {git_sub} .' discards working tree modifications"
 
             if git_sub == "branch" and any(a in ["-d", "-D", "--delete"] for a in git_args):
@@ -251,7 +413,7 @@ def is_destructive_command(
     return False, ""
 
 
-def classify_input_legacy(line: str, workspace: Optional[Union[str, Path]] = None) -> Route:
+def classify_input_legacy(line: str, workspace: str | Path | None = None) -> Route:
     """Characterization implementation of the unhardened pre-P1.3 cockpit router."""
     raw = line
     cleaned = strip_prompt_prefixes(line)
@@ -316,7 +478,7 @@ def classify_input_legacy(line: str, workspace: Optional[Union[str, Path]] = Non
 
 def classify_input(
     line: str,
-    workspace: Optional[Union[str, Path]] = None,
+    workspace: str | Path | None = None,
     is_multiline_paste: bool = False,
     paste_line_count: int = 1,
 ) -> Route:
@@ -333,7 +495,9 @@ def classify_input(
 
     # 1. Legacy router escape hatch
     if os.getenv("OCTOFLOW_LEGACY_ROUTER") == "1":
-        logger.warning("[DEPRECATION] OCTOFLOW_LEGACY_ROUTER=1 is active. This unhardened fallback is deprecated and will be removed in a future release.")
+        logger.warning(
+            "[DEPRECATION] OCTOFLOW_LEGACY_ROUTER=1 is active. This unhardened fallback is deprecated and will be removed in a future release."
+        )
         return classify_input_legacy(line, workspace=workspace)
 
     # 2. Check for empty input
@@ -342,9 +506,13 @@ def classify_input(
         return Route(kind=RouteKind.EMPTY, raw_input=raw_input, reason="empty input")
 
     # 3. Handle multi-line pasted content (Task 6)
-    has_newlines = ("\n" in line or "\r" in line)
+    has_newlines = "\n" in line or "\r" in line
     effective_multiline = is_multiline_paste or has_newlines
-    effective_line_count = paste_line_count if paste_line_count > 1 else (len(line.splitlines()) if has_newlines else 1)
+    effective_line_count = (
+        paste_line_count
+        if paste_line_count > 1
+        else (len(line.splitlines()) if has_newlines else 1)
+    )
 
     if effective_multiline and effective_line_count > 1:
         if cleaned.startswith("!") or cleaned.startswith("$"):
@@ -379,7 +547,9 @@ def classify_input(
     if cleaned.startswith("!") or cleaned.startswith("$"):
         cmd = cleaned[1:].strip()
         if not cmd:
-            return Route(kind=RouteKind.EMPTY, raw_input=raw_input, reason="empty explicit shell command")
+            return Route(
+                kind=RouteKind.EMPTY, raw_input=raw_input, reason="empty explicit shell command"
+            )
 
         is_comp = has_compound_operators(cmd)
         try:
@@ -395,7 +565,8 @@ def classify_input(
             argv=parsed_argv,
             destructive=is_dest,
             compound=is_comp,
-            reason="explicit shell command (! or $ prefix)" + (f": {dest_reason}" if is_dest else ""),
+            reason="explicit shell command (! or $ prefix)"
+            + (f": {dest_reason}" if is_dest else ""),
             raw_input=raw_input,
             needs_confirmation=True,  # Explicit shell commands ALWAYS require confirmation
         )
@@ -473,7 +644,9 @@ def classify_input(
             parsed_argv = shlex.split(cleaned)
         except Exception:
             parsed_argv = cleaned.split()
-        is_dest, dest_reason = is_destructive_command(cleaned, argv=parsed_argv, workspace=workspace)
+        is_dest, dest_reason = is_destructive_command(
+            cleaned, argv=parsed_argv, workspace=workspace
+        )
         return Route(
             kind=RouteKind.SHELL_EXPLICIT,
             command=cleaned,
@@ -521,7 +694,8 @@ def classify_input(
 
         # If there are > 2 remaining arguments without flags or path characters (e.g. touch user profile card)
         non_flag_non_path = [
-            t for t in remaining_tokens
+            t
+            for t in remaining_tokens
             if not t.startswith("-") and "/" not in t and "\\" not in t and "." not in t
         ]
         if len(non_flag_non_path) >= 3:
@@ -553,7 +727,7 @@ def classify_input(
 
 def log_command_history(
     command: str,
-    workspace: Optional[Union[str, Path]] = None,
+    workspace: str | Path | None = None,
     success: bool = True,
     kind: str = "SHELL",
 ) -> None:
@@ -596,9 +770,9 @@ def log_command_history(
 
 def execute_shell_route(
     route: Route,
-    workspace: Union[str, Path],
+    workspace: str | Path,
     timeout: int = 60,
-) -> Tuple[int, str, str]:
+) -> tuple[int, str, str]:
     """Executes a classified shell route with 64KB output truncation and safety enforcement.
 
     - SHELL_SIMPLE: executed with shell=False using argv.
@@ -639,7 +813,7 @@ def execute_shell_route(
     if len(stderr.encode("utf-8", errors="ignore")) > MAX_CAPTURE_BYTES:
         stderr = stderr[:MAX_CAPTURE_BYTES] + "\n... [STDERR TRUNCATED AT 64 KB] ..."
 
-    success = (res.returncode == 0)
+    success = res.returncode == 0
     log_command_history(route.command, workspace=ws, success=success, kind=route.kind.value)
 
     return res.returncode, stdout, stderr

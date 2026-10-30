@@ -10,23 +10,29 @@ Simulates 8 biologically realistic continuous soft tentacles in 3D marine physic
 - Plug-and-play compatibility with OctopusBrain 16D observation space.
 """
 
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Any
+
 import numpy as np
 import torch
-
 from octopus_brain.config import EnvConfig
 
 
 class SoftTentacleKinematics:
     """Continuum kinematics model for a single muscular hydrostat arm in 3D."""
 
-    def __init__(self, base_pos: np.ndarray, n_segments: int = 5, nominal_length: float = 3.5, nominal_radius: float = 0.35):
+    def __init__(
+        self,
+        base_pos: np.ndarray,
+        n_segments: int = 5,
+        nominal_length: float = 3.5,
+        nominal_radius: float = 0.35,
+    ):
         self.base_pos = np.array(base_pos, dtype=np.float32)
         self.n_segments = n_segments
         self.nominal_length = nominal_length
         self.nominal_radius = nominal_radius
         self.base_radius = nominal_radius
-        self.volume = np.pi * (nominal_radius ** 2) * nominal_length  # Constant volume invariant
+        self.volume = np.pi * (nominal_radius**2) * nominal_length  # Constant volume invariant
 
         # State per segment: pitch angle theta, yaw angle phi, segment length L
         self.thetas = np.zeros(n_segments, dtype=np.float32)
@@ -109,7 +115,7 @@ class SoftBodyTentacleEnv:
 
     def __init__(
         self,
-        config: Optional[EnvConfig] = None,
+        config: EnvConfig | None = None,
         n_arms: int = 8,
         max_steps: int = 45,
         segments_per_arm: int = 5,
@@ -134,17 +140,19 @@ class SoftBodyTentacleEnv:
             self.arm_bases[i] = [ring_radius * np.cos(a), 0.5, ring_radius * np.sin(a)]
 
         self.tentacles = [
-            SoftTentacleKinematics(base_pos=self.arm_bases[i], n_segments=self.segments_per_arm, nominal_length=3.8)
+            SoftTentacleKinematics(
+                base_pos=self.arm_bases[i], n_segments=self.segments_per_arm, nominal_length=3.8
+            )
             for i in range(self.n_arms)
         ]
         self.arms = self.tentacles  # Friendly alias
 
         self.rng = np.random.RandomState(42)
-        self.targets: List[np.ndarray] = []
-        self.joint_targets: List[Dict[str, Any]] = []
-        self.hazards: List[np.ndarray] = []
+        self.targets: list[np.ndarray] = []
+        self.joint_targets: list[dict[str, Any]] = []
+        self.hazards: list[np.ndarray] = []
 
-    def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         if seed is not None:
             self.rng = np.random.RandomState(seed)
 
@@ -170,9 +178,7 @@ class SoftBodyTentacleEnv:
             self.joint_targets.append({"pos": mid, "arms": (a, b), "active": True})
 
         # Spawn moving marine predator hazards
-        self.hazards = [
-            self.rng.uniform(-6.0, 6.0, size=3) for _ in range(2)
-        ]
+        self.hazards = [self.rng.uniform(-6.0, 6.0, size=3) for _ in range(2)]
         for h in self.hazards:
             h[1] = np.abs(h[1]) + 1.0
 
@@ -238,8 +244,8 @@ class SoftBodyTentacleEnv:
         return obs
 
     def step(
-        self, actions: Union[np.ndarray, torch.Tensor]
-    ) -> Tuple[np.ndarray, np.ndarray, bool, bool, Dict[str, Any]]:
+        self, actions: np.ndarray | torch.Tensor
+    ) -> tuple[np.ndarray, np.ndarray, bool, bool, dict[str, Any]]:
         """Step 3D continuous soft tentacles using discrete action mapping or continuous controls."""
         if isinstance(actions, torch.Tensor):
             actions = actions.detach().cpu().numpy()
@@ -251,11 +257,11 @@ class SoftBodyTentacleEnv:
 
         # Action mapping: 0: Stay, 1: Pitch Up, 2: Pitch Down, 3: Yaw Left, 4: Yaw Right
         control_deltas = [
-            (0.0, 0.0, 0.0),    # Stay
-            (1.0, 0.0, 0.5),    # Pitch Up & Elongate
+            (0.0, 0.0, 0.0),  # Stay
+            (1.0, 0.0, 0.5),  # Pitch Up & Elongate
             (-1.0, 0.0, -0.2),  # Pitch Down & Contract
-            (0.0, -1.0, 0.2),   # Yaw Left
-            (0.0, 1.0, 0.2),    # Yaw Right
+            (0.0, -1.0, 0.2),  # Yaw Left
+            (0.0, 1.0, 0.2),  # Yaw Right
         ]
 
         for i in range(self.n_arms):

@@ -6,9 +6,11 @@ sensory observation vectors for the cephalopod forward-model predictive network.
 """
 
 from __future__ import annotations
+
 import math
 import os
-from typing import Any, Optional, Protocol, Union, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
+
 import numpy as np
 
 from octoflow.tools import ToolResult
@@ -17,6 +19,7 @@ from octoflow.tools import ToolResult
 @runtime_checkable
 class SensoryEncoder(Protocol):
     """Protocol for sensory observation encoders."""
+
     obs_dim: int
     backend: str
 
@@ -25,10 +28,9 @@ class SensoryEncoder(Protocol):
         result: ToolResult,
         step: int = 0,
         max_steps: int = 15,
-        as_tensor: Optional[bool] = None,
-        device: Optional[Any] = None,
-    ) -> Union[np.ndarray, Any]:
-        ...
+        as_tensor: bool | None = None,
+        device: Any | None = None,
+    ) -> np.ndarray | Any: ...
 
 
 class CodeSensoryEncoder:
@@ -42,7 +44,12 @@ class CodeSensoryEncoder:
         self.syntax_keywords = ["syntaxerror", "indentationerror", "parseerror", "unexpected token"]
         self.oom_keywords = ["outofmemory", "cuda out of memory", "oom", "memoryerror"]
         self.test_keywords = ["failed", "assertionerror", "test failed", "failures=", "errors="]
-        self.missing_keywords = ["filenotfounderror", "modulenotfounderror", "no such file", "importerror"]
+        self.missing_keywords = [
+            "filenotfounderror",
+            "modulenotfounderror",
+            "no such file",
+            "importerror",
+        ]
         self.type_keywords = ["typeerror", "valueerror", "validationerror", "attributeerror"]
 
     def encode(
@@ -50,9 +57,9 @@ class CodeSensoryEncoder:
         result: ToolResult,
         step: int = 0,
         max_steps: int = 15,
-        as_tensor: Optional[bool] = None,
-        device: Optional[Any] = None,
-    ) -> Union[np.ndarray, Any]:
+        as_tensor: bool | None = None,
+        device: Any | None = None,
+    ) -> np.ndarray | Any:
         """Convert a ToolResult into a normalized sensory observation vector of shape (obs_dim,).
 
         Feature Layout (16 dimensions):
@@ -118,7 +125,7 @@ class CodeSensoryEncoder:
         features[14] = 1.0 if "timeoutexpired" in stderr_lower or result.returncode == 124 else 0.0
 
         # Feature 15: Quiescence / clean success
-        is_clean = (result.returncode == 0 and stderr_len == 0 and result.success)
+        is_clean = result.returncode == 0 and stderr_len == 0 and result.success
         features[15] = 1.0 if is_clean else 0.0
 
         return_tensor = (self.backend == "torch") if as_tensor is None else bool(as_tensor)
@@ -141,10 +148,12 @@ def _is_torch_available() -> bool:
     """Check if torch is importable without eagerly importing it."""
     try:
         import importlib.util
+
         return importlib.util.find_spec("torch") is not None
     except Exception:
         try:
             import torch  # noqa: F401
+
             return True
         except ImportError:
             return False
@@ -157,6 +166,7 @@ def _get_configured_backend() -> str:
         return env_backend.strip().lower()
     try:
         from octoflow.settings import load_settings
+
         settings = load_settings()
         return settings.defaults.encoder_backend.strip().lower()
     except Exception:
@@ -193,6 +203,8 @@ def get_encoder(backend: str = "auto", obs_dim: int = 16) -> CodeSensoryEncoder:
     elif b == "numpy":
         selected = "numpy"
     else:
-        raise ValueError(f"Unknown backend '{backend}'. Supported backends: 'auto', 'numpy', 'torch'.")
+        raise ValueError(
+            f"Unknown backend '{backend}'. Supported backends: 'auto', 'numpy', 'torch'."
+        )
 
     return CodeSensoryEncoder(obs_dim=obs_dim, backend=selected)

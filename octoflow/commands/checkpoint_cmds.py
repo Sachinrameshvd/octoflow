@@ -2,21 +2,25 @@
 
 import datetime
 from pathlib import Path
-from typing import Optional
+
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Confirm
+from rich.table import Table
 
-from octoflow.checkpoint import undo_run, list_runs
+from octoflow.checkpoint import list_runs, undo_run
 
 console = Console()
 
 
 def undo_cli_cmd(
-    run_id: Optional[str] = typer.Argument(None, help="Specific run ID to undo (default: most recent run)"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt and proceed immediately"),
+    run_id: str | None = typer.Argument(
+        None, help="Specific run ID to undo (default: most recent run)"
+    ),
+    yes: bool = typer.Option(
+        False, "--yes", "-y", help="Skip confirmation prompt and proceed immediately"
+    ),
     workspace: str = typer.Option(".", "--dir", "-d", help="Target project workspace folder"),
 ):
     """Undo an OctoFlow run: checkout original branch, discard run branch, and restore stash."""
@@ -24,9 +28,13 @@ def undo_cli_cmd(
 
     def _cli_confirm(prompt_text: str, diff_stat: str) -> bool:
         if diff_stat:
-            console.print(Panel(diff_stat, title="[cyan]Changes to be Discarded[/cyan]", border_style="cyan"))
+            console.print(
+                Panel(diff_stat, title="[cyan]Changes to be Discarded[/cyan]", border_style="cyan")
+            )
         console.print(f"[bold yellow]▲ {prompt_text}[/bold yellow]")
-        return Confirm.ask("Are you sure you want to discard this run branch and return to original branch?")
+        return Confirm.ask(
+            "Are you sure you want to discard this run branch and return to original branch?"
+        )
 
     try:
         res = undo_run(
@@ -37,11 +45,17 @@ def undo_cli_cmd(
         )
 
         if res.get("status") == "SUCCESS":
-            console.print(f"\n[bold green]✔ Cleanly undone OctoFlow run '{res['run_id']}'.[/bold green]")
-            console.print(f"● Switched back to original branch: [bold cyan]{res['original_branch']}[/bold cyan]")
+            console.print(
+                f"\n[bold green]✔ Cleanly undone OctoFlow run '{res['run_id']}'.[/bold green]"
+            )
+            console.print(
+                f"● Switched back to original branch: [bold cyan]{res['original_branch']}[/bold cyan]"
+            )
             console.print(f"● Deleted run branch: [dim]{res['deleted_branch']}[/dim]")
             if res.get("restored_stash"):
-                console.print(f"● [bold green]✔ Restored uncommitted changes from stash snapshot.[/bold green]\n")
+                console.print(
+                    "● [bold green]✔ Restored uncommitted changes from stash snapshot.[/bold green]\n"
+                )
             else:
                 console.print("")
         elif res.get("status") == "CANCELLED":
@@ -55,7 +69,9 @@ def undo_cli_cmd(
 
 
 def runs_cli_cmd(
-    workspace: Optional[str] = typer.Option(None, "--dir", "-d", help="Filter runs by workspace folder"),
+    workspace: str | None = typer.Option(
+        None, "--dir", "-d", help="Filter runs by workspace folder"
+    ),
     limit: int = typer.Option(10, "--limit", "-n", help="Maximum number of runs to display"),
 ):
     """List recent OctoFlow execution runs and their git provenance status."""
@@ -76,7 +92,11 @@ def runs_cli_cmd(
 
     for m in runs:
         dt = datetime.datetime.fromtimestamp(m.created_at).strftime("%Y-%m-%d %H:%M:%S")
-        status_color = "green" if m.status == "COMPLETED" else ("yellow" if m.status in ("WIP", "RUNNING") else "magenta")
+        status_color = (
+            "green"
+            if m.status == "COMPLETED"
+            else ("yellow" if m.status in ("WIP", "RUNNING") else "magenta")
+        )
         status_str = f"[{status_color}]{m.status}[/{status_color}]"
         goal_snippet = m.goal.replace("\n", " ")[:45] + ("..." if len(m.goal) > 45 else "")
         table.add_row(

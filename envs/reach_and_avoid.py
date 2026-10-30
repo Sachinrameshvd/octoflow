@@ -11,17 +11,17 @@ Environment layout:
 - Delayed context cues: Supports long-horizon memory testing
 """
 
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Any
+
 import numpy as np
 import torch
-
 from octopus_brain.config import EnvConfig
 
 
 class ReachAndAvoidEnv:
     """Toy multi-arm gridworld environment simulating octopus arm coordination."""
 
-    def __init__(self, config: Optional[EnvConfig] = None):
+    def __init__(self, config: EnvConfig | None = None):
         self.config = config or EnvConfig()
         self.grid_size = self.config.grid_size
         self.n_arms = self.config.n_arms
@@ -41,24 +41,27 @@ class ReachAndAvoidEnv:
             ]
 
         # Action deltas: 0: Stay/Interact, 1: Up, 2: Down, 3: Left, 4: Right
-        self.action_deltas = np.array([
-            [0, 0],    # Stay
-            [0, 1],    # Up
-            [0, -1],   # Down
-            [-1, 0],   # Left
-            [1, 0],    # Right
-        ], dtype=np.float32)
+        self.action_deltas = np.array(
+            [
+                [0, 0],  # Stay
+                [0, 1],  # Up
+                [0, -1],  # Down
+                [-1, 0],  # Left
+                [1, 0],  # Right
+            ],
+            dtype=np.float32,
+        )
 
         self.rng = np.random.RandomState(42)
         self.current_step = 0
         self.arm_tips = np.zeros((self.n_arms, 2), dtype=np.float32)
-        self.single_targets: List[np.ndarray] = []
-        self.joint_targets: List[Dict[str, Any]] = []
-        self.hazards: List[np.ndarray] = []
-        self.hazard_velocities: List[np.ndarray] = []
+        self.single_targets: list[np.ndarray] = []
+        self.joint_targets: list[dict[str, Any]] = []
+        self.hazards: list[np.ndarray] = []
+        self.hazard_velocities: list[np.ndarray] = []
         self.delayed_context_cue = 0.0  # +1.0 or -1.0 global cue
 
-    def seed(self, seed: Optional[int] = None) -> None:
+    def seed(self, seed: int | None = None) -> None:
         """Set random seed."""
         if seed is not None:
             self.rng = np.random.RandomState(seed)
@@ -83,11 +86,13 @@ class ReachAndAvoidEnv:
             mid = (self.arm_bases[arm_a] + self.arm_bases[arm_b]) / 2.0
             jitter = self.rng.uniform(-0.5, 0.5, size=2)
             pos = np.clip(mid + jitter, 0, self.grid_size - 1)
-            self.joint_targets.append({
-                "pos": pos,
-                "arms": (arm_a, arm_b),
-                "active": True,
-            })
+            self.joint_targets.append(
+                {
+                    "pos": pos,
+                    "arms": (arm_a, arm_b),
+                    "active": True,
+                }
+            )
 
         # 3. Hazards
         self.hazards = []
@@ -98,7 +103,7 @@ class ReachAndAvoidEnv:
             self.hazards.append(pos)
             self.hazard_velocities.append(vel)
 
-    def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         """Reset environment to initial state."""
         if seed is not None:
             self.seed(seed)
@@ -118,7 +123,7 @@ class ReachAndAvoidEnv:
         }
         return obs, info
 
-    def get_active_joint_pairs(self) -> List[Tuple[int, int]]:
+    def get_active_joint_pairs(self) -> list[tuple[int, int]]:
         """Return list of arm pairs (i, j) that currently have an active joint target near them."""
         active_pairs = []
         for jt in self.joint_targets:
@@ -216,8 +221,8 @@ class ReachAndAvoidEnv:
         return obs
 
     def step(
-        self, actions: Union[np.ndarray, torch.Tensor]
-    ) -> Tuple[np.ndarray, np.ndarray, bool, bool, Dict[str, Any]]:
+        self, actions: np.ndarray | torch.Tensor
+    ) -> tuple[np.ndarray, np.ndarray, bool, bool, dict[str, Any]]:
         """Execute one environment step.
 
         Args:

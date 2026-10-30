@@ -1,6 +1,7 @@
 """Tests for P4.1 socket isolation and network blocking in default runs."""
 
 import socket
+
 import pytest
 
 

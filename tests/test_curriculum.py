@@ -1,9 +1,7 @@
 """Unit tests for Curriculum learning and environment transitions."""
 
 import numpy as np
-import pytest
-
-from envs.curriculum import CurriculumScheduler, CurriculumEnv
+from envs.curriculum import CurriculumEnv, CurriculumScheduler
 
 
 def test_curriculum_scheduler_graduation():

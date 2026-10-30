@@ -4,9 +4,7 @@ Verifies that rate_limiter and fastapi_todo pass acceptance testing offline
 without calling any live external LLM endpoints.
 """
 
-import tempfile
 from pathlib import Path
-import pytest
 
 from octoflow.bench import BENCHMARK_SUITE, run_single_benchmark_run
 from octoflow.cassette import ReplayProvider

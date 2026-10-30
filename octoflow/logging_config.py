@@ -9,12 +9,12 @@ Features:
 """
 
 from __future__ import annotations
+
 import logging
-from logging.handlers import RotatingFileHandler
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Optional
 
 from octoflow.errors import redact_secrets
 
@@ -29,7 +29,11 @@ _TRACE_ENABLED: bool = False
 
 def is_trace_enabled() -> bool:
     """Return True if tracebacks / debug trace is enabled via flag or env."""
-    return _TRACE_ENABLED or (os.getenv("OCTOFLOW_DEBUG") == "1") or (os.getenv("OCTOFLOW_TRACE") == "1")
+    return (
+        _TRACE_ENABLED
+        or (os.getenv("OCTOFLOW_DEBUG") == "1")
+        or (os.getenv("OCTOFLOW_TRACE") == "1")
+    )
 
 
 def set_trace_enabled(enabled: bool = True) -> None:
@@ -63,7 +67,7 @@ def get_log_dir() -> Path:
     return log_dir
 
 
-_ACTIVE_LOG_FILE: Optional[Path] = None
+_ACTIVE_LOG_FILE: Path | None = None
 
 
 def get_log_file_path() -> Path:
@@ -92,8 +96,7 @@ class RedactionFilter(logging.Filter):
                 }
             elif isinstance(record.args, tuple):
                 record.args = tuple(
-                    redact_secrets(v) if isinstance(v, str) else v
-                    for v in record.args
+                    redact_secrets(v) if isinstance(v, str) else v for v in record.args
                 )
         return True
 
@@ -130,7 +133,7 @@ class SecureRotatingFileHandler(RotatingFileHandler):
             pass
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """Get the octoflow logger or a child logger."""
     base_logger = logging.getLogger(LOGGER_NAME)
     if not name or name == LOGGER_NAME:
@@ -143,7 +146,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 def setup_logging(
     verbose: bool = False,
     trace: bool = False,
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
     force_reinit: bool = False,
 ) -> logging.Logger:
     """Initialize rotating file and console logging for OctoFlow.
@@ -164,7 +167,9 @@ def setup_logging(
     if _INITIALIZED and not force_reinit:
         # Update levels if flags change
         file_level = logging.DEBUG if is_trace_enabled() else logging.INFO
-        stderr_level = logging.DEBUG if is_trace_enabled() else (logging.INFO if verbose else logging.WARNING)
+        stderr_level = (
+            logging.DEBUG if is_trace_enabled() else (logging.INFO if verbose else logging.WARNING)
+        )
         logger.setLevel(min(file_level, stderr_level))
         for h in logger.handlers:
             if isinstance(h, RotatingFileHandler):

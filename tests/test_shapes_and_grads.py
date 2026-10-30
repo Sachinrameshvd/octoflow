@@ -1,22 +1,20 @@
 """Unit tests for OctopusBrain architecture shapes, gradient flow, and gating dynamics."""
 
-import pytest
 import numpy as np
+import pytest
 
 torch = pytest.importorskip("torch")
-import torch.nn as nn
-import torch.optim as optim
 
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.modules import PeripheralModule
-from octopus_brain.central import CentralSystem
-from octopus_brain.brain import OctopusBrain
-from octopus_brain.losses import OctopusLoss
 from experiments.baselines import (
+    AlwaysLocalBaseline,
     DenseCentralizedBaseline,
     SynchronousFullCommBaseline,
-    AlwaysLocalBaseline,
 )
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.central import CentralSystem
+from octopus_brain.config import OctopusBrainConfig
+from octopus_brain.losses import OctopusLoss
+from octopus_brain.modules import PeripheralModule
 
 
 def test_peripheral_module_shapes():
@@ -169,7 +167,9 @@ def test_end_to_end_gradient_flow():
 
     # Central system
     assert brain.central_system.q_proj.weight.grad is not None, "Central Q proj grad is None"
-    assert brain.central_system.feedback_proj[0].weight.grad is not None, "Central feedback grad is None"
+    assert brain.central_system.feedback_proj[0].weight.grad is not None, (
+        "Central feedback grad is None"
+    )
 
 
 def test_gating_report_rate_not_stuck():
@@ -189,7 +189,9 @@ def test_gating_report_rate_not_stuck():
     report_rate = out["report_rate"]
 
     # Initial report rate should be in healthy range (strictly > 0% and < 100%)
-    assert 0.0 < report_rate < 1.0, f"Report rate {report_rate*100:.1f}% is stuck at degenerate extreme!"
+    assert 0.0 < report_rate < 1.0, (
+        f"Report rate {report_rate * 100:.1f}% is stuck at degenerate extreme!"
+    )
 
     # Test responsiveness: setting high threshold should reduce report rate
     with torch.no_grad():

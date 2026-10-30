@@ -7,7 +7,6 @@ Features:
 - Top-down contextual feedback broadcast only to active reporting modules
 """
 
-from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -51,7 +50,7 @@ class CentralSystem(nn.Module):
         )
 
         # Trajectory buffer to hold step-level summaries between consolidation intervals
-        self.buffer: List[torch.Tensor] = []
+        self.buffer: list[torch.Tensor] = []
 
     def init_central_state(self, batch_size: int, device: torch.device) -> torch.Tensor:
         """Initialize slow central memory state."""
@@ -68,7 +67,7 @@ class CentralSystem(nn.Module):
         central_state: torch.Tensor,
         step_count: int,
         is_ablated: bool = False,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Compute coalition attention and sparse consolidation.
 
         Args:
@@ -109,7 +108,7 @@ class CentralSystem(nn.Module):
         # 1. Coalition Attention over Reporting Modules
         # Mask out non-reporting modules so attention is computed ONLY over reporting modules
         # report_mask: (B, N) -> True where module reports (report_flags > 0.1)
-        reporting_mask = (report_flags.squeeze(-1) > 0.1)  # (B, N) bool
+        reporting_mask = report_flags.squeeze(-1) > 0.1  # (B, N) bool
         active_counts = reporting_mask.float().sum(dim=-1, keepdim=True)  # (B, 1)
 
         # Multi-head coalition attention
@@ -127,7 +126,7 @@ class CentralSystem(nn.Module):
         V_h = V.view(batch_size, n_mod, H, d_k).transpose(1, 2)  # (B, H, N, d_k)
 
         # Raw attention scores: (B, H, N, N)
-        scores = torch.matmul(Q_h, K_h.transpose(-2, -1)) / (d_k ** 0.5)
+        scores = torch.matmul(Q_h, K_h.transpose(-2, -1)) / (d_k**0.5)
 
         # Create key mask: where key module is NOT reporting, score = -1e9
         # reporting_mask: (B, N) -> expand to (B, 1, 1, N)

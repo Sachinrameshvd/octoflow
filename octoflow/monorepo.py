@@ -6,13 +6,13 @@ maps sub-packages to their optimal Ganglia arms, and aggregates cross-package to
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
-def scan_monorepo_topology(root_dir: str = ".") -> Dict[str, Any]:
+def scan_monorepo_topology(root_dir: str = ".") -> dict[str, Any]:
     """Scan workspace root for monorepo packages, workspaces, and multi-service subdirectories."""
     ws = Path(root_dir).resolve()
-    packages: List[Dict[str, Any]] = []
+    packages: list[dict[str, Any]] = []
 
     # 1. Check workspace manifests
     is_monorepo = False
@@ -36,18 +36,24 @@ def scan_monorepo_topology(root_dir: str = ".") -> Dict[str, Any]:
 
     # 2. Discover sub-projects / packages
     candidate_dirs = [
-        d for d in ws.iterdir()
-        if d.is_dir() and not d.name.startswith(".") and d.name not in ["node_modules", "target", "dist", "build", "venv", ".venv"]
+        d
+        for d in ws.iterdir()
+        if d.is_dir()
+        and not d.name.startswith(".")
+        and d.name not in ["node_modules", "target", "dist", "build", "venv", ".venv"]
     ]
 
     # Also inspect packages/, apps/, services/ subdirectories if present
     for sub in ["packages", "apps", "services"]:
         sub_path = ws / sub
         if sub_path.exists() and sub_path.is_dir():
-            candidate_dirs.extend([
-                d for d in sub_path.iterdir()
-                if d.is_dir() and not d.name.startswith(".") and d.name != "node_modules"
-            ])
+            candidate_dirs.extend(
+                [
+                    d
+                    for d in sub_path.iterdir()
+                    if d.is_dir() and not d.name.startswith(".") and d.name != "node_modules"
+                ]
+            )
 
     for d in candidate_dirs:
         rel_path = str(d.relative_to(ws))
@@ -71,7 +77,11 @@ def scan_monorepo_topology(root_dir: str = ".") -> Dict[str, Any]:
                 pass
 
         # Check Python
-        elif (d / "pyproject.toml").exists() or (d / "setup.py").exists() or (d / "requirements.txt").exists():
+        elif (
+            (d / "pyproject.toml").exists()
+            or (d / "setup.py").exists()
+            or (d / "requirements.txt").exists()
+        ):
             manifest = "pyproject.toml" if (d / "pyproject.toml").exists() else "setup.py"
             pkg_type = "backend"
             primary_arm = 2
@@ -89,19 +99,21 @@ def scan_monorepo_topology(root_dir: str = ".") -> Dict[str, Any]:
             primary_arm = 7  # DevOps
 
         if manifest:
-            packages.append({
-                "name": d.name,
-                "rel_path": rel_path,
-                "type": pkg_type,
-                "manifest": manifest,
-                "primary_arm": primary_arm,
-            })
+            packages.append(
+                {
+                    "name": d.name,
+                    "rel_path": rel_path,
+                    "type": pkg_type,
+                    "manifest": manifest,
+                    "primary_arm": primary_arm,
+                }
+            )
 
     if len(packages) >= 2:
         is_monorepo = True
 
     # Build arm routing map
-    arm_routing: Dict[int, List[str]] = {i: [] for i in range(8)}
+    arm_routing: dict[int, list[str]] = {i: [] for i in range(8)}
     for pkg in packages:
         arm_routing[pkg["primary_arm"]].append(pkg["rel_path"])
 

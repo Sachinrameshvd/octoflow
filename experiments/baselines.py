@@ -10,14 +10,12 @@ Three required ablations to isolate causal factors:
    - Modular peripheral modules with ring neighbor passing, but central coalition system disabled (r_i == 0)
 """
 
-from typing import Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions import Categorical
-
-from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import OctopusBrainConfig
+from torch.distributions import Categorical
 
 
 class DenseCentralizedBaseline(nn.Module):
@@ -26,7 +24,7 @@ class DenseCentralizedBaseline(nn.Module):
     Takes concatenated observations from all arms and outputs joint actions.
     """
 
-    def __init__(self, config: Optional[OctopusBrainConfig] = None):
+    def __init__(self, config: OctopusBrainConfig | None = None):
         super().__init__()
         self.config = config or OctopusBrainConfig()
         self.n_modules = self.config.n_modules
@@ -55,14 +53,16 @@ class DenseCentralizedBaseline(nn.Module):
 
         self.gru = nn.GRUCell(self.hidden_dim, self.hidden_dim)
 
-        self.actor_heads = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(self.hidden_dim, self.hidden_dim // 2),
-                nn.ReLU(),
-                nn.Linear(self.hidden_dim // 2, self.action_dim),
-            )
-            for _ in range(self.n_modules)
-        ])
+        self.actor_heads = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(self.hidden_dim, self.hidden_dim // 2),
+                    nn.ReLU(),
+                    nn.Linear(self.hidden_dim // 2, self.action_dim),
+                )
+                for _ in range(self.n_modules)
+            ]
+        )
 
         self.critic = nn.Sequential(
             nn.Linear(self.hidden_dim, self.hidden_dim // 2),
@@ -70,26 +70,24 @@ class DenseCentralizedBaseline(nn.Module):
             nn.Linear(self.hidden_dim // 2, 1),
         )
 
-        self.hidden_state: Optional[torch.Tensor] = None
-        self.prev_actions: Optional[torch.Tensor] = None
+        self.hidden_state: torch.Tensor | None = None
+        self.prev_actions: torch.Tensor | None = None
         self.step_count: int = 0
 
-    def reset(self, batch_size: int = 1, device: Optional[torch.device] = None) -> None:
+    def reset(self, batch_size: int = 1, device: torch.device | None = None) -> None:
         """Reset internal recurrent state."""
         if device is None:
             device = next(self.parameters()).device
         self.hidden_state = torch.zeros(batch_size, self.hidden_dim, device=device)
-        self.prev_actions = torch.zeros(
-            batch_size, self.n_modules * self.action_dim, device=device
-        )
+        self.prev_actions = torch.zeros(batch_size, self.n_modules * self.action_dim, device=device)
         self.step_count = 0
 
     def step(
         self,
         obs: torch.Tensor,
-        active_mask: Optional[torch.Tensor] = None,
+        active_mask: torch.Tensor | None = None,
         deterministic: bool = False,
-    ) -> Dict[str, Union[torch.Tensor, float, bool, List]]:
+    ) -> dict[str, torch.Tensor | float | bool | list]:
         """Execute one centralized step.
 
         Args:
@@ -180,11 +178,11 @@ class SynchronousFullCommBaseline(OctopusBrain):
     def step(
         self,
         obs: torch.Tensor,
-        active_mask: Optional[torch.Tensor] = None,
+        active_mask: torch.Tensor | None = None,
         deterministic: bool = False,
         disable_central: bool = False,
         force_report_all: bool = True,
-    ) -> Dict[str, Union[torch.Tensor, float, bool, List]]:
+    ) -> dict[str, torch.Tensor | float | bool | list]:
         return super().step(
             obs=obs,
             active_mask=active_mask,
@@ -204,11 +202,11 @@ class AlwaysLocalBaseline(OctopusBrain):
     def step(
         self,
         obs: torch.Tensor,
-        active_mask: Optional[torch.Tensor] = None,
+        active_mask: torch.Tensor | None = None,
         deterministic: bool = False,
         disable_central: bool = True,
         force_report_all: bool = False,
-    ) -> Dict[str, Union[torch.Tensor, float, bool, List]]:
+    ) -> dict[str, torch.Tensor | float | bool | list]:
         return super().step(
             obs=obs,
             active_mask=active_mask,

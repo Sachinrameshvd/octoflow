@@ -13,37 +13,48 @@ Usage:
     python experiments/live_bridge.py --port 8765 --checkpoint checkpoints/top1_octopus_brain.pt
 """
 
-import sys
-import os
-import json
 import argparse
+import json
+import os
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
+
 import numpy as np
 import torch
 
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
-from octopus_brain.lexicon import InterBrachialLexiconDecoder
-from envs.reach_and_avoid import ReachAndAvoidEnv
 from envs.hunting_env import CooperativeHuntingEnv
+from envs.reach_and_avoid import ReachAndAvoidEnv
 from envs.soft_body_tentacle import SoftBodyTentacleEnv
-from octopus_brain.connectome import CephalopodConnectome
 from octopus_brain.biophysics import BiophysicalConnectomeSimulator
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
+from octopus_brain.connectome import CephalopodConnectome
+from octopus_brain.lexicon import InterBrachialLexiconDecoder
 
 
 class CognitiveBridgeSession:
     """Manages live environment and model state for real-time visualization."""
 
-    def __init__(self, checkpoint_path: str = "checkpoints/top1_octopus_brain.pt", device_name: str = "cpu"):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    def __init__(
+        self, checkpoint_path: str = "checkpoints/top1_octopus_brain.pt", device_name: str = "cpu"
+    ):
+        self.device = torch.device(
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
         print(f"--> Cognitive Bridge using compute device: {self.device}")
 
-        self.config = OctopusBrainConfig(n_modules=8, obs_dim=16, action_dim=5, hidden_dim=64, message_dim=32, central_dim=64)
+        self.config = OctopusBrainConfig(
+            n_modules=8, obs_dim=16, action_dim=5, hidden_dim=64, message_dim=32, central_dim=64
+        )
         self.model = OctopusBrain(self.config).to(self.device)
         self.lexicon = InterBrachialLexiconDecoder(message_dim=32).to(self.device)
 
@@ -119,11 +130,19 @@ class CognitiveBridgeSession:
         logits = out["action_logits"][0].detach().cpu().numpy()
         values = out["values"][0].detach().cpu().numpy().squeeze(-1)
 
-        c_mat = out["coalition_matrix"][0].detach().cpu().numpy() if out["coalition_matrix"].numel() > 0 else np.zeros((8, 8))
+        c_mat = (
+            out["coalition_matrix"][0].detach().cpu().numpy()
+            if out["coalition_matrix"].numel() > 0
+            else np.zeros((8, 8))
+        )
         coalitions = out.get("coalition_clusters", [])
 
         # Decode semantic communication chatter using Inter-Brachial Lexicon
-        nbr_msgs = self.model.prev_neighbor_msgs[0] if self.model.prev_neighbor_msgs is not None else torch.zeros(8, 32, device=self.device)
+        nbr_msgs = (
+            self.model.prev_neighbor_msgs[0]
+            if self.model.prev_neighbor_msgs is not None
+            else torch.zeros(8, 32, device=self.device)
+        )
         decoded_intents = self.lexicon.decode_all_arms(nbr_msgs, report_flags=report_flags)
 
         # Step environment
@@ -232,6 +251,7 @@ class CognitiveBridgeHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/llm/pool":
             self._set_cors_headers(200)
             from octoflow.config import load_secure_config
+
             cfg_file = Path.home() / ".octoflow" / "config.json"
             entries = []
             if cfg_file.exists():
@@ -275,9 +295,12 @@ class CognitiveBridgeHandler(BaseHTTPRequestHandler):
             scenario = body.get("scenario", "standard")
             SESSION.set_scenario(scenario)
             self._set_cors_headers(200)
-            self.wfile.write(json.dumps({"status": "scenario_set", "scenario": scenario}).encode("utf-8"))
+            self.wfile.write(
+                json.dumps({"status": "scenario_set", "scenario": scenario}).encode("utf-8")
+            )
         elif parsed.path == "/llm/pool":
-            from octoflow.config import load_secure_config, save_secure_config
+            from octoflow.config import load_secure_config
+
             cfg_dir = Path.home() / ".octoflow"
             cfg_dir.mkdir(parents=True, exist_ok=True)
             cfg_file = cfg_dir / "config.json"
@@ -320,17 +343,20 @@ class CognitiveBridgeHandler(BaseHTTPRequestHandler):
             cfg_file.write_text(json.dumps(cfg_data, indent=2), encoding="utf-8")
 
             self._set_cors_headers(200)
-            self.wfile.write(json.dumps({"status": "ok", "pool_size": len(current_pool)}).encode("utf-8"))
+            self.wfile.write(
+                json.dumps({"status": "ok", "pool_size": len(current_pool)}).encode("utf-8")
+            )
 
         elif parsed.path == "/llm/test":
             provider = body.get("provider", "gemini")
             api_key = body.get("api_key", "")
             base_url = body.get("base_url", "")
             model = body.get("model", "")
-            
+
             # Lightweight health check
             try:
                 import time
+
                 t0 = time.time()
                 # Test connectivity
                 if provider in ["ollama", "custom", "vllm"] and base_url:

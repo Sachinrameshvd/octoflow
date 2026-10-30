@@ -18,7 +18,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -29,14 +29,9 @@ pytestmark = pytest.mark.integration_local
 from octoflow.cli import app
 from octoflow.ignition import (
     ProjectIgniter,
-    find_free_port,
     is_port_listening,
     kill_process_group,
-    wait_for_service_readiness,
-    open_url_in_browser,
     list_active_ignitions,
-    stop_ignition,
-    get_log_tail,
 )
 
 runner = CliRunner()
@@ -47,7 +42,9 @@ def test_ignition_http_server_lifecycle_and_127_bind():
     with tempfile.TemporaryDirectory() as tmpdir:
         ws = Path(tmpdir)
         html_file = ws / "index.html"
-        html_file.write_text("<!DOCTYPE html><html><body><h1>OctoFlow Cleanup Test</h1></body></html>")
+        html_file.write_text(
+            "<!DOCTYPE html><html><body><h1>OctoFlow Cleanup Test</h1></body></html>"
+        )
 
         igniter = ProjectIgniter(workspace_dir=tmpdir)
         manifest = igniter.ignite(objective="Test cleanup lifecycle", timeout=5.0)
@@ -108,14 +105,18 @@ def test_ignition_open_flag_mocked_webbrowser():
 
         # 2. When open_browser=True in interactive local TTY: webbrowser.open called exactly once
         igniter_open = ProjectIgniter(workspace_dir=tmpdir)
-        with patch("webbrowser.open", return_value=True) as mock_open, \
-             patch("sys.stdout.isatty", return_value=True), \
-             patch.dict(os.environ, {}, clear=False):
+        with (
+            patch("webbrowser.open", return_value=True) as mock_open,
+            patch("sys.stdout.isatty", return_value=True),
+            patch.dict(os.environ, {}, clear=False),
+        ):
             # Ensure SSH env vars are unset
             for key in ["SSH_CLIENT", "SSH_TTY", "SSH_CONNECTION"]:
                 os.environ.pop(key, None)
 
-            manifest_open = igniter_open.ignite(objective="With open", open_browser=True, timeout=5.0)
+            manifest_open = igniter_open.ignite(
+                objective="With open", open_browser=True, timeout=5.0
+            )
             try:
                 assert manifest_open.status in ("READY", "RUNNING")
                 assert mock_open.call_count == 1
@@ -125,9 +126,13 @@ def test_ignition_open_flag_mocked_webbrowser():
 
         # 3. When open_browser=True but in SSH or non-TTY: print URL, do NOT call webbrowser.open
         igniter_ssh = ProjectIgniter(workspace_dir=tmpdir)
-        with patch("webbrowser.open") as mock_open, \
-             patch.dict(os.environ, {"SSH_CONNECTION": "192.168.1.1 12345 192.168.1.2 22"}):
-            manifest_ssh = igniter_ssh.ignite(objective="SSH session", open_browser=True, timeout=5.0)
+        with (
+            patch("webbrowser.open") as mock_open,
+            patch.dict(os.environ, {"SSH_CONNECTION": "192.168.1.1 12345 192.168.1.2 22"}),
+        ):
+            manifest_ssh = igniter_ssh.ignite(
+                objective="SSH session", open_browser=True, timeout=5.0
+            )
             try:
                 assert manifest_ssh.status in ("READY", "RUNNING")
                 assert not mock_open.called
@@ -170,7 +175,9 @@ def test_ignition_readiness_failure_reports_failed_with_log_tail():
             assert elapsed < 5.0
             assert manifest.error_message is not None
             # Verify log tail contains the last crash lines (e.g. CRASH_LOG_LINE_24)
-            assert "CRASH_LOG_LINE_24" in manifest.error_message or "CRASH_LOG_LINE_24" in (manifest.log_tail or "")
+            assert "CRASH_LOG_LINE_24" in manifest.error_message or "CRASH_LOG_LINE_24" in (
+                manifest.log_tail or ""
+            )
         finally:
             igniter.terminate_all()
 
@@ -181,11 +188,7 @@ def test_ignition_readiness_timeout_silent_service():
         ws = Path(tmpdir)
         # Create a python script that sleeps indefinitely without opening a socket
         hang_script = ws / "silent_app.py"
-        hang_script.write_text(
-            "import time\n"
-            "print('Starting silent app...')\n"
-            "time.sleep(60)\n"
-        )
+        hang_script.write_text("import time\nprint('Starting silent app...')\ntime.sleep(60)\n")
 
         igniter = ProjectIgniter(workspace_dir=tmpdir)
         deliverables = {

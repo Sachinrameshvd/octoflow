@@ -10,8 +10,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any
 
 GITHUB_WORKFLOW_TEMPLATE = """name: OctoFlow Swarm Guard
 
@@ -76,16 +75,26 @@ def generate_github_action_workflow(workspace: str = ".") -> Path:
     return workflow_file
 
 
-def _get_git_diff_files(workspace_dir: str, base_ref: str = "HEAD~1") -> Tuple[List[str], str]:
+def _get_git_diff_files(workspace_dir: str, base_ref: str = "HEAD~1") -> tuple[list[str], str]:
     """Retrieve list of modified files and raw diff content."""
     try:
         # Check if git repository exists
-        git_check = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=workspace_dir, capture_output=True, text=True)
+        git_check = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=workspace_dir,
+            capture_output=True,
+            text=True,
+        )
         if git_check.returncode != 0:
             return [], ""
 
         # Check commit count
-        c_count = subprocess.run(["git", "rev-list", "--count", "HEAD"], cwd=workspace_dir, capture_output=True, text=True)
+        c_count = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD"],
+            cwd=workspace_dir,
+            capture_output=True,
+            text=True,
+        )
         num_commits = int(c_count.stdout.strip()) if c_count.stdout.strip().isdigit() else 1
 
         if num_commits <= 1:
@@ -96,7 +105,9 @@ def _get_git_diff_files(workspace_dir: str, base_ref: str = "HEAD~1") -> Tuple[L
             diff_files_cmd = ["git", "diff", base_ref, "--name-only"]
 
         diff_res = subprocess.run(diff_cmd, cwd=workspace_dir, capture_output=True, text=True)
-        files_res = subprocess.run(diff_files_cmd, cwd=workspace_dir, capture_output=True, text=True)
+        files_res = subprocess.run(
+            diff_files_cmd, cwd=workspace_dir, capture_output=True, text=True
+        )
 
         files = [f.strip() for f in files_res.stdout.splitlines() if f.strip()]
         return files, diff_res.stdout
@@ -109,7 +120,7 @@ def review_pull_request(
     base_ref: str = "HEAD~1",
     write_summary: bool = True,
     shadow_mode: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Execute automated 3-Arm CI/CD inspection over git diff.
 
     Args:
@@ -124,16 +135,16 @@ def review_pull_request(
     ws = Path(workspace).resolve()
     modified_files, raw_diff = _get_git_diff_files(str(ws), base_ref=base_ref)
 
-    findings_arm6: List[str] = []
-    findings_arm5: List[str] = []
-    findings_arm0: List[str] = []
+    findings_arm6: list[str] = []
+    findings_arm5: list[str] = []
+    findings_arm0: list[str] = []
 
     hard_block = False
 
     # -------------------------------------------------------------------------
     # ARM 6: SECURITY & CREDENTIAL LEAK INSPECTION
     # -------------------------------------------------------------------------
-    leaked_secrets: List[str] = []
+    leaked_secrets: list[str] = []
     for line in raw_diff.splitlines():
         if line.startswith("+") and not line.startswith("+++"):
             for pat, secret_type in SECRET_PATTERNS:
@@ -142,7 +153,9 @@ def review_pull_request(
                     hard_block = True
 
     if leaked_secrets:
-        findings_arm6.append(f"CRITICAL: Leaked credentials detected in diff: {', '.join(set(leaked_secrets))}")
+        findings_arm6.append(
+            f"CRITICAL: Leaked credentials detected in diff: {', '.join(set(leaked_secrets))}"
+        )
     else:
         findings_arm6.append("Zero credential or API key leaks detected in changed files.")
 
@@ -150,10 +163,14 @@ def review_pull_request(
     sqli_risk = False
     for line in raw_diff.splitlines():
         if line.startswith("+"):
-            if re.search(r"f[\"'].*SELECT .*\{.*\}", line, re.IGNORECASE) or re.search(r"f[\"'].*INSERT .*\{.*\}", line, re.IGNORECASE):
+            if re.search(r"f[\"'].*SELECT .*\{.*\}", line, re.IGNORECASE) or re.search(
+                r"f[\"'].*INSERT .*\{.*\}", line, re.IGNORECASE
+            ):
                 sqli_risk = True
                 hard_block = True
-                findings_arm6.append("CRITICAL: Raw SQL f-string query detected. Use parameterized ORM expressions.")
+                findings_arm6.append(
+                    "CRITICAL: Raw SQL f-string query detected. Use parameterized ORM expressions."
+                )
                 break
     if not sqli_risk:
         findings_arm6.append("SQL queries verify parameterized input binding.")
@@ -161,7 +178,7 @@ def review_pull_request(
     # -------------------------------------------------------------------------
     # ARM 5: QA & AST PRE-FLIGHT SYNTAX VALIDATION
     # -------------------------------------------------------------------------
-    ast_errors: List[str] = []
+    ast_errors: list[str] = []
     has_test_files = any("test" in f.lower() for f in modified_files)
     has_core_code = any(f.endswith(".py") and "test" not in f.lower() for f in modified_files)
 
@@ -189,14 +206,16 @@ def review_pull_request(
         findings_arm5.append("100% Python AST and JSON syntax valid across modified files.")
 
     if has_core_code and not has_test_files:
-        findings_arm5.append("Advisory: Core application files modified without corresponding tests in tests/.")
+        findings_arm5.append(
+            "Advisory: Core application files modified without corresponding tests in tests/."
+        )
     elif has_test_files:
         findings_arm5.append("PR includes accompanying test coverage updates.")
 
     # -------------------------------------------------------------------------
     # ARM 0: ARCHITECTURAL BOUNDARY & TOPOLOGY REVIEW
     # -------------------------------------------------------------------------
-    circular_warnings: List[str] = []
+    circular_warnings: list[str] = []
     # Check for cross-tier boundary leaks (e.g. models importing from views)
     for rel_path in modified_files:
         if "models/" in rel_path or "db/" in rel_path:
@@ -204,12 +223,16 @@ def review_pull_request(
             if p.exists() and p.suffix == ".py":
                 content = p.read_text(encoding="utf-8")
                 if "import frontend" in content or "import views" in content:
-                    circular_warnings.append(f"Inverted boundary: {rel_path} imports higher-level presentation layer.")
+                    circular_warnings.append(
+                        f"Inverted boundary: {rel_path} imports higher-level presentation layer."
+                    )
 
     if circular_warnings:
         findings_arm0.extend(circular_warnings)
     else:
-        findings_arm0.append("Interface contracts, folder topology, and module boundaries verified clean.")
+        findings_arm0.append(
+            "Interface contracts, folder topology, and module boundaries verified clean."
+        )
 
     # -------------------------------------------------------------------------
     # FORMAT OUTPUT REPORT (GitHub Markdown & Step Summary)
@@ -222,7 +245,11 @@ def review_pull_request(
     arm5_status = "✖ BLOCKED" if any("CRITICAL" in f for f in findings_arm5) else "✔ PASSED"
     arm0_status = "ℹ ADVISORY" if circular_warnings else "✔ PASSED"
 
-    shadow_header = "> **SHADOW CI MODE**: Advisory audit only. Pipeline merge blocking is suppressed.\n\n" if shadow_mode else ""
+    shadow_header = (
+        "> **SHADOW CI MODE**: Advisory audit only. Pipeline merge blocking is suppressed.\n\n"
+        if shadow_mode
+        else ""
+    )
     report_md = f"""## OctoFlow Swarm Guard CI Review
 
 {shadow_header}> **Swarm Verdict**: **{status_icon} {overall_status}** • 3 Arms Audited ({len(modified_files)} files modified)

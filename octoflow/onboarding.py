@@ -8,8 +8,7 @@ import json
 import os
 import platform
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 CURSOR_RULES_TEMPLATE = """# OctoFlow Cephalopod Swarm Delegation Rules
 
@@ -50,47 +49,36 @@ VSCODE_TASKS_TEMPLATE = {
             "type": "shell",
             "command": "octos",
             "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new",
-                "focus": True
-            }
+            "presentation": {"reveal": "always", "panel": "new", "focus": True},
         },
         {
             "label": "OctoFlow: 3D Visualizer",
             "type": "shell",
             "command": "octos ui",
             "problemMatcher": [],
-            "presentation": {
-                "reveal": "silent",
-                "panel": "shared"
-            }
+            "presentation": {"reveal": "silent", "panel": "shared"},
         },
         {
             "label": "OctoFlow: Swarm Guard Scan",
             "type": "shell",
             "command": "octos guard",
             "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
+            "presentation": {"reveal": "always", "panel": "shared"},
         },
         {
             "label": "OctoFlow: Doctor Diagnostics",
             "type": "shell",
             "command": "octos doctor",
             "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
-        }
-    ]
+            "presentation": {"reveal": "always", "panel": "shared"},
+        },
+    ],
 }
 
 
-def _merge_json_safely(file_path: Path, new_data: Dict[str, Any], key_merger: Optional[str] = None) -> bool:
+def _merge_json_safely(
+    file_path: Path, new_data: dict[str, Any], key_merger: str | None = None
+) -> bool:
     """Non-destructively merge JSON configuration into an existing or new file."""
     try:
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -114,7 +102,9 @@ def _merge_json_safely(file_path: Path, new_data: Dict[str, Any], key_merger: Op
                 existing[key_merger].update(new_data[key_merger])
             elif isinstance(existing[key_merger], list) and isinstance(new_data[key_merger], list):
                 # Unique list merge by label or id if present
-                existing_labels = {item.get("label") for item in existing[key_merger] if isinstance(item, dict)}
+                existing_labels = {
+                    item.get("label") for item in existing[key_merger] if isinstance(item, dict)
+                }
                 for item in new_data[key_merger]:
                     if isinstance(item, dict) and item.get("label") not in existing_labels:
                         existing[key_merger].append(item)
@@ -129,14 +119,14 @@ def _merge_json_safely(file_path: Path, new_data: Dict[str, Any], key_merger: Op
         return False
 
 
-def onboard_ide(workspace: str = ".") -> Dict[str, Any]:
+def onboard_ide(workspace: str = ".") -> dict[str, Any]:
     """Execute complete 1-command Omni-IDE onboarding across Cursor, Claude, VS Code, and Git.
 
     Returns:
         Dict detailing which integrations were successfully injected.
     """
     ws = Path(workspace).resolve()
-    details: List[str] = []
+    details: list[str] = []
     results = {
         "cursor": False,
         "claude_code": False,
@@ -156,9 +146,14 @@ def onboard_ide(workspace: str = ".") -> Dict[str, Any]:
         else:
             existing_text = cursor_file.read_text(encoding="utf-8")
             if "OctoFlow Cephalopod Swarm" not in existing_text:
-                cursor_file.write_text(existing_text.rstrip() + "\n\n" + CURSOR_RULES_TEMPLATE.strip() + "\n", encoding="utf-8")
+                cursor_file.write_text(
+                    existing_text.rstrip() + "\n\n" + CURSOR_RULES_TEMPLATE.strip() + "\n",
+                    encoding="utf-8",
+                )
                 results["cursor"] = True
-                details.append(f"Appended OctoFlow delegation rules to existing {cursor_file.relative_to(ws)}")
+                details.append(
+                    f"Appended OctoFlow delegation rules to existing {cursor_file.relative_to(ws)}"
+                )
             else:
                 results["cursor"] = True
                 details.append(f"Existing {cursor_file.relative_to(ws)} already configured")
@@ -168,14 +163,7 @@ def onboard_ide(workspace: str = ".") -> Dict[str, Any]:
     # 2. Claude Code CLI (~/.claude.json)
     try:
         claude_cli_file = Path.home() / ".claude.json"
-        mcp_payload = {
-            "mcpServers": {
-                "octoflow": {
-                    "command": "octos",
-                    "args": ["mcp"]
-                }
-            }
-        }
+        mcp_payload = {"mcpServers": {"octoflow": {"command": "octos", "args": ["mcp"]}}}
         if _merge_json_safely(claude_cli_file, mcp_payload, key_merger="mcpServers"):
             results["claude_code"] = True
             details.append(f"Injected OctoFlow MCP server into Claude Code ({claude_cli_file})")
@@ -187,7 +175,13 @@ def onboard_ide(workspace: str = ".") -> Dict[str, Any]:
         system = platform.system()
         desktop_conf_path = None
         if system == "Darwin":
-            desktop_conf_path = Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+            desktop_conf_path = (
+                Path.home()
+                / "Library"
+                / "Application Support"
+                / "Claude"
+                / "claude_desktop_config.json"
+            )
         elif system == "Windows":
             appdata = os.getenv("APPDATA")
             if appdata:
@@ -196,17 +190,12 @@ def onboard_ide(workspace: str = ".") -> Dict[str, Any]:
             desktop_conf_path = Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
 
         if desktop_conf_path:
-            mcp_payload = {
-                "mcpServers": {
-                    "octoflow": {
-                        "command": "octos",
-                        "args": ["mcp"]
-                    }
-                }
-            }
+            mcp_payload = {"mcpServers": {"octoflow": {"command": "octos", "args": ["mcp"]}}}
             if _merge_json_safely(desktop_conf_path, mcp_payload, key_merger="mcpServers"):
                 results["claude_desktop"] = True
-                details.append(f"Injected OctoFlow MCP server into Claude Desktop ({desktop_conf_path})")
+                details.append(
+                    f"Injected OctoFlow MCP server into Claude Desktop ({desktop_conf_path})"
+                )
     except Exception as e:
         details.append(f"Failed to inject Claude Desktop MCP: {e}")
 
@@ -223,6 +212,7 @@ def onboard_ide(workspace: str = ".") -> Dict[str, Any]:
     # 5. Git Pre-Commit Hook (octos guard)
     try:
         from octoflow.cli import install_git_hooks
+
         hook_ok = install_git_hooks(workspace=str(ws))
         results["git_hooks"] = hook_ok
         if hook_ok:

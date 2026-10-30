@@ -16,40 +16,33 @@ Covers:
 13. Async agenerate retry and backoff execution.
 """
 
-import asyncio
 import json
-import logging
-import re
-import pytest
+
 import httpx
-from unittest.mock import MagicMock, patch
+import pytest
 
 pytestmark = pytest.mark.unit
 
 from octoflow.outcome import ProviderExhaustedError
 from octoflow.provider import (
-    BaseLLMProvider,
-    AnthropicProvider,
-    OpenAIProvider,
-    OllamaProvider,
-    FailoverLLMProvider,
-    CascadePoolLLMProvider,
-    ProviderError,
-    ProviderAuthError,
-    ProviderRateLimitError,
-    ProviderTransientError,
-    ProviderRequestError,
-    ProviderUnavailableError,
-    classify_http_error,
-    redact_secrets,
-    execute_with_retry,
-    aexecute_with_retry,
-    set_sleep_functions,
-    reset_sleep_functions,
     DEFAULT_CLOUD_TIMEOUT,
     DEFAULT_OLLAMA_TIMEOUT,
+    AnthropicProvider,
+    FailoverLLMProvider,
+    OllamaProvider,
+    OpenAIProvider,
+    ProviderAuthError,
+    ProviderError,
+    ProviderRateLimitError,
+    ProviderRequestError,
+    ProviderTransientError,
+    ProviderUnavailableError,
+    aexecute_with_retry,
+    classify_http_error,
+    execute_with_retry,
+    redact_secrets,
+    reset_sleep_functions,
 )
-from octoflow.config import LLMConfigEntry
 
 
 @pytest.fixture(autouse=True)
@@ -84,7 +77,9 @@ def test_classify_auth_errors():
     assert err_400_key.status == 400
 
     # 400 standard bad request -> ProviderRequestError
-    err_400_req = classify_http_error(400, provider="anthropic", body='{"error": "max_tokens too large"}')
+    err_400_req = classify_http_error(
+        400, provider="anthropic", body='{"error": "max_tokens too large"}'
+    )
     assert isinstance(err_400_req, ProviderRequestError)
     assert err_400_req.status == 400
 
@@ -185,7 +180,9 @@ def test_429_with_retry_after_retries_at_most_twice():
         nonlocal calls
         calls += 1
         req = httpx.Request("POST", provider.base_url)
-        return httpx.Response(429, headers={"Retry-After": "2"}, text="Too Many Requests", request=req)
+        return httpx.Response(
+            429, headers={"Retry-After": "2"}, text="Too Many Requests", request=req
+        )
 
     with pytest.raises(ProviderRateLimitError) as exc_info:
         execute_with_retry(mock_post, provider=provider, sleep_fn=mock_sleep)
@@ -312,11 +309,19 @@ def test_failover_skips_disabled_provider_and_exhausts_with_hints():
 
     # Monkeypatch generate on p1 to simulate 401
     def mock_p1_gen(*args, **kwargs):
-        raise ProviderAuthError("401 Unauthorized", provider="anthropic", status=401, hint="Check ANTHROPIC_API_KEY")
+        raise ProviderAuthError(
+            "401 Unauthorized", provider="anthropic", status=401, hint="Check ANTHROPIC_API_KEY"
+        )
 
     # Monkeypatch generate on p2 to simulate 429
     def mock_p2_gen(*args, **kwargs):
-        raise ProviderRateLimitError("429 Quota Exceeded", provider="openai", status=429, hint="Check OpenAI Quota", retry_after=5.0)
+        raise ProviderRateLimitError(
+            "429 Quota Exceeded",
+            provider="openai",
+            status=429,
+            hint="Check OpenAI Quota",
+            retry_after=5.0,
+        )
 
     p1.generate = mock_p1_gen
     p2.generate = mock_p2_gen

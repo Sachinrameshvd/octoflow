@@ -4,18 +4,16 @@ Renders syntax-highlighted, interactive Rich documentation directly in the shell
 or cockpit, with chapter navigation, search, and web-viewer launching.
 """
 
-import sys
 import webbrowser
-from typing import Optional, List, Dict
+
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
-from rich.markdown import Markdown
 
 from octoflow.themes import load_saved_theme
 
-
-MANUAL_SECTIONS: Dict[str, Dict[str, str]] = {
+MANUAL_SECTIONS: dict[str, dict[str, str]] = {
     "1": {
         "title": "Biological Principles & Active Inference",
         "content": """
@@ -32,7 +30,7 @@ Adjacent arms exchange semantic tokens across an inter-brachial ring bus without
 
 **3. Biophysical Connectomics:**
 Biological Dale's Principle enforces strict neurotransmitter identities: Acetylcholine (ACh) for excitation, GABA/Glutamate for inhibition, and Dopamine/Octopamine for neuromodulation.
-"""
+""",
     },
     "2": {
         "title": "The 8 Specialized Neural Arm Ganglia",
@@ -48,7 +46,7 @@ Each arm operates an egocentric sensory patch and specialized tool suite:
 * **Arm 5 (QA & Invariants):** Pytest/Jest suites, automated regression discovery, AST self-healing loop.
 * **Arm 6 (Security & Guard):** 14-rule zero-trust PII filtering, secret audits, credential hygiene.
 * **Arm 7 (DevOps & Ignition):** Docker builds, CI/CD pipelines, live dev server boots, and safe rollbacks.
-"""
+""",
     },
     "3": {
         "title": "Master Command Directory",
@@ -69,7 +67,7 @@ Each arm operates an egocentric sensory patch and specialized tool suite:
 | **`/ui`** | Open 3D WebGL Constellation in browser | `./octos ui` |
 | **`/runner`** | Launch 8-bit benthic dot-matrix runner | `./octo runner` |
 | **`/doctor`** | Comprehensive environment diagnostics | `./octo doctor` |
-"""
+""",
     },
     "4": {
         "title": "Step-by-Step Developer Playbooks",
@@ -92,7 +90,7 @@ Each arm operates an egocentric sensory patch and specialized tool suite:
 1. Run `./octo eject --output ./my-agent-kit`
 2. Commit the zero-dependency files into your project.
 3. Run directly: `python ./my-agent-kit/run.py "Deploy microservice"`
-"""
+""",
     },
     "5": {
         "title": "Zero-Trust Federation & 14-Rule PII Redaction",
@@ -109,7 +107,7 @@ All inter-arm, inter-octopus, and cross-machine transmissions are automatically 
 * **PII Identifiers:** Emails, IPv4 addresses, Credit card numbers -> `[REDACTED_PII]`
 
 Action modes available: `REDACT` (default), `BLOCK` (raises PermissionError), `HASH`, `PASS`.
-"""
+""",
     },
     "6": {
         "title": "Keyboard Shortcuts Cheatsheet",
@@ -129,30 +127,36 @@ Action modes available: `REDACT` (default), `BLOCK` (raises PermissionError), `H
 * **`F1` / `/help`:** Display quick command help table
 * **`k` / `j`:** Previous / Next theme in palette picker
 * **`/exit` / `q`:** Exit cleanly
-"""
-    }
+""",
+    },
 }
 
 
-def display_manual(chapter: Optional[str] = None, web: bool = False, console: Optional[Console] = None) -> None:
+def display_manual(
+    chapter: str | None = None, web: bool = False, console: Console | None = None
+) -> None:
     """Render the manual to the terminal or open in web browser."""
     con = console or Console()
     theme = load_saved_theme()
 
     if web:
-        con.print(f"[{theme.rich_primary}]◈ Opening Cephalopod Manual in default browser...[/{theme.rich_primary}]")
+        con.print(
+            f"[{theme.rich_primary}]◈ Opening Cephalopod Manual in default browser...[/{theme.rich_primary}]"
+        )
         webbrowser.open("http://localhost:8088?manual=1")
         return
 
     con.print()
-    con.print(Panel(
-        "[bold white]🐙 OCTOFLOW CEPHALOPOD DEVELOPER MANUAL & FIELD GUIDE[/bold white]\n"
-        "[dim]Biological Active Inference • 8 Arm Ganglia • Master Commands • Playbooks • Zero-Trust PII[/dim]\n\n"
-        "[dim]Shortcut: Press [bold]? [/bold] in the 3D Web Visualizer or run [bold]./octo manual[/bold] anytime.[/dim]",
-        title="[bold cyan]Official Documentation[/bold cyan]",
-        border_style=theme.rich_border,
-        padding=(1, 2)
-    ))
+    con.print(
+        Panel(
+            "[bold white]🐙 OCTOFLOW CEPHALOPOD DEVELOPER MANUAL & FIELD GUIDE[/bold white]\n"
+            "[dim]Biological Active Inference • 8 Arm Ganglia • Master Commands • Playbooks • Zero-Trust PII[/dim]\n\n"
+            "[dim]Shortcut: Press [bold]? [/bold] in the 3D Web Visualizer or run [bold]./octo manual[/bold] anytime.[/dim]",
+            title="[bold cyan]Official Documentation[/bold cyan]",
+            border_style=theme.rich_border,
+            padding=(1, 2),
+        )
+    )
 
     # If specific chapter requested
     if chapter:
@@ -162,21 +166,27 @@ def display_manual(chapter: Optional[str] = None, web: bool = False, console: Op
             if ch_key == k or ch_key.lower() in v["title"].lower():
                 matched_section = (k, v)
                 break
-        
+
         if matched_section:
             k, sec = matched_section
-            con.print(Panel(
-                Markdown(sec["content"].strip()),
-                title=f"[bold green]Chapter {k}: {sec['title']}[/bold green]",
-                border_style="green",
-                padding=(1, 2)
-            ))
+            con.print(
+                Panel(
+                    Markdown(sec["content"].strip()),
+                    title=f"[bold green]Chapter {k}: {sec['title']}[/bold green]",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+            )
             return
         else:
-            con.print(f"[yellow]Chapter '{chapter}' not found. Displaying table of contents:[/yellow]\n")
+            con.print(
+                f"[yellow]Chapter '{chapter}' not found. Displaying table of contents:[/yellow]\n"
+            )
 
     # Table of Contents
-    toc_table = Table(title="Manual Chapters (Select with --chapter <number>)", border_style=theme.rich_border)
+    toc_table = Table(
+        title="Manual Chapters (Select with --chapter <number>)", border_style=theme.rich_border
+    )
     toc_table.add_column("Ch #", style=theme.rich_primary, width=6)
     toc_table.add_column("Chapter Title", style="bold white", width=46)
     toc_table.add_column("Quick Command", style="dim", width=24)
@@ -189,10 +199,12 @@ def display_manual(chapter: Optional[str] = None, web: bool = False, console: Op
 
     # Render all chapters in clean accordion sequence
     for k, sec in MANUAL_SECTIONS.items():
-        con.print(Panel(
-            Markdown(sec["content"].strip()),
-            title=f"[bold cyan]Chapter {k}: {sec['title']}[/bold cyan]",
-            border_style=theme.rich_border,
-            padding=(1, 2)
-        ))
+        con.print(
+            Panel(
+                Markdown(sec["content"].strip()),
+                title=f"[bold cyan]Chapter {k}: {sec['title']}[/bold cyan]",
+                border_style=theme.rich_border,
+                padding=(1, 2),
+            )
+        )
         con.print()

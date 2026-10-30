@@ -3,7 +3,6 @@
 import pytest
 
 torch = pytest.importorskip("torch")
-import torch.nn as nn
 from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.losses import AdaptiveGateBudgeter, OctopusLoss
 
@@ -17,7 +16,7 @@ def test_adaptive_gate_budgeter_init_and_properties():
 
 def test_adaptive_gate_budgeter_penalty_computation():
     budgeter = AdaptiveGateBudgeter(target_rate=0.25, lr=0.05, init_val=0.1)
-    
+
     # Over target (rate = 0.50 > 0.25)
     high_probs = torch.full((4, 8), 0.50)
     primal, dual = budgeter.compute_penalty(high_probs)
@@ -33,7 +32,7 @@ def test_adaptive_gate_budgeter_penalty_computation():
 def test_adaptive_gate_budgeter_dual_step():
     budgeter = AdaptiveGateBudgeter(target_rate=0.25, lr=0.1, init_val=0.2)
     initial_lambda = budgeter.lambda_val.item()
-    
+
     # High reporting rate should increase lambda (higher penalty)
     new_lambda = budgeter.update_dual_step(0.60)
     assert new_lambda > initial_lambda

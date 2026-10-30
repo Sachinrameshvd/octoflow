@@ -13,19 +13,20 @@ Implements the connectome pipeline inspired by Google Connectomics and FlyWire:
   biophysical Spiking Neural Network (SNN) simulation engines.
 """
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, List, Optional, Tuple, Any, Set
 import json
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+
 import numpy as np
 
 
 class Neurotransmitter(str, Enum):
     ACETYLCHOLINE = "acetylcholine"  # Primary invertebrate excitatory transmitter
-    GABA = "gaba"                    # Primary central inhibitory transmitter
-    GLUTAMATE = "glutamate"          # Invertebrate neuromuscular & peripheral inhibitor
-    DOPAMINE = "dopamine"            # Neuromodulatory / reinforcement transmitter
-    OCTOPAMINE = "octopamine"        # Neuromodulatory / invertebrate arousal transmitter
+    GABA = "gaba"  # Primary central inhibitory transmitter
+    GLUTAMATE = "glutamate"  # Invertebrate neuromuscular & peripheral inhibitor
+    DOPAMINE = "dopamine"  # Neuromodulatory / reinforcement transmitter
+    OCTOPAMINE = "octopamine"  # Neuromodulatory / invertebrate arousal transmitter
 
 
 class NeuronCategory(str, Enum):
@@ -42,6 +43,7 @@ class NeuronCategory(str, Enum):
 @dataclass
 class ConnectomeNode:
     """A biologically identified neuron in the cephalopod connectome."""
+
     id: int
     label: str
     region: str
@@ -50,7 +52,7 @@ class ConnectomeNode:
     category: NeuronCategory
     neurotransmitter: Neurotransmitter
     sign: float  # +1.0 for excitatory, -1.0 for inhibitory, 0.0 for pure modulatory
-    position: Tuple[float, float, float]
+    position: tuple[float, float, float]
     base_firing_threshold_mv: float = -50.0
     resting_potential_mv: float = -70.0
     membrane_capacitance_uf: float = 1.0
@@ -59,6 +61,7 @@ class ConnectomeNode:
 @dataclass
 class SynapticEdge:
     """A directed synaptic contact between two identified neurons."""
+
     source_id: int
     target_id: int
     synapse_count: int  # Biological contact count (1 to 20+)
@@ -74,12 +77,12 @@ class CephalopodConnectome:
     def __init__(self, scale_factor: float = 1.0, seed: int = 42):
         self.scale_factor = scale_factor
         self.rng = np.random.RandomState(seed)
-        self.nodes: List[ConnectomeNode] = []
-        self.edges: List[SynapticEdge] = []
-        self.node_by_id: Dict[int, ConnectomeNode] = {}
-        self.edges_by_source: Dict[int, List[SynapticEdge]] = {}
-        self.edges_by_target: Dict[int, List[SynapticEdge]] = {}
-        self.region_node_ids: Dict[str, List[int]] = {}
+        self.nodes: list[ConnectomeNode] = []
+        self.edges: list[SynapticEdge] = []
+        self.node_by_id: dict[int, ConnectomeNode] = {}
+        self.edges_by_source: dict[int, list[SynapticEdge]] = {}
+        self.edges_by_target: dict[int, list[SynapticEdge]] = {}
+        self.region_node_ids: dict[str, list[int]] = {}
 
         self._build_connectome()
 
@@ -91,11 +94,15 @@ class CephalopodConnectome:
         segment_index: int,
         category: NeuronCategory,
         transmitter: Neurotransmitter,
-        pos: Tuple[float, float, float],
+        pos: tuple[float, float, float],
     ) -> int:
         node_id = len(self.nodes)
-        sign = 1.0 if transmitter == Neurotransmitter.ACETYLCHOLINE else (
-            -1.0 if transmitter in (Neurotransmitter.GABA, Neurotransmitter.GLUTAMATE) else 0.5
+        sign = (
+            1.0
+            if transmitter == Neurotransmitter.ACETYLCHOLINE
+            else (
+                -1.0 if transmitter in (Neurotransmitter.GABA, Neurotransmitter.GLUTAMATE) else 0.5
+            )
         )
         node = ConnectomeNode(
             id=node_id,
@@ -197,13 +204,17 @@ class CephalopodConnectome:
         # Wire Vertical Lobe Matrix:
         # SFL -> Amacrine (divergent connectivity)
         for s_id in sfl_ids:
-            targets = self.rng.choice(vl_amacrine_ids, size=min(8, len(vl_amacrine_ids)), replace=False)
+            targets = self.rng.choice(
+                vl_amacrine_ids, size=min(8, len(vl_amacrine_ids)), replace=False
+            )
             for t_id in targets:
                 self._add_edge(s_id, int(t_id), synapse_count=int(self.rng.randint(2, 6)))
 
         # Amacrine -> Efferent (convergent connectivity)
         for a_id in vl_amacrine_ids:
-            targets = self.rng.choice(vl_efferent_ids, size=min(3, len(vl_efferent_ids)), replace=False)
+            targets = self.rng.choice(
+                vl_efferent_ids, size=min(3, len(vl_efferent_ids)), replace=False
+            )
             for t_id in targets:
                 self._add_edge(a_id, int(t_id), synapse_count=int(self.rng.randint(1, 5)))
 
@@ -258,8 +269,8 @@ class CephalopodConnectome:
             self._add_edge(curr, right, synapse_count=4)
 
         # 4. Distributed 8 Brachial Axial Cords & Sucker Ganglia
-        self.arm_sensory_ids: Dict[int, List[int]] = {i: [] for i in range(8)}
-        self.arm_motor_ids: Dict[int, List[int]] = {i: [] for i in range(8)}
+        self.arm_sensory_ids: dict[int, list[int]] = {i: [] for i in range(8)}
+        self.arm_motor_ids: dict[int, list[int]] = {i: [] for i in range(8)}
 
         n_segments = 4
         for arm_idx in range(8):
@@ -304,7 +315,9 @@ class CephalopodConnectome:
                     arm_index=arm_idx,
                     segment_index=seg,
                     category=NeuronCategory.INTER_RELAY,
-                    transmitter=Neurotransmitter.GABA if seg % 2 == 1 else Neurotransmitter.ACETYLCHOLINE,
+                    transmitter=Neurotransmitter.GABA
+                    if seg % 2 == 1
+                    else Neurotransmitter.ACETYLCHOLINE,
                     pos=(ax_x, ax_y + 0.1, ax_z),
                 )
 
@@ -359,7 +372,7 @@ class CephalopodConnectome:
             w[edge.target_id, edge.source_id] += edge.sign * edge.conductance_ns
         return w
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Returns statistics of the connectome."""
         n_nodes = len(self.nodes)
         n_edges = len(self.edges)

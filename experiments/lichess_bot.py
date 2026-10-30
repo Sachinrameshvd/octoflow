@@ -11,22 +11,19 @@ Usage:
     python experiments/lichess_bot.py --token lip_xxxxxxxxxxxxxxxxxxxx
 """
 
-import sys
-import os
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-import httpx
+
 import chess
+import httpx
 
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from octopus_brain.adapter import OctopusGymAdapter
-from octopus_brain.config import OctopusBrainConfig
-
 
 LICHESS_API_BASE = "https://lichess.org"
 
@@ -77,8 +74,12 @@ def encode_board_to_arms(board: chess.Board, is_white: bool) -> list:
         arm_features[9] = opponent_count / 4.0
         arm_features[10] = 0.5 if (friendly_count > 0 and opponent_count > 0) else 0.0
         arm_features[11] = 1.0 if (file_idx in [3, 4]) else 0.0  # Center files (D, E)
-        arm_features[12] = 1.0 if (friendly_count == 0 and opponent_count == 0) else 0.0  # Fully open file
-        arm_features[13] = 1.0 if (friendly_count == 0 and opponent_count > 0) else 0.0  # Half-open file
+        arm_features[12] = (
+            1.0 if (friendly_count == 0 and opponent_count == 0) else 0.0
+        )  # Fully open file
+        arm_features[13] = (
+            1.0 if (friendly_count == 0 and opponent_count > 0) else 0.0
+        )  # Half-open file
         arm_features[14] = 1.0 / (1.0 + abs(file_idx - king_file))  # King distance
         arm_features[15] = 1.0 if board.is_check() else 0.0
 
@@ -156,7 +157,7 @@ class OctopusLichessBot:
             accept_url = f"{LICHESS_API_BASE}/api/challenge/{ch_id}/accept"
             res = httpx.post(accept_url, headers=self.headers)
             if res.status_code == 200:
-                print(f"✅ Challenge accepted! Entering game room...")
+                print("✅ Challenge accepted! Entering game room...")
             else:
                 print(f"❌ Failed to accept challenge: {res.text}")
 
@@ -186,9 +187,11 @@ class OctopusLichessBot:
                 if msg_type == "gameFull":
                     white_player = data["white"].get("name", "Unknown")
                     black_player = data["black"].get("name", "Unknown")
-                    my_color_is_white = (white_player.lower() == self.username.lower())
+                    my_color_is_white = white_player.lower() == self.username.lower()
                     print(f"  • White: @{white_player} | Black: @{black_player}")
-                    print(f"  • OctopusBrain plays: {'WHITE ⚪' if my_color_is_white else 'BLACK ⚫'}")
+                    print(
+                        f"  • OctopusBrain plays: {'WHITE ⚪' if my_color_is_white else 'BLACK ⚫'}"
+                    )
 
                     # Catch up moves
                     moves_str = data["state"]["moves"]
@@ -197,7 +200,9 @@ class OctopusLichessBot:
                         for m in moves_str.split():
                             board.push_uci(m)
 
-                    is_my_turn = (board.turn == chess.WHITE and my_color_is_white) or (board.turn == chess.BLACK and not my_color_is_white)
+                    is_my_turn = (board.turn == chess.WHITE and my_color_is_white) or (
+                        board.turn == chess.BLACK and not my_color_is_white
+                    )
                     if is_my_turn and not board.is_game_over():
                         self.make_move(game_id, board, my_color_is_white)
 
@@ -215,7 +220,9 @@ class OctopusLichessBot:
                         print("=" * 80)
                         return
 
-                    is_my_turn = (board.turn == chess.WHITE and my_color_is_white) or (board.turn == chess.BLACK and not my_color_is_white)
+                    is_my_turn = (board.turn == chess.WHITE and my_color_is_white) or (
+                        board.turn == chess.BLACK and not my_color_is_white
+                    )
                     if is_my_turn and not board.is_game_over():
                         self.make_move(game_id, board, my_color_is_white)
 
@@ -256,7 +263,9 @@ class OctopusLichessBot:
             # Capture bonus
             if board.is_capture(move):
                 target_piece = board.piece_at(move.to_square)
-                score += 3.0 + (PIECE_VALUES.get(target_piece.piece_type, 1.0) if target_piece else 1.0)
+                score += 3.0 + (
+                    PIECE_VALUES.get(target_piece.piece_type, 1.0) if target_piece else 1.0
+                )
 
             # Check bonus
             board.push(move)
@@ -282,16 +291,24 @@ class OctopusLichessBot:
         # 5. Display real-time telemetry and ASCII board
         report_str = "".join(["●" if r else "○" for r in info["report_events"]])
         coalitions = info["coalition_clusters"]
-        coalition_str = ", ".join([f"({','.join(map(str, c))})" for c in coalitions]) if coalitions else "None"
+        coalition_str = (
+            ", ".join([f"({','.join(map(str, c))})" for c in coalitions]) if coalitions else "None"
+        )
 
-        print(f"\n  [Move {board.fullmove_number}] OctopusBrain plays: {uci_move.upper()} (Arm #{from_arm} / File {chr(ord('A')+from_arm)})")
-        print(f"  • Gating: [{report_str}] ({info['report_rate']*100:2.0f}%) | Coalitions: {coalition_str}")
+        print(
+            f"\n  [Move {board.fullmove_number}] OctopusBrain plays: {uci_move.upper()} (Arm #{from_arm} / File {chr(ord('A') + from_arm)})"
+        )
+        print(
+            f"  • Gating: [{report_str}] ({info['report_rate'] * 100:2.0f}%) | Coalitions: {coalition_str}"
+        )
 
         # Active biological semantic thoughts
         active_intents = [it for it in info["decoded_intents"] if it["is_reporting"]]
         if active_intents:
             for it in active_intents[:2]:
-                print(f"    🗣 Arm #{it['arm_index']}: {it['icon']} {it['label']} ({it['confidence']*100:.0f}%) -> {it['description']}")
+                print(
+                    f"    🗣 Arm #{it['arm_index']}: {it['icon']} {it['label']} ({it['confidence'] * 100:.0f}%) -> {it['description']}"
+                )
 
         # Mini ASCII board
         print(f"\n{board}\n")
@@ -300,7 +317,12 @@ class OctopusLichessBot:
 def main():
     parser = argparse.ArgumentParser(description="OctopusBrain Lichess Bot")
     parser.add_argument("--token", type=str, required=True, help="Lichess API personal token")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/top1_octopus_brain.pt", help="Checkpoint path")
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="checkpoints/top1_octopus_brain.pt",
+        help="Checkpoint path",
+    )
     args = parser.parse_args()
 
     bot = OctopusLichessBot(token=args.token, checkpoint_path=args.checkpoint)

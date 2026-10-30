@@ -9,54 +9,61 @@ Exports a 100% self-contained, offline HTML/CSS/JS document containing:
 
 import ast
 import json
-import os
 import re
 import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from octoflow.ci import SECRET_PATTERNS
 from octoflow.config import SOFTWARE_DEV_ROSTER
-from octoflow.themes import get_theme
 from octoflow.provider import redact_secrets
+from octoflow.themes import get_theme
 
 
 def collect_mission_audit_data(
     workspace: str = ".",
     objective: str = "Mission Execution",
-    telemetry_events: Optional[List[dict]] = None,
+    telemetry_events: list[dict] | None = None,
     duration_seconds: float = 18.4,
     mode: str = "live",
     outcome: str = "complete",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Collect git state, AST validation, diffs, and token metrics for audit export."""
     ws = Path(workspace).resolve()
 
     # Git Metadata
     branch = "main"
     commit_hash = "HEAD"
-    modified_files: List[str] = []
-    file_diffs: Dict[str, str] = {}
+    modified_files: list[str] = []
+    file_diffs: dict[str, str] = {}
 
     try:
-        b_res = subprocess.run(["git", "branch", "--show-current"], cwd=str(ws), capture_output=True, text=True)
+        b_res = subprocess.run(
+            ["git", "branch", "--show-current"], cwd=str(ws), capture_output=True, text=True
+        )
         if b_res.returncode == 0 and b_res.stdout.strip():
             branch = b_res.stdout.strip()
 
-        c_res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=str(ws), capture_output=True, text=True)
+        c_res = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"], cwd=str(ws), capture_output=True, text=True
+        )
         if c_res.returncode == 0 and c_res.stdout.strip():
             commit_hash = c_res.stdout.strip()
 
-        st_res = subprocess.run(["git", "status", "--porcelain"], cwd=str(ws), capture_output=True, text=True)
+        st_res = subprocess.run(
+            ["git", "status", "--porcelain"], cwd=str(ws), capture_output=True, text=True
+        )
         if st_res.returncode == 0:
             for line in st_res.stdout.splitlines():
                 if len(line) > 3:
                     f_name = line[3:].strip()
                     modified_files.append(f_name)
 
-        diff_res = subprocess.run(["git", "diff", "HEAD~1"], cwd=str(ws), capture_output=True, text=True)
+        diff_res = subprocess.run(
+            ["git", "diff", "HEAD~1"], cwd=str(ws), capture_output=True, text=True
+        )
         raw_diff = diff_res.stdout if diff_res.returncode == 0 else ""
         if not raw_diff:
             diff_res = subprocess.run(["git", "diff"], cwd=str(ws), capture_output=True, text=True)
@@ -82,8 +89,8 @@ def collect_mission_audit_data(
             modified_files.append(p.name)
 
     # Arm 6 Security & Credential Audit
-    leaked_secrets: List[str] = []
-    sqli_risks: List[str] = []
+    leaked_secrets: list[str] = []
+    sqli_risks: list[str] = []
     for f_name, d_text in file_diffs.items():
         for line in d_text.splitlines():
             if line.startswith("+") and not line.startswith("+++"):
@@ -94,7 +101,7 @@ def collect_mission_audit_data(
                     sqli_risks.append(f"{f_name}: raw SQL f-string")
 
     # Arm 5 AST Validation
-    ast_errors: List[str] = []
+    ast_errors: list[str] = []
     for f_rel in modified_files:
         target = ws / f_rel
         if target.exists() and f_rel.endswith(".py"):
@@ -106,7 +113,7 @@ def collect_mission_audit_data(
     hard_block = bool(leaked_secrets or sqli_risks or ast_errors)
 
     # Vertical Lobe Memory Heuristics
-    heuristics: List[Dict[str, Any]] = []
+    heuristics: list[dict[str, Any]] = []
     mem_file = Path.home() / ".octoflow" / "vertical_lobe.json"
     if mem_file.exists():
         try:
@@ -129,14 +136,14 @@ def collect_mission_audit_data(
     roi_multiplier = round(monolithic_cost / max(swarm_cost, 0.001), 1)
 
     # 8-Ganglia Swarm Grid
-    arms_data: List[Dict[str, Any]] = []
+    arms_data: list[dict[str, Any]] = []
     for arm_id in range(8):
         role_cfg = SOFTWARE_DEV_ROSTER[arm_id] if arm_id < len(SOFTWARE_DEV_ROSTER) else None
         role_title = role_cfg.title if role_cfg else f"Specialist {arm_id}"
         tier = getattr(role_cfg, "model_tier", "balanced").upper()
 
         arm_files = [f for f in modified_files if _arm_file_affinity(arm_id, f)]
-        findings: List[str] = []
+        findings: list[str] = []
 
         if arm_id == 6:
             if leaked_secrets:
@@ -156,16 +163,22 @@ def collect_mission_audit_data(
         else:
             findings.append(f"Sub-objective decomposed and verified by {role_title}.")
 
-        arms_data.append({
-            "arm_id": arm_id,
-            "title": role_title,
-            "tier": tier,
-            "status": "✖ BLOCKED" if (arm_id == 6 and leaked_secrets) or (arm_id == 5 and ast_errors) else "✔ COMPLETED",
-            "findings": findings,
-            "files": arm_files,
-            "surprise_avg": round(0.042 + (arm_id * 0.011), 3),
-            "pulses": max(len([e for e in (telemetry_events or []) if e.get("arm_id") == arm_id]), 3),
-        })
+        arms_data.append(
+            {
+                "arm_id": arm_id,
+                "title": role_title,
+                "tier": tier,
+                "status": "✖ BLOCKED"
+                if (arm_id == 6 and leaked_secrets) or (arm_id == 5 and ast_errors)
+                else "✔ COMPLETED",
+                "findings": findings,
+                "files": arm_files,
+                "surprise_avg": round(0.042 + (arm_id * 0.011), 3),
+                "pulses": max(
+                    len([e for e in (telemetry_events or []) if e.get("arm_id") == arm_id]), 3
+                ),
+            }
+        )
 
     # Fallback telemetry events if none passed
     if not telemetry_events:
@@ -220,29 +233,31 @@ def _arm_file_affinity(arm_id: int, filename: str) -> bool:
     return False
 
 
-def _generate_synthetic_telemetry(arms: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _generate_synthetic_telemetry(arms: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Generate realistic connectome timeline sequence for self-contained replay."""
     frames = []
     t = 0.0
     for cycle in range(1, 4):
         for a in arms:
             t += round(0.4 + (a["arm_id"] * 0.1), 2)
-            frames.append({
-                "timestamp": t,
-                "arm_id": a["arm_id"],
-                "role": a["title"],
-                "event_type": "STEP",
-                "surprise": a["surprise_avg"],
-                "summary": f"Ganglia Arm {a['arm_id']} ({a['title']}) evaluated state, surprise: {a['surprise_avg']:.3f}",
-                "cycle": cycle,
-                "progress_pct": min(round((cycle * 30.0) + (a["arm_id"] * 1.5), 1), 100.0),
-            })
+            frames.append(
+                {
+                    "timestamp": t,
+                    "arm_id": a["arm_id"],
+                    "role": a["title"],
+                    "event_type": "STEP",
+                    "surprise": a["surprise_avg"],
+                    "summary": f"Ganglia Arm {a['arm_id']} ({a['title']}) evaluated state, surprise: {a['surprise_avg']:.3f}",
+                    "cycle": cycle,
+                    "progress_pct": min(round((cycle * 30.0) + (a["arm_id"] * 1.5), 1), 100.0),
+                }
+            )
     return frames
 
 
 def generate_html_audit_report(
-    mission_data: Dict[str, Any],
-    output_path: Optional[str] = None,
+    mission_data: dict[str, Any],
+    output_path: str | None = None,
     theme_id: str = "tokyo_night",
 ) -> Path:
     """Generate a 100% self-contained, standalone HTML mission audit report."""
@@ -276,7 +291,7 @@ def generate_html_audit_report(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OctoFlow Mission Audit • {mission_data.get('objective', 'Report')}</title>
+  <title>OctoFlow Mission Audit • {mission_data.get("objective", "Report")}</title>
   <style>
     :root {{
       --bg-base: #0B0F19;
@@ -601,12 +616,12 @@ def generate_html_audit_report(
           <span>OctoFlow Mission Audit</span>
         </div>
         <div class="mission-meta">
-          <span><strong>Objective:</strong> {mission_data.get('objective')}</span>
-          <span><strong>Branch:</strong> <code>{mission_data.get('branch')}</code> ({mission_data.get('commit')})</span>
-          <span><strong>Executed:</strong> {mission_data.get('timestamp')}</span>
+          <span><strong>Objective:</strong> {mission_data.get("objective")}</span>
+          <span><strong>Branch:</strong> <code>{mission_data.get("branch")}</code> ({mission_data.get("commit")})</span>
+          <span><strong>Executed:</strong> {mission_data.get("timestamp")}</span>
         </div>
       </div>
-      <div class="verdict-badge {'blocked' if is_blocked else ''}">
+      <div class="verdict-badge {"blocked" if is_blocked else ""}">
         {verdict_badge}
       </div>
     </header>
@@ -615,18 +630,18 @@ def generate_html_audit_report(
     <section class="roi-grid">
       <div class="roi-card">
         <div class="label">Swarm Heterogeneous Cost</div>
-        <div class="value">${token_econ.get('swarm_cost', 0.0):.3f}</div>
-        <div class="subtext">{token_econ.get('swarm_tokens', 0):,} tokens consumed across 8 arms</div>
+        <div class="value">${token_econ.get("swarm_cost", 0.0):.3f}</div>
+        <div class="subtext">{token_econ.get("swarm_tokens", 0):,} tokens consumed across 8 arms</div>
       </div>
       <div class="roi-card">
         <div class="label">Monolithic Prompt Cost</div>
-        <div class="value" style="color: var(--text-muted);">${token_econ.get('monolithic_cost', 0.0):.3f}</div>
-        <div class="subtext">{token_econ.get('monolithic_tokens', 0):,} estimated monolithic tokens</div>
+        <div class="value" style="color: var(--text-muted);">${token_econ.get("monolithic_cost", 0.0):.3f}</div>
+        <div class="subtext">{token_econ.get("monolithic_tokens", 0):,} estimated monolithic tokens</div>
       </div>
       <div class="roi-card">
         <div class="label">Token Cost Savings</div>
-        <div class="value" style="color: var(--success);">{token_econ.get('savings_pct', 0.0)}%</div>
-        <div class="subtext">{token_econ.get('roi_multiplier', 0.0)}x efficiency vs standard LLM</div>
+        <div class="value" style="color: var(--success);">{token_econ.get("savings_pct", 0.0)}%</div>
+        <div class="subtext">{token_econ.get("roi_multiplier", 0.0)}x efficiency vs standard LLM</div>
       </div>
       <div class="roi-card">
         <div class="label">Active Ganglia Verification</div>
@@ -670,8 +685,8 @@ def generate_html_audit_report(
         <button class="play-btn" id="playBtn" onclick="togglePlay()">
           <span id="playIcon">▶</span> Play
         </button>
-        <input type="range" class="scrubber" id="timelineScrubber" min="0" max="{len(mission_data.get('telemetry_frames', [])) - 1}" value="0" oninput="onScrub(this.value)">
-        <div class="ticker" id="eventTicker">Frame 1 / {len(mission_data.get('telemetry_frames', []))}</div>
+        <input type="range" class="scrubber" id="timelineScrubber" min="0" max="{len(mission_data.get("telemetry_frames", [])) - 1}" value="0" oninput="onScrub(this.value)">
+        <div class="ticker" id="eventTicker">Frame 1 / {len(mission_data.get("telemetry_frames", []))}</div>
       </div>
     </section>
 
@@ -704,7 +719,7 @@ def generate_html_audit_report(
           </ul>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: auto; display: flex; justify-content: space-between;">
             <span>Files: {files_count}</span>
-            <span>Surprise: {a.get('surprise_avg', 0.04):.3f}</span>
+            <span>Surprise: {a.get("surprise_avg", 0.04):.3f}</span>
           </div>
         </div>
 """
@@ -768,7 +783,7 @@ def generate_html_audit_report(
     # Footer and Scripts
     html_content += f"""
     <footer class="footer-note">
-      OctoFlow Cephalopod Neural Swarm • Standalone Audit Report • Generated {mission_data.get('timestamp')}
+      OctoFlow Cephalopod Neural Swarm • Standalone Audit Report • Generated {mission_data.get("timestamp")}
     </footer>
   </div>
 

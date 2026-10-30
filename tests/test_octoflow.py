@@ -10,27 +10,24 @@ Tests all core components:
 7. SupraesophagealConductor & dynamic coalition attention
 """
 
-import os
 import shutil
 import tempfile
-import pytest
-import numpy as np
 
+import numpy as np
+import pytest
+from octoflow.arm import ArmAgent
+from octoflow.bus import InterBrachialBus, MessageIntent
+from octoflow.conductor import SupraesophagealConductor
 from octoflow.config import (
+    SOFTWARE_DEV_ROSTER,
     OctoFlowConfig,
     SwarmMorphology,
-    SOFTWARE_DEV_ROSTER,
-    AIML_RESEARCH_ROSTER,
-    FULLSTACK_AI_ROSTER,
 )
-from octoflow.tools import WorkspaceSandbox, ToolResult
 from octoflow.encoder import CodeSensoryEncoder
 from octoflow.gate import SurpriseGate
-from octoflow.bus import InterBrachialBus, MessageIntent
 from octoflow.memory import VerticalLobeMemory
 from octoflow.provider import MockLLMProvider
-from octoflow.arm import ArmAgent
-from octoflow.conductor import SupraesophagealConductor
+from octoflow.tools import ToolResult, WorkspaceSandbox
 
 
 @pytest.fixture
@@ -120,7 +117,9 @@ def test_surprise_gate_and_silent_execution():
     encoder = CodeSensoryEncoder(obs_dim=16)
 
     # 1. Clean tool run -> Low surprise -> Silent execution
-    clean_res = ToolResult(tool_name="write_file", target="api.py", success=True, returncode=0, diff_lines=20)
+    clean_res = ToolResult(
+        tool_name="write_file", target="api.py", success=True, returncode=0, diff_lines=20
+    )
     obs_clean = encoder.encode(clean_res)
     escalate, surprise, telemetry = gate.evaluate(obs_clean, clean_res)
 
@@ -129,7 +128,13 @@ def test_surprise_gate_and_silent_execution():
     assert telemetry["savings_pct"] == 100.0
 
     # 2. Fatal crash tool run -> High surprise -> Escalation
-    fatal_res = ToolResult(tool_name="run_command", target="pytest", success=False, returncode=1, stderr="AssertionError: 404 != 200")
+    fatal_res = ToolResult(
+        tool_name="run_command",
+        target="pytest",
+        success=False,
+        returncode=1,
+        stderr="AssertionError: 404 != 200",
+    )
     obs_fatal = encoder.encode(fatal_res)
     escalate_fatal, surprise_fatal, _ = gate.evaluate(obs_fatal, fatal_res)
 
@@ -222,6 +227,7 @@ def test_conductor_swarm_and_token_savings(temp_workspace):
     )
 
     telemetry_events = []
+
     def on_event(ev):
         telemetry_events.append(ev)
 
@@ -232,7 +238,9 @@ def test_conductor_swarm_and_token_savings(temp_workspace):
     assert len(goals) == 8
 
     # Run the swarm
-    summary = conductor.run_swarm("Build a real-time markdown editor with FastAPI and Vue", max_cycles=3)
+    summary = conductor.run_swarm(
+        "Build a real-time markdown editor with FastAPI and Vue", max_cycles=3
+    )
 
     assert summary["quiescent_arms"] >= 1
     assert summary["tokens_consumed"] > 0

@@ -7,25 +7,29 @@ applies preflight-validated AST patches, and iterates in a closed loop until 100
 
 import ast
 import json
-import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from octoflow.config import OctoFlowConfig
-from octoflow.tools import WorkspaceSandbox
-from octoflow.logging_config import get_logger
 from octoflow.errors import BudgetExceeded
+from octoflow.logging_config import get_logger
+from octoflow.tools import WorkspaceSandbox
 
 logger = get_logger("healing")
 
 
-def detect_test_framework(workspace_dir: str) -> Optional[Tuple[str, List[str]]]:
+def detect_test_framework(workspace_dir: str) -> tuple[str, list[str]] | None:
     """Detect workspace testing framework and execution command."""
     ws = Path(workspace_dir).resolve()
 
-    if (ws / "pytest.ini").exists() or (ws / "tests").exists() or (ws / "pyproject.toml").exists() or (ws / "setup.py").exists():
+    if (
+        (ws / "pytest.ini").exists()
+        or (ws / "tests").exists()
+        or (ws / "pyproject.toml").exists()
+        or (ws / "setup.py").exists()
+    ):
         return ("pytest", ["pytest", "-q"])
 
     pkg_json = ws / "package.json"
@@ -35,7 +39,9 @@ def detect_test_framework(workspace_dir: str) -> Optional[Tuple[str, List[str]]]
             if "scripts" in data and "test" in data["scripts"]:
                 return ("npm", ["npm", "test"])
         except Exception as e:
-            logger.debug("Failed parsing package.json for test script in %s: %s", ws, e)  # best-effort: malformed package.json
+            logger.debug(
+                "Failed parsing package.json for test script in %s: %s", ws, e
+            )  # best-effort: malformed package.json
 
     if (ws / "Cargo.toml").exists():
         return ("cargo", ["cargo", "test"])
@@ -46,7 +52,9 @@ def detect_test_framework(workspace_dir: str) -> Optional[Tuple[str, List[str]]]
     return None
 
 
-def run_test_suite(workspace_dir: str, cmd: Optional[List[str]] = None, timeout: int = 60) -> Tuple[int, str, str]:
+def run_test_suite(
+    workspace_dir: str, cmd: list[str] | None = None, timeout: int = 60
+) -> tuple[int, str, str]:
     """Execute test suite and capture exit code, stdout, and stderr."""
     ws = Path(workspace_dir).resolve()
     if not cmd:
@@ -62,7 +70,7 @@ def run_test_suite(workspace_dir: str, cmd: Optional[List[str]] = None, timeout:
         return 1, "", str(e)
 
 
-def parse_pytest_failures(output: str) -> List[Dict[str, Any]]:
+def parse_pytest_failures(output: str) -> list[dict[str, Any]]:
     """Parse failing test files, functions, lines, and error messages from pytest output."""
     failures = []
     lines = output.splitlines()
@@ -72,28 +80,34 @@ def parse_pytest_failures(output: str) -> List[Dict[str, Any]]:
         # Match lines like "FAILED tests/test_auth.py::test_login - AssertionError: ..."
         m_failed = re.search(r"FAILED\s+([^\s:]+)::([^\s\-]+)\s*-\s*(.*)", line)
         if m_failed:
-            failures.append({
-                "file": m_failed.group(1),
-                "test_name": m_failed.group(2),
-                "error": m_failed.group(3).strip(),
-                "line_no": None,
-            })
+            failures.append(
+                {
+                    "file": m_failed.group(1),
+                    "test_name": m_failed.group(2),
+                    "error": m_failed.group(3).strip(),
+                    "line_no": None,
+                }
+            )
             continue
 
         # Match line numbers like "tests/test_auth.py:42: AssertionError"
         m_line = re.search(r"([^\s:]+\.py):(\d+):\s*(.*Error.*)", line)
         if m_line:
-            failures.append({
-                "file": m_line.group(1),
-                "test_name": None,
-                "error": m_line.group(3).strip(),
-                "line_no": int(m_line.group(2)),
-            })
+            failures.append(
+                {
+                    "file": m_line.group(1),
+                    "test_name": None,
+                    "error": m_line.group(3).strip(),
+                    "line_no": int(m_line.group(2)),
+                }
+            )
 
     return failures
 
 
-def extract_failure_signature(parsed_failures: List[Dict[str, Any]], raw_output: str) -> Tuple[Tuple[str, str], ...]:
+def extract_failure_signature(
+    parsed_failures: list[dict[str, Any]], raw_output: str
+) -> tuple[tuple[str, str], ...]:
     """Extract a normalized tuple signature of (test_id, error_type) pairs."""
     if not parsed_failures:
         tail = raw_output.strip().splitlines()[-1] if raw_output.strip() else "unknown"
@@ -113,10 +127,12 @@ def extract_failure_signature(parsed_failures: List[Dict[str, Any]], raw_output:
     return tuple(sorted(sig_items))
 
 
-def count_failing_tests(parsed_failures: List[Dict[str, Any]], raw_output: str) -> int:
+def count_failing_tests(parsed_failures: list[dict[str, Any]], raw_output: str) -> int:
     """Count unique failing tests from parsed failures or raw output."""
     if parsed_failures:
-        unique_ids = {f"{f.get('file', '')}::{f.get('test_name', '') or ''}" for f in parsed_failures}
+        unique_ids = {
+            f"{f.get('file', '')}::{f.get('test_name', '') or ''}" for f in parsed_failures
+        }
         return len(unique_ids)
     m = re.search(r"(\d+)\s+failed", raw_output)
     if m:
@@ -126,11 +142,11 @@ def count_failing_tests(parsed_failures: List[Dict[str, Any]], raw_output: str) 
 
 def self_heal_workspace(
     workspace_dir: str = ".",
-    max_attempts: Optional[int] = None,
-    custom_cmd: Optional[List[str]] = None,
-    config: Optional[OctoFlowConfig] = None,
-    budget_tracker: Optional[Any] = None,
-) -> Dict[str, Any]:
+    max_attempts: int | None = None,
+    custom_cmd: list[str] | None = None,
+    config: OctoFlowConfig | None = None,
+    budget_tracker: Any | None = None,
+) -> dict[str, Any]:
     """Execute autonomous closed-loop test repair with budget and repetition enforcement.
 
     1. Executes detected test suite.
@@ -150,8 +166,8 @@ def self_heal_workspace(
     if budget_tracker is not None:
         sandbox.set_budget_tracker(budget_tracker)
 
-    history: List[Dict[str, Any]] = []
-    repaired_files: List[str] = []
+    history: list[dict[str, Any]] = []
+    repaired_files: list[str] = []
 
     # Initial Run
     rc, stdout, stderr = run_test_suite(str(ws), cmd)
@@ -170,13 +186,17 @@ def self_heal_workspace(
         }
 
     cfg = config or OctoFlowConfig(workspace_dir=str(ws))
-    limit = max_attempts if max_attempts is not None else (cfg.budget.max_heal_iterations if hasattr(cfg, "budget") else 5)
+    limit = (
+        max_attempts
+        if max_attempts is not None
+        else (cfg.budget.max_heal_iterations if hasattr(cfg, "budget") else 5)
+    )
 
     initial_failures = parse_pytest_failures(full_log)
     initial_sig = extract_failure_signature(initial_failures, full_log)
     initial_count = count_failing_tests(initial_failures, full_log)
 
-    signature_history: List[Tuple[Tuple[str, str], ...]] = []
+    signature_history: list[tuple[tuple[str, str], ...]] = []
     iterations_without_decrease: int = 0
     prev_failing_count: int = initial_count
     stop_reason: str = "max_iterations_reached"
@@ -202,9 +222,11 @@ def self_heal_workspace(
                 }
 
         parsed_failures = parse_pytest_failures(full_log)
-        failure_summary = parsed_failures[0] if parsed_failures else {
-            "file": "tests", "test_name": "suite", "error": full_log[-300:]
-        }
+        failure_summary = (
+            parsed_failures[0]
+            if parsed_failures
+            else {"file": "tests", "test_name": "suite", "error": full_log[-300:]}
+        )
 
         target_file_rel = failure_summary.get("file", "")
         # Heuristic to find implementation file vs test file
@@ -224,7 +246,11 @@ def self_heal_workspace(
                 target_path = py_files[0]
                 target_to_repair = str(target_path.relative_to(ws))
 
-        file_content = target_path.read_text(encoding="utf-8") if (target_path.exists() and target_path.is_file()) else ""
+        file_content = (
+            target_path.read_text(encoding="utf-8")
+            if (target_path.exists() and target_path.is_file())
+            else ""
+        )
 
         # Formulate repair prompt for Arm 2 (Backend) and Arm 5 (QA)
         repair_prompt = f"""You are Arm 2 (Backend Logic) and Arm 5 (QA) of the OctoFlow Swarm.
@@ -232,7 +258,7 @@ A unit test failure occurred in the workspace:
 
 Framework: {fw_name}
 Failing File: {target_file_rel}
-Error Details: {failure_summary.get('error', 'Assertion or runtime error')}
+Error Details: {failure_summary.get("error", "Assertion or runtime error")}
 Target Implementation to Repair: {target_to_repair}
 
 Existing Implementation:
@@ -247,6 +273,7 @@ Do not include conversational filler or markdown notes around the code.
 """
 
         from octoflow.provider import get_llm_provider
+
         provider = get_llm_provider(cfg, tier="frontier")
         if budget_tracker is not None:
             try:
@@ -264,7 +291,9 @@ Do not include conversational filler or markdown notes around the code.
                     "history": history,
                     "final_output": full_log,
                 }
-        resp = provider.generate(repair_prompt, system_prompt="You are an expert autonomous bug repair agent.")
+        resp = provider.generate(
+            repair_prompt, system_prompt="You are an expert autonomous bug repair agent."
+        )
         if budget_tracker is not None:
             budget_tracker.record_tokens(resp.total_tokens)
 
@@ -305,13 +334,15 @@ Do not include conversational filler or markdown notes around the code.
         rc, stdout, stderr = run_test_suite(str(ws), cmd)
         full_log = stdout + "\n" + stderr
 
-        history.append({
-            "attempt": attempt,
-            "target_file": target_to_repair,
-            "failure": failure_summary,
-            "ast_valid": is_valid_ast,
-            "pass_after_repair": (rc == 0),
-        })
+        history.append(
+            {
+                "attempt": attempt,
+                "target_file": target_to_repair,
+                "failure": failure_summary,
+                "ast_valid": is_valid_ast,
+                "pass_after_repair": (rc == 0),
+            }
+        )
 
         if rc == 0:
             return {

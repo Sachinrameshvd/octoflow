@@ -8,7 +8,6 @@ captures logs to <workspace>/.octoflow/ignition/<service>.log, tracks PIDs/PGIDs
 """
 
 import atexit
-import asyncio
 import http.client
 import json
 import os
@@ -20,14 +19,16 @@ import sys
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
+
 from pydantic import BaseModel, Field
 
-from octoflow.encoder import CodeSensoryEncoder
-from octoflow.tools import ToolResult
-from octoflow.logging_config import get_logger
 from octoflow.checkpoint import get_runs_dir
+from octoflow.encoder import CodeSensoryEncoder
+from octoflow.logging_config import get_logger
+from octoflow.tools import ToolResult
 
 logger = get_logger("ignition")
 
@@ -36,14 +37,14 @@ logger = get_logger("ignition")
 # Process Group Management & Global Signal Safety
 # -----------------------------------------------------------------------------
 
-_ACTIVE_IGNITERS: List["ProjectIgniter"] = []
-_ACTIVE_PGIDS: Set[int] = set()
+_ACTIVE_IGNITERS: list["ProjectIgniter"] = []
+_ACTIVE_PGIDS: set[int] = set()
 _SIGNALS_INSTALLED = False
 
 
 def kill_process_group(pgid: int, grace_seconds: float = 3.0) -> bool:
     """Terminate a process group with SIGTERM, 3s grace period, then SIGKILL.
-    
+
     Guarantees no orphaned child processes remain after shutdown or Ctrl-C.
     """
     if pgid <= 1:
@@ -165,12 +166,20 @@ def _install_signal_handlers():
                 kill_process_group(pgid, grace_seconds=1.5)
 
             if signum == signal.SIGINT:
-                if callable(orig_sigint) and orig_sigint not in (signal.SIG_IGN, signal.SIG_DFL, _signal_handler):
+                if callable(orig_sigint) and orig_sigint not in (
+                    signal.SIG_IGN,
+                    signal.SIG_DFL,
+                    _signal_handler,
+                ):
                     orig_sigint(signum, frame)
                 else:
                     raise KeyboardInterrupt()
             elif signum == signal.SIGTERM:
-                if callable(orig_sigterm) and orig_sigterm not in (signal.SIG_IGN, signal.SIG_DFL, _signal_handler):
+                if callable(orig_sigterm) and orig_sigterm not in (
+                    signal.SIG_IGN,
+                    signal.SIG_DFL,
+                    _signal_handler,
+                ):
                     orig_sigterm(signum, frame)
                 else:
                     sys.exit(128 + signal.SIGTERM)
@@ -199,6 +208,7 @@ atexit.register(_cleanup_atexit)
 # Port Discovery & Readiness Verification
 # -----------------------------------------------------------------------------
 
+
 def find_free_port(start_port: int, max_attempts: int = 50) -> int:
     """Find the next available unallocated port bound to 127.0.0.1."""
     for p in range(start_port, start_port + max_attempts):
@@ -209,7 +219,9 @@ def find_free_port(start_port: int, max_attempts: int = 50) -> int:
                 return p
         except OSError:
             continue
-    raise RuntimeError(f"Unable to find available port in range {start_port}-{start_port + max_attempts}")
+    raise RuntimeError(
+        f"Unable to find available port in range {start_port}-{start_port + max_attempts}"
+    )
 
 
 def is_port_listening(port: int, host: str = "127.0.0.1", timeout: float = 0.5) -> bool:
@@ -237,7 +249,7 @@ def check_http_ready(host: str, port: int, path: str = "/", timeout: float = 1.0
         return False
 
 
-def get_log_tail(log_path: Optional[Path], max_lines: int = 20) -> str:
+def get_log_tail(log_path: Path | None, max_lines: int = 20) -> str:
     """Retrieve the last max_lines lines from a service log file."""
     if not log_path or not log_path.exists():
         return ""
@@ -256,11 +268,11 @@ def wait_for_service_readiness(
     host: str = "127.0.0.1",
     is_http: bool = True,
     timeout: float = 30.0,
-    proc: Optional[subprocess.Popen] = None,
-    log_file: Optional[Path] = None,
-) -> Tuple[bool, str]:
+    proc: subprocess.Popen | None = None,
+    log_file: Path | None = None,
+) -> tuple[bool, str]:
     """Poll TCP port and HTTP GET until ready or timeout is exceeded.
-    
+
     Returns (is_ready, last_20_log_lines). If the process terminates prematurely,
     returns immediately without waiting the full timeout.
     """
@@ -291,14 +303,19 @@ def wait_for_service(port: int, host: str = "127.0.0.1", timeout: float = 6.0) -
 
 def open_url_in_browser(url: str) -> bool:
     """Open URL in browser if session is an interactive local TTY and not SSH.
-    
+
     Returns True if browser was successfully invoked, False otherwise.
     In non-TTY or SSH sessions, prints the URL instead.
     """
-    is_ssh = bool(os.environ.get("SSH_CLIENT") or os.environ.get("SSH_TTY") or os.environ.get("SSH_CONNECTION"))
+    is_ssh = bool(
+        os.environ.get("SSH_CLIENT")
+        or os.environ.get("SSH_TTY")
+        or os.environ.get("SSH_CONNECTION")
+    )
     is_tty = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     if is_tty and not is_ssh:
         import webbrowser
+
         try:
             return webbrowser.open(url)
         except Exception as e:
@@ -315,8 +332,10 @@ def open_url_in_browser(url: str) -> bool:
 # Data Models & Process Registry
 # -----------------------------------------------------------------------------
 
+
 class IgnitionServiceInfo(BaseModel):
     """Detailed metadata for a single running child service."""
+
     name: str
     pid: int
     pgid: int
@@ -329,22 +348,25 @@ class IgnitionServiceInfo(BaseModel):
 
 class LiveServiceManifest(BaseModel):
     """Manifest describing actively running services provisioned by ProjectIgniter."""
-    service_type: str = "web_app"  # "web_app", "api_service", "aiml_training", "aiml_inference", "static_web"
+
+    service_type: str = (
+        "web_app"  # "web_app", "api_service", "aiml_training", "aiml_inference", "static_web"
+    )
     title: str = "Generated Application"
-    primary_url: Optional[str] = None
-    api_docs_url: Optional[str] = None
-    inference_url: Optional[str] = None
+    primary_url: str | None = None
+    api_docs_url: str | None = None
+    inference_url: str | None = None
     status: str = "INITIALIZING"  # "READY", "RUNNING", "FAILED", "STOPPED"
-    backend_port: Optional[int] = None
-    frontend_port: Optional[int] = None
-    pids: List[int] = Field(default_factory=list)
-    pgids: List[int] = Field(default_factory=list)
-    services: List[IgnitionServiceInfo] = Field(default_factory=list)
-    endpoints: List[str] = Field(default_factory=list)
-    error_message: Optional[str] = None
-    log_tail: Optional[str] = None
+    backend_port: int | None = None
+    frontend_port: int | None = None
+    pids: list[int] = Field(default_factory=list)
+    pgids: list[int] = Field(default_factory=list)
+    services: list[IgnitionServiceInfo] = Field(default_factory=list)
+    endpoints: list[str] = Field(default_factory=list)
+    error_message: str | None = None
+    log_tail: str | None = None
     command_launched: str = ""
-    run_id: Optional[str] = None
+    run_id: str | None = None
 
 
 def save_ignition_registry(run_id: str, manifest: LiveServiceManifest, workspace_dir: Path) -> Path:
@@ -376,7 +398,7 @@ def save_ignition_registry(run_id: str, manifest: LiveServiceManifest, workspace
     return reg_file
 
 
-def load_ignition_registry(run_id: str) -> Optional[Dict[str, Any]]:
+def load_ignition_registry(run_id: str) -> dict[str, Any] | None:
     """Load ignition metadata for a specific run ID."""
     reg_file = get_runs_dir() / run_id / "ignition.json"
     if reg_file.exists():
@@ -387,7 +409,7 @@ def load_ignition_registry(run_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def list_active_ignitions(workspace_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
+def list_active_ignitions(workspace_dir: Path | None = None) -> list[dict[str, Any]]:
     """Scan all recorded ignition runs and return currently active service sets."""
     runs_dir = get_runs_dir()
     if not runs_dir.exists():
@@ -430,7 +452,9 @@ def list_active_ignitions(workspace_dir: Optional[Path] = None) -> List[Dict[str
     return active
 
 
-def get_active_ignition_manifest(workspace_dir: Optional[Path] = None) -> Optional[LiveServiceManifest]:
+def get_active_ignition_manifest(
+    workspace_dir: Path | None = None,
+) -> LiveServiceManifest | None:
     """Retrieve the most recent active LiveServiceManifest for a workspace."""
     active = list_active_ignitions(workspace_dir=workspace_dir)
     if not active:
@@ -443,10 +467,10 @@ def get_active_ignition_manifest(workspace_dir: Optional[Path] = None) -> Option
 
 
 def stop_ignition(
-    run_id: Optional[str] = None,
+    run_id: str | None = None,
     stop_all: bool = False,
-    workspace_dir: Optional[Path] = None,
-) -> List[int]:
+    workspace_dir: Path | None = None,
+) -> list[int]:
     """Stop ignition processes by run_id, all, or latest. Returns list of stopped PIDs."""
     stopped_pids = []
     runs_dir = get_runs_dir()
@@ -506,21 +530,22 @@ def stop_ignition(
 # Main ProjectIgniter Engine
 # -----------------------------------------------------------------------------
 
+
 class ProjectIgniter:
     """Autonomous Phase Gate 4 engine: provisions, launches, and monitors live deliverables."""
 
     def __init__(
         self,
-        workspace_dir: Union[str, Path] = ".",
-        sensory_encoder: Optional[CodeSensoryEncoder] = None,
-        run_id: Optional[str] = None,
+        workspace_dir: str | Path = ".",
+        sensory_encoder: CodeSensoryEncoder | None = None,
+        run_id: str | None = None,
     ):
         self.workspace_dir = Path(workspace_dir).expanduser().resolve()
         self.encoder = sensory_encoder or CodeSensoryEncoder()
         self.run_id = run_id or f"ignite-{int(time.time())}-{uuid.uuid4().hex[:6]}"
-        self.active_processes: List[Tuple[subprocess.Popen, Any, int]] = []  # (proc, log_fp, pgid)
-        self.manifest: Optional[LiveServiceManifest] = None
-        self.log_handles: List[Any] = []
+        self.active_processes: list[tuple[subprocess.Popen, Any, int]] = []  # (proc, log_fp, pgid)
+        self.manifest: LiveServiceManifest | None = None
+        self.log_handles: list[Any] = []
 
         _install_signal_handlers()
         _ACTIVE_IGNITERS.append(self)
@@ -531,7 +556,7 @@ class ProjectIgniter:
         log_dir.mkdir(parents=True, exist_ok=True)
         return log_dir
 
-    def inspect_deliverables(self) -> Dict[str, Any]:
+    def inspect_deliverables(self) -> dict[str, Any]:
         """Scan workspace folder topology to detect build artifacts and runnable targets."""
         ws = self.workspace_dir
         deliverables = {
@@ -560,7 +585,11 @@ class ProjectIgniter:
                 break
 
         # 2. Check Static HTML
-        html_paths = [ws / "index.html", ws / "frontend" / "index.html", ws / "public" / "index.html"]
+        html_paths = [
+            ws / "index.html",
+            ws / "frontend" / "index.html",
+            ws / "public" / "index.html",
+        ]
         for html_p in html_paths:
             if html_p.exists():
                 deliverables["has_static_html"] = True
@@ -629,7 +658,9 @@ class ProjectIgniter:
         # Route to appropriate scenario
         if deliverables["has_aiml_train"] or deliverables["has_aiml_infer"]:
             manifest = self._ignite_aiml(deliverables, objective, timeout=timeout)
-        elif deliverables["has_python_backend"] and (deliverables["has_node_frontend"] or deliverables["has_static_html"]):
+        elif deliverables["has_python_backend"] and (
+            deliverables["has_node_frontend"] or deliverables["has_static_html"]
+        ):
             manifest = self._ignite_fullstack(deliverables, objective, timeout=timeout)
         elif deliverables["has_python_backend"]:
             manifest = self._ignite_backend(deliverables, objective, timeout=timeout)
@@ -655,12 +686,12 @@ class ProjectIgniter:
 
     def _spawn_with_port_retry(
         self,
-        spawn_fn: Callable[[int, Path], Optional[subprocess.Popen]],
+        spawn_fn: Callable[[int, Path], subprocess.Popen | None],
         service_name: str,
         base_port: int,
         log_file: Path,
         max_retries: int = 3,
-    ) -> Tuple[Optional[subprocess.Popen], int]:
+    ) -> tuple[subprocess.Popen | None, int]:
         """Spawn service with automatic retry on EADDRINUSE / address collision."""
         curr_port = find_free_port(base_port)
         for attempt in range(max_retries):
@@ -672,8 +703,17 @@ class ProjectIgniter:
             time.sleep(0.3)
             if proc.poll() is not None:
                 tail = get_log_tail(log_file, 10).lower()
-                if any(err in tail for err in ["address already in use", "eaddrinuse", "errno 48", "errno 98"]):
-                    logger.warning("Port %d busy for %s. Retrying attempt %d/%d...", curr_port, service_name, attempt + 1, max_retries)
+                if any(
+                    err in tail
+                    for err in ["address already in use", "eaddrinuse", "errno 48", "errno 98"]
+                ):
+                    logger.warning(
+                        "Port %d busy for %s. Retrying attempt %d/%d...",
+                        curr_port,
+                        service_name,
+                        attempt + 1,
+                        max_retries,
+                    )
                     curr_port = find_free_port(curr_port + 1)
                     continue
                 return proc, curr_port
@@ -682,7 +722,9 @@ class ProjectIgniter:
 
         return None, curr_port
 
-    def _ignite_fullstack(self, deliverables: Dict[str, Any], objective: str, timeout: float = 30.0) -> LiveServiceManifest:
+    def _ignite_fullstack(
+        self, deliverables: dict[str, Any], objective: str, timeout: float = 30.0
+    ) -> LiveServiceManifest:
         """Launch both backend API and frontend dev server."""
         log_dir = self._get_log_dir()
         backend_log = log_dir / "backend.log"
@@ -715,7 +757,9 @@ class ProjectIgniter:
             )
         elif deliverables["has_static_html"] and deliverables["html_entrypoint"]:
             frontend_p, frontend_port = self._spawn_with_port_retry(
-                lambda p, lf: self._spawn_static_server(deliverables["html_entrypoint"].parent, p, lf),
+                lambda p, lf: self._spawn_static_server(
+                    deliverables["html_entrypoint"].parent, p, lf
+                ),
                 "frontend",
                 5173,
                 frontend_log,
@@ -733,33 +777,51 @@ class ProjectIgniter:
         b_ready, b_tail = False, ""
         f_ready, f_tail = False, ""
         if backend_p:
-            b_ready, b_tail = wait_for_service_readiness(backend_port, is_http=True, timeout=timeout, proc=backend_p, log_file=backend_log)
-            services_info.append(IgnitionServiceInfo(
-                name="backend",
-                pid=backend_p.pid,
-                pgid=get_safe_pgid(backend_p.pid),
-                port=backend_port,
-                url=f"http://127.0.0.1:{backend_port}",
-                log_path=str(backend_log),
-                status="READY" if b_ready else "FAILED",
-            ))
+            b_ready, b_tail = wait_for_service_readiness(
+                backend_port, is_http=True, timeout=timeout, proc=backend_p, log_file=backend_log
+            )
+            services_info.append(
+                IgnitionServiceInfo(
+                    name="backend",
+                    pid=backend_p.pid,
+                    pgid=get_safe_pgid(backend_p.pid),
+                    port=backend_port,
+                    url=f"http://127.0.0.1:{backend_port}",
+                    log_path=str(backend_log),
+                    status="READY" if b_ready else "FAILED",
+                )
+            )
 
         if frontend_p:
-            f_ready, f_tail = wait_for_service_readiness(frontend_port, is_http=True, timeout=timeout, proc=frontend_p, log_file=frontend_log)
-            services_info.append(IgnitionServiceInfo(
-                name="frontend",
-                pid=frontend_p.pid,
-                pgid=get_safe_pgid(frontend_p.pid),
-                port=frontend_port,
-                url=f"http://127.0.0.1:{frontend_port}",
-                log_path=str(frontend_log),
-                status="READY" if f_ready else "FAILED",
-            ))
+            f_ready, f_tail = wait_for_service_readiness(
+                frontend_port, is_http=True, timeout=timeout, proc=frontend_p, log_file=frontend_log
+            )
+            services_info.append(
+                IgnitionServiceInfo(
+                    name="frontend",
+                    pid=frontend_p.pid,
+                    pgid=get_safe_pgid(frontend_p.pid),
+                    port=frontend_port,
+                    url=f"http://127.0.0.1:{frontend_port}",
+                    log_path=str(frontend_log),
+                    status="READY" if f_ready else "FAILED",
+                )
+            )
 
-        primary_url = f"http://127.0.0.1:{frontend_port}" if frontend_p else f"http://127.0.0.1:{backend_port}"
-        api_docs = f"http://127.0.0.1:{backend_port}/docs" if deliverables["has_fastapi"] else f"http://127.0.0.1:{backend_port}"
+        primary_url = (
+            f"http://127.0.0.1:{frontend_port}"
+            if frontend_p
+            else f"http://127.0.0.1:{backend_port}"
+        )
+        api_docs = (
+            f"http://127.0.0.1:{backend_port}/docs"
+            if deliverables["has_fastapi"]
+            else f"http://127.0.0.1:{backend_port}"
+        )
 
-        is_overall_ready = (b_ready and f_ready) if (backend_p and frontend_p) else (b_ready or f_ready)
+        is_overall_ready = (
+            (b_ready and f_ready) if (backend_p and frontend_p) else (b_ready or f_ready)
+        )
         status = "READY" if is_overall_ready else "FAILED"
         err_msg = None
         log_tail = None
@@ -785,7 +847,9 @@ class ProjectIgniter:
             run_id=self.run_id,
         )
 
-    def _ignite_backend(self, deliverables: Dict[str, Any], objective: str, timeout: float = 30.0) -> LiveServiceManifest:
+    def _ignite_backend(
+        self, deliverables: dict[str, Any], objective: str, timeout: float = 30.0
+    ) -> LiveServiceManifest:
         """Launch standalone backend API."""
         log_dir = self._get_log_dir()
         backend_log = log_dir / "backend.log"
@@ -810,18 +874,22 @@ class ProjectIgniter:
         api_url = f"http://127.0.0.1:{backend_port}"
         docs_url = f"{api_url}/docs" if deliverables["has_fastapi"] else api_url
 
-        is_ready, tail = wait_for_service_readiness(backend_port, is_http=True, timeout=timeout, proc=backend_p, log_file=backend_log)
+        is_ready, tail = wait_for_service_readiness(
+            backend_port, is_http=True, timeout=timeout, proc=backend_p, log_file=backend_log
+        )
 
         if backend_p:
-            services_info.append(IgnitionServiceInfo(
-                name="backend",
-                pid=backend_p.pid,
-                pgid=pgids[0],
-                port=backend_port,
-                url=api_url,
-                log_path=str(backend_log),
-                status="READY" if is_ready else "FAILED",
-            ))
+            services_info.append(
+                IgnitionServiceInfo(
+                    name="backend",
+                    pid=backend_p.pid,
+                    pgid=pgids[0],
+                    port=backend_port,
+                    url=api_url,
+                    log_path=str(backend_log),
+                    status="READY" if is_ready else "FAILED",
+                )
+            )
 
         return LiveServiceManifest(
             service_type="api_service",
@@ -835,12 +903,16 @@ class ProjectIgniter:
             services=services_info,
             endpoints=["/docs" if deliverables["has_fastapi"] else "/", "/health"],
             command_launched=f"Python API Server on :{backend_port}",
-            error_message=f"Backend readiness failed ({timeout}s):\n{tail}" if not is_ready else None,
+            error_message=f"Backend readiness failed ({timeout}s):\n{tail}"
+            if not is_ready
+            else None,
             log_tail=tail if not is_ready else None,
             run_id=self.run_id,
         )
 
-    def _ignite_frontend(self, deliverables: Dict[str, Any], objective: str, timeout: float = 30.0) -> LiveServiceManifest:
+    def _ignite_frontend(
+        self, deliverables: dict[str, Any], objective: str, timeout: float = 30.0
+    ) -> LiveServiceManifest:
         """Launch standalone frontend UI."""
         log_dir = self._get_log_dir()
         frontend_log = log_dir / "frontend.log"
@@ -854,7 +926,9 @@ class ProjectIgniter:
             )
         elif deliverables["has_static_html"] and deliverables["html_entrypoint"]:
             frontend_p, frontend_port = self._spawn_with_port_retry(
-                lambda p, lf: self._spawn_static_server(deliverables["html_entrypoint"].parent, p, lf),
+                lambda p, lf: self._spawn_static_server(
+                    deliverables["html_entrypoint"].parent, p, lf
+                ),
                 "frontend",
                 5173,
                 frontend_log,
@@ -873,18 +947,22 @@ class ProjectIgniter:
             _ACTIVE_PGIDS.add(pgid)
 
         primary_url = f"http://127.0.0.1:{frontend_port}"
-        is_ready, tail = wait_for_service_readiness(frontend_port, is_http=True, timeout=timeout, proc=frontend_p, log_file=frontend_log)
+        is_ready, tail = wait_for_service_readiness(
+            frontend_port, is_http=True, timeout=timeout, proc=frontend_p, log_file=frontend_log
+        )
 
         if frontend_p:
-            services_info.append(IgnitionServiceInfo(
-                name="frontend",
-                pid=frontend_p.pid,
-                pgid=pgids[0],
-                port=frontend_port,
-                url=primary_url,
-                log_path=str(frontend_log),
-                status="READY" if is_ready else "FAILED",
-            ))
+            services_info.append(
+                IgnitionServiceInfo(
+                    name="frontend",
+                    pid=frontend_p.pid,
+                    pgid=pgids[0],
+                    port=frontend_port,
+                    url=primary_url,
+                    log_path=str(frontend_log),
+                    status="READY" if is_ready else "FAILED",
+                )
+            )
 
         return LiveServiceManifest(
             service_type="web_app",
@@ -897,12 +975,16 @@ class ProjectIgniter:
             services=services_info,
             endpoints=["/"],
             command_launched=f"Frontend Server on :{frontend_port}",
-            error_message=f"Frontend readiness failed ({timeout}s):\n{tail}" if not is_ready else None,
+            error_message=f"Frontend readiness failed ({timeout}s):\n{tail}"
+            if not is_ready
+            else None,
             log_tail=tail if not is_ready else None,
             run_id=self.run_id,
         )
 
-    def _ignite_aiml(self, deliverables: Dict[str, Any], objective: str, timeout: float = 30.0) -> LiveServiceManifest:
+    def _ignite_aiml(
+        self, deliverables: dict[str, Any], objective: str, timeout: float = 30.0
+    ) -> LiveServiceManifest:
         """Launch AI/ML Training loop and optional Inference Server."""
         log_dir = self._get_log_dir()
         infer_log = log_dir / "aiml_infer.log"
@@ -927,16 +1009,20 @@ class ProjectIgniter:
                 pgids.append(pgid)
                 _ACTIVE_PGIDS.add(pgid)
                 infer_url = f"http://127.0.0.1:{infer_port}"
-                is_ready, tail = wait_for_service_readiness(infer_port, is_http=True, timeout=timeout, proc=infer_p, log_file=infer_log)
-                services_info.append(IgnitionServiceInfo(
-                    name="aiml_infer",
-                    pid=infer_p.pid,
-                    pgid=pgid,
-                    port=infer_port,
-                    url=infer_url,
-                    log_path=str(infer_log),
-                    status="READY" if is_ready else "FAILED",
-                ))
+                is_ready, tail = wait_for_service_readiness(
+                    infer_port, is_http=True, timeout=timeout, proc=infer_p, log_file=infer_log
+                )
+                services_info.append(
+                    IgnitionServiceInfo(
+                        name="aiml_infer",
+                        pid=infer_p.pid,
+                        pgid=pgid,
+                        port=infer_port,
+                        url=infer_url,
+                        log_path=str(infer_log),
+                        status="READY" if is_ready else "FAILED",
+                    )
+                )
 
         # 2. Spawn Training Loop in background if present
         if deliverables["has_aiml_train"] and deliverables["train_entrypoint"]:
@@ -955,15 +1041,17 @@ class ProjectIgniter:
             pgids.append(tr_pgid)
             _ACTIVE_PGIDS.add(tr_pgid)
             self.active_processes.append((train_p, train_fp, tr_pgid))
-            services_info.append(IgnitionServiceInfo(
-                name="aiml_train",
-                pid=train_p.pid,
-                pgid=tr_pgid,
-                port=0,
-                url="",
-                log_path=str(train_log),
-                status="RUNNING",
-            ))
+            services_info.append(
+                IgnitionServiceInfo(
+                    name="aiml_train",
+                    pid=train_p.pid,
+                    pgid=tr_pgid,
+                    port=0,
+                    url="",
+                    log_path=str(train_log),
+                    status="RUNNING",
+                )
+            )
 
         return LiveServiceManifest(
             service_type="aiml_training",
@@ -983,7 +1071,9 @@ class ProjectIgniter:
     # -------------------------------------------------------------------------
     # Process Launching Helpers
     # -------------------------------------------------------------------------
-    def _spawn_python_backend(self, entrypoint: Path, port: int, log_file: Path) -> Optional[subprocess.Popen]:
+    def _spawn_python_backend(
+        self, entrypoint: Path, port: int, log_file: Path
+    ) -> subprocess.Popen | None:
         """Spawn Python FastAPI/HTTP backend on target port bound to 127.0.0.1."""
         env = os.environ.copy()
         env["PORT"] = str(port)
@@ -997,7 +1087,16 @@ class ProjectIgniter:
 
             rel_path = entrypoint.relative_to(self.workspace_dir).as_posix()
             dotted_module = rel_path.replace("/", ".").replace(".py", "")
-            cmd = [sys.executable, "-m", "uvicorn", f"{dotted_module}:{app_var}", "--host", "127.0.0.1", "--port", str(port)]
+            cmd = [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                f"{dotted_module}:{app_var}",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ]
         except Exception:
             cmd = [sys.executable, str(entrypoint)]
 
@@ -1020,7 +1119,9 @@ class ProjectIgniter:
             logger.debug("Failed launching backend process: %s", e)
             return None
 
-    def _spawn_node_frontend(self, frontend_dir: Path, port: int, log_file: Path) -> Optional[subprocess.Popen]:
+    def _spawn_node_frontend(
+        self, frontend_dir: Path, port: int, log_file: Path
+    ) -> subprocess.Popen | None:
         """Spawn Node / Vite frontend dev server bound to 127.0.0.1."""
         env = os.environ.copy()
         env["PORT"] = str(port)
@@ -1045,7 +1146,9 @@ class ProjectIgniter:
             logger.debug("Node frontend launch failed: %s; falling back to static server", e)
             return self._spawn_static_server(frontend_dir, port, log_file)
 
-    def _spawn_static_server(self, static_dir: Path, port: int, log_file: Path) -> Optional[subprocess.Popen]:
+    def _spawn_static_server(
+        self, static_dir: Path, port: int, log_file: Path
+    ) -> subprocess.Popen | None:
         """Spawn lightweight Python HTTP static server bound to 127.0.0.1."""
         cmd = [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"]
         try:
@@ -1074,7 +1177,7 @@ class ProjectIgniter:
             except Exception:
                 pass
 
-    def monitor_sensory_stream(self) -> Optional[ToolResult]:
+    def monitor_sensory_stream(self) -> ToolResult | None:
         """Check all active processes for runtime errors and encode into sensory signals."""
         for proc, log_fp, _ in self.active_processes:
             if proc.poll() is not None and proc.returncode != 0:

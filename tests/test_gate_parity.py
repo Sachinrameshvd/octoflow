@@ -9,16 +9,18 @@ Validates that:
 """
 
 from __future__ import annotations
+
 import json
 from pathlib import Path
-import pytest
+
 import numpy as np
+import pytest
 
 pytestmark = [pytest.mark.unit, pytest.mark.characterization]
 
-from octoflow.tools import ToolResult
 from octoflow.encoder import CodeSensoryEncoder, get_encoder
 from octoflow.gate import SurpriseGate
+from octoflow.tools import ToolResult
 
 GOLDEN_PATH = Path(__file__).resolve().parent / "characterization" / "golden" / "gate.json"
 
@@ -74,7 +76,9 @@ def test_encoder_numpy_matches_golden_corpus(golden_corpus):
 def test_gate_numpy_sequential_parity_matches_golden(golden_corpus):
     """Verify SurpriseGate(backend='numpy') reproduces exact sequential threshold adaptation and decisions."""
     encoder = CodeSensoryEncoder(obs_dim=16, backend="numpy")
-    gate = SurpriseGate(arm_id=1, obs_dim=16, initial_threshold=0.50, adaptation_rate=0.05, backend="numpy")
+    gate = SurpriseGate(
+        arm_id=1, obs_dim=16, initial_threshold=0.50, adaptation_rate=0.05, backend="numpy"
+    )
 
     max_ds_diff = 0.0
     max_thresh_diff = 0.0
@@ -116,7 +120,9 @@ def test_gate_numpy_sequential_parity_matches_golden(golden_corpus):
         assert telemetry["silent_steps"] == expected_telemetry["silent_steps"]
         assert telemetry["escalations"] == expected_telemetry["escalations"]
 
-    print(f"\n[Parity Check] Gate NumPy vs Golden max dS diff: {max_ds_diff:.2e}, max threshold diff: {max_thresh_diff:.2e}")
+    print(
+        f"\n[Parity Check] Gate NumPy vs Golden max dS diff: {max_ds_diff:.2e}, max threshold diff: {max_thresh_diff:.2e}"
+    )
 
 
 @pytest.mark.parametrize("backend", ["numpy", "torch"])
@@ -126,7 +132,9 @@ def test_gate_backend_parity_across_modes(backend, golden_corpus):
         pytest.importorskip("torch", reason="PyTorch extra [ml] is not installed")
 
     encoder = get_encoder(backend=backend, obs_dim=16)
-    gate = SurpriseGate(arm_id=1, obs_dim=16, initial_threshold=0.50, adaptation_rate=0.05, backend=backend)
+    gate = SurpriseGate(
+        arm_id=1, obs_dim=16, initial_threshold=0.50, adaptation_rate=0.05, backend=backend
+    )
 
     for case in golden_corpus:
         res = _reconstruct_tool_result(case)
@@ -152,6 +160,7 @@ def test_corrupted_nan_inf_parity():
 
     try:
         import torch
+
         gate_torch = SurpriseGate(arm_id=1, obs_dim=16, backend="torch")
         nan_t = torch.tensor(nan_arr)
         inf_t = torch.tensor(inf_arr)

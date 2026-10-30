@@ -1,19 +1,21 @@
 """Setup CLI command for interactive first-run configuration wizard."""
 
-import os
 import getpass
+import os
 from pathlib import Path
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+
 from octoflow.cockpit import get_live_wizard_input, interactive_cockpit
 from octoflow.config import (
     get_octoflow_dir,
     load_secure_config,
-    save_secure_config,
     mask_credential,
+    save_secure_config,
 )
 from octoflow.themes import load_saved_theme, save_theme_preference
 
@@ -35,19 +37,47 @@ def run_setup_wizard(launch_after: bool = False):
         border_style=cur_theme.rich_border,
     )
 
-    table = Table(title="◈ Supported LLM Neural Engines", border_style=cur_theme.rich_border, expand=True)
+    table = Table(
+        title="◈ Supported LLM Neural Engines", border_style=cur_theme.rich_border, expand=True
+    )
     table.add_column("#", width=4, justify="center", style=cur_theme.rich_primary)
     table.add_column("Provider", width=22, style="bold white")
     table.add_column("Recommended Model", width=24, style=cur_theme.rich_secondary)
     table.add_column("Best Suited For", style="white")
 
-    table.add_row("1", Text("[Anthropic Claude]"), "claude-3-5-sonnet", "State-of-the-art coding & autonomous reasoning")
-    table.add_row("2", Text("[OpenAI]"), "gpt-4o / o3-mini", "High speed, broad tool calling & code synthesis")
-    table.add_row("3", Text("[Google Gemini]"), "gemini-2.0-flash", "Massive context window & rapid code generation")
-    table.add_row("4", Text("[xAI Grok]"), "grok-2", "Low-latency inference & mathematical reasoning")
-    table.add_row("5", Text("[DeepSeek]"), "deepseek-chat (V3/R1)", "High-performance coding at economical cost")
-    table.add_row("6", Text("[Local Ollama]"), "qwen2.5-coder / llama3", "100% Free, offline & private on local Mac")
-    table.add_row("7", Text("[Mock Mode]"), "deterministic-mock", "Offline test harness (zero cost, dry run)")
+    table.add_row(
+        "1",
+        Text("[Anthropic Claude]"),
+        "claude-3-5-sonnet",
+        "State-of-the-art coding & autonomous reasoning",
+    )
+    table.add_row(
+        "2", Text("[OpenAI]"), "gpt-4o / o3-mini", "High speed, broad tool calling & code synthesis"
+    )
+    table.add_row(
+        "3",
+        Text("[Google Gemini]"),
+        "gemini-2.0-flash",
+        "Massive context window & rapid code generation",
+    )
+    table.add_row(
+        "4", Text("[xAI Grok]"), "grok-2", "Low-latency inference & mathematical reasoning"
+    )
+    table.add_row(
+        "5",
+        Text("[DeepSeek]"),
+        "deepseek-chat (V3/R1)",
+        "High-performance coding at economical cost",
+    )
+    table.add_row(
+        "6",
+        Text("[Local Ollama]"),
+        "qwen2.5-coder / llama3",
+        "100% Free, offline & private on local Mac",
+    )
+    table.add_row(
+        "7", Text("[Mock Mode]"), "deterministic-mock", "Offline test harness (zero cost, dry run)"
+    )
 
     step1_heading = Text("\nStep 1: Choose Primary LLM Core Provider", style="bold white")
 
@@ -84,7 +114,10 @@ def run_setup_wizard(launch_after: bool = False):
 
     # Step 2: Key input (non-echoing via getpass for credentials)
     saved_key = ""
-    step2_heading = Text(f"\nStep 1 Selected: [{prov_name}]\nStep 2: Enter API Key or Endpoint (optional - press Enter to skip)\n", style="bold white")
+    step2_heading = Text(
+        f"\nStep 1 Selected: [{prov_name}]\nStep 2: Enter API Key or Endpoint (optional - press Enter to skip)\n",
+        style="bold white",
+    )
 
     def _prompt_secret_key(key_env_var: str, current_val: str) -> str:
         masked = mask_credential(current_val) if current_val else ""
@@ -115,14 +148,22 @@ def run_setup_wizard(launch_after: bool = False):
             os.environ["OPENAI_API_KEY"] = saved_key
 
     elif chosen_provider == "gemini":
-        env_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or existing_cfg.get("gemini_api_key", "")
+        env_key = (
+            os.getenv("GEMINI_API_KEY")
+            or os.getenv("GOOGLE_API_KEY")
+            or existing_cfg.get("gemini_api_key", "")
+        )
         saved_key = _prompt_secret_key("GEMINI_API_KEY", env_key)
         if saved_key:
             existing_cfg["gemini_api_key"] = saved_key
             os.environ["GEMINI_API_KEY"] = saved_key
 
     elif chosen_provider == "grok":
-        env_key = os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or existing_cfg.get("grok_api_key", "")
+        env_key = (
+            os.getenv("XAI_API_KEY")
+            or os.getenv("GROK_API_KEY")
+            or existing_cfg.get("grok_api_key", "")
+        )
         saved_key = _prompt_secret_key("XAI_API_KEY", env_key)
         if saved_key:
             existing_cfg["grok_api_key"] = saved_key
@@ -156,11 +197,17 @@ def run_setup_wizard(launch_after: bool = False):
         "gemini": ("Google Gemini", "gemini-2.0-flash", None),
         "grok": ("xAI Grok", "grok-2", None),
         "deepseek": ("DeepSeek", "deepseek-chat", None),
-        "ollama": ("Local Ollama", "qwen2.5-coder:32b", existing_cfg.get("ollama_base_url", "http://localhost:11434")),
+        "ollama": (
+            "Local Ollama",
+            "qwen2.5-coder:32b",
+            existing_cfg.get("ollama_base_url", "http://localhost:11434"),
+        ),
     }
     if chosen_provider in entry_defs:
         p_name, p_model, p_url = entry_defs[chosen_provider]
-        pool_idx = next((i for i, e in enumerate(pool) if e.get("provider") == chosen_provider), None)
+        pool_idx = next(
+            (i for i, e in enumerate(pool) if e.get("provider") == chosen_provider), None
+        )
         entry = {
             "id": f"{chosen_provider}_primary",
             "provider": chosen_provider,
@@ -197,7 +244,14 @@ def run_setup_wizard(launch_after: bool = False):
         existing_cfg=existing_cfg,
         workspace=workspace,
     )
-    theme_map = {"1": "abyssal", "2": "catppuccin", "3": "tokyo-night", "4": "dracula", "5": "nord", "6": "minimalist"}
+    theme_map = {
+        "1": "abyssal",
+        "2": "catppuccin",
+        "3": "tokyo-night",
+        "4": "dracula",
+        "5": "nord",
+        "6": "minimalist",
+    }
     new_theme_id = theme_map.get(theme_choice, "catppuccin")
     save_theme_preference(new_theme_id)
     existing_cfg["default_theme"] = new_theme_id
@@ -206,10 +260,12 @@ def run_setup_wizard(launch_after: bool = False):
     save_secure_config(existing_cfg, cfg_file)
 
     console.clear()
-    console.print(f"\n[{cur_theme.rich_success}]◈ Configuration saved successfully to ~/.octoflow/config.json![/{cur_theme.rich_success}]")
+    console.print(
+        f"\n[{cur_theme.rich_success}]◈ Configuration saved successfully to ~/.octoflow/config.json![/{cur_theme.rich_success}]"
+    )
     console.print(f"  • Provider: [bold]{chosen_provider.upper()}[/bold]")
     console.print(f"  • Theme: [bold]{new_theme_id}[/bold]")
-    console.print(f"[dim]Transitioning into live cephalopod console...[/dim]\n")
+    console.print("[dim]Transitioning into live cephalopod console...[/dim]\n")
 
     if launch_after:
         interactive_cockpit()

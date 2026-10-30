@@ -22,10 +22,9 @@ Tests cover:
 """
 
 import asyncio
-import os
 import stat
 import time
-from pathlib import Path
+
 import httpx
 import pytest
 
@@ -34,18 +33,14 @@ try:
     from websockets.asyncio.client import connect as ws_connect
 except ImportError:
     from websockets import connect as ws_connect
-from websockets.exceptions import ConnectionClosed
-
-from octoflow.server import TelemetryBroadcaster, find_available_port
+from octoflow.conductor import SwarmTelemetryEvent
 from octoflow.config import (
     load_secure_config,
-    save_secure_config,
     mask_credential,
-    harden_permissions_if_looser,
-    get_octoflow_dir,
+    save_secure_config,
 )
-from octoflow.conductor import SwarmTelemetryEvent, SupraesophagealConductor
-from octoflow.config import OctoFlowConfig
+from octoflow.server import TelemetryBroadcaster, find_available_port
+from websockets.exceptions import ConnectionClosed
 
 
 @pytest.fixture
@@ -78,6 +73,7 @@ def dev_mode_server():
 # 1. Bind Address & Network Warning Tests
 # ==============================================================================
 
+
 def test_default_bind_is_localhost():
     """Verify default server binds only to 127.0.0.1, not 0.0.0.0."""
     server = TelemetryBroadcaster(port=18088)
@@ -98,61 +94,81 @@ def test_non_localhost_bind_prints_warning(capsys):
 # 2. WebSocket Origin Validation Tests
 # ==============================================================================
 
+
 def test_websocket_accepts_no_origin(ephemeral_server):
     """Verify CLI / automated tests without an Origin header connect successfully."""
+
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         async with ws_connect(uri) as ws:
             assert ws is not None
+
     asyncio.run(_test())
 
 
 def test_websocket_accepts_localhost_origin(ephemeral_server):
     """Verify visualizer served from http://localhost:<port> connects successfully."""
+
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         origin = f"http://localhost:{ephemeral_server.port}"
         async with ws_connect(uri, origin=origin) as ws:
             assert ws is not None
+
     asyncio.run(_test())
 
 
 def test_websocket_accepts_127_origin(ephemeral_server):
     """Verify visualizer served from http://127.0.0.1:<port> connects successfully."""
+
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         origin = f"http://127.0.0.1:{ephemeral_server.port}"
         async with ws_connect(uri, origin=origin) as ws:
             assert ws is not None
+
     asyncio.run(_test())
 
 
 def test_websocket_rejects_evil_origin_with_1008(ephemeral_server):
     """Verify untrusted origin (e.g. evil.example) is rejected with RFC 6455 code 1008."""
+
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         with pytest.raises(ConnectionClosed) as exc_info:
             async with ws_connect(uri, origin="https://evil.example") as ws:
                 await ws.recv()
-        close_code = exc_info.value.rcvd.code if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd else exc_info.value.code
+        close_code = (
+            exc_info.value.rcvd.code
+            if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd
+            else exc_info.value.code
+        )
         assert close_code == 1008
+
     asyncio.run(_test())
 
 
 def test_websocket_rejects_arbitrary_web_page_origin(ephemeral_server):
     """Verify connection from an arbitrary website (e.g. attacker.com) is rejected with 1008."""
+
     async def _test():
         uri = f"ws://127.0.0.1:{ephemeral_server.port}/ws/telemetry"
         with pytest.raises(ConnectionClosed) as exc_info:
             async with ws_connect(uri, origin="http://attacker.com:8080") as ws:
                 await ws.recv()
-        close_code = exc_info.value.rcvd.code if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd else exc_info.value.code
+        close_code = (
+            exc_info.value.rcvd.code
+            if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd
+            else exc_info.value.code
+        )
         assert close_code == 1008
+
     asyncio.run(_test())
 
 
 def test_vite_dev_mode_origin_behavior(ephemeral_server, dev_mode_server):
     """Verify Vite dev origin (http://localhost:5173) is accepted only in dev_mode."""
+
     async def _test():
         vite_origin = "http://localhost:5173"
 
@@ -161,13 +177,18 @@ def test_vite_dev_mode_origin_behavior(ephemeral_server, dev_mode_server):
         with pytest.raises(ConnectionClosed) as exc_info:
             async with ws_connect(uri_prod, origin=vite_origin) as ws:
                 await ws.recv()
-        close_code = exc_info.value.rcvd.code if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd else exc_info.value.code
+        close_code = (
+            exc_info.value.rcvd.code
+            if hasattr(exc_info.value, "rcvd") and exc_info.value.rcvd
+            else exc_info.value.code
+        )
         assert close_code == 1008
 
         # Dev server accepts Vite dev origin
         uri_dev = f"ws://127.0.0.1:{dev_mode_server.port}/ws/telemetry"
         async with ws_connect(uri_dev, origin=vite_origin) as ws:
             assert ws is not None
+
     asyncio.run(_test())
 
 
@@ -212,6 +233,7 @@ def test_websocket_e2e_message_flow(ephemeral_server):
 # 3. HTTP Host Header Validation Tests (DNS Rebinding Defense)
 # ==============================================================================
 
+
 def test_http_accepts_valid_localhost_host_header(ephemeral_server):
     """Verify valid Host header for localhost returns status 200."""
     url = f"http://127.0.0.1:{ephemeral_server.port}/"
@@ -238,6 +260,7 @@ def test_http_rejects_attacker_domain_host_header(ephemeral_server):
 # 4. Telemetry Payload Sanitization & Canary Scrubbing Tests
 # ==============================================================================
 
+
 def test_telemetry_payload_strips_sensitive_fields():
     """Verify sanitize_telemetry_dict strips prompts, file contents, outputs, and keys."""
     test_key = "sk-" + "ant-api03-CANARYKEY1234567890abcdef-SHOULD-STRIP"
@@ -258,7 +281,7 @@ def test_telemetry_payload_strips_sensitive_fields():
             "safe_metric": 100,
             "raw_output": "ls -la secret",
         },
-        "summary": f"Ran step with {summary_key} successfully."
+        "summary": f"Ran step with {summary_key} successfully.",
     }
 
     sanitized = TelemetryBroadcaster.sanitize_telemetry_dict(raw_payload)
@@ -302,7 +325,7 @@ def test_captured_telemetry_contains_no_canary(ephemeral_server):
             "file_content": canary_file,
             "api_key": canary_key,
             "safe_counter": 42,
-        }
+        },
     )
 
     ephemeral_server.broadcast(event)
@@ -320,6 +343,7 @@ def test_captured_telemetry_contains_no_canary(ephemeral_server):
 # ==============================================================================
 # 5. Config Permissions, Hardening & Masking Tests
 # ==============================================================================
+
 
 def test_mask_credential():
     """Verify mask_credential produces first 3 characters followed by '****'."""
@@ -339,7 +363,9 @@ def test_config_directory_and_file_permissions(tmp_path, monkeypatch, capsys):
     cfg_file = octo_dir / "config.json"
 
     # Save secure config
-    save_secure_config({"default_model": "mock", "anthropic_api_key": "sk-" + "ant-secret1234567890"})
+    save_secure_config(
+        {"default_model": "mock", "anthropic_api_key": "sk-" + "ant-secret1234567890"}
+    )
 
     assert octo_dir.exists()
     assert cfg_file.exists()
@@ -384,7 +410,7 @@ def test_llm_pool_endpoint_masks_credentials(ephemeral_server, tmp_path, monkeyp
                 "model": "claude-3-5-sonnet",
                 "api_key": "sk-" + "ant-api03-CANARY1234567890abcdef",
                 "enabled": True,
-                "priority": 1
+                "priority": 1,
             }
         ]
     }

@@ -7,10 +7,11 @@ Usage:
     python experiments/export_onnx.py --checkpoint checkpoints/top1_octopus_brain.pt --output checkpoints/octopus_brain.onnx
 """
 
-import sys
-import os
 import argparse
+import os
+import sys
 from pathlib import Path
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -19,8 +20,8 @@ import torch.nn.functional as F
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import OctopusBrainConfig
 
 
 class ExportableOctopusBrain(nn.Module):
@@ -112,13 +113,13 @@ class ExportableOctopusBrain(nn.Module):
             outgoing_msg_list.append(out_msg_i)
 
         new_hidden_states = torch.stack(new_hidden_list, dim=1)  # (B, N, hidden_dim)
-        action_logits = torch.stack(action_logits_list, dim=1)   # (B, N, action_dim)
-        report_probs = torch.stack(report_probs_list, dim=1)     # (B, N)
-        new_neighbor_msgs = torch.stack(neighbor_msg_list, dim=1) # (B, N, message_dim)
-        outgoing_msgs = torch.stack(outgoing_msg_list, dim=1)     # (B, N, message_dim)
+        action_logits = torch.stack(action_logits_list, dim=1)  # (B, N, action_dim)
+        report_probs = torch.stack(report_probs_list, dim=1)  # (B, N)
+        new_neighbor_msgs = torch.stack(neighbor_msg_list, dim=1)  # (B, N, message_dim)
+        outgoing_msgs = torch.stack(outgoing_msg_list, dim=1)  # (B, N, message_dim)
 
         # Greedy actions (argmax)
-        actions = torch.argmax(action_logits, dim=-1)             # (B, N)
+        actions = torch.argmax(action_logits, dim=-1)  # (B, N)
         new_prev_actions = F.one_hot(actions, num_classes=self.config.action_dim).float()
 
         # 3. Central System attention and feedback
@@ -130,13 +131,15 @@ class ExportableOctopusBrain(nn.Module):
         v = central.v_proj(gated_msgs)
 
         d_k = q.size(-1)
-        scores = torch.matmul(q, k.transpose(-2, -1)) / (d_k ** 0.5)
+        scores = torch.matmul(q, k.transpose(-2, -1)) / (d_k**0.5)
         attn_weights = F.softmax(scores, dim=-1)
         coalition_context = torch.matmul(attn_weights, v)
         coalition_out = central.out_proj(coalition_context)
 
         # Contextual feedback
-        fb_in = torch.cat([coalition_out, central_state.unsqueeze(1).expand(-1, self.n_modules, -1)], dim=-1)
+        fb_in = torch.cat(
+            [coalition_out, central_state.unsqueeze(1).expand(-1, self.n_modules, -1)], dim=-1
+        )
         new_central_feedback = central.feedback_proj(fb_in)
 
         # Slow central GRU
@@ -158,7 +161,9 @@ class ExportableOctopusBrain(nn.Module):
 def export_model(checkpoint_path: str, output_path: str, device: str = "cpu"):
     """Export checkpoint to ONNX."""
     device = torch.device(device)
-    config = OctopusBrainConfig(n_modules=8, obs_dim=16, action_dim=5, hidden_dim=64, message_dim=32, central_dim=64)
+    config = OctopusBrainConfig(
+        n_modules=8, obs_dim=16, action_dim=5, hidden_dim=64, message_dim=32, central_dim=64
+    )
     brain = OctopusBrain(config).to(device)
 
     if os.path.exists(checkpoint_path):
@@ -237,6 +242,7 @@ def export_model(checkpoint_path: str, output_path: str, device: str = "cpu"):
     # Verify with onnxruntime
     try:
         import onnxruntime as ort
+
         print("--> Validating with ONNX Runtime...")
         session = ort.InferenceSession(output_path, providers=["CPUExecutionProvider"])
         ort_inputs = {

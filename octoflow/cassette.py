@@ -6,19 +6,18 @@ them offline in CI without external LLM dependencies.
 
 import hashlib
 import json
-import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field
 
-from octoflow.provider import BaseLLMProvider, LLMResponse, redact_secrets
 from octoflow.logging_config import get_logger
+from octoflow.provider import BaseLLMProvider, LLMResponse, redact_secrets
 
 logger = get_logger("cassette")
 
 
-def normalize_cassette_text(text: str, workspace_root: Optional[Union[str, Path]] = None) -> str:
+def normalize_cassette_text(text: str, workspace_root: str | Path | None = None) -> str:
     """Normalize text by stripping local machine paths, temp dirs, and redacting secrets."""
     if not text:
         return ""
@@ -48,12 +47,13 @@ def compute_request_hash(prompt: str, system_prompt: str = "") -> str:
     """Compute deterministic SHA-256 hash of normalized system prompt and user prompt."""
     norm_sys = normalize_cassette_text(system_prompt).strip()
     norm_usr = normalize_cassette_text(prompt).strip()
-    payload = f"SYS:{norm_sys}\nUSR:{norm_usr}".encode("utf-8")
+    payload = f"SYS:{norm_sys}\nUSR:{norm_usr}".encode()
     return hashlib.sha256(payload).hexdigest()
 
 
 class CassetteEntry(BaseModel):
     """Single recorded LLM interaction."""
+
     request_hash: str
     prompt: str
     system_prompt: str = ""
@@ -68,8 +68,9 @@ class CassetteEntry(BaseModel):
 
 class CassetteData(BaseModel):
     """Container for recorded cassette file."""
+
     version: int = 1
-    entries: List[CassetteEntry] = Field(default_factory=list)
+    entries: list[CassetteEntry] = Field(default_factory=list)
 
 
 class CassetteRecorder(BaseLLMProvider):
@@ -78,8 +79,8 @@ class CassetteRecorder(BaseLLMProvider):
     def __init__(
         self,
         provider: BaseLLMProvider,
-        cassette_dir: Union[str, Path],
-        workspace_root: Optional[Union[str, Path]] = None,
+        cassette_dir: str | Path,
+        workspace_root: str | Path | None = None,
     ):
         super().__init__()
         self.wrapped_provider = provider
@@ -91,14 +92,16 @@ class CassetteRecorder(BaseLLMProvider):
         self.cassette_file = self.cassette_dir / "cassette.json"
 
         # Load existing entries if cassette file already exists
-        self.entries: List[CassetteEntry] = []
+        self.entries: list[CassetteEntry] = []
         if self.cassette_file.exists():
             try:
                 raw = json.loads(self.cassette_file.read_text(encoding="utf-8"))
                 data = CassetteData.model_validate(raw)
                 self.entries = data.entries
             except Exception as e:
-                logger.warning("Failed to load existing cassette from %s: %s", self.cassette_file, e)
+                logger.warning(
+                    "Failed to load existing cassette from %s: %s", self.cassette_file, e
+                )
 
     def _record_interaction(
         self,
@@ -168,16 +171,16 @@ class ReplayProvider(BaseLLMProvider):
 
     def __init__(
         self,
-        cassette_dir: Union[str, Path],
-        workspace_root: Optional[Union[str, Path]] = None,
+        cassette_dir: str | Path,
+        workspace_root: str | Path | None = None,
     ):
         super().__init__()
         self.provider_name = "replay"
         self.model = "cassette-replay"
         self.cassette_dir = Path(cassette_dir)
         self.workspace_root = workspace_root
-        self.entries: List[CassetteEntry] = []
-        self._by_hash: Dict[str, List[CassetteEntry]] = {}
+        self.entries: list[CassetteEntry] = []
+        self._by_hash: dict[str, list[CassetteEntry]] = {}
         self._playback_index: int = 0
 
         cassette_file = self.cassette_dir / "cassette.json"
@@ -221,7 +224,9 @@ class ReplayProvider(BaseLLMProvider):
         if self.entries:
             return self.entries[-1]
 
-        raise RuntimeError(f"ReplayProvider: No recorded cassette entries available in {self.cassette_dir}")
+        raise RuntimeError(
+            f"ReplayProvider: No recorded cassette entries available in {self.cassette_dir}"
+        )
 
     def generate(
         self,
@@ -250,5 +255,6 @@ class ReplayProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         import asyncio
+
         await asyncio.sleep(0.001)
         return self.generate(prompt, system_prompt, temperature, max_tokens)

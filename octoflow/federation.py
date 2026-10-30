@@ -9,16 +9,18 @@ Networking and peer node trust scoring (FederationPeer, PeerTrustLevel) are
 currently experimental, unused prototypes. Networking for federation is not implemented.
 """
 
+import hashlib
 import re
 import time
-import hashlib
 from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple, Union
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
 class PIIAction(str, Enum):
     """Action to take when PII or sensitive secrets are detected."""
+
     BLOCK = "BLOCK"
     REDACT = "REDACT"
     HASH = "HASH"
@@ -27,14 +29,16 @@ class PIIAction(str, Enum):
 
 class PeerTrustLevel(str, Enum):
     """Zero-trust security tiers for federated cephalopod agents. [experimental: unused prototype]"""
+
     UNTRUSTED = "UNTRUSTED"  # Level 0: Public/unknown peer, strict PII redaction & discovery only
     PROBATION = "PROBATION"  # Level 1: Initial verified handshake, task requests permitted
-    VERIFIED = "VERIFIED"    # Level 2: Proven reliability, partial memory share
-    CORE = "CORE"            # Level 3: Full consortium peer, direct synaptic bandwidth
+    VERIFIED = "VERIFIED"  # Level 2: Proven reliability, partial memory share
+    CORE = "CORE"  # Level 3: Full consortium peer, direct synaptic bandwidth
 
 
 class PIIDetectionRule(BaseModel):
     """Specification of a regex-based PII or credential pattern."""
+
     name: str
     pattern: str
     replacement: str
@@ -42,7 +46,7 @@ class PIIDetectionRule(BaseModel):
 
 
 # 14 Comprehensive PII and Secret Patterns
-PII_RULES: List[PIIDetectionRule] = [
+PII_RULES: list[PIIDetectionRule] = [
     PIIDetectionRule(
         name="OPENAI_API_KEY",
         pattern=r"\bsk-[a-zA-Z0-9]{20,60}\b",
@@ -132,6 +136,7 @@ PII_RULES: List[PIIDetectionRule] = [
 
 class SanitizationEvent(BaseModel):
     """Log entry when sensitive data is intercepted."""
+
     timestamp: float = Field(default_factory=time.time)
     rule_name: str
     severity: str
@@ -140,6 +145,7 @@ class SanitizationEvent(BaseModel):
 
 class FederationPeer(BaseModel):
     """Metadata and trust score for a federated agent or node."""
+
     peer_id: str
     name: str
     endpoint: str = ""
@@ -153,14 +159,14 @@ class FederationPeer(BaseModel):
     @property
     def trust_score(self) -> float:
         """Calculate dynamic trust score [0.0 - 1.0].
-        
+
         Formula: 0.5 * (success_rate) + 0.3 * (liveness) - 0.5 * (threat_penalty)
         """
         total = self.successful_tasks + self.failed_tasks
         success_ratio = (self.successful_tasks / total) if total > 0 else 0.5
         recency = max(0.0, 1.0 - (time.time() - self.last_seen) / 86400.0)
         threat_penalty = min(1.0, self.threat_events * 0.25)
-        
+
         score = (0.5 * success_ratio) + (0.3 * recency) - (0.5 * threat_penalty)
         return float(max(0.0, min(1.0, score)))
 
@@ -171,21 +177,21 @@ class FederationGuard:
     def __init__(self, default_action: PIIAction = PIIAction.REDACT):
         self.default_action = default_action
         self._compiled_rules = [(rule, re.compile(rule.pattern)) for rule in PII_RULES]
-        self.audit_log: List[SanitizationEvent] = []
-        self.peers: Dict[str, FederationPeer] = {}
+        self.audit_log: list[SanitizationEvent] = []
+        self.peers: dict[str, FederationPeer] = {}
 
     def scan_and_sanitize(
         self,
         text: str,
-        action: Optional[PIIAction] = None,
-    ) -> Tuple[str, List[SanitizationEvent]]:
+        action: PIIAction | None = None,
+    ) -> tuple[str, list[SanitizationEvent]]:
         """Scans text for all 14 PII/secret patterns and applies the chosen action."""
         if not text or not isinstance(text, str):
             return text, []
 
         act = action or self.default_action
         sanitized = text
-        events: List[SanitizationEvent] = []
+        events: list[SanitizationEvent] = []
 
         for rule, compiled_regex in self._compiled_rules:
             matches = list(compiled_regex.finditer(sanitized))
@@ -205,9 +211,11 @@ class FederationGuard:
                 elif act == PIIAction.REDACT:
                     sanitized = compiled_regex.sub(rule.replacement, sanitized)
                 elif act == PIIAction.HASH:
+
                     def _hasher(m: re.Match) -> str:
                         h = hashlib.sha256(m.group(0).encode()).hexdigest()[:12]
                         return f"[HASHED_{rule.name}_{h}]"
+
                     sanitized = compiled_regex.sub(_hasher, sanitized)
                 elif act == PIIAction.PASS:
                     # Log event but leave text unmodified
@@ -218,10 +226,10 @@ class FederationGuard:
     def sanitize_payload(
         self,
         payload: Any,
-        action: Optional[PIIAction] = None,
-    ) -> Tuple[Any, List[SanitizationEvent]]:
+        action: PIIAction | None = None,
+    ) -> tuple[Any, list[SanitizationEvent]]:
         """Recursively sanitizes dictionaries, lists, and strings in payloads."""
-        all_events: List[SanitizationEvent] = []
+        all_events: list[SanitizationEvent] = []
 
         if isinstance(payload, str):
             clean_str, evts = self.scan_and_sanitize(payload, action)
@@ -264,7 +272,7 @@ class FederationGuard:
                 peer.successful_tasks += 1
             else:
                 peer.failed_tasks += 1
-            
+
             # Recalculate tier
             score = peer.trust_score
             if score >= 0.85 and peer.threat_events == 0:
@@ -286,7 +294,7 @@ import logging
 class SecretSanitizingLogFilter(logging.Filter):
     """Logging filter that scrubs secrets and PII from all log records before emission."""
 
-    def __init__(self, guard: Optional[FederationGuard] = None):
+    def __init__(self, guard: FederationGuard | None = None):
         super().__init__()
         self.guard = guard or GLOBAL_FEDERATION_GUARD
 
@@ -297,12 +305,18 @@ class SecretSanitizingLogFilter(logging.Filter):
         if record.args:
             if isinstance(record.args, tuple):
                 record.args = tuple(
-                    self.guard.scan_and_sanitize(str(a), PIIAction.REDACT)[0] if isinstance(a, str) else a
+                    self.guard.scan_and_sanitize(str(a), PIIAction.REDACT)[0]
+                    if isinstance(a, str)
+                    else a
                     for a in record.args
                 )
             elif isinstance(record.args, dict):
                 record.args = {
-                    k: (self.guard.scan_and_sanitize(str(v), PIIAction.REDACT)[0] if isinstance(v, str) else v)
+                    k: (
+                        self.guard.scan_and_sanitize(str(v), PIIAction.REDACT)[0]
+                        if isinstance(v, str)
+                        else v
+                    )
                     for k, v in record.args.items()
                 }
         return True

@@ -12,38 +12,45 @@ Usage:
     python experiments/infer.py --checkpoint checkpoints/best_octopus_brain.pt --episodes 1 --render gif --gif-output experiments/inference_demo.gif
 """
 
-import sys
-import os
 import argparse
+import os
+import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
+
 import numpy as np
 import torch
 
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
 from envs.reach_and_avoid import ReachAndAvoidEnv
 from envs.render_env import EnvironmentVisualizer
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
 
 
 def run_inference(
-    checkpoint_path: Optional[str] = "checkpoints/best_octopus_brain.pt",
+    checkpoint_path: str | None = "checkpoints/best_octopus_brain.pt",
     episodes: int = 2,
     render_mode: str = "terminal",
-    gif_output: Optional[str] = None,
+    gif_output: str | None = None,
     num_knockouts: int = 0,
     deterministic: bool = True,
     seed: int = 42,
-    device_name: Optional[str] = None,
-) -> Dict[str, Any]:
+    device_name: str | None = None,
+) -> dict[str, Any]:
     """Execute model inference and diagnostic telemetry."""
     if device_name:
         device = torch.device(device_name)
     else:
-        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+        device = torch.device(
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
 
     print("=" * 80)
     print("OCTOPUSBRAIN INFERENCE ENGINE")
@@ -127,19 +134,33 @@ def run_inference(
             if render_mode == "terminal":
                 if t % 5 == 0 or t == env.max_steps - 1 or info.get("joint_completed", 0) > 0:
                     report_str = "".join(["●" if r else "○" for r in report_events])
-                    cluster_str = ", ".join([f"({','.join(map(str, c))})" for c in active_clusters]) or "None"
+                    cluster_str = (
+                        ", ".join([f"({','.join(map(str, c))})" for c in active_clusters]) or "None"
+                    )
                     print(
                         f"  [Step {t:02d}] "
                         f"Rew: {step_reward:+5.2f} | "
-                        f"Reports [{report_str}] ({np.mean(report_events)*100:3.0f}%) | "
+                        f"Reports [{report_str}] ({np.mean(report_events) * 100:3.0f}%) | "
                         f"Max Surprise: {np.max(surprises):.2f} | "
                         f"Coalitions: {cluster_str}"
                     )
             elif render_mode == "ascii":
-                print(visualizer.render_ascii(step=t, reward=ep_reward, report_rate=float(np.mean(report_events)), coalition_clusters=active_clusters, clear_screen=False))
+                print(
+                    visualizer.render_ascii(
+                        step=t,
+                        reward=ep_reward,
+                        report_rate=float(np.mean(report_events)),
+                        coalition_clusters=active_clusters,
+                        clear_screen=False,
+                    )
+                )
 
             if render_mode == "gif":
-                c_mat = out["coalition_matrix"][0].detach().cpu().numpy() if out["coalition_matrix"].numel() > 0 else np.zeros((8, 8))
+                c_mat = (
+                    out["coalition_matrix"][0].detach().cpu().numpy()
+                    if out["coalition_matrix"].numel() > 0
+                    else np.zeros((8, 8))
+                )
                 snapshot = {
                     "step": t,
                     "reward": ep_reward,
@@ -148,7 +169,10 @@ def run_inference(
                     "edges": out.get("active_coalitions", []),
                     "arm_tips": env.arm_tips.copy(),
                     "single_targets": [st.copy() for st in env.single_targets],
-                    "joint_targets": [{"pos": jt["pos"].copy(), "active": jt["active"]} for jt in env.joint_targets],
+                    "joint_targets": [
+                        {"pos": jt["pos"].copy(), "active": jt["active"]}
+                        for jt in env.joint_targets
+                    ],
                     "hazards": [h.copy() for h in env.hazards],
                 }
                 frames_for_gif.append(snapshot)
@@ -159,12 +183,15 @@ def run_inference(
 
         total_rewards.append(ep_reward)
         all_report_rates.append(np.mean(ep_reports))
-        print(f"--- EPISODE {ep} END: Total Reward = {ep_reward:+.2f}, Mean Comm Rate = {np.mean(ep_reports)*100:.1f}%\n")
+        print(
+            f"--- EPISODE {ep} END: Total Reward = {ep_reward:+.2f}, Mean Comm Rate = {np.mean(ep_reports) * 100:.1f}%\n"
+        )
 
         # Save GIF if requested
         if render_mode == "gif" and gif_output and len(frames_for_gif) > 0:
             import matplotlib.pyplot as plt
             from matplotlib.animation import FuncAnimation, PillowWriter
+
             os.makedirs(os.path.dirname(os.path.abspath(gif_output)), exist_ok=True)
             fig, ax = plt.subplots(figsize=(7, 7), facecolor="#0f172a")
 
@@ -201,7 +228,7 @@ def run_inference(
     print("=" * 80)
     print("INFERENCE SUMMARY:")
     print(f"  Mean Reward:          {summary['mean_reward']:+.2f} ± {summary['std_reward']:.2f}")
-    print(f"  Mean Comm Rate:       {summary['mean_report_rate']*100:.1f}%")
+    print(f"  Mean Comm Rate:       {summary['mean_report_rate'] * 100:.1f}%")
     print(f"  Single Target Hits:   {summary['total_single_hits']}")
     print(f"  Joint Target Hits:    {summary['total_joint_hits']}")
     print(f"  Hazard Collisions:    {summary['total_hazard_hits']}")
@@ -212,12 +239,29 @@ def run_inference(
 
 def main():
     parser = argparse.ArgumentParser(description="OctopusBrain Inference CLI")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/best_octopus_brain.pt", help="Path to model checkpoint")
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="checkpoints/best_octopus_brain.pt",
+        help="Path to model checkpoint",
+    )
     parser.add_argument("--episodes", type=int, default=2, help="Number of inference episodes")
-    parser.add_argument("--render", type=str, default="terminal", choices=["terminal", "ascii", "gif", "quiet"], help="Rendering mode")
-    parser.add_argument("--gif-output", type=str, default="experiments/inference_demo.gif", help="GIF output path")
-    parser.add_argument("--knockout", type=int, default=0, help="Number of arms to sever/knockout (0..7)")
-    parser.add_argument("--stochastic", action="store_true", help="Sample actions stochastically instead of greedy")
+    parser.add_argument(
+        "--render",
+        type=str,
+        default="terminal",
+        choices=["terminal", "ascii", "gif", "quiet"],
+        help="Rendering mode",
+    )
+    parser.add_argument(
+        "--gif-output", type=str, default="experiments/inference_demo.gif", help="GIF output path"
+    )
+    parser.add_argument(
+        "--knockout", type=int, default=0, help="Number of arms to sever/knockout (0..7)"
+    )
+    parser.add_argument(
+        "--stochastic", action="store_true", help="Sample actions stochastically instead of greedy"
+    )
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--device", type=str, default=None, help="Compute device (cpu, mps, cuda)")
     args = parser.parse_args()

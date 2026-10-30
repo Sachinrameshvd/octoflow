@@ -1,26 +1,22 @@
 """CLI commands for managing OctoFlow typed configuration and settings."""
 
 from __future__ import annotations
+
 import json
-import sys
-from pathlib import Path
-from typing import Optional
+
 import typer
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
 from pydantic import ValidationError
+from rich.console import Console
+from rich.table import Table
 
 from octoflow.settings import (
     ConfigurationError,
-    Settings,
     get_default_config_path,
     load_settings,
-    restore_config_backup,
-    save_settings,
-    set_config_value,
     mask_secret_value,
     migrate_config_if_needed,
+    restore_config_backup,
+    set_config_value,
 )
 
 config_app = typer.Typer(
@@ -131,7 +127,9 @@ def cmd_config_set(
         disp_val = mask_secret_value(value)
 
     cfg_path = get_default_config_path()
-    console.print(f"[bold green]✔ Successfully set '{key}' = '{disp_val}' in {cfg_path}[/bold green]")
+    console.print(
+        f"[bold green]✔ Successfully set '{key}' = '{disp_val}' in {cfg_path}[/bold green]"
+    )
 
 
 @config_app.command("validate")
@@ -139,7 +137,9 @@ def cmd_config_validate() -> None:
     """Validate current configuration file against Pydantic schema."""
     cfg_path = get_default_config_path()
     if not cfg_path.exists():
-        console.print(f"[yellow]Notice: Configuration file does not exist at {cfg_path} (defaults active).[/yellow]")
+        console.print(
+            f"[yellow]Notice: Configuration file does not exist at {cfg_path} (defaults active).[/yellow]"
+        )
         return
 
     try:
@@ -175,12 +175,14 @@ def cmd_config_migrate(
                 f"[bold green]✔ Migrated {cfg_path.name} to schema_version=1 (Backup saved to {bak_path.name})[/bold green]"
             )
         else:
-            console.print(f"[bold green]✔ Configuration is already up to date ({cfg_path.name}).[/bold green]")
+            console.print(
+                f"[bold green]✔ Configuration is already up to date ({cfg_path.name}).[/bold green]"
+            )
     except Exception as e:
         _handle_error(e)
 
 
-def register(app: typer.Typer, octos_app: Optional[typer.Typer] = None) -> None:
+def register(app: typer.Typer, octos_app: typer.Typer | None = None) -> None:
     """Register config command group into Typer app(s)."""
     app.add_typer(config_app, name="config")
     if octos_app is not None:

@@ -5,9 +5,12 @@ Full-scale algorithmic synthesis and multi-scale simulation of the
 """
 
 from octopus_brain.blue_brain.atlas import AdultOctopusAtlas, NeuropilLobeDefinition
-from octopus_brain.blue_brain.microcircuits import CephalopodMicrocircuitLibrary, MicrocircuitTemplate
-from octopus_brain.blue_brain.sparse_synthesizer import AdultOctopusConnectomeSynthesizer
 from octopus_brain.blue_brain.hybrid_simulator import AdultOctopusHybridSimulator
+from octopus_brain.blue_brain.microcircuits import (
+    CephalopodMicrocircuitLibrary,
+    MicrocircuitTemplate,
+)
+from octopus_brain.blue_brain.sparse_synthesizer import AdultOctopusConnectomeSynthesizer
 
 __all__ = [
     "AdultOctopusAtlas",

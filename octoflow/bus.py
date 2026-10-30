@@ -7,11 +7,14 @@ central conductor, preventing orchestrator context window saturation.
 
 import time
 from collections import deque
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
+
 from pydantic import BaseModel, Field
+
 
 class MessageIntent:
     """Enumeration of semantic arm communication intents."""
+
     AUTONOMOUS_EXPLORE = "AUTONOMOUS_EXPLORE"
     TARGET_DETECTED = "TARGET_DETECTED"
     COOPERATIVE_PULL = "COOPERATIVE_PULL"
@@ -62,10 +65,11 @@ INTENT_METADATA = {
 
 class BrachialMessage(BaseModel):
     """Compact lateral message exchanged across the inter-brachial ring."""
+
     sender_id: int
     target_id: int
     intent: str = MessageIntent.AUTONOMOUS_EXPLORE
-    payload: Dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
     summary: str = ""
     timestamp: float = Field(default_factory=time.time)
 
@@ -76,15 +80,15 @@ from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
 class InterBrachialBus:
     """Ring-topology message bus connecting arm ganglia with zero-trust PII sanitization and dead-arm fault tolerance."""
 
-    def __init__(self, n_arms: int = 8, guard: Optional[FederationGuard] = None):
+    def __init__(self, n_arms: int = 8, guard: FederationGuard | None = None):
         if n_arms <= 0:
             raise ValueError(f"n_arms must be positive integer >= 1, got {n_arms}")
         self.n_arms = n_arms
         self.guard = guard or GLOBAL_FEDERATION_GUARD
         # Inboxes for each arm: arm_id -> deque of incoming BrachialMessages
-        self._inboxes: Dict[int, deque] = {i: deque(maxlen=20) for i in range(n_arms)}
+        self._inboxes: dict[int, deque] = {i: deque(maxlen=20) for i in range(n_arms)}
         self._active_arms: set[int] = set(range(n_arms))
-        self.message_history: List[BrachialMessage] = []
+        self.message_history: list[BrachialMessage] = []
 
     def mark_arm_inactive(self, arm_id: int) -> None:
         """Mark an arm as dead/offline so lateral routing bypasses it."""
@@ -99,7 +103,7 @@ class InterBrachialBus:
         """Return True if arm is active."""
         return arm_id in self._active_arms
 
-    def get_neighbors(self, arm_id: int) -> Tuple[int, int]:
+    def get_neighbors(self, arm_id: int) -> tuple[int, int]:
         """Return (left_neighbor_id, right_neighbor_id) on the ring, bypassing dead arms."""
         if self.n_arms == 1:
             return 0, 0
@@ -128,17 +132,23 @@ class InterBrachialBus:
         target_id: int,
         intent: str,
         summary: str = "",
-        payload: Optional[Dict[str, Any]] = None,
+        payload: dict[str, Any] | None = None,
     ) -> BrachialMessage:
         """Transmit a message laterally along the ring bus with PII sanitization."""
         if target_id not in self._inboxes:
-            raise ValueError(f"Target arm {target_id} not connected to bus (valid: 0..{self.n_arms - 1})")
+            raise ValueError(
+                f"Target arm {target_id} not connected to bus (valid: 0..{self.n_arms - 1})"
+            )
         if sender_id not in self._inboxes:
-            raise ValueError(f"Sender arm {sender_id} not connected to bus (valid: 0..{self.n_arms - 1})")
+            raise ValueError(
+                f"Sender arm {sender_id} not connected to bus (valid: 0..{self.n_arms - 1})"
+            )
 
         # Cleanse summary and payload of sensitive credentials/PII
         clean_summary, _ = self.guard.scan_and_sanitize(summary) if self.guard else (summary, [])
-        clean_payload, _ = self.guard.sanitize_payload(payload or {}) if self.guard else (payload or {}, [])
+        clean_payload, _ = (
+            self.guard.sanitize_payload(payload or {}) if self.guard else (payload or {}, [])
+        )
 
         msg = BrachialMessage(
             sender_id=sender_id,
@@ -156,15 +166,15 @@ class InterBrachialBus:
         sender_id: int,
         intent: str,
         summary: str = "",
-        payload: Optional[Dict[str, Any]] = None,
-    ) -> List[BrachialMessage]:
+        payload: dict[str, Any] | None = None,
+    ) -> list[BrachialMessage]:
         """Broadcast a message to immediate ring neighbors (left and right), bypassing dead arms."""
         left, right = self.get_neighbors(sender_id)
         msg_l = self.send_lateral(sender_id, left, intent, summary, payload)
         msg_r = self.send_lateral(sender_id, right, intent, summary, payload)
         return [msg_l, msg_r]
 
-    def poll_inbox(self, arm_id: int) -> List[BrachialMessage]:
+    def poll_inbox(self, arm_id: int) -> list[BrachialMessage]:
         """Drain and return all pending messages for an arm."""
         if arm_id not in self._inboxes:
             raise ValueError(f"Arm {arm_id} not connected to bus (valid: 0..{self.n_arms - 1})")

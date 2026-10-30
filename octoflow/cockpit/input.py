@@ -13,17 +13,19 @@ import signal
 import sys
 import termios
 import tty
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any
+
 from rich.console import Console
 from rich.live import Live
 
-from octoflow.themes import OctoTheme, get_banner_loop_frame
-from octoflow.runner import render_runner_frame
 from octoflow.cockpit.session import CockpitSession, Theme
+from octoflow.runner import render_runner_frame
+from octoflow.themes import get_banner_loop_frame
 
 _saved_term_settings = None
-_saved_term_fd: Optional[int] = None
+_saved_term_fd: int | None = None
 
 
 def restore_terminal_mode():
@@ -93,11 +95,12 @@ def raw_terminal_mode(fd: int):
 
 class CockpitInput(str):
     """Extends string with bracketed-paste metadata."""
+
     paste_line_count: int = 1
     is_pasted: bool = False
 
 
-def clean_bracketed_paste(raw_chunk: str) -> Tuple[str, bool, int]:
+def clean_bracketed_paste(raw_chunk: str) -> tuple[str, bool, int]:
     """Parse bracketed paste control sequences and compute line metrics.
 
     Returns:
@@ -111,10 +114,10 @@ def clean_bracketed_paste(raw_chunk: str) -> Tuple[str, bool, int]:
 
 
 def get_live_cockpit_keys(
-    session: Optional[CockpitSession] = None,
-    grid_builder: Optional[Callable[[str, int, int, float, int, int], Any]] = None,
-    console: Optional[Console] = None,
-    commands: Optional[List[str]] = None,
+    session: CockpitSession | None = None,
+    grid_builder: Callable[[str, int, int, float, int, int], Any] | None = None,
+    console: Console | None = None,
+    commands: list[str] | None = None,
 ) -> CockpitInput:
     """Non-blocking animated cockpit input loop.
 
@@ -127,6 +130,7 @@ def get_live_cockpit_keys(
         console = Console()
     if grid_builder is None:
         from octoflow.cockpit.render import build_cockpit_grid
+
         _sess = session
         grid_builder = lambda b, c, t, ox, oy, plc: build_cockpit_grid(_sess, b, c, t, ox, oy, plc)
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
@@ -137,7 +141,7 @@ def get_live_cockpit_keys(
             cleaned = raw_line.strip()
             res = CockpitInput(cleaned)
             res.paste_line_count = len(raw_line.splitlines()) if "\n" in raw_line else 1
-            res.is_pasted = (res.paste_line_count > 1)
+            res.is_pasted = res.paste_line_count > 1
             return res
         except (KeyboardInterrupt, EOFError):
             return CockpitInput("/exit")
@@ -201,23 +205,32 @@ def get_live_cockpit_keys(
                     while idx < len(clean_chunk):
                         ch = clean_chunk[idx]
                         if ch == "\x1b":
-                            if idx + 2 < len(clean_chunk) and clean_chunk[idx:idx+3] == "\x1b[C":
+                            if (
+                                idx + 2 < len(clean_chunk)
+                                and clean_chunk[idx : idx + 3] == "\x1b[C"
+                            ):
                                 cursor_pos = min(cursor_pos + 1, len(buffer))
                                 idx += 3
                                 continue
-                            elif idx + 2 < len(clean_chunk) and clean_chunk[idx:idx+3] == "\x1b[D":
+                            elif (
+                                idx + 2 < len(clean_chunk)
+                                and clean_chunk[idx : idx + 3] == "\x1b[D"
+                            ):
                                 cursor_pos = max(cursor_pos - 1, 0)
                                 idx += 3
                                 continue
                             else:
                                 end_m = idx + 1
-                                while end_m < len(clean_chunk) and clean_chunk[end_m] not in "ABCDEFHJKSTZ~":
+                                while (
+                                    end_m < len(clean_chunk)
+                                    and clean_chunk[end_m] not in "ABCDEFHJKSTZ~"
+                                ):
                                     end_m += 1
                                 idx = end_m + 1
                                 continue
                         elif ch in ["\x7f", "\x08"]:
                             if cursor_pos > 0:
-                                buffer = buffer[:cursor_pos - 1] + buffer[cursor_pos:]
+                                buffer = buffer[: cursor_pos - 1] + buffer[cursor_pos:]
                                 cursor_pos -= 1
                             idx += 1
                         elif ch == "\t":
@@ -245,11 +258,17 @@ def get_live_cockpit_keys(
                 jump_phase += 0.16
                 octo_y = 1 if math.sin(jump_phase) > 0.25 else 0
 
-                live.update(grid_builder(buffer, cursor_pos, tick, octo_x, octo_y, pasted_line_count))
+                live.update(
+                    grid_builder(buffer, cursor_pos, tick, octo_x, octo_y, pasted_line_count)
+                )
 
     res = CockpitInput(buffer.strip())
-    res.paste_line_count = pasted_line_count if pasted_line_count > 1 else (len(buffer.splitlines()) if "\n" in buffer else 1)
-    res.is_pasted = (pasted_line_count > 1 or "\n" in buffer)
+    res.paste_line_count = (
+        pasted_line_count
+        if pasted_line_count > 1
+        else (len(buffer.splitlines()) if "\n" in buffer else 1)
+    )
+    res.is_pasted = pasted_line_count > 1 or "\n" in buffer
     return res
 
 
@@ -261,17 +280,18 @@ def get_live_wizard_keys(
     theme: Theme,
     prompt_label: str = "Select option: ",
     default_value: str = "",
-    extra_panels: Optional[list] = None,
+    extra_panels: list | None = None,
     is_password: bool = False,
-    existing_cfg: Optional[dict] = None,
-    workspace: Optional[Path] = None,
-    console: Optional[Console] = None,
+    existing_cfg: dict | None = None,
+    workspace: Path | None = None,
+    console: Console | None = None,
 ) -> str:
     """Non-blocking animated input loop for setup wizard.
 
     Keeps the runner jumping and banner updating without blocking.
     """
     import subprocess
+
     from rich.panel import Panel
     from rich.table import Table
     from rich.text import Text
@@ -310,7 +330,7 @@ def get_live_wizard_keys(
     hud_table.add_column(style="white")
     hud_table.add_row("◈ WORKSPACE", f"{ws}  [dim]({git_branch})[/dim]")
     hud_table.add_row("◈ LLM CORE", f"{curr_mod.upper()}  [dim](Budget: ${curr_bud:.2f})[/dim]")
-    hud_table.add_row("◈ SWARM TIER", f"Octopuses: AUTO  [dim](Cross-Ring Synaptic Bus)[/dim]")
+    hud_table.add_row("◈ SWARM TIER", "Octopuses: AUTO  [dim](Cross-Ring Synaptic Bus)[/dim]")
     hud_table.add_row(
         "◈ PALETTE",
         f"[{theme.rich_primary}]●[/{theme.rich_primary}] [{theme.rich_secondary}]●[/{theme.rich_secondary}] [{theme.rich_success}]●[/{theme.rich_success}] {theme.name} [dim]({theme.description})[/dim]",
@@ -431,7 +451,10 @@ def get_live_wizard_keys(
                                 continue
                             else:
                                 end_m = idx + 1
-                                while end_m < len(raw_chunk) and raw_chunk[end_m] not in "ABCDEFHJKSTZ~":
+                                while (
+                                    end_m < len(raw_chunk)
+                                    and raw_chunk[end_m] not in "ABCDEFHJKSTZ~"
+                                ):
                                     end_m += 1
                                 idx = end_m + 1
                                 continue
@@ -466,4 +489,3 @@ def get_live_wizard_keys(
 
 # Backward-compatible alias for live wizard input
 get_live_wizard_input = get_live_wizard_keys
-

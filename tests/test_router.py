@@ -18,35 +18,22 @@ import os
 import pty
 import select
 import stat
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
 pytestmark = pytest.mark.unit
 
 import pytest
-
 from octoflow.router import (
-    ALLOWED_SIMPLE_SHELL_COMMANDS,
-    DESTRUCTIVE_COMMANDS,
-    PROSE_WORDS,
+    MAX_CAPTURE_BYTES,
+    SESSION_COMMAND_HISTORY,
     Route,
     RouteKind,
     classify_input,
-    classify_input_legacy,
     execute_shell_route,
-    has_compound_operators,
-    is_destructive_command,
     log_command_history,
-    strip_prompt_prefixes,
-    SESSION_COMMAND_HISTORY,
-    MAX_CAPTURE_BYTES,
 )
-
 
 # ============================================================================
 # 1. TABLE-DRIVEN ROUTER TEST SUITE (>= 60 TEST CASES)
@@ -60,7 +47,6 @@ ROUTER_TEST_CASES = [
     ("   ", RouteKind.EMPTY, False, False, False),
     ("\t", RouteKind.EMPTY, False, False, False),
     ("  \n  ", RouteKind.EMPTY, False, False, False),
-
     # ------------------------------------------------------------------------
     # Category 2: Safe Simple Shell Commands (12 cases)
     # ------------------------------------------------------------------------
@@ -76,7 +62,6 @@ ROUTER_TEST_CASES = [
     ("grep -rn 'def classify' .", RouteKind.SHELL_SIMPLE, False, False, False),
     ("which python3", RouteKind.SHELL_SIMPLE, False, False, False),
     ("git status", RouteKind.SHELL_SIMPLE, False, False, False),
-
     # ------------------------------------------------------------------------
     # Category 3: Natural Language Swarm Goals (Shell heads with prose) (14 cases)
     # ------------------------------------------------------------------------
@@ -92,9 +77,20 @@ ROUTER_TEST_CASES = [
     ("grep for memory leaks in the app", RouteKind.SWARM_GOAL, False, False, False),
     ("touch user profile card component", RouteKind.SWARM_GOAL, False, False, False),
     ("build a distributed key-value store in python", RouteKind.SWARM_GOAL, False, False, False),
-    ("create an e-commerce platform with stripe integration", RouteKind.SWARM_GOAL, False, False, False),
-    ("design an autonomous multi-agent consensus protocol", RouteKind.SWARM_GOAL, False, False, False),
-
+    (
+        "create an e-commerce platform with stripe integration",
+        RouteKind.SWARM_GOAL,
+        False,
+        False,
+        False,
+    ),
+    (
+        "design an autonomous multi-agent consensus protocol",
+        RouteKind.SWARM_GOAL,
+        False,
+        False,
+        False,
+    ),
     # ------------------------------------------------------------------------
     # Category 4: Explicit Shell Commands (! and $) (8 cases)
     # ------------------------------------------------------------------------
@@ -106,7 +102,6 @@ ROUTER_TEST_CASES = [
     ("$ echo test", RouteKind.SHELL_EXPLICIT, False, False, True),
     ("/sh pytest tests/", RouteKind.SHELL_EXPLICIT, False, False, True),
     ("/bash make test", RouteKind.SHELL_EXPLICIT, False, False, True),
-
     # ------------------------------------------------------------------------
     # Category 5: Compound Commands (Pipes, redirects, ;, &&, ||, subshells) (10 cases)
     # ------------------------------------------------------------------------
@@ -120,7 +115,6 @@ ROUTER_TEST_CASES = [
     ("echo `whoami`", RouteKind.SHELL_EXPLICIT, False, True, True),
     ("echo $(pwd)", RouteKind.SHELL_EXPLICIT, False, True, True),
     ("ls &", RouteKind.SHELL_EXPLICIT, False, True, True),
-
     # ------------------------------------------------------------------------
     # Category 6: Destructive Commands (14 cases)
     # ------------------------------------------------------------------------
@@ -142,7 +136,6 @@ ROUTER_TEST_CASES = [
     ("git checkout .", RouteKind.SHELL_SIMPLE, True, False, True),
     ("git restore .", RouteKind.SHELL_SIMPLE, True, False, True),
     ("git branch -D old-branch", RouteKind.SHELL_SIMPLE, True, False, True),
-
     # ------------------------------------------------------------------------
     # Category 7: Parent Directory Traversal & Outside Workspace Paths (6 cases)
     # ------------------------------------------------------------------------
@@ -152,7 +145,6 @@ ROUTER_TEST_CASES = [
     ("touch ../sibling.txt", RouteKind.SHELL_SIMPLE, True, False, True),
     ("cat /etc/passwd", RouteKind.SHELL_SIMPLE, True, False, True),
     ("ls /tmp", RouteKind.SHELL_SIMPLE, True, False, True),
-
     # ------------------------------------------------------------------------
     # Category 8: Slash Commands and Slashless Normalization (6 cases)
     # ------------------------------------------------------------------------
@@ -165,7 +157,10 @@ ROUTER_TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("input_line,expected_kind,expected_destructive,expected_compound,expected_confirmation", ROUTER_TEST_CASES)
+@pytest.mark.parametrize(
+    "input_line,expected_kind,expected_destructive,expected_compound,expected_confirmation",
+    ROUTER_TEST_CASES,
+)
 def test_classify_input_table(
     input_line: str,
     expected_kind: RouteKind,
@@ -176,20 +171,31 @@ def test_classify_input_table(
 ):
     """Table-driven test validating at least 60 distinct input variations for P1.3."""
     route = classify_input(input_line, workspace=tmp_path)
-    assert route.kind == expected_kind, f"Failed kind for '{input_line}': got {route.kind}, expected {expected_kind}"
-    assert route.destructive == expected_destructive, f"Failed destructive for '{input_line}': got {route.destructive}, expected {expected_destructive}"
-    assert route.compound == expected_compound, f"Failed compound for '{input_line}': got {route.compound}, expected {expected_compound}"
-    assert route.needs_confirmation == expected_confirmation, f"Failed confirmation for '{input_line}': got {route.needs_confirmation}, expected {expected_confirmation}"
+    assert route.kind == expected_kind, (
+        f"Failed kind for '{input_line}': got {route.kind}, expected {expected_kind}"
+    )
+    assert route.destructive == expected_destructive, (
+        f"Failed destructive for '{input_line}': got {route.destructive}, expected {expected_destructive}"
+    )
+    assert route.compound == expected_compound, (
+        f"Failed compound for '{input_line}': got {route.compound}, expected {expected_compound}"
+    )
+    assert route.needs_confirmation == expected_confirmation, (
+        f"Failed confirmation for '{input_line}': got {route.needs_confirmation}, expected {expected_confirmation}"
+    )
 
 
 def test_table_case_count():
     """Ensure the table-driven test suite exceeds the required 60 cases."""
-    assert len(ROUTER_TEST_CASES) >= 60, f"Expected >= 60 test cases, found {len(ROUTER_TEST_CASES)}"
+    assert len(ROUTER_TEST_CASES) >= 60, (
+        f"Expected >= 60 test cases, found {len(ROUTER_TEST_CASES)}"
+    )
 
 
 # ============================================================================
 # 2. SPECIFIC ACCEPTANCE CRITERIA VERIFICATIONS
 # ============================================================================
+
 
 def test_acceptance_rm_rf_requires_confirmation(tmp_path: Path):
     """classify_input('rm -rf build') has destructive=True and requires y/N confirmation."""
@@ -225,6 +231,7 @@ def test_acceptance_compound_never_autorun(tmp_path: Path):
 # 3. SAFE PASTE HANDLING & MULTI-LINE PROTECTION
 # ============================================================================
 
+
 def test_multiline_paste_treated_as_swarm_goal(tmp_path: Path):
     """Multi-line paste without '!' is treated as a single SWARM_GOAL and never auto-executed."""
     pasted_text = "rm -rf /\nls -la\ncat /etc/passwd"
@@ -256,6 +263,7 @@ def test_bracketed_paste_stripping_and_newline():
 # 4. PATH SAFETY & TRAVERSAL DETECTION
 # ============================================================================
 
+
 def test_inside_workspace_absolute_path_is_safe(tmp_path: Path):
     """Absolute paths located inside the active workspace do not trigger destructive confirmation."""
     inside_file = tmp_path / "subdir" / "data.txt"
@@ -282,6 +290,7 @@ def test_outside_workspace_absolute_path_requires_confirmation(tmp_path: Path):
 # 5. LEGACY ESCAPE HATCH (OCTOFLOW_LEGACY_ROUTER=1)
 # ============================================================================
 
+
 def test_legacy_escape_hatch(monkeypatch, tmp_path: Path):
     """When OCTOFLOW_LEGACY_ROUTER=1, unhardened legacy classification is used."""
     monkeypatch.setenv("OCTOFLOW_LEGACY_ROUTER", "1")
@@ -296,12 +305,13 @@ def test_legacy_escape_hatch(monkeypatch, tmp_path: Path):
 # 6. COMMAND EXECUTION & 64 KB OUTPUT TRUNCATION
 # ============================================================================
 
+
 def test_execute_shell_route_simple(tmp_path: Path):
     """SHELL_SIMPLE runs subprocess.run with shell=False."""
     route = Route(
         kind=RouteKind.SHELL_SIMPLE,
         command="python3 -c 'print(\"simple_ok\")'",
-        argv=["python3", "-c", "print(\"simple_ok\")"],
+        argv=["python3", "-c", 'print("simple_ok")'],
     )
     code, stdout, stderr = execute_shell_route(route, workspace=tmp_path)
     assert code == 0
@@ -326,7 +336,7 @@ def test_output_truncation_at_64kb(tmp_path: Path):
     route = Route(
         kind=RouteKind.SHELL_SIMPLE,
         command="python3 -c 'print(\"A\" * 100000)'",
-        argv=["python3", "-c", "print(\"A\" * 100000)"],
+        argv=["python3", "-c", 'print("A" * 100000)'],
     )
     code, stdout, stderr = execute_shell_route(route, workspace=tmp_path)
     assert code == 0
@@ -337,6 +347,7 @@ def test_output_truncation_at_64kb(tmp_path: Path):
 # ============================================================================
 # 7. COMMAND HISTORY LOGGING & 0600 PERMISSIONS
 # ============================================================================
+
 
 def test_history_logging_and_permissions(tmp_path: Path, monkeypatch):
     """History logs to memory and ~/.octoflow/history with mode 0600."""
@@ -364,10 +375,12 @@ def test_history_logging_and_permissions(tmp_path: Path, monkeypatch):
 # 8. PTY / TERMINAL CONFIRMATION SIMULATION TESTS
 # ============================================================================
 
+
 @pytest.mark.pty
 def test_pty_confirmation_yes(tmp_path: Path):
     """Verify non-blocking confirmation succeeds when user provides 'y'."""
     import tty
+
     master, slave = pty.openpty()
     try:
         tty.setcbreak(slave)
@@ -388,6 +401,7 @@ def test_pty_confirmation_yes(tmp_path: Path):
 def test_pty_confirmation_no(tmp_path: Path):
     """Verify non-blocking confirmation rejects when user provides 'n'."""
     import tty
+
     master, slave = pty.openpty()
     try:
         tty.setcbreak(slave)

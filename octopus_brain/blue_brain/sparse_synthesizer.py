@@ -9,17 +9,18 @@ using procedural algorithmic instantiation and hierarchical chunking:
 - Generates whole-brain macroscopic tract matrices connecting all 30+ brain lobes.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
+
 import numpy as np
 
-from octopus_brain.blue_brain.atlas import AdultOctopusAtlas, NeuropilLobeDefinition
+from octopus_brain.blue_brain.atlas import AdultOctopusAtlas
 from octopus_brain.blue_brain.microcircuits import CephalopodMicrocircuitLibrary
 
 
 class AdultOctopusConnectomeSynthesizer:
     """High-performance algorithmic synthesizer for 500,000,000-neuron cephalopod connectome."""
 
-    def __init__(self, atlas: Optional[AdultOctopusAtlas] = None, seed: int = 42):
+    def __init__(self, atlas: AdultOctopusAtlas | None = None, seed: int = 42):
         self.atlas = atlas or AdultOctopusAtlas()
         self.microcircuits = CephalopodMicrocircuitLibrary()
         self.seed = seed
@@ -27,7 +28,7 @@ class AdultOctopusConnectomeSynthesizer:
 
         self.summary = self._compute_full_scale_metrics()
 
-    def _compute_full_scale_metrics(self) -> Dict[str, Any]:
+    def _compute_full_scale_metrics(self) -> dict[str, Any]:
         """Calculates exact whole-brain biological scale metrics."""
         total_cells = 0
         total_estimated_synapses = 0
@@ -58,7 +59,9 @@ class AdultOctopusConnectomeSynthesizer:
         return {
             "total_adult_neurons": total_cells,
             "total_estimated_synapses": total_estimated_synapses,
-            "total_brain_volume_mm3": round(sum(l.volume_mm3 for l in self.atlas.lobes.values()), 1),
+            "total_brain_volume_mm3": round(
+                sum(l.volume_mm3 for l in self.atlas.lobes.values()), 1
+            ),
             "mean_synapses_per_neuron": round(total_estimated_synapses / max(1, total_cells), 1),
             "lobe_breakdown": lobe_metrics,
         }
@@ -67,8 +70,8 @@ class AdultOctopusConnectomeSynthesizer:
         self,
         lobe_id: str,
         n_sample_neurons: int = 500,
-        chunk_seed: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        chunk_seed: int | None = None,
+    ) -> dict[str, Any]:
         """Procedurally instantiates a high-resolution microscopic sample chunk
 
         from the specified lobe adhering to Peter's rule.
@@ -110,7 +113,7 @@ class AdultOctopusConnectomeSynthesizer:
         phi = rng.uniform(0.0, 2.0 * np.pi, size=n_sample_neurons)
         r = chunk_radius_mm * (u ** (1.0 / 3.0))
 
-        sin_theta = np.sqrt(1.0 - cos_theta ** 2)
+        sin_theta = np.sqrt(1.0 - cos_theta**2)
         xs = cx + r * sin_theta * np.cos(phi)
         ys = cy + r * sin_theta * np.sin(phi)
         zs = cz + r * cos_theta
@@ -128,19 +131,25 @@ class AdultOctopusConnectomeSynthesizer:
             dists_um = np.linalg.norm(coords - pos_i, axis=1) * 1000.0
 
             # Find potential post-synaptic targets
-            candidate_targets = np.where((dists_um > 5.0) & (dists_um < tmpl.receptive_field_radius_um * 2.0))[0]
+            candidate_targets = np.where(
+                (dists_um > 5.0) & (dists_um < tmpl.receptive_field_radius_um * 2.0)
+            )[0]
             for target_j in candidate_targets:
-                p_conn = self.microcircuits.calculate_connection_probability(tmpl.id, dists_um[target_j])
+                p_conn = self.microcircuits.calculate_connection_probability(
+                    tmpl.id, dists_um[target_j]
+                )
                 if rng.uniform(0.0, 1.0) < p_conn:
                     weight_ns = float(rng.uniform(1.5, 4.5))
                     sign = -1.0 if "gaba" in str(assigned_types[i]) else 1.0
-                    edges.append({
-                        "source": int(i),
-                        "target": int(target_j),
-                        "distance_um": round(float(dists_um[target_j]), 1),
-                        "conductance_ns": round(weight_ns, 2),
-                        "sign": sign,
-                    })
+                    edges.append(
+                        {
+                            "source": int(i),
+                            "target": int(target_j),
+                            "distance_um": round(float(dists_um[target_j]), 1),
+                            "conductance_ns": round(weight_ns, 2),
+                            "sign": sign,
+                        }
+                    )
 
         return {
             "lobe_id": lobe_id,
@@ -154,14 +163,16 @@ class AdultOctopusConnectomeSynthesizer:
                     "id": i,
                     "cell_type": str(assigned_types[i]),
                     "position_mm": [round(float(v), 3) for v in coords[i]],
-                    "neurotransmitter": lobe.primary_neurotransmitter if "gaba" not in str(assigned_types[i]) else "gaba",
+                    "neurotransmitter": lobe.primary_neurotransmitter
+                    if "gaba" not in str(assigned_types[i])
+                    else "gaba",
                 }
                 for i in range(n_sample_neurons)
             ],
             "edges": edges,
         }
 
-    def get_macro_interlobe_tract_matrix(self) -> Tuple[List[str], np.ndarray]:
+    def get_macro_interlobe_tract_matrix(self) -> tuple[list[str], np.ndarray]:
         """Constructs the macro-scale inter-lobe connectivity tract matrix
 
         connecting all lobes across the central and peripheral nervous system.

@@ -10,7 +10,6 @@ Y. Gutfreund, T. Flash, and B. Hochner (1996, 1998, 2005):
   while satisfying the muscular hydrostat constant-volume constraint: V = pi * r^2 * L = const.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
 
 
@@ -21,8 +20,8 @@ class StereotypicBendWaveController:
         self,
         n_segments: int = 5,
         conduction_velocity_ms: float = 2.2,  # Biological wave speed (~2.2 m/s)
-        arm_nominal_length_m: float = 0.5,    # 50 cm arm
-        dt_sec: float = 0.02,                 # Physics tick (20 ms)
+        arm_nominal_length_m: float = 0.5,  # 50 cm arm
+        dt_sec: float = 0.02,  # Physics tick (20 ms)
     ):
         self.n_segments = n_segments
         self.v_wave = conduction_velocity_ms

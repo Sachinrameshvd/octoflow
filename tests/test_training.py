@@ -2,13 +2,14 @@
 
 import os
 import tempfile
+
 import pytest
 
 torch = pytest.importorskip("torch")
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
-from octopus_brain.trainer import OctopusTrainer
 from envs.reach_and_avoid import ReachAndAvoidEnv
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
+from octopus_brain.trainer import OctopusTrainer
 
 
 def test_trainer_collect_episode_and_gae():

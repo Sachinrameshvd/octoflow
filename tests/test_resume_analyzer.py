@@ -1,7 +1,10 @@
 """Automated unit test suite for AI Resume & ATS Match Analyzer."""
 
 import pytest
-resume_analyzer = pytest.importorskip("api.resume_analyzer", reason="AI Resume Analyzer app not in local pythonpath")
+
+resume_analyzer = pytest.importorskip(
+    "api.resume_analyzer", reason="AI Resume Analyzer app not in local pythonpath"
+)
 app = resume_analyzer.app
 extract_skills = resume_analyzer.extract_skills
 from fastapi.testclient import TestClient
@@ -39,7 +42,7 @@ def test_api_analyze_match_scoring(client):
     """Verify /api/analyze calculates accurate ATS score, keyword tags, and bullet rewrites."""
     payload = {
         "job_description": "We need Python, FastAPI, Docker, PostgreSQL, and Redis experience.",
-        "resume_text": "Experienced software developer skilled in Python, Docker, and Redis."
+        "resume_text": "Experienced software developer skilled in Python, Docker, and Redis.",
     }
     response = client.post("/api/analyze", json=payload)
     assert response.status_code == 200

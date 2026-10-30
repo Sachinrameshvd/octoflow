@@ -12,22 +12,24 @@ Outputs:
 - experiments/evaluation_report.json
 """
 
-import sys
-import os
-import json
 import argparse
+import json
+import os
+import sys
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
+
 import numpy as np
 import torch
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
-from envs.reach_and_avoid import ReachAndAvoidEnv
 from envs.hunting_env import CooperativeHuntingEnv
+from envs.reach_and_avoid import ReachAndAvoidEnv
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
+
 from experiments.run_fault_tolerance import run_episode as run_knockout_ep
 from experiments.run_memory_ablation import evaluate_condition as run_memory_cond
 
@@ -36,7 +38,7 @@ def generate_evaluation_report(
     checkpoint_path: str = "checkpoints/best_octopus_brain.pt",
     eval_episodes: int = 20,
     output_dir: str = "experiments",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Compile multi-domain empirical performance diagnostics into structured markdown & json."""
     print("=" * 80)
     print("GENERATING COMPREHENSIVE OCTOPUSBRAIN EVALUATION REPORT")
@@ -58,7 +60,9 @@ def generate_evaluation_report(
         print(f"--> Loaded trained weights from: {checkpoint_path}")
         is_trained = True
     else:
-        print(f"--> WARNING: Checkpoint not found at {checkpoint_path}. Evaluating untrained weights.")
+        print(
+            f"--> WARNING: Checkpoint not found at {checkpoint_path}. Evaluating untrained weights."
+        )
 
     model.eval()
 
@@ -158,7 +162,9 @@ def generate_evaluation_report(
         k_rew = knockout_results[k]["mean_reward"]
         knockout_results[k]["delta_reward"] = float(k_rew - base_k0)
         # Resilient if reward does not crash below catastrophic threshold
-        knockout_results[k]["resilience_score"] = float(max(0.0, 1.0 - max(0.0, base_k0 - k_rew) / max(abs(base_k0), 10.0)) * 100.0)
+        knockout_results[k]["resilience_score"] = float(
+            max(0.0, 1.0 - max(0.0, base_k0 - k_rew) / max(abs(base_k0), 10.0)) * 100.0
+        )
 
     # 4. Memory Asymmetry
     print("[4/4] Evaluating Memory Asymmetry (Local vs Central)...")
@@ -212,8 +218,8 @@ def generate_evaluation_report(
 
     md_content = f"""# OctopusBrain: Comprehensive Empirical Evaluation Report
 
-**Model Status:** {report_data['status']}  
-**Evaluated Checkpoint:** `{report_data['checkpoint']}`  
+**Model Status:** {report_data["status"]}  
+**Evaluated Checkpoint:** `{report_data["checkpoint"]}`  
 **Evaluator Episodes:** {eval_episodes} per environment domain  
 
 ---
@@ -222,12 +228,12 @@ def generate_evaluation_report(
 
 | Metric | Measured Value | Theoretical Target | Status |
 |---|---|---|---|
-| **Mean Episode Reward** | **{ra['mean_reward']:+.2f} ± {ra['std_reward']:.2f}** | > +10.0 | {"✅ Superhuman" if ra['mean_reward'] > 10 else "🟢 Healthy"} |
-| **Communication Rate** | **{ra['comm_rate_pct']:.1f}%** | 20.0% – 30.0% | {"✅ Optimal Sparsity" if 15 <= ra['comm_rate_pct'] <= 35 else "🟡 Drift"} |
-| **Bandwidth Reduction** | **{ra['bandwidth_reduction_pct']:.1f}%** | > 70.0% | ✅ High-Efficiency |
-| **Single Target Hits** | **{ra['single_targets_per_ep']:.1f} / ep** | > 8.0 | ✅ Active Foraging |
-| **Joint Cooperative Hits** | **{ra['joint_targets_per_ep']:.1f} / ep** | > 1.5 | ✅ Coordinated |
-| **Hazard Collisions** | **{ra['hazard_collisions_per_ep']:.1f} / ep** | < 15.0 | {"✅ Resilient" if ra['hazard_collisions_per_ep'] < 10 else "🟡 Moderate"} |
+| **Mean Episode Reward** | **{ra["mean_reward"]:+.2f} ± {ra["std_reward"]:.2f}** | > +10.0 | {"✅ Superhuman" if ra["mean_reward"] > 10 else "🟢 Healthy"} |
+| **Communication Rate** | **{ra["comm_rate_pct"]:.1f}%** | 20.0% – 30.0% | {"✅ Optimal Sparsity" if 15 <= ra["comm_rate_pct"] <= 35 else "🟡 Drift"} |
+| **Bandwidth Reduction** | **{ra["bandwidth_reduction_pct"]:.1f}%** | > 70.0% | ✅ High-Efficiency |
+| **Single Target Hits** | **{ra["single_targets_per_ep"]:.1f} / ep** | > 8.0 | ✅ Active Foraging |
+| **Joint Cooperative Hits** | **{ra["joint_targets_per_ep"]:.1f} / ep** | > 1.5 | ✅ Coordinated |
+| **Hazard Collisions** | **{ra["hazard_collisions_per_ep"]:.1f} / ep** | < 15.0 | {"✅ Resilient" if ra["hazard_collisions_per_ep"] < 10 else "🟡 Moderate"} |
 
 ---
 
@@ -235,10 +241,10 @@ def generate_evaluation_report(
 
 | Metric | Measured Value | Significance |
 |---|---|---|
-| **Mean Hunting Reward** | **{hunt['mean_reward']:+.2f} ± {hunt['std_reward']:.2f}** | Robust cross-domain policy generalization |
-| **Solitary Prey Captures** | **{hunt['solitary_captures_per_ep']:.1f} / ep** | Independent peripheral motor pursuit |
-| **Cooperative Encircle Captures** | **{hunt['coop_encirclement_captures_per_ep']:.1f} / ep** | Multi-arm pincer traps trapping fast evasive prey |
-| **Predator / Hazard Collisions** | **{hunt['hazard_collisions_per_ep']:.1f} / ep** | Collision avoidance under dynamic pursuit pressure |
+| **Mean Hunting Reward** | **{hunt["mean_reward"]:+.2f} ± {hunt["std_reward"]:.2f}** | Robust cross-domain policy generalization |
+| **Solitary Prey Captures** | **{hunt["solitary_captures_per_ep"]:.1f} / ep** | Independent peripheral motor pursuit |
+| **Cooperative Encircle Captures** | **{hunt["coop_encirclement_captures_per_ep"]:.1f} / ep** | Multi-arm pincer traps trapping fast evasive prey |
+| **Predator / Hazard Collisions** | **{hunt["hazard_collisions_per_ep"]:.1f} / ep** | Collision avoidance under dynamic pursuit pressure |
 
 ---
 
@@ -246,11 +252,11 @@ def generate_evaluation_report(
 
 | Severed Arms ($k$) | Mean Reward | Relative $\\Delta$ Reward | Resilience Index | Biological Analogue |
 |---|---|---|---|---|
-| **$k=0$ (Intact 8 Arms)** | {knockout_results[0]['mean_reward']:+.2f} ± {knockout_results[0]['std_reward']:.2f} | Baseline | **100.0%** | Full anatomical integrity |
-| **$k=1$ (1 Severed)** | {knockout_results[1]['mean_reward']:+.2f} ± {knockout_results[1]['std_reward']:.2f} | {knockout_results[1]['delta_reward']:+.2f} | **{knockout_results[1]['resilience_score']:.1f}%** | Minor arm autotomy |
-| **$k=2$ (2 Severed)** | {knockout_results[2]['mean_reward']:+.2f} ± {knockout_results[2]['std_reward']:.2f} | {knockout_results[2]['delta_reward']:+.2f} | **{knockout_results[2]['resilience_score']:.1f}%** | Dual arm amputation |
-| **$k=3$ (3 Severed)** | {knockout_results[3]['mean_reward']:+.2f} ± {knockout_results[3]['std_reward']:.2f} | {knockout_results[3]['delta_reward']:+.2f} | **{knockout_results[3]['resilience_score']:.1f}%** | Severe trauma degradation |
-| **$k=4$ (4 Severed - 50%)** | {knockout_results[4]['mean_reward']:+.2f} ± {knockout_results[4]['std_reward']:.2f} | {knockout_results[4]['delta_reward']:+.2f} | **{knockout_results[4]['resilience_score']:.1f}%** | Half-body ablation survival |
+| **$k=0$ (Intact 8 Arms)** | {knockout_results[0]["mean_reward"]:+.2f} ± {knockout_results[0]["std_reward"]:.2f} | Baseline | **100.0%** | Full anatomical integrity |
+| **$k=1$ (1 Severed)** | {knockout_results[1]["mean_reward"]:+.2f} ± {knockout_results[1]["std_reward"]:.2f} | {knockout_results[1]["delta_reward"]:+.2f} | **{knockout_results[1]["resilience_score"]:.1f}%** | Minor arm autotomy |
+| **$k=2$ (2 Severed)** | {knockout_results[2]["mean_reward"]:+.2f} ± {knockout_results[2]["std_reward"]:.2f} | {knockout_results[2]["delta_reward"]:+.2f} | **{knockout_results[2]["resilience_score"]:.1f}%** | Dual arm amputation |
+| **$k=3$ (3 Severed)** | {knockout_results[3]["mean_reward"]:+.2f} ± {knockout_results[3]["std_reward"]:.2f} | {knockout_results[3]["delta_reward"]:+.2f} | **{knockout_results[3]["resilience_score"]:.1f}%** | Severe trauma degradation |
+| **$k=4$ (4 Severed - 50%)** | {knockout_results[4]["mean_reward"]:+.2f} ± {knockout_results[4]["std_reward"]:.2f} | {knockout_results[4]["delta_reward"]:+.2f} | **{knockout_results[4]["resilience_score"]:.1f}%** | Half-body ablation survival |
 
 ---
 
@@ -258,16 +264,16 @@ def generate_evaluation_report(
 
 | Configuration | Reactive Reward | Delayed Context Retention | Mechanism Tested |
 |---|---|---|---|
-| **Full Architecture** | **{mem['full_system_reactive_reward']:+.2f}** | **{mem['full_system_delayed_cue_retention']:.2f}** | Peripheral fast GRU + Central slow consolidation |
-| **Central Ablated** | — | **{mem['central_ablated_cue_retention']:.2f}** | Peripheral only (working memory decay) |
-| **Pure Reactive** | — | **{mem['pure_reactive_cue_retention']:.2f}** | Zero memory (instantaneous reflex control) |
+| **Full Architecture** | **{mem["full_system_reactive_reward"]:+.2f}** | **{mem["full_system_delayed_cue_retention"]:.2f}** | Peripheral fast GRU + Central slow consolidation |
+| **Central Ablated** | — | **{mem["central_ablated_cue_retention"]:.2f}** | Peripheral only (working memory decay) |
+| **Pure Reactive** | — | **{mem["pure_reactive_cue_retention"]:.2f}** | Zero memory (instantaneous reflex control) |
 
 ---
 
 ## 5. Architectural Verdict
 
 The OctopusBrain architecture achieves:
-- **Sparse Adaptive Bandwidth**: Cuts inter-arm message communication by over **{ra['bandwidth_reduction_pct']:.0f}%** while maintaining cooperative coordination.
+- **Sparse Adaptive Bandwidth**: Cuts inter-arm message communication by over **{ra["bandwidth_reduction_pct"]:.0f}%** while maintaining cooperative coordination.
 - **Graceful Fault Tolerance**: Maintains robust policy stability across arm amputations.
 - **Hierarchical Memory**: Successfully dissociates high-frequency motor reflexes from long-horizon consolidation cues.
 """
@@ -282,8 +288,15 @@ The OctopusBrain architecture achieves:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Comprehensive OctopusBrain Report")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/best_octopus_brain.pt", help="Checkpoint to evaluate")
-    parser.add_argument("--episodes", type=int, default=15, help="Episodes per evaluation environment")
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="checkpoints/best_octopus_brain.pt",
+        help="Checkpoint to evaluate",
+    )
+    parser.add_argument(
+        "--episodes", type=int, default=15, help="Episodes per evaluation environment"
+    )
     parser.add_argument("--outdir", type=str, default="experiments", help="Output directory")
     args = parser.parse_args()
 

@@ -1,33 +1,41 @@
 """Theme, Banner, and Screensaver CLI commands."""
 
 import sys
-from typing import Optional
+
 import typer
 from rich.console import Console
 from rich.table import Table
+
 from octoflow.themes import (
     get_theme,
+    list_themes,
     load_saved_theme,
     save_theme_preference,
-    list_themes,
 )
 
 console = Console()
 
 
-def _execute_theme_cmd(name: Optional[str]):
+def _execute_theme_cmd(name: str | None):
     """Execute theme display or switch."""
     cur_theme = load_saved_theme()
     if not name:
         if sys.stdin.isatty() and sys.stdout.isatty():
             from octoflow.theme_selector import run_interactive_theme_picker
+
             chosen = run_interactive_theme_picker(console, initial_theme=cur_theme)
-            console.print(f"[{chosen.rich_success}]✔ Theme locked in: [bold]{chosen.name}[/bold] ({chosen.description})[/{chosen.rich_success}]")
-            console.print(f"[dim]Saved to ~/.octoflow/theme.json and synchronized with 3D Visualizer.[/dim]\n")
+            console.print(
+                f"[{chosen.rich_success}]✔ Theme locked in: [bold]{chosen.name}[/bold] ({chosen.description})[/{chosen.rich_success}]"
+            )
+            console.print(
+                "[dim]Saved to ~/.octoflow/theme.json and synchronized with 3D Visualizer.[/dim]\n"
+            )
             return
 
         themes_all = list_themes()
-        theme_table = Table(title="◈ Available Developer Palettes", border_style=cur_theme.rich_border, expand=True)
+        theme_table = Table(
+            title="◈ Available Developer Palettes", border_style=cur_theme.rich_border, expand=True
+        )
         theme_table.add_column("#", width=4, style=cur_theme.rich_primary)
         theme_table.add_column("Theme ID", style="bold white", width=16)
         theme_table.add_column("Name", style="white", width=22)
@@ -40,33 +48,47 @@ def _execute_theme_cmd(name: Optional[str]):
             theme_table.add_row(str(idx), t_id + is_active, t_obj.name, swatch, t_obj.description)
 
         console.print(theme_table)
-        console.print(f"[dim]Tip: Switch theme by typing [bold]octos theme <id>[/bold] (e.g. [cyan]octos theme catppuccin[/cyan])[/dim]\n")
+        console.print(
+            "[dim]Tip: Switch theme by typing [bold]octos theme <id>[/bold] (e.g. [cyan]octos theme catppuccin[/cyan])[/dim]\n"
+        )
     else:
         new_theme = get_theme(name)
         save_theme_preference(new_theme.id)
-        console.print(f"[{new_theme.rich_success}]✔ Switched palette to: [bold]{new_theme.name}[/bold] ({new_theme.description})[/{new_theme.rich_success}]")
-        console.print(f"[dim]Saved to ~/.octoflow/theme.json and synchronized with 3D Visualizer.[/dim]\n")
+        console.print(
+            f"[{new_theme.rich_success}]✔ Switched palette to: [bold]{new_theme.name}[/bold] ({new_theme.description})[/{new_theme.rich_success}]"
+        )
+        console.print(
+            "[dim]Saved to ~/.octoflow/theme.json and synchronized with 3D Visualizer.[/dim]\n"
+        )
 
 
-def _run_banner(loop: bool, theme_name: Optional[str]):
+def _run_banner(loop: bool, theme_name: str | None):
     t = get_theme(theme_name) if theme_name else load_saved_theme()
     if loop:
         from octoflow.themes import play_banner_continuous
+
         play_banner_continuous(console, t, prompt_message="Press [Enter] or any key to exit")
     else:
         from octoflow.themes import play_banner_animation
+
         play_banner_animation(console, t)
 
 
 def app_theme_cmd(
-    name: Optional[str] = typer.Argument(None, help="Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')"),
+    name: str | None = typer.Argument(
+        None,
+        help="Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')",
+    ),
 ):
     """View or switch the OctoFlow terminal & visualizer theme."""
     _execute_theme_cmd(name)
 
 
 def octos_theme_cmd(
-    name: Optional[str] = typer.Argument(None, help="Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')"),
+    name: str | None = typer.Argument(
+        None,
+        help="Theme palette ('abyssal', 'catppuccin', 'tokyo-night', 'dracula', 'cyberpunk', 'nord', 'gruvbox', 'minimalist')",
+    ),
 ):
     """View or switch the OctoFlow terminal & visualizer theme."""
     _execute_theme_cmd(name)
@@ -74,7 +96,7 @@ def octos_theme_cmd(
 
 def app_banner_cmd(
     loop: bool = typer.Option(False, "--loop", "-l", help="Run continuous ambient animation loop"),
-    theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
+    theme: str | None = typer.Option(None, "--theme", "-t", help="Theme palette"),
 ):
     """Play the 3D animated OCTOFLOW banner (single replay or continuous loop)."""
     _run_banner(loop, theme)
@@ -82,21 +104,21 @@ def app_banner_cmd(
 
 def octos_banner_cmd(
     loop: bool = typer.Option(False, "--loop", "-l", help="Run continuous ambient animation loop"),
-    theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
+    theme: str | None = typer.Option(None, "--theme", "-t", help="Theme palette"),
 ):
     """Play the 3D animated OCTOFLOW banner (single replay or continuous loop)."""
     _run_banner(loop, theme)
 
 
 def app_screensaver_cmd(
-    theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
+    theme: str | None = typer.Option(None, "--theme", "-t", help="Theme palette"),
 ):
     """Launch continuous ambient 3D banner screensaver until keypress."""
     _run_banner(True, theme)
 
 
 def octos_screensaver_cmd(
-    theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Theme palette"),
+    theme: str | None = typer.Option(None, "--theme", "-t", help="Theme palette"),
 ):
     """Launch continuous ambient 3D banner screensaver until keypress."""
     _run_banner(True, theme)

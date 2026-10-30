@@ -1,12 +1,10 @@
 """Tests for 99% Accurate Cephalopod Electrophysiology and Neuroscience Modules."""
 
-import pytest
 import numpy as np
-
-from octopus_brain.hodgkin_huxley import CephalopodHodgkinHuxley
-from octopus_brain.vertical_lobe_ltp import VerticalLobeAssociativeMemory
 from octopus_brain.bend_propagation import StereotypicBendWaveController
+from octopus_brain.hodgkin_huxley import CephalopodHodgkinHuxley
 from octopus_brain.neuromodulation import CephalopodNeuromodulation
+from octopus_brain.vertical_lobe_ltp import VerticalLobeAssociativeMemory
 
 
 class TestCephalopodHodgkinHuxley:
@@ -42,7 +40,9 @@ class TestVerticalLobeLTP:
     """Test suite for Vertical Lobe presynaptic LTP associative memory."""
 
     def test_ltp_reinforcement_potentiation(self):
-        vl = VerticalLobeAssociativeMemory(n_sfl_inputs=8, n_amacrine_fibers=64, n_efferent_outputs=2)
+        vl = VerticalLobeAssociativeMemory(
+            n_sfl_inputs=8, n_amacrine_fibers=64, n_efferent_outputs=2
+        )
         cues = np.zeros(8, dtype=np.float32)
         cues[0:2] = 1.0
 
@@ -54,11 +54,15 @@ class TestVerticalLobeLTP:
             vl.apply_reinforcement(reward_dopamine=0.8, target_action_idx=0)
 
         post_drive = float(vl.forward(cues)[0])
-        assert post_drive > initial_drive, "Vertical Lobe efferent drive must potentiate after dopaminergic pairing"
+        assert post_drive > initial_drive, (
+            "Vertical Lobe efferent drive must potentiate after dopaminergic pairing"
+        )
         assert vl.ltp_event_count == 5
 
     def test_ltd_punishment_depression(self):
-        vl = VerticalLobeAssociativeMemory(n_sfl_inputs=8, n_amacrine_fibers=64, n_efferent_outputs=2, initial_weight=1.0)
+        vl = VerticalLobeAssociativeMemory(
+            n_sfl_inputs=8, n_amacrine_fibers=64, n_efferent_outputs=2, initial_weight=1.0
+        )
         cues = np.ones(8, dtype=np.float32)
 
         initial_drive = float(vl.forward(cues)[1])
@@ -69,7 +73,9 @@ class TestVerticalLobeLTP:
             vl.apply_reinforcement(punishment_serotonin=0.8, target_action_idx=1)
 
         depressed_drive = float(vl.forward(cues)[1])
-        assert depressed_drive < initial_drive, "Vertical Lobe efferent drive must depress after punishment"
+        assert depressed_drive < initial_drive, (
+            "Vertical Lobe efferent drive must depress after punishment"
+        )
         assert vl.ltd_event_count == 5
 
 
@@ -77,8 +83,12 @@ class TestStereotypicBendWave:
     """Test suite for stereotypic bend propagation traveling waves."""
 
     def test_wave_propagation_along_arm(self):
-        controller = StereotypicBendWaveController(n_segments=5, conduction_velocity_ms=2.0, arm_nominal_length_m=0.5, dt_sec=0.02)
-        controller.trigger_reach(arm_idx=0, target_pitch_theta=0.7, target_yaw_phi=-0.5, amplitude=1.0)
+        controller = StereotypicBendWaveController(
+            n_segments=5, conduction_velocity_ms=2.0, arm_nominal_length_m=0.5, dt_sec=0.02
+        )
+        controller.trigger_reach(
+            arm_idx=0, target_pitch_theta=0.7, target_yaw_phi=-0.5, amplitude=1.0
+        )
 
         assert controller.wave_active[0]
 

@@ -8,7 +8,6 @@ Each module corresponds to one peripheral sub-system (e.g. octopus arm-tip) with
 - Lateral neighbor communication projections
 """
 
-from typing import Dict, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -98,10 +97,10 @@ class PeripheralModule(nn.Module):
         neighbor_in: torch.Tensor,
         central_feedback: torch.Tensor,
         h_prev: torch.Tensor,
-        pred_obs_prev: Optional[torch.Tensor] = None,
+        pred_obs_prev: torch.Tensor | None = None,
         is_active: bool = True,
         deterministic: bool = False,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Execute one forward step of the peripheral module.
 
         Args:
@@ -146,7 +145,7 @@ class PeripheralModule(nn.Module):
         if pred_obs_prev is not None:
             # Normalized mean-squared prediction error
             diff = obs_t - pred_obs_prev
-            surprise = torch.mean(diff ** 2, dim=-1, keepdim=True)  # (B, 1)
+            surprise = torch.mean(diff**2, dim=-1, keepdim=True)  # (B, 1)
         else:
             surprise = torch.zeros(batch_size, 1, device=device)
 

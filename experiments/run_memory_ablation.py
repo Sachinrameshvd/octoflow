@@ -14,21 +14,19 @@ CRITICAL PROTOCOL:
 Logs report rate and coalition statistics BEFORE reporting any task-performance numbers.
 """
 
-import sys
-import os
 import argparse
+import os
+import sys
 from pathlib import Path
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from typing import Dict, List, Tuple, Optional
 import numpy as np
 import torch
-
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
-from octopus_brain.brain import OctopusBrain
 from envs.reach_and_avoid import ReachAndAvoidEnv
+from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import EnvConfig, OctopusBrainConfig
 
 
 def evaluate_condition(
@@ -39,7 +37,7 @@ def evaluate_condition(
     num_episodes: int = 20,
     seed: int = 42,
     device: torch.device = torch.device("cpu"),
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate one memory ablation condition across reactive and delayed-cue tasks."""
     total_rewards = []
     report_rates = []
@@ -59,9 +57,7 @@ def evaluate_condition(
         for t in range(env.max_steps):
             if ablate_local_memory:
                 # Local memory ablated: zero out peripheral hidden states before step
-                model.hidden_states = [
-                    torch.zeros_like(h) for h in model.hidden_states
-                ]
+                model.hidden_states = [torch.zeros_like(h) for h in model.hidden_states]
 
             with torch.no_grad():
                 out = model.step(
@@ -108,12 +104,14 @@ def evaluate_condition(
 
 def run_memory_ablation_experiment(
     num_episodes: int = 20,
-    checkpoint_path: Optional[str] = "checkpoints/best_octopus_brain.pt",
+    checkpoint_path: str | None = "checkpoints/best_octopus_brain.pt",
 ) -> None:
     """Run dual-benchmark memory ablation study across all 4 conditions."""
     print("=" * 80)
     print("OCTOPUS-BRAIN: MEMORY ABLATION EXPERIMENT")
-    print(f"Checkpoint: {checkpoint_path if (checkpoint_path and os.path.exists(checkpoint_path)) else 'Random Weights'}")
+    print(
+        f"Checkpoint: {checkpoint_path if (checkpoint_path and os.path.exists(checkpoint_path)) else 'Random Weights'}"
+    )
     print("=" * 80)
 
     device = torch.device("cpu")
@@ -139,7 +137,12 @@ def run_memory_ablation_experiment(
     print("CRITICAL GATE HEALTH & DIAGNOSTIC PRE-LOGGING:")
     print("-" * 80)
     pre_diag = evaluate_condition(
-        env_reactive, model, ablate_local_memory=False, ablate_central_memory=False, num_episodes=5, seed=10
+        env_reactive,
+        model,
+        ablate_local_memory=False,
+        ablate_central_memory=False,
+        num_episodes=5,
+        seed=10,
     )
     report_rate_pct = pre_diag["mean_report_rate"] * 100.0
     print(f"[*] Report Rate: {report_rate_pct:.2f}%")
@@ -166,13 +169,21 @@ def run_memory_ablation_experiment(
     for name, ablate_loc, ablate_cent in conditions:
         # Evaluate Reactive Benchmark
         res_react = evaluate_condition(
-            env_reactive, model, ablate_local_memory=ablate_loc, ablate_central_memory=ablate_cent,
-            num_episodes=num_episodes, seed=100
+            env_reactive,
+            model,
+            ablate_local_memory=ablate_loc,
+            ablate_central_memory=ablate_cent,
+            num_episodes=num_episodes,
+            seed=100,
         )
         # Evaluate Long-Horizon Delayed Cue Benchmark
         res_delay = evaluate_condition(
-            env_delayed, model, ablate_local_memory=ablate_loc, ablate_central_memory=ablate_cent,
-            num_episodes=num_episodes, seed=200
+            env_delayed,
+            model,
+            ablate_local_memory=ablate_loc,
+            ablate_central_memory=ablate_cent,
+            num_episodes=num_episodes,
+            seed=200,
         )
         results_table.append((name, res_react, res_delay))
 
@@ -196,7 +207,12 @@ def run_memory_ablation_experiment(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run OctopusBrain Memory Ablation Experiment")
     parser.add_argument("--episodes", type=int, default=20, help="Number of episodes per condition")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/best_octopus_brain.pt", help="Checkpoint path to evaluate")
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="checkpoints/best_octopus_brain.pt",
+        help="Checkpoint path to evaluate",
+    )
     args = parser.parse_args()
 
     run_memory_ablation_experiment(num_episodes=args.episodes, checkpoint_path=args.checkpoint)

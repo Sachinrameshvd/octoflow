@@ -1,14 +1,9 @@
 """Unit tests for CassetteRecorder and ReplayProvider."""
 
-import tempfile
-import pytest
-from pathlib import Path
-
 from octoflow.cassette import (
     CassetteRecorder,
     ReplayProvider,
     normalize_cassette_text,
-    compute_request_hash,
 )
 from octoflow.provider import MockLLMProvider
 

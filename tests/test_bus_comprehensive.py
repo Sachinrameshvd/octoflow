@@ -10,7 +10,7 @@ Verifies:
 """
 
 import pytest
-from octoflow.bus import InterBrachialBus, BrachialMessage, MessageIntent
+from octoflow.bus import InterBrachialBus, MessageIntent
 
 
 def test_ring_topology_scaling():
@@ -21,8 +21,12 @@ def test_ring_topology_scaling():
             left, right = bus.get_neighbors(i)
             expected_left = (i - 1) % n
             expected_right = (i + 1) % n
-            assert left == expected_left, f"N={n}, node {i}: expected left {expected_left}, got {left}"
-            assert right == expected_right, f"N={n}, node {i}: expected right {expected_right}, got {right}"
+            assert left == expected_left, (
+                f"N={n}, node {i}: expected left {expected_left}, got {left}"
+            )
+            assert right == expected_right, (
+                f"N={n}, node {i}: expected right {expected_right}, got {right}"
+            )
 
 
 def test_ring_topology_edge_cases():
@@ -123,7 +127,9 @@ def test_pii_sanitization_on_bus():
         sender_id=0,
         target_id=1,
         intent=MessageIntent.COOPERATIVE_PULL,
-        summary="Connecting using secret key " + "sk-ant-" + "api03-abcdef1234567890abcdef1234567890",
+        summary="Connecting using secret key "
+        + "sk-ant-"
+        + "api03-abcdef1234567890abcdef1234567890",
         payload={"api_token": "sk-proj-" + "supersecrettoken1234567890abcdef12345"},
     )
     inbox = bus.poll_inbox(1)
@@ -156,4 +162,3 @@ def test_dead_arm_neighbor_bypass():
     # Recover Arm 1
     bus.mark_arm_active(1)
     assert bus.get_neighbors(0) == (7, 1)
-

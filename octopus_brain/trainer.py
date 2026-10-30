@@ -1,18 +1,18 @@
 """Production-Grade Actor-Critic Trainer with GAE & Adaptive Lagrangian Gating for OctopusBrain."""
 
-from typing import Dict, List, Optional, Tuple, Any
 import os
 import time
+from typing import Any
+
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
+from envs.reach_and_avoid import ReachAndAvoidEnv
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from octopus_brain.config import OctopusBrainConfig, EnvConfig
 from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.losses import OctopusLoss
-from envs.reach_and_avoid import ReachAndAvoidEnv
 
 
 class OctopusTrainer:
@@ -22,12 +22,12 @@ class OctopusTrainer:
         self,
         model: OctopusBrain,
         env: ReachAndAvoidEnv,
-        config: Optional[OctopusBrainConfig] = None,
+        config: OctopusBrainConfig | None = None,
         lr: float = 0.002,
         gamma: float = 0.96,
         gae_lambda: float = 0.92,
         max_grad_norm: float = 1.0,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         algorithm: str = "ppo",
         ppo_epochs: int = 3,
         clip_eps: float = 0.2,
@@ -60,9 +60,9 @@ class OctopusTrainer:
 
         self.model.to(self.device)
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.lr, weight_decay=1e-4)
-        self.scheduler: Optional[CosineAnnealingLR] = None
+        self.scheduler: CosineAnnealingLR | None = None
         self.loss_fn = OctopusLoss(self.config)
-        self.history: Dict[str, List[float]] = {
+        self.history: dict[str, list[float]] = {
             "episode_rewards": [],
             "mean_report_rates": [],
             "total_losses": [],
@@ -76,7 +76,7 @@ class OctopusTrainer:
             "hazard_hits": [],
         }
 
-    def collect_episode(self, seed: Optional[int] = None) -> Dict[str, Any]:
+    def collect_episode(self, seed: int | None = None) -> dict[str, Any]:
         """Run a single rollout episode and package trajectory tensors for learning."""
         self.model.train()
         obs_np, _ = self.env.reset(seed=seed)
@@ -106,12 +106,19 @@ class OctopusTrainer:
             actions_list.append(out["actions"].detach().clone())
 
             next_obs_np, env_rewards, term, trunc, info = self.env.step(actions)
-            next_obs = torch.tensor(next_obs_np, dtype=torch.float32, device=self.device).unsqueeze(0)
+            next_obs = torch.tensor(next_obs_np, dtype=torch.float32, device=self.device).unsqueeze(
+                0
+            )
 
             # Intrinsic curiosity reward from forward-model surprise
             step_rewards = env_rewards.copy()
             if self.curiosity_coef > 0:
-                surprises = out.get("surprise_values", torch.zeros_like(out["actions"].float()))[0].detach().cpu().numpy()
+                surprises = (
+                    out.get("surprise_values", torch.zeros_like(out["actions"].float()))[0]
+                    .detach()
+                    .cpu()
+                    .numpy()
+                )
                 intrinsic_reward = self.curiosity_coef * np.clip(surprises, 0.0, 1.0)
                 step_rewards = step_rewards + intrinsic_reward
 
@@ -123,8 +130,10 @@ class OctopusTrainer:
 
             log_probs_list.append(out["action_log_probs"])  # (1, N)
             entropies_list.append(out["action_entropies"])
-            values_list.append(out["values"])              # (1, N, 1)
-            rewards_list.append(torch.tensor(step_rewards, dtype=torch.float32, device=self.device).unsqueeze(0))
+            values_list.append(out["values"])  # (1, N, 1)
+            rewards_list.append(
+                torch.tensor(step_rewards, dtype=torch.float32, device=self.device).unsqueeze(0)
+            )
             report_probs_list.append(out["report_probs"])
             pred_obs_list.append(out["pred_next_obs"])
             actual_obs_list.append(next_obs)
@@ -136,7 +145,7 @@ class OctopusTrainer:
 
         T = len(rewards_list)
         values = torch.stack(values_list, dim=0).squeeze(-1)  # (T, 1, N)
-        rewards_t = torch.stack(rewards_list, dim=0)          # (T, 1, N)
+        rewards_t = torch.stack(rewards_list, dim=0)  # (T, 1, N)
 
         # 1. Generalized Advantage Estimation (GAE)
         advantages = torch.zeros_like(rewards_t)
@@ -155,16 +164,16 @@ class OctopusTrainer:
         returns = advantages + values
 
         return {
-            "log_probs": torch.stack(log_probs_list, dim=0),      # (T, 1, N)
-            "entropies": torch.stack(entropies_list, dim=0),      # (T, 1, N)
-            "values": torch.stack(values_list, dim=0),            # (T, 1, N, 1)
-            "returns": returns,                                   # (T, 1, N)
-            "advantages": advantages,                             # (T, 1, N)
-            "obs_list": obs_list,                                 # List of T tensors (1, N, obs_dim)
-            "actions_list": actions_list,                         # List of T tensors (1, N)
-            "report_probs": torch.stack(report_probs_list, dim=0),# (T, 1, N)
-            "pred_obs": torch.stack(pred_obs_list, dim=0),        # (T, 1, N, obs_dim)
-            "actual_obs": torch.stack(actual_obs_list, dim=0),    # (T, 1, N, obs_dim)
+            "log_probs": torch.stack(log_probs_list, dim=0),  # (T, 1, N)
+            "entropies": torch.stack(entropies_list, dim=0),  # (T, 1, N)
+            "values": torch.stack(values_list, dim=0),  # (T, 1, N, 1)
+            "returns": returns,  # (T, 1, N)
+            "advantages": advantages,  # (T, 1, N)
+            "obs_list": obs_list,  # List of T tensors (1, N, obs_dim)
+            "actions_list": actions_list,  # List of T tensors (1, N)
+            "report_probs": torch.stack(report_probs_list, dim=0),  # (T, 1, N)
+            "pred_obs": torch.stack(pred_obs_list, dim=0),  # (T, 1, N, obs_dim)
+            "actual_obs": torch.stack(actual_obs_list, dim=0),  # (T, 1, N, obs_dim)
             "total_reward": total_reward,
             "mean_report_rate": float(torch.stack(report_probs_list).mean().item()),
             "single_hits": single_target_hits,
@@ -172,14 +181,14 @@ class OctopusTrainer:
             "hazard_hits": hazard_collisions,
         }
 
-    def train_step(self, trajectory: Dict[str, Any]) -> Dict[str, float]:
+    def train_step(self, trajectory: dict[str, Any]) -> dict[str, float]:
         """Perform policy gradient / PPO & Lagrangian dual optimization step."""
         if self.algorithm == "ppo" and "obs_list" in trajectory and "actions_list" in trajectory:
             return self._train_step_ppo(trajectory)
         else:
             return self._train_step_a2c(trajectory)
 
-    def _train_step_a2c(self, trajectory: Dict[str, Any]) -> Dict[str, float]:
+    def _train_step_a2c(self, trajectory: dict[str, Any]) -> dict[str, float]:
         """Single-step Actor-Critic update with normalized GAE advantage."""
         self.model.train()
         self.optimizer.zero_grad()
@@ -214,11 +223,13 @@ class OctopusTrainer:
             "dual_lambda": float(losses["dual_lambda"]),
         }
 
-    def _train_step_ppo(self, trajectory: Dict[str, Any]) -> Dict[str, float]:
+    def _train_step_ppo(self, trajectory: dict[str, Any]) -> dict[str, float]:
         """Multi-epoch PPO clipped surrogate optimization over the trajectory."""
         old_log_probs = trajectory["log_probs"].detach()
         returns = trajectory["returns"].detach()
-        advantages = trajectory.get("advantages", trajectory["returns"] - trajectory["values"].squeeze(-1)).detach()
+        advantages = trajectory.get(
+            "advantages", trajectory["returns"] - trajectory["values"].squeeze(-1)
+        ).detach()
         actual_obs = trajectory["actual_obs"].detach()
         obs_seq = trajectory["obs_list"]
         actions_seq = trajectory["actions_list"]
@@ -241,7 +252,7 @@ class OctopusTrainer:
                 out = self.model.step(obs_seq[t], deterministic=False)
                 logits = out["action_logits"]  # (1, N, action_dim)
                 dist = torch.distributions.Categorical(logits=logits)
-                act = actions_seq[t]          # (1, N)
+                act = actions_seq[t]  # (1, N)
                 new_log_probs_list.append(dist.log_prob(act))
                 new_entropies_list.append(dist.entropy())
                 new_values_list.append(out["values"])
@@ -294,7 +305,7 @@ class OctopusTrainer:
             "dual_lambda": dual_lam,
         }
 
-    def evaluate(self, n_episodes: int = 10, seed: int = 42) -> Dict[str, float]:
+    def evaluate(self, n_episodes: int = 10, seed: int = 42) -> dict[str, float]:
         """Run deterministic evaluation and compute aggregate metrics."""
         self.model.eval()
         rewards = []
@@ -329,7 +340,9 @@ class OctopusTrainer:
                 ep_joint += info.get("joint_target_hits", info.get("joint_completed", 0))
                 ep_hazards += info.get("hazard_collisions", info.get("hazard_hits", 0))
 
-                obs = torch.tensor(next_obs_np, dtype=torch.float32, device=self.device).unsqueeze(0)
+                obs = torch.tensor(next_obs_np, dtype=torch.float32, device=self.device).unsqueeze(
+                    0
+                )
                 if term or trunc:
                     break
 
@@ -350,7 +363,7 @@ class OctopusTrainer:
             "mean_hazard_hits": float(np.mean(hazard_hits)),
         }
 
-    def train_batch(self, trajectories: List[Dict[str, Any]]) -> Dict[str, float]:
+    def train_batch(self, trajectories: list[dict[str, Any]]) -> dict[str, float]:
         """Multi-trajectory batched gradient update."""
         loss_dicts = []
         for traj in trajectories:
@@ -363,15 +376,19 @@ class OctopusTrainer:
         self,
         num_episodes: int = 120,
         eval_every: int = 20,
-        checkpoint_path: Optional[str] = None,
+        checkpoint_path: str | None = None,
         verbose: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Complete training loop with periodic evaluations and best model checkpointing."""
         if verbose:
             print("=" * 80)
             print(f"STARTING OCTOPUSBRAIN TRAINING ({num_episodes} Episodes)")
-            print(f"Architecture: {self.config.n_modules} Arms | Hidden: {self.config.hidden_dim} | Device: {self.device}")
-            print(f"Algorithm: {self.algorithm.upper()} (epochs={self.ppo_epochs}, clip={self.clip_eps}) | Batch Rollouts: {self.batch_episodes}")
+            print(
+                f"Architecture: {self.config.n_modules} Arms | Hidden: {self.config.hidden_dim} | Device: {self.device}"
+            )
+            print(
+                f"Algorithm: {self.algorithm.upper()} (epochs={self.ppo_epochs}, clip={self.clip_eps}) | Batch Rollouts: {self.batch_episodes}"
+            )
             print(f"Curiosity Bonus Coef: {self.curiosity_coef}")
             print("=" * 80)
 
@@ -385,7 +402,9 @@ class OctopusTrainer:
             # Entropy Annealing: High exploration initially, fine-tuned deterministic precision late
             if self.entropy_anneal:
                 progress = min(1.0, float(ep) / max(1, num_episodes))
-                self.loss_fn.entropy_coef = self.entropy_init + progress * (self.entropy_final - self.entropy_init)
+                self.loss_fn.entropy_coef = self.entropy_init + progress * (
+                    self.entropy_final - self.entropy_init
+                )
 
             # Collect episode trajectory (or multiple parallel rollouts)
             if self.batch_episodes <= 1:
@@ -424,14 +443,12 @@ class OctopusTrainer:
 
             # Curriculum Stage Progression Check
             if hasattr(self.env, "scheduler") and self.env.scheduler is not None:
-                graduated = self.env.scheduler.record_episode(
-                    mean_ep_rew, mean_haz, ep
-                )
+                graduated = self.env.scheduler.record_episode(mean_ep_rew, mean_haz, ep)
                 if graduated and verbose:
                     print(
-                        f"\n{'*'*70}\n"
+                        f"\n{'*' * 70}\n"
                         f"🎓 [CURRICULUM ADVANCEMENT] Graduated to: {self.env.scheduler.current_stage_name}!\n"
-                        f"{'*'*70}\n"
+                        f"{'*' * 70}\n"
                     )
 
             # Periodic Evaluation & Logging
@@ -444,7 +461,7 @@ class OctopusTrainer:
                         f"[Ep {ep:03d}/{num_episodes}] "
                         f"Train Rew: {np.mean(self.history['episode_rewards'][-eval_every:]):+6.2f} | "
                         f"Eval Rew: {eval_metrics['mean_reward']:+6.2f} | "
-                        f"Comm Rate: {eval_metrics['mean_report_rate']*100:4.1f}% | "
+                        f"Comm Rate: {eval_metrics['mean_report_rate'] * 100:4.1f}% | "
                         f"Dual λ: {loss_dict['dual_lambda']:4.2f} | "
                         f"Joint Hits: {eval_metrics['mean_joint_hits']:3.1f} | "
                         f"Hazards: {eval_metrics['mean_hazard_hits']:3.1f} | "
@@ -455,7 +472,9 @@ class OctopusTrainer:
                     best_eval_reward = eval_metrics["mean_reward"]
                     self.save_checkpoint(checkpoint_path)
                     if verbose:
-                        print(f"  --> Saved new best checkpoint to {checkpoint_path} (Eval Rew: {best_eval_reward:+.2f})")
+                        print(
+                            f"  --> Saved new best checkpoint to {checkpoint_path} (Eval Rew: {best_eval_reward:+.2f})"
+                        )
 
         return {
             "best_eval_reward": best_eval_reward,

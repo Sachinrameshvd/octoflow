@@ -69,3 +69,55 @@ markers = [
     "security: Path traversal, command injection, secret redaction, and sandbox security tests",
     "integration_local: Local integration tests allowed to use localhost loopback sockets",
 ]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["octoflow", "tests"]
+exclude = [
+    ".git",
+    ".venv",
+    "build",
+    "dist",
+    "__pycache__",
+    "notebooks",
+    "*.ipynb",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade (target Python 3.10)
+    "S",   # flake8-bandit (security)
+]
+ignore = [
+    "E501",  # line length handled by ruff format
+    "B008",  # do not perform function calls in argument defaults (standard in Typer/Click/FastAPI CLI)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use asserts, mock fixtures, hardcoded tokens, loopback sockets, and shell commands
+"tests/**" = [
+    "S101",  # use of assert
+    "S105",  # possible hardcoded password / token in fixtures
+    "S106",  # possible hardcoded password in arg
+    "S108",  # insecure temp file usage (standard pytest tmp_path)
+    "S311",  # pseudo-random generators in tests
+    "S603",  # subprocess call without shell=True
+    "S607",  # start process with partial path
+    "B018",  # useless expression in tests
+    "E402",  # module level import not at top of file (pytestmark at top)
+]
+# Scripts for coverage/benchmarks
+"scripts/**" = [
+    "S603",
+    "S607",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

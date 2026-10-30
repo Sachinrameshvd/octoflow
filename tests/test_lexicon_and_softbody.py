@@ -1,13 +1,12 @@
 """Unit tests for Inter-Brachial Message Lexicon and Continuous 3D Soft-Body Tentacle Physics."""
 
-import pytest
 import numpy as np
+import pytest
 
 torch = pytest.importorskip("torch")
 
-from octopus_brain.config import OctopusBrainConfig
-from octopus_brain.lexicon import InterBrachialLexiconDecoder, MessageIntent, INTENT_METADATA
 from envs.soft_body_tentacle import SoftBodyTentacleEnv
+from octopus_brain.lexicon import INTENT_METADATA, InterBrachialLexiconDecoder, MessageIntent
 
 
 def test_lexicon_initialization():

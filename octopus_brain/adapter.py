@@ -5,16 +5,15 @@ architecture into any standard multi-agent reinforcement learning environment or
 custom physics simulator (MuJoCo, PyBullet, Isaac Gym, or real soft robotics).
 """
 
-from typing import Dict, List, Optional, Tuple, Any, Union
 import os
+from typing import Any
+
 import numpy as np
 import torch
-import torch.nn as nn
 
-from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.brain import OctopusBrain
+from octopus_brain.config import OctopusBrainConfig
 from octopus_brain.lexicon import InterBrachialLexiconDecoder
-
 
 ACTION_NAMES = ["STAY", "UP", "DOWN", "LEFT", "RIGHT"]
 
@@ -33,13 +32,19 @@ class OctopusGymAdapter:
 
     def __init__(
         self,
-        model: Optional[OctopusBrain] = None,
-        config: Optional[OctopusBrainConfig] = None,
-        checkpoint_path: Optional[str] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        model: OctopusBrain | None = None,
+        config: OctopusBrainConfig | None = None,
+        checkpoint_path: str | None = None,
+        device: str | torch.device | None = None,
     ):
         if device is None:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+            self.device = torch.device(
+                "cuda"
+                if torch.cuda.is_available()
+                else "mps"
+                if torch.backends.mps.is_available()
+                else "cpu"
+            )
         elif isinstance(device, str):
             self.device = torch.device(device)
         else:
@@ -74,9 +79,9 @@ class OctopusGymAdapter:
         self._current_batch_size = batch_size
         self.model.reset(batch_size=batch_size, device=self.device)
 
-    def adapt_observation(self, observation: Union[np.ndarray, torch.Tensor, List]) -> torch.Tensor:
+    def adapt_observation(self, observation: np.ndarray | torch.Tensor | list) -> torch.Tensor:
         """Universal observation normalizer.
-        
+
         Maps 1D flat observations (e.g. CartPole (4,), Pendulum (3,)) or standard multi-arm
         observations (8, 16) into standard tensor shape (B, N, obs_dim).
         """
@@ -97,10 +102,12 @@ class OctopusGymAdapter:
                 end = ((i + 1) * total_len) // self.n_arms
                 slice_len = min(self.obs_dim, end - start)
                 if slice_len > 0:
-                    adapted[i, :slice_len] = obs_np[start:start + slice_len]
+                    adapted[i, :slice_len] = obs_np[start : start + slice_len]
                 else:
                     # Tile
-                    adapted[i, :min(total_len, self.obs_dim)] = obs_np[:min(total_len, self.obs_dim)]
+                    adapted[i, : min(total_len, self.obs_dim)] = obs_np[
+                        : min(total_len, self.obs_dim)
+                    ]
             obs_t = torch.tensor(adapted, dtype=torch.float32, device=self.device).unsqueeze(0)
             return obs_t
 
@@ -112,10 +119,10 @@ class OctopusGymAdapter:
 
     def predict(
         self,
-        observation: Union[np.ndarray, torch.Tensor, List],
-        active_mask: Optional[Union[np.ndarray, torch.Tensor, List[int]]] = None,
+        observation: np.ndarray | torch.Tensor | list,
+        active_mask: np.ndarray | torch.Tensor | list[int] | None = None,
         deterministic: bool = True,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Compute actions for all peripheral arms given observations.
 
         Args:
@@ -140,7 +147,9 @@ class OctopusGymAdapter:
         is_unbatched = False
         if isinstance(observation, np.ndarray) and observation.ndim == 2:
             is_unbatched = True
-        elif isinstance(observation, (list, tuple)) and (len(observation) > 0 and not isinstance(observation[0], (list, tuple))):
+        elif isinstance(observation, (list, tuple)) and (
+            len(observation) > 0 and not isinstance(observation[0], (list, tuple))
+        ):
             is_unbatched = True
 
         obs_t = self.adapt_observation(observation)
@@ -187,7 +196,11 @@ class OctopusGymAdapter:
                 actions_np[..., s_idx] = 0
 
         # Decode semantic message chatter
-        nbr_msgs = self.model.prev_neighbor_msgs[0] if self.model.prev_neighbor_msgs is not None else torch.zeros(self.n_arms, self.config.message_dim, device=self.device)
+        nbr_msgs = (
+            self.model.prev_neighbor_msgs[0]
+            if self.model.prev_neighbor_msgs is not None
+            else torch.zeros(self.n_arms, self.config.message_dim, device=self.device)
+        )
         rep_flags = report_events_np[0] if report_events_np.ndim > 1 else report_events_np
         decoded_intents = self.lexicon.decode_all_arms(nbr_msgs, report_flags=rep_flags)
 
@@ -196,13 +209,18 @@ class OctopusGymAdapter:
             report_out = report_events_np[0]
             surprise_out = surprise_np[0]
             values_out = values_np[0]
-            action_names = [ACTION_NAMES[a] if 0 <= a < len(ACTION_NAMES) else "STAY" for a in actions_out]
+            action_names = [
+                ACTION_NAMES[a] if 0 <= a < len(ACTION_NAMES) else "STAY" for a in actions_out
+            ]
         else:
             actions_out = actions_np
             report_out = report_events_np
             surprise_out = surprise_np
             values_out = values_np
-            action_names = [[ACTION_NAMES[a] if 0 <= a < len(ACTION_NAMES) else "STAY" for a in b_act] for b_act in actions_out]
+            action_names = [
+                [ACTION_NAMES[a] if 0 <= a < len(ACTION_NAMES) else "STAY" for a in b_act]
+                for b_act in actions_out
+            ]
 
         info = {
             "report_events": report_out,

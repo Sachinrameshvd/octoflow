@@ -1,8 +1,7 @@
 """CLI commands for inspecting running ignition services and terminating process groups."""
 
-import datetime
 from pathlib import Path
-from typing import Optional
+
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -13,7 +12,9 @@ console = Console()
 
 
 def ps_cli_cmd(
-    workspace: Optional[str] = typer.Option(None, "--dir", "-d", help="Filter services by workspace directory"),
+    workspace: str | None = typer.Option(
+        None, "--dir", "-d", help="Filter services by workspace directory"
+    ),
 ):
     """List actively running Phase 4 ignition application & API servers."""
     ws = Path(workspace).resolve() if workspace else None
@@ -64,18 +65,28 @@ def ps_cli_cmd(
 
 
 def stop_cli_cmd(
-    run_id: Optional[str] = typer.Argument(None, help="Specific run ID to stop (default: latest active run)"),
-    all_services: bool = typer.Option(False, "--all", "-a", help="Stop all running ignition services across all runs"),
-    workspace: Optional[str] = typer.Option(None, "--dir", "-d", help="Target project workspace folder"),
+    run_id: str | None = typer.Argument(
+        None, help="Specific run ID to stop (default: latest active run)"
+    ),
+    all_services: bool = typer.Option(
+        False, "--all", "-a", help="Stop all running ignition services across all runs"
+    ),
+    workspace: str | None = typer.Option(
+        None, "--dir", "-d", help="Target project workspace folder"
+    ),
 ):
     """Stop active ignition application and API background servers."""
     ws = Path(workspace).resolve() if workspace else None
     stopped_pids = stop_ignition(run_id=run_id, stop_all=all_services, workspace_dir=ws)
 
     if stopped_pids:
-        console.print(f"\n[bold green]✔ Successfully stopped {len(stopped_pids)} ignition process(es) (PIDs: {', '.join(str(p) for p in stopped_pids)}).[/bold green]\n")
+        console.print(
+            f"\n[bold green]✔ Successfully stopped {len(stopped_pids)} ignition process(es) (PIDs: {', '.join(str(p) for p in stopped_pids)}).[/bold green]\n"
+        )
     else:
-        target_desc = "all runs" if all_services else (f"run '{run_id}'" if run_id else "latest run")
+        target_desc = (
+            "all runs" if all_services else (f"run '{run_id}'" if run_id else "latest run")
+        )
         console.print(f"\n[dim]No running ignition processes found for {target_desc}.[/dim]\n")
 
 

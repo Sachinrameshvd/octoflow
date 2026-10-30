@@ -9,13 +9,12 @@ Demonstrates the complete Google-style connectome workflow:
 """
 
 import os
-import json
-import numpy as np
 
-from octopus_brain.connectome import CephalopodConnectome
-from octopus_brain.biophysics import BiophysicalConnectomeSimulator
-from octopus_brain.connectome_controller import ConnectomeEmbodiedController
+import numpy as np
 from envs.soft_body_tentacle import SoftBodyTentacleEnv
+from octopus_brain.biophysics import BiophysicalConnectomeSimulator
+from octopus_brain.connectome import CephalopodConnectome
+from octopus_brain.connectome_controller import ConnectomeEmbodiedController
 
 
 def main():
