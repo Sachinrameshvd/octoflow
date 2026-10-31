@@ -21,14 +21,16 @@ import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 from octoflow.checkpoint import get_runs_dir
-from octoflow.encoder import CodeSensoryEncoder
 from octoflow.logging_config import get_logger
 from octoflow.tools import ToolResult
+
+if TYPE_CHECKING:
+    from octoflow.encoder import CodeSensoryEncoder
 
 logger = get_logger("ignition")
 
@@ -541,7 +543,11 @@ class ProjectIgniter:
         run_id: str | None = None,
     ):
         self.workspace_dir = Path(workspace_dir).expanduser().resolve()
-        self.encoder = sensory_encoder or CodeSensoryEncoder()
+        if sensory_encoder is None:
+            from octoflow.encoder import CodeSensoryEncoder
+
+            sensory_encoder = CodeSensoryEncoder()
+        self.encoder = sensory_encoder
         self.run_id = run_id or f"ignite-{int(time.time())}-{uuid.uuid4().hex[:6]}"
         self.active_processes: list[tuple[subprocess.Popen, Any, int]] = []  # (proc, log_fp, pgid)
         self.manifest: LiveServiceManifest | None = None
