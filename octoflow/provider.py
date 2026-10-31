@@ -14,14 +14,22 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from pydantic import BaseModel
 
 from octoflow.config import LLMConfigEntry, OctoFlowConfig
+from octoflow.errors import (
+    ProviderAuthError,
+    ProviderError,
+    ProviderExhaustedError,
+    ProviderRateLimitError,
+    ProviderRequestError,
+    ProviderTransientError,
+    ProviderUnavailableError,
+)
 from octoflow.logging_config import get_logger
-from octoflow.outcome import ProviderExhaustedError
 from octoflow.usage import UsageLedger, estimate_tokens_from_chars
 
 logger = get_logger("provider")
@@ -69,20 +77,6 @@ def redact_secrets(text: str) -> str:
 
 
 _sanitize_secret_text = redact_secrets
-
-
-# ==============================================================================
-# Provider Error Taxonomy (Re-parented from octoflow.errors)
-# ==============================================================================
-from octoflow.errors import (
-    ProviderAuthError,
-    ProviderError,
-    ProviderExhaustedError,
-    ProviderRateLimitError,
-    ProviderRequestError,
-    ProviderTransientError,
-    ProviderUnavailableError,
-)
 
 
 # ==============================================================================
@@ -168,12 +162,12 @@ def classify_http_error(
     # 1. Ollama specific handling
     if p_name == "ollama":
         if status_code == 404 or "not found" in clean_text.lower():
-            m = model or "model"
+            mod_name = model or "model"
             return ProviderUnavailableError(
-                f"Model '{m}' not found in Ollama",
+                f"Model '{mod_name}' not found in Ollama",
                 provider=provider,
                 status=404,
-                hint=f"run: ollama pull {m}",
+                hint=f"run: ollama pull {mod_name}",
             )
 
     # 2. Status 401 or 403 -> ProviderAuthError
@@ -302,7 +296,7 @@ DEFAULT_OLLAMA_TIMEOUT = httpx.Timeout(connect=5.0, read=300.0, write=30.0, pool
 def set_sleep_functions(
     sync_sleep: Callable[[float], None] | None = None,
     async_sleep: Callable[[float], Any] | None = None,
-):
+) -> None:
     """Inject global sleep functions for testing backoff and retries without real-time delays."""
     global _DEFAULT_SLEEP_FN, _DEFAULT_ASYNC_SLEEP_FN
     if sync_sleep is not None:
@@ -311,7 +305,7 @@ def set_sleep_functions(
         _DEFAULT_ASYNC_SLEEP_FN = async_sleep
 
 
-def reset_sleep_functions():
+def reset_sleep_functions() -> None:
     """Reset sleep functions to standard time.sleep and asyncio.sleep."""
     global _DEFAULT_SLEEP_FN, _DEFAULT_ASYNC_SLEEP_FN
     _DEFAULT_SLEEP_FN = time.sleep
@@ -365,7 +359,7 @@ def execute_with_retry(
                 if isinstance(provider, BaseLLMProvider):
                     provider.is_disabled = True
                     provider.disabled_reason = str(err)
-                raise err
+                raise err from raw_e
 
             elif isinstance(err, ProviderRateLimitError):
                 if rate_limit_retries < 2:
@@ -378,7 +372,7 @@ def execute_with_retry(
                         )
                     actual_sleep(delay)
                     continue
-                raise err
+                raise err from raw_e
 
             elif isinstance(err, ProviderTransientError):
                 if transient_retries < 2:
@@ -387,10 +381,10 @@ def execute_with_retry(
                     delay = base_delay + random.uniform(0.05, 0.2)
                     actual_sleep(delay)
                     continue
-                raise err
+                raise err from raw_e
 
             else:
-                raise err
+                raise err from raw_e
 
 
 async def aexecute_with_retry(
@@ -419,7 +413,7 @@ async def aexecute_with_retry(
     transient_retries = 0
     actual_asleep = asleep_fn or getattr(provider, "asleep_fn", None) or _DEFAULT_ASYNC_SLEEP_FN
 
-    async def _do_sleep(d: float):
+    async def _do_sleep(d: float) -> None:
         if inspect.iscoroutinefunction(actual_asleep):
             await actual_asleep(d)
         else:
@@ -431,7 +425,7 @@ async def aexecute_with_retry(
         try:
             resp = await coro_fn()
             resp.raise_for_status()
-            return resp
+            return cast(httpx.Response, resp)
         except Exception as raw_e:
             err = classify_http_error(raw_e, provider=provider_name, model=model_name)
 
@@ -439,7 +433,7 @@ async def aexecute_with_retry(
                 if isinstance(provider, BaseLLMProvider):
                     provider.is_disabled = True
                     provider.disabled_reason = str(err)
-                raise err
+                raise err from raw_e
 
             elif isinstance(err, ProviderRateLimitError):
                 if rate_limit_retries < 2:
@@ -452,7 +446,7 @@ async def aexecute_with_retry(
                         )
                     await _do_sleep(delay)
                     continue
-                raise err
+                raise err from raw_e
 
             elif isinstance(err, ProviderTransientError):
                 if transient_retries < 2:
@@ -461,10 +455,10 @@ async def aexecute_with_retry(
                     delay = base_delay + random.uniform(0.05, 0.2)
                     await _do_sleep(delay)
                     continue
-                raise err
+                raise err from raw_e
 
             else:
-                raise err
+                raise err from raw_e
 
 
 def retry_http_request(
@@ -811,7 +805,7 @@ class AnthropicProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         headers = {
-            "x-api-key": self.api_key,
+            "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
@@ -823,12 +817,12 @@ class AnthropicProvider(BaseLLMProvider):
             "messages": [{"role": "user", "content": prompt}],
         }
         with httpx.Client(timeout=self.timeout) as client:
-            resp = execute_with_retry(
+            http_resp = execute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
                 sleep_fn=self.sleep_fn,
             )
-            data = resp.json()
+            data = http_resp.json()
 
         content = data["content"][0]["text"]
         usage = data.get("usage")
@@ -848,7 +842,7 @@ class AnthropicProvider(BaseLLMProvider):
         # Claude 3.5 Sonnet pricing: $3 / MTok in, $15 / MTok out
         cost = (in_toks * 0.000003) + (out_toks * 0.000015)
 
-        resp = LLMResponse(
+        llm_resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
@@ -856,8 +850,8 @@ class AnthropicProvider(BaseLLMProvider):
             estimated_cost_dollars=cost,
             estimated=estimated,
         )
-        self.record_usage(resp)
-        return resp
+        self.record_usage(llm_resp)
+        return llm_resp
 
     async def agenerate(
         self,
@@ -867,7 +861,7 @@ class AnthropicProvider(BaseLLMProvider):
         max_tokens: int = 2048,
     ) -> LLMResponse:
         headers = {
-            "x-api-key": self.api_key,
+            "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
@@ -879,12 +873,12 @@ class AnthropicProvider(BaseLLMProvider):
             "messages": [{"role": "user", "content": prompt}],
         }
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await aexecute_with_retry(
+            http_resp = await aexecute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
                 asleep_fn=self.asleep_fn,
             )
-            data = resp.json()
+            data = http_resp.json()
 
         content = data["content"][0]["text"]
         usage = data.get("usage")
@@ -902,7 +896,7 @@ class AnthropicProvider(BaseLLMProvider):
             estimated = True
         cost = (in_toks * 0.000003) + (out_toks * 0.000015)
 
-        resp = LLMResponse(
+        llm_resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
@@ -910,8 +904,8 @@ class AnthropicProvider(BaseLLMProvider):
             estimated_cost_dollars=cost,
             estimated=estimated,
         )
-        self.record_usage(resp)
-        return resp
+        self.record_usage(llm_resp)
+        return llm_resp
 
 
 class OpenAIProvider(BaseLLMProvider):
@@ -932,7 +926,7 @@ class OpenAIProvider(BaseLLMProvider):
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable or parameter required.")
         self.model = model
-        raw_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        raw_url = base_url or os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
         if not raw_url.endswith("/chat/completions"):
             self.base_url = f"{raw_url.rstrip('/')}/chat/completions"
         else:
@@ -964,12 +958,12 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": max_tokens,
         }
         with httpx.Client(timeout=self.timeout) as client:
-            resp = execute_with_retry(
+            http_resp = execute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
                 sleep_fn=self.sleep_fn,
             )
-            data = resp.json()
+            data = http_resp.json()
 
         content = data["choices"][0]["message"]["content"]
         usage = data.get("usage")
@@ -989,7 +983,7 @@ class OpenAIProvider(BaseLLMProvider):
         # GPT-4o pricing: $2.50 / MTok in, $10 / MTok out
         cost = (in_toks * 0.0000025) + (out_toks * 0.000010)
 
-        resp = LLMResponse(
+        llm_resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
@@ -997,8 +991,8 @@ class OpenAIProvider(BaseLLMProvider):
             estimated_cost_dollars=cost,
             estimated=estimated,
         )
-        self.record_usage(resp)
-        return resp
+        self.record_usage(llm_resp)
+        return llm_resp
 
     async def agenerate(
         self,
@@ -1023,12 +1017,12 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": max_tokens,
         }
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await aexecute_with_retry(
+            http_resp = await aexecute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
                 asleep_fn=self.asleep_fn,
             )
-            data = resp.json()
+            data = http_resp.json()
 
         content = data["choices"][0]["message"]["content"]
         usage = data.get("usage")
@@ -1046,7 +1040,7 @@ class OpenAIProvider(BaseLLMProvider):
             estimated = True
         cost = (in_toks * 0.0000025) + (out_toks * 0.000010)
 
-        resp = LLMResponse(
+        llm_resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
@@ -1054,8 +1048,8 @@ class OpenAIProvider(BaseLLMProvider):
             estimated_cost_dollars=cost,
             estimated=estimated,
         )
-        self.record_usage(resp)
-        return resp
+        self.record_usage(llm_resp)
+        return llm_resp
 
 
 class GeminiProvider(OpenAIProvider):
@@ -1068,7 +1062,7 @@ class GeminiProvider(OpenAIProvider):
         api_key: str | None = None,
         model: str = "gemini-2.0-flash",
         base_url: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not key:
@@ -1087,7 +1081,7 @@ class GrokProvider(OpenAIProvider):
         api_key: str | None = None,
         model: str = "grok-2-1212",
         base_url: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         key = api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
         if not key:
@@ -1106,7 +1100,7 @@ class DeepSeekProvider(OpenAIProvider):
         api_key: str | None = None,
         model: str = "deepseek-chat",
         base_url: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         key = api_key or os.getenv("DEEPSEEK_API_KEY")
         if not key:
@@ -1133,7 +1127,7 @@ class OllamaProvider(BaseLLMProvider):
         self.timeout = timeout or DEFAULT_OLLAMA_TIMEOUT
         self.sleep_fn = sleep_fn
         self.asleep_fn = asleep_fn
-        self._semaphore = None
+        self._semaphore: asyncio.Semaphore | None = None
 
     def generate(
         self,
@@ -1151,12 +1145,12 @@ class OllamaProvider(BaseLLMProvider):
         }
         endpoint = f"{self.base_url}/api/generate"
         with httpx.Client(timeout=self.timeout) as client:
-            resp = execute_with_retry(
+            http_resp = execute_with_retry(
                 lambda: client.post(endpoint, json=payload),
                 provider=self,
                 sleep_fn=self.sleep_fn,
             )
-            data = resp.json()
+            data = http_resp.json()
 
         content = data.get("response", "")
         in_eval = data.get("prompt_eval_count")
@@ -1170,7 +1164,7 @@ class OllamaProvider(BaseLLMProvider):
             out_toks = estimate_tokens_from_chars(content)
             estimated = True
 
-        resp = LLMResponse(
+        llm_resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
@@ -1178,8 +1172,8 @@ class OllamaProvider(BaseLLMProvider):
             estimated_cost_dollars=0.0,  # 100% free offline
             estimated=estimated,
         )
-        self.record_usage(resp)
-        return resp
+        self.record_usage(llm_resp)
+        return llm_resp
 
     async def agenerate(
         self,
@@ -1190,6 +1184,7 @@ class OllamaProvider(BaseLLMProvider):
     ) -> LLMResponse:
         if self._semaphore is None:
             self._semaphore = asyncio.Semaphore(1)
+        sem = self._semaphore
 
         payload = {
             "model": self.model,
@@ -1199,14 +1194,14 @@ class OllamaProvider(BaseLLMProvider):
             "options": {"temperature": temperature, "num_predict": max_tokens},
         }
         endpoint = f"{self.base_url}/api/generate"
-        async with self._semaphore:
+        async with sem:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                resp = await aexecute_with_retry(
+                http_resp = await aexecute_with_retry(
                     lambda: client.post(endpoint, json=payload),
                     provider=self,
                     asleep_fn=self.asleep_fn,
                 )
-                data = resp.json()
+                data = http_resp.json()
 
         content = data.get("response", "")
         in_eval = data.get("prompt_eval_count")
@@ -1220,7 +1215,7 @@ class OllamaProvider(BaseLLMProvider):
             out_toks = estimate_tokens_from_chars(content)
             estimated = True
 
-        resp = LLMResponse(
+        llm_resp = LLMResponse(
             content=content,
             tokens_prompt=in_toks,
             tokens_completion=out_toks,
@@ -1228,8 +1223,8 @@ class OllamaProvider(BaseLLMProvider):
             estimated_cost_dollars=0.0,
             estimated=estimated,
         )
-        self.record_usage(resp)
-        return resp
+        self.record_usage(llm_resp)
+        return llm_resp
 
 
 class FailoverLLMProvider(BaseLLMProvider):
@@ -1864,7 +1859,7 @@ def _build_single_provider(
         return DeepSeekProvider(api_key=api_key, model=model)
 
     elif p_name == "ollama":
-        url = config.base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        url = config.base_url or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434"
         if config.model_provider == "ollama":
             # Homogeneous Ollama execution (e.g. local bench with single pulled model)
             resolved_default = (

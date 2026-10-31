@@ -41,11 +41,10 @@ class SurpriseGate:
             else "gated"
         )
 
-        # Running statistics
         self.total_steps = 0
         self.escalation_count = 0
         self.silent_steps = 0
-        self.surprise_history: list = []
+        self.surprise_history: list[float] = []
 
     def compute_surprise(
         self,
@@ -58,10 +57,10 @@ class SurpriseGate:
         if self.backend == "torch":
             try:
                 import torch
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "PyTorch is required when gate backend='torch'. Install with: pip install 'octoflow[ml]'"
-                )
+                ) from err
             if isinstance(actual_obs, np.ndarray):
                 actual_t = torch.tensor(actual_obs, dtype=torch.float32)
             else:
@@ -130,10 +129,10 @@ class SurpriseGate:
                 predicted_arr = np.asarray(expected_obs, dtype=np.float32)
         else:
             # Analytical baseline expectation: clean execution (exit code 0, no stderr, quiescence=1.0)
-            baseline = np.zeros(self.obs_dim, dtype=np.float32)
+            baseline_arr = np.zeros(self.obs_dim, dtype=np.float32)
             if self.obs_dim > 0:
-                baseline[-1] = 1.0  # Quiescence expected on last dimension
-            predicted_arr = baseline
+                baseline_arr[-1] = 1.0  # Quiescence expected on last dimension
+            predicted_arr = baseline_arr
 
         # Handle empty observations
         if actual_arr.size == 0 or predicted_arr.size == 0:
@@ -158,7 +157,7 @@ class SurpriseGate:
         actual_obs: Any | np.ndarray,
         tool_result: ToolResult,
         expected_obs: Any | np.ndarray | None = None,
-    ) -> tuple[bool, float, dict[str, float]]:
+    ) -> tuple[bool, float, dict[str, Any]]:
         """Evaluate whether to escalate or remain silent.
 
         Returns:

@@ -14,7 +14,9 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -348,7 +350,7 @@ class WorkspaceSandbox:
             return False
 
     @contextlib.contextmanager
-    def file_lock(self, rel_path: str, arm_id: int):
+    def file_lock(self, rel_path: str, arm_id: int) -> Generator[None, None, None]:
         """Context manager to reliably acquire and release an advisory lock."""
         acquired = self.acquire_lock(rel_path, arm_id)
         if not acquired:

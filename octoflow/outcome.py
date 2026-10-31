@@ -4,6 +4,16 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from octoflow.errors import OctoFlowError, ProviderExhaustedError
+
+__all__ = [
+    "RunMode",
+    "RunOutcome",
+    "RunResult",
+    "OctoFlowError",
+    "ProviderExhaustedError",
+]
+
 
 class RunMode(str, Enum):
     """Execution mode of the swarm."""
@@ -18,17 +28,6 @@ class RunOutcome(str, Enum):
     COMPLETE = "complete"
     PARTIAL = "partial"
     FAILED = "failed"
-
-
-from octoflow.errors import OctoFlowError, ProviderExhaustedError
-
-__all__ = [
-    "RunMode",
-    "RunOutcome",
-    "RunResult",
-    "OctoFlowError",
-    "ProviderExhaustedError",
-]
 
 
 @dataclass

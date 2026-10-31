@@ -277,7 +277,7 @@ class Settings(BaseModel):
 
         # Process providers
         if "providers" in dumped and isinstance(dumped["providers"], dict):
-            for p_name, p_data in dumped["providers"].items():
+            for _p_name, p_data in dumped["providers"].items():
                 if isinstance(p_data, dict) and "api_key" in p_data:
                     raw_k = p_data["api_key"]
                     if raw_k is not None:
@@ -549,7 +549,7 @@ def migrate_config_if_needed(cfg_path: Path) -> tuple[bool, Path | None]:
         raw_text = cfg_path.read_text(encoding="utf-8")
         raw_data = json.loads(raw_text) if raw_text.strip() else {}
     except Exception as e:
-        raise ConfigurationError(f"Failed to read existing configuration at {cfg_path}: {e}")
+        raise ConfigurationError(f"Failed to read existing configuration at {cfg_path}: {e}") from e
 
     if not isinstance(raw_data, dict):
         raw_data = {}
@@ -579,7 +579,7 @@ def migrate_config_if_needed(cfg_path: Path) -> tuple[bool, Path | None]:
             hint = f"Allowed providers: {', '.join(sorted(VALID_PROVIDERS))}"
         elif "scale" in loc.lower():
             hint = "Scale must be at least 1 octopus"
-        raise ConfigurationError(msg, loc=loc, hint=hint)
+        raise ConfigurationError(msg, loc=loc, hint=hint) from e
 
     # Write migrated structure atomically
     migrated_json = json.dumps(settings_obj.to_dict(mask_secrets=False), indent=2)
@@ -626,18 +626,18 @@ def _apply_env_overrides(data: dict[str, Any]) -> None:
             try:
                 data.setdefault("server", {})["ws_port"] = int(env[ws_var])
                 break
-            except ValueError:
+            except ValueError as err:
                 raise ConfigurationError(
                     f"Invalid integer for {ws_var}: '{env[ws_var]}'", loc="server.ws_port"
-                )
+                ) from err
     if "OCTOFLOW_HTTP_PORT" in env:
         try:
             data.setdefault("server", {})["http_port"] = int(env["OCTOFLOW_HTTP_PORT"])
-        except ValueError:
+        except ValueError as err:
             raise ConfigurationError(
                 f"Invalid integer for OCTOFLOW_HTTP_PORT: '{env['OCTOFLOW_HTTP_PORT']}'",
                 loc="server.http_port",
-            )
+            ) from err
 
     # Defaults Settings
     for prov_var in ("OCTOFLOW_DEFAULT_PROVIDER", "OCTOFLOW_PROVIDER"):
@@ -653,11 +653,11 @@ def _apply_env_overrides(data: dict[str, Any]) -> None:
             try:
                 data.setdefault("defaults", {})["default_scale"] = int(env[scale_var])
                 break
-            except ValueError:
+            except ValueError as err:
                 raise ConfigurationError(
                     f"Invalid integer for {scale_var}: '{env[scale_var]}'",
                     loc="defaults.default_scale",
-                )
+                ) from err
     for backend_var in ("OCTOFLOW_ENCODER_BACKEND", "ENCODER_BACKEND"):
         if backend_var in env:
             data.setdefault("defaults", {})["encoder_backend"] = env[backend_var].strip().lower()
@@ -813,7 +813,7 @@ def load_settings(
             if isinstance(file_data, dict):
                 _deep_merge_dict(merged_data, file_data)
         except Exception as e:
-            raise ConfigurationError(f"Failed to load config file {cfg_path}: {e}")
+            raise ConfigurationError(f"Failed to load config file {cfg_path}: {e}") from e
 
     # 3. Environment variables
     _apply_env_overrides(merged_data)
@@ -836,7 +836,7 @@ def load_settings(
             hint = f"Allowed providers: {', '.join(sorted(VALID_PROVIDERS))}"
         elif "scale" in loc.lower():
             hint = "Scale must be at least 1 octopus"
-        raise ConfigurationError(msg, loc=loc, hint=hint)
+        raise ConfigurationError(msg, loc=loc, hint=hint) from e
 
     if settings_obj.extras:
         _warn_extras_once(settings_obj.extras)
@@ -894,7 +894,7 @@ def set_config_value(key_path: str, value_str: str, cfg_path: Path | None = None
             hint = "Ports must be between 1 and 65535"
         elif "provider" in loc.lower():
             hint = f"Allowed providers: {', '.join(sorted(VALID_PROVIDERS))}"
-        raise ConfigurationError(msg, loc=loc, hint=hint)
+        raise ConfigurationError(msg, loc=loc, hint=hint) from e
 
     # Write atomically
     save_settings(validated, cfg_path)

@@ -40,6 +40,10 @@ ml = [
 dev = [
     "pytest>=7.0.0",
     "matplotlib>=3.5.0",
+    "ruff>=0.8.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.0.0",
+    "types-requests>=2.31.0",
 ]
 
 [project.scripts]
@@ -82,6 +86,8 @@ exclude = [
     "__pycache__",
     "notebooks",
     "*.ipynb",
+    "experiments",
+    "models",
 ]
 
 [tool.ruff.lint]
@@ -96,28 +102,250 @@ select = [
 ignore = [
     "E501",  # line length handled by ruff format
     "B008",  # do not perform function calls in argument defaults (standard in Typer/Click/FastAPI CLI)
+    "S603",  # subprocess call without shell=True is standard across CLI orchestration
+    "S607",  # partial executable paths (git, python, pytest) rely on system PATH lookup
+    "S311",  # pseudo-random generator usage is for non-cryptographic simulation, jitter, and heuristics
+    "S110",  # try-except-pass is used for non-fatal cleanups, fallback detection, and optional telemetry
+    "S112",  # try-except-continue is used for resilient iterative sweeps and optional status probing
 ]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests use asserts, mock fixtures, hardcoded tokens, loopback sockets, and shell commands
 "tests/**" = [
     "S101",  # use of assert
+    "S104",  # test assertions and mock bindings intentionally test 0.0.0.0 warning behavior
     "S105",  # possible hardcoded password / token in fixtures
     "S106",  # possible hardcoded password in arg
     "S108",  # insecure temp file usage (standard pytest tmp_path)
+    "S110",  # try-except-pass in test cleanup / fixture tear down
     "S311",  # pseudo-random generators in tests
     "S603",  # subprocess call without shell=True
     "S607",  # start process with partial path
     "B018",  # useless expression in tests
     "E402",  # module level import not at top of file (pytestmark at top)
+    "F841",  # unused local variables in test assertions
 ]
 # Scripts for coverage/benchmarks
 "scripts/**" = [
-    "S603",
-    "S607",
+    "S101",  # assertions in verification scripts
+    "S603",  # subprocess in helper scripts
+    "S607",  # partial paths in helper scripts
 ]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.10"
+files = ["octoflow"]
+warn_unused_configs = false
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+
+# Strict type checking enabled for clean core modules
+[[tool.mypy.overrides]]
+module = [
+    "octoflow.settings",
+    "octoflow.outcome",
+    "octoflow.errors",
+    "octoflow.router",
+    "octoflow.budget",
+    "octoflow.tools",
+    "octoflow.gate",
+    "octoflow.provider",
+]
+strict = true
+
+# Ratchet List: Un-migrated modules explicitly ignored until future phase migrations
+# TODO: ratchet typecheck - migrate arm orchestration to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.arm"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate audit engine to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.audit"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate bench harness to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.bench"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate brachial bus to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.bus"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate replay cassettes to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.cassette"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate checkpoints and undo ledger to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.checkpoint"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate CI gatekeeper to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.ci"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate CLI wiring and options to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.cli"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate coalition attention to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.coalition"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate interactive cockpit UI to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.cockpit.*"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate CLI command modules to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.commands.*"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate central conductor to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.conductor"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate legacy config models to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.config"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate consortium multi-octopus to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.consortium"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate eject packager to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.eject"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate code sensory encoder to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.encoder"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate PII redactor & federation to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.federation"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate self-healing loop to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.healing"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate process igniter & isolation to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.ignition"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate logging configuration to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.logging_config"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate manual & help generation to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.manual"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate MCP server integration to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.mcp"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate vertical lobe memory to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.memory"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate monorepo analyzer to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.monorepo"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate notification hooks to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.notify"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate Omni-IDE onboarding to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.onboarding"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate session recorder to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.recorder"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate mission HTML audit report to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.report"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate task runner loop to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.runner"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate FastAPI telemetry server to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.server"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate theme selector UI to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.theme_selector"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate ANSI 3D theme definitions to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.themes"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate test failure triage to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.triage"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate token usage tracking to strict typing
+[[tool.mypy.overrides]]
+module = "octoflow.usage"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate octopus biophysical neural simulation to strict typing
+[[tool.mypy.overrides]]
+module = "octopus_brain.*"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate simulation environments to strict typing
+[[tool.mypy.overrides]]
+module = "envs.*"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate test suite to strict typing
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# TODO: ratchet typecheck - migrate scripts to strict typing
+[[tool.mypy.overrides]]
+module = "scripts.*"
+ignore_errors = true

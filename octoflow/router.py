@@ -339,11 +339,13 @@ def is_destructive_command(
         return False, ""
 
     # Clean tokens for inspection (stripping chaining punctuation)
-    cleaned_tokens = [t.strip(";;&|`$()'\"") for t in tokens if t.strip(";;&|`$()'\"")]
+    cleaned_tokens = [
+        t.strip(";;&|`$()'\"")  # noqa: B005 - intentional character set stripping for shell punctuation
+        for t in tokens
+        if t.strip(";;&|`$()'\"")  # noqa: B005 - intentional character set stripping for shell punctuation
+    ]
     if not cleaned_tokens:
         return False, ""
-
-    head = cleaned_tokens[0].lower()
 
     # 1. Base destructive commands (checked at head and across all tokens for compound commands)
     for t in cleaned_tokens:
@@ -621,7 +623,7 @@ def classify_input(
         )
 
     # 7. Simple shell command classification (Task 2)
-    first_token = first_word.rstrip(";;&|").lower()
+    first_token = first_word.rstrip(";;&|").lower()  # noqa: B005 - intentional character set stripping
 
     if first_token not in ALLOWED_SIMPLE_SHELL_COMMANDS:
         # Commands not matching allowed shell commands route to SWARM_GOAL (e.g. "make a resume analyzer", "list the requirements")
@@ -793,7 +795,7 @@ def execute_shell_route(
             text=True,
         )
     elif route.kind == RouteKind.SHELL_EXPLICIT:
-        res = subprocess.run(
+        res = subprocess.run(  # noqa: S602 - user-explicit shell route (!prefix) intentionally executes via shell after interactive cockpit confirmation
             route.command,
             shell=True,
             cwd=str(ws),
