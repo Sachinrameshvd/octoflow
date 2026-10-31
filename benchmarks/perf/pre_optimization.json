@@ -1,0 +1,150 @@
+{
+  "version": "1.0",
+  "phase": "P4.3",
+  "mode": "full",
+  "machine": {
+    "system": "Darwin",
+    "release": "25.5.0",
+    "machine": "arm64",
+    "processor": "arm",
+    "cpu_count_logical": 8,
+    "cpu_count_physical": 8,
+    "total_ram_gb": 8.0,
+    "python_version": "3.14.3",
+    "python_implementation": "CPython",
+    "timestamp": "2026-10-31T05:56:52Z"
+  },
+  "metrics": {
+    "help_startup": {
+      "runs_count": 10,
+      "median_seconds": 0.2511,
+      "mean_seconds": 0.2714,
+      "min_seconds": 0.2441,
+      "max_seconds": 0.3579,
+      "stdev_seconds": 0.0444,
+      "raw_samples": [
+        0.3526,
+        0.251,
+        0.2542,
+        0.2498,
+        0.2513,
+        0.2441,
+        0.246,
+        0.2494,
+        0.3579,
+        0.2578
+      ]
+    },
+    "import_times": {
+      "octoflow": {
+        "module": "octoflow",
+        "runs_count": 5,
+        "median_seconds": 0.0235,
+        "mean_seconds": 0.0236,
+        "min_seconds": 0.0227,
+        "max_seconds": 0.0248
+      },
+      "octoflow_cli": {
+        "module": "octoflow.cli",
+        "runs_count": 5,
+        "median_seconds": 0.2377,
+        "mean_seconds": 0.2388,
+        "min_seconds": 0.2353,
+        "max_seconds": 0.2443
+      }
+    },
+    "cockpit_idle": {
+      "sampling_duration_seconds": 60.0,
+      "samples_count": 108,
+      "cpu_percent_median": 7.65,
+      "cpu_percent_p95": 8.3,
+      "cpu_percent_max": 8.6,
+      "rss_mb_median": 56.95,
+      "rss_mb_max": 78.31
+    },
+    "frame_render": {
+      "frames_measured": 600,
+      "p50_ms": 5.86,
+      "p95_ms": 6.622,
+      "mean_ms": 6.035,
+      "min_ms": 5.371,
+      "max_ms": 17.565
+    },
+    "visualizer_dist": {
+      "dist_path": "/Users/sachinrk/Desktop/Octoflow copy/visualizer/dist",
+      "total_raw_bytes": 31598984,
+      "total_raw_mb": 30.14,
+      "total_gzip_bytes": 8382342,
+      "total_gzip_mb": 7.99,
+      "top_chunks": [
+        {
+          "file": "assets/ort-wasm-simd-threaded.jsep-MDYUKy93.wasm",
+          "raw_bytes": 28312028,
+          "raw_kb": 27648.46,
+          "gzip_bytes": 6624630,
+          "gzip_kb": 6469.37
+        },
+        {
+          "file": "models/octopus_brain.onnx",
+          "raw_bytes": 1940454,
+          "raw_kb": 1894.97,
+          "gzip_bytes": 1418193,
+          "gzip_kb": 1384.95
+        },
+        {
+          "file": "assets/vendor-three-CX_ctJdb.js",
+          "raw_bytes": 596733,
+          "raw_kb": 582.75,
+          "gzip_bytes": 144935,
+          "gzip_kb": 141.54
+        },
+        {
+          "file": "assets/vendor-onnx-DDKov_QH.js",
+          "raw_bytes": 404490,
+          "raw_kb": 395.01,
+          "gzip_bytes": 108493,
+          "gzip_kb": 105.95
+        },
+        {
+          "file": "assets/index-CgIbYke4.js",
+          "raw_bytes": 265923,
+          "raw_kb": 259.69,
+          "gzip_bytes": 69391,
+          "gzip_kb": 67.76
+        },
+        {
+          "file": "assets/index-B0OvtCsC.css",
+          "raw_bytes": 52316,
+          "raw_kb": 51.09,
+          "gzip_bytes": 9478,
+          "gzip_kb": 9.26
+        },
+        {
+          "file": "index.html",
+          "raw_bytes": 12487,
+          "raw_kb": 12.19,
+          "gzip_bytes": 3562,
+          "gzip_kb": 3.48
+        },
+        {
+          "file": "favicon.svg",
+          "raw_bytes": 9522,
+          "raw_kb": 9.3,
+          "gzip_bytes": 1499,
+          "gzip_kb": 1.46
+        },
+        {
+          "file": "icons.svg",
+          "raw_bytes": 5031,
+          "raw_kb": 4.91,
+          "gzip_bytes": 2161,
+          "gzip_kb": 2.11
+        }
+      ]
+    },
+    "install_size": {
+      "venv_size_mb": 939.73,
+      "octoflow_package_size_mb": 38.2
+    }
+  }
+}

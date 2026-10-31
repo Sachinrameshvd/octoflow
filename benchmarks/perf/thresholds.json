@@ -1,0 +1,8 @@
+{
+  "max_help_startup_seconds": 0.50,
+  "max_import_cli_seconds": 0.40,
+  "max_cockpit_idle_cpu_percent": 15.0,
+  "max_cockpit_idle_rss_mb": 150.0,
+  "max_frame_render_p95_ms": 25.0,
+  "max_visualizer_chunk_kb": 650.0
+}

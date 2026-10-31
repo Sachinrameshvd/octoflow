@@ -141,3 +141,46 @@ To execute tests requiring live external services:
    ```bash
    pytest tests/ -m "live" -v
    ```
+
+---
+
+## 8. Performance Baseline & Regression Testing (P4.3)
+
+OctoFlow tracks key CLI, TUI, and rendering performance metrics to prevent silent latency and CPU regressions:
+
+### 8.1 Performance Measurement Script
+
+The script `scripts/perf_baseline.py` benchmarks and collects:
+- **CLI Startup Time:** Wall-clock duration of `octoflow.cli --help` (median of 10 runs).
+- **Import Latencies:** Isolated import times for `octoflow` and `octoflow.cli`.
+- **Cockpit Idle Metrics:** CPU % and RSS memory sampled over 60 seconds inside a real PTY.
+- **Frame Render Time:** p50 and p95 latencies over 600 frames using `build_cockpit_grid`.
+- **Visualizer Distribution Size:** Raw and gzipped bundle sizes, with chunk breakdowns.
+
+### 8.2 Usage & Commands
+
+```bash
+# Run comprehensive baseline (full 60s idle, 10 help runs, 600 frames)
+python scripts/perf_baseline.py --output benchmarks/perf/baseline.json
+
+# Run fast smoke baseline for local testing or CI (< 15s)
+python scripts/perf_baseline.py --quick --output benchmarks/perf/baseline.json
+
+# Validate against soft thresholds
+python scripts/perf_baseline.py --quick --check-thresholds benchmarks/perf/thresholds.json
+```
+
+### 8.3 Soft Performance Thresholds (`benchmarks/perf/thresholds.json`)
+
+| Metric | Soft Ceiling Threshold | Actual Measured (P4.3) |
+| :--- | :--- | :--- |
+| CLI Help Startup | `< 0.50s` | `0.225s` |
+| CLI Module Import | `< 0.40s` | `0.206s` |
+| Cockpit Frame Render (p95) | `< 25.0ms` | `0.428ms` |
+| Cockpit Idle CPU (median) | `< 15.0%` | `4.30%` |
+| Cockpit Idle RSS | `< 150 MB` | `53.4 MB` |
+
+### 8.4 CI Performance Job
+
+A non-blocking informational GitHub Actions workflow job (`perf`) runs `scripts/perf_baseline.py --quick` on pull requests to ensure regressions are caught early without blocking standard test pipelines.
+

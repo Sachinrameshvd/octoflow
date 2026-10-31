@@ -56,6 +56,29 @@ jobs:
       run: |
         mypy
 
+  perf:
+    name: Performance Baseline (Informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run Performance Baseline (--quick)
+      run: |
+        python scripts/perf_baseline.py --quick --output benchmarks/perf/ci_baseline.json --check-thresholds benchmarks/perf/thresholds.json
+
   test-base:
     name: Base Package Unit Tests (No Torch/ML)
     runs-on: ${{ matrix.os }}

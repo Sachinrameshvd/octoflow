@@ -179,3 +179,41 @@ All confirmed machine-specific paths were removed and replaced with relative pat
 4. **`.gitignore`:**
    - Anchored `/dist/` to root to prevent accidental exclusion of package directory `octoflow/dist/`.
    - Added ignores for `.env`, `.env.*` (preserving `!.env.example`), `node_modules/`, `*venv/`, `.octoflow/`, `.octoflow-mission/`, `.ruff_cache/`.
+
+---
+
+## 8. Performance Baseline & Cheap Wins (after P4.3)
+
+> **Phase:** P4.3 — Performance baseline and cheap wins  
+> **Date:** October 31, 2026  
+> **Host Environment:** Apple Silicon M-series (Darwin 25.5.0, arm64, 8 cores, 8GB RAM)  
+> **Python Version:** 3.14.3 (`.venv/bin/python`)  
+> **Baseline Data Artifact:** `benchmarks/perf/baseline.json`
+
+### 8.1 Summary of Before vs. After Optimizations
+
+| Metric | Target | Before P4.3 | After P4.3 | Improvement |
+| :--- | :--- | :--- | :--- | :--- |
+| **CLI Help Startup (`octoflow.cli --help`)** | < 0.50s | 0.2511s | **0.2251s** | **-10.4%** |
+| **Import Time (`import octoflow.cli`)** | < 0.40s | 0.2377s | **0.2060s** | **-13.3%** |
+| **Cockpit Frame Render p50** | — | 5.860ms | **0.374ms** | **-93.6% (15x faster)** |
+| **Cockpit Frame Render p95** | < 25.0ms | 6.622ms | **0.428ms** | **-93.5% (15x faster)** |
+| **Cockpit Idle CPU (median over 60s)** | < 15.0% | 7.65% | **4.30%** | **-43.8% CPU load** |
+| **Cockpit Idle RSS Memory** | < 150 MB | 56.95 MB | **53.41 MB** | **-6.2% memory** |
+| **Visualizer Main JS Bundle Size** | < 600 kB | 1,267.6 kB | **265.9 kB** | **-79.0% bundle reduction** |
+
+### 8.2 Cheap Wins Implemented
+1. **Cached HUD Metadata & Fast Git Branch Resolution (`octoflow/cockpit/render.py`):**
+   - Eliminated `subprocess.run(["git", "branch"])` executed on every animation frame (20/sec).
+   - Direct `.git/HEAD` reference parsing and session cache dropped frame render p95 from `6.62ms` to `0.43ms`.
+2. **Lazy Import of Sensory Encoder (`octoflow/ignition.py`):**
+   - Deferred `from octoflow.encoder import CodeSensoryEncoder` to runtime instantiation.
+   - Completely removed `numpy` from initial CLI help import tree, shaving ~31ms off startup.
+3. **Vite Code-Splitting & Vendor Chunking (`visualizer/vite.config.ts`):**
+   - Split monolithic Three.js and ONNX runtime dependencies into separate vendor chunks: `vendor-three` (596.7 kB), `vendor-onnx` (404.5 kB), and main app bundle (265.9 kB). Eliminated Vite chunk warning.
+
+### 8.3 Distribution & Installation Footprint
+- **Visualizer Distribution:** Raw: `30.14 MB` | Gzipped: `7.99 MB` (dominated by 28.3 MB ONNX WebAssembly SIMD runtime).
+- **Virtual Environment (`.venv`):** `939.73 MB`.
+- **OctoFlow Source Package (`octoflow`):** `39.41 MB` (includes pre-built WebGL distribution).
+
