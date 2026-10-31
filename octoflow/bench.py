@@ -627,7 +627,7 @@ def generate_summary_markdown(
     # Compute ratios for tasks with both modes
     overall_gated_tokens = []
     overall_ungated_tokens = []
-    for t_id, data in task_stats.items():
+    for _t_id, data in task_stats.items():
         if "gated" in data and "always_escalate" in data:
             g_med = data["gated"]["tokens_med"]
             u_med = data["always_escalate"]["tokens_med"]
@@ -691,13 +691,13 @@ def generate_summary_markdown(
 
     # Token measurement explanation for Limitations section
     if is_estimated:
-        token_caveat = (
+        usage_caveat = (
             "⚠️ **Tokens were ESTIMATED**: The provider or local environment returned no direct token usage headers. "
             "Token quantities were computed using the fallback heuristic `ceil(chars / 4)`. "
             "Character estimates are approximate and may deviate from specific BPE/WordPiece tokenizers by ±15-20%."
         )
     else:
-        token_caveat = (
+        usage_caveat = (
             "✔ **Tokens were MEASURED**: Token usage was obtained directly from API provider response headers "
             "(`prompt_tokens`, `completion_tokens`)."
         )
@@ -753,7 +753,7 @@ Evaluated against 4 standard algorithmic and architectural challenges:
 ## 4. Limitations & Data Caveats
 
 - **Token Measurement Fidelity:**
-  - {token_caveat}
+  - {usage_caveat}
 - **Provider & Model Scope:**
   - Evaluated using provider `{provider}` with model `{model}`.
   - Results using mock or fake providers represent synthetic execution traces designed for verification of accounting and harness mechanics, NOT empirical performance of neural foundation models.

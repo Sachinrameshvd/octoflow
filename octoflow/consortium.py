@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
 from octoflow.config import OctoFlowConfig, SwarmMorphology
+from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
 from octoflow.ignition import ProjectIgniter
 
 
@@ -30,9 +31,6 @@ class SynapticContractEvent(BaseModel):
     topic: str
     summary: str = ""
     payload: dict[str, Any] = Field(default_factory=dict)
-
-
-from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
 
 
 class InterOctopusSynapticBus:

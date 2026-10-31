@@ -86,7 +86,6 @@ class SoftTentacleKinematics:
     def forward_kinematics(self) -> np.ndarray:
         """Compute 3D spine coordinates from base to tip."""
         current_pos = self.base_pos.copy()
-        current_heading = np.array([0.0, 0.0, 1.0], dtype=np.float32)
 
         for k in range(self.n_segments):
             L = self.segment_lengths[k]

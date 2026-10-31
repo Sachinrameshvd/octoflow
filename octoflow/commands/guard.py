@@ -127,7 +127,7 @@ def install_git_hooks(workspace: str = ".") -> bool:
     pre_commit_file.write_text(hook_script, encoding="utf-8")
 
     st = os.stat(pre_commit_file)
-    os.chmod(pre_commit_file, st.st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+    os.chmod(pre_commit_file, st.st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)  # noqa: S103 - git pre-commit hook script requires executable bit permissions
 
     console.print(
         f"[{theme.rich_success}]✔ Installed OctoFlow Pre-Commit Guard at {pre_commit_file}[/{theme.rich_success}]"

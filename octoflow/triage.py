@@ -46,7 +46,7 @@ def get_workspace_diff_items(workspace_dir: str = ".") -> list[dict[str, Any]]:
                 try:
                     f_content = full_path.read_text(encoding="utf-8")
                     diff_text = f"+++ b/{rel_file}\n" + "\n".join(
-                        f"+{l}" for l in f_content.splitlines()[:50]
+                        f"+{line}" for line in f_content.splitlines()[:50]
                     )
                 except Exception:
                     diff_text = f"+++ b/{rel_file} (binary or unreadable)"
@@ -97,10 +97,18 @@ def get_workspace_diff_items(workspace_dir: str = ".") -> list[dict[str, Any]]:
 
             # Count added / removed lines
             added = len(
-                [l for l in diff_text.splitlines() if l.startswith("+") and not l.startswith("+++")]
+                [
+                    line
+                    for line in diff_text.splitlines()
+                    if line.startswith("+") and not line.startswith("+++")
+                ]
             )
             removed = len(
-                [l for l in diff_text.splitlines() if l.startswith("-") and not l.startswith("---")]
+                [
+                    line
+                    for line in diff_text.splitlines()
+                    if line.startswith("-") and not line.startswith("---")
+                ]
             )
 
             items.append(

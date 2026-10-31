@@ -132,7 +132,10 @@ def get_live_cockpit_keys(
         from octoflow.cockpit.render import build_cockpit_grid
 
         _sess = session
-        grid_builder = lambda b, c, t, ox, oy, plc: build_cockpit_grid(_sess, b, c, t, ox, oy, plc)
+
+        def grid_builder(b, c, t, ox, oy, plc):
+            return build_cockpit_grid(_sess, b, c, t, ox, oy, plc)
+
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         try:
             raw_line = sys.stdin.readline()

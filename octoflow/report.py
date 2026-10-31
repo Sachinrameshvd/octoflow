@@ -278,7 +278,6 @@ def generate_html_audit_report(
 
     is_blocked = mission_data.get("hard_block", False)
     verdict_badge = "✖ MERGE BLOCKED" if is_blocked else "✔ APPROVED"
-    verdict_color = "#EF4444" if is_blocked else "#22C55E"
 
     token_econ = mission_data.get("token_economy", {})
     arms = mission_data.get("arms", [])
@@ -739,13 +738,13 @@ def generate_html_audit_report(
 """
         for f_name, d_content in file_diffs.items():
             formatted_lines = []
-            for l in d_content.splitlines():
-                if l.startswith("+") and not l.startswith("+++"):
-                    formatted_lines.append(f'<span class="diff-add">{l}</span>')
-                elif l.startswith("-") and not l.startswith("---"):
-                    formatted_lines.append(f'<span class="diff-del">{l}</span>')
+            for line in d_content.splitlines():
+                if line.startswith("+") and not line.startswith("+++"):
+                    formatted_lines.append(f'<span class="diff-add">{line}</span>')
+                elif line.startswith("-") and not line.startswith("---"):
+                    formatted_lines.append(f'<span class="diff-del">{line}</span>')
                 else:
-                    formatted_lines.append(l)
+                    formatted_lines.append(line)
             diff_block = "\n".join(formatted_lines)
 
             html_content += f"""

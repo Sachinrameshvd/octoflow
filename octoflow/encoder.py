@@ -132,11 +132,11 @@ class CodeSensoryEncoder:
         if return_tensor:
             try:
                 import torch
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "PyTorch is required when as_tensor=True or backend='torch'. "
                     "Install with: pip install 'octoflow[ml]'"
-                )
+                ) from err
             t = torch.tensor(features, dtype=torch.float32)
             if device:
                 t = t.to(device)

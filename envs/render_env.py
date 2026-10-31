@@ -47,7 +47,7 @@ class EnvironmentVisualizer:
         grid = [["." for _ in range(self.grid_size)] for _ in range(self.grid_size)]
 
         # 1. Place Arm Bases
-        for i, (bx, by) in enumerate(self.env.arm_bases):
+        for _i, (bx, by) in enumerate(self.env.arm_bases):
             ix, iy = (
                 int(np.clip(round(bx), 0, self.grid_size - 1)),
                 int(np.clip(round(by), 0, self.grid_size - 1)),

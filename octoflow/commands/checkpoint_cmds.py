@@ -62,10 +62,10 @@ def undo_cli_cmd(
             console.print("[dim]Undo operation cancelled by user.[/dim]\n")
     except ValueError as ve:
         console.print(f"\n✖ [bold red][UNDO ERROR] {ve}[/bold red]\n")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from ve
     except Exception as e:
         console.print(f"\n✖ [bold red][FAILED] {e}[/bold red]\n")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
 
 def runs_cli_cmd(

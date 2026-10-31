@@ -211,7 +211,7 @@ class TelemetryBroadcaster:
             f"https://127.0.0.1:{self.port}",
             f"https://localhost:{self.port}",
         }
-        if self.host not in ("127.0.0.1", "localhost", "0.0.0.0"):
+        if self.host not in ("127.0.0.1", "localhost", "0.0.0.0"):  # noqa: S104 - host whitelist check
             allowed.add(f"http://{self.host}:{self.port}")
             allowed.add(f"https://{self.host}:{self.port}")
         if self.dev_mode:
@@ -224,10 +224,10 @@ class TelemetryBroadcaster:
     def get_allowed_hosts(self) -> set[str]:
         """Build set of permitted Host header values for DNS-rebinding protection."""
         allowed = {"127.0.0.1", "localhost", "testserver"}
-        if self.host not in ("127.0.0.1", "localhost", "0.0.0.0"):
+        if self.host not in ("127.0.0.1", "localhost", "0.0.0.0"):  # noqa: S104 - host whitelist check
             allowed.add(self.host.lower())
-        if self.host == "0.0.0.0":
-            allowed.add("0.0.0.0")
+        if self.host == "0.0.0.0":  # noqa: S104 - permit 0.0.0.0 in header when explicitly bound
+            allowed.add("0.0.0.0")  # noqa: S104 - permit 0.0.0.0 in header when explicitly bound
         return allowed
 
     def create_app(self) -> Any:

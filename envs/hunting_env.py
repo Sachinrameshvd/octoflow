@@ -84,8 +84,6 @@ class CooperativeHuntingEnv:
 
     def _spawn_entities(self) -> None:
         """Spawn solitary prey, intelligent evasive prey, and moving hazards."""
-        center = self.grid_size / 2.0
-
         # 1. Solitary prey (slower, caught by single arm)
         self.solitary_prey = []
         for i in range(self.config.n_single_targets):

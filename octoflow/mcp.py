@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from octoflow.conductor import SupraesophagealConductor
 from octoflow.config import OctoFlowConfig, SwarmMorphology
+from octoflow.outcome import RunMode
 from octoflow.tools import ToolResult
 
 

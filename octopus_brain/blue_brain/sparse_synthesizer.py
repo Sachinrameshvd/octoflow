@@ -60,7 +60,7 @@ class AdultOctopusConnectomeSynthesizer:
             "total_adult_neurons": total_cells,
             "total_estimated_synapses": total_estimated_synapses,
             "total_brain_volume_mm3": round(
-                sum(l.volume_mm3 for l in self.atlas.lobes.values()), 1
+                sum(lobe.volume_mm3 for lobe in self.atlas.lobes.values()), 1
             ),
             "mean_synapses_per_neuron": round(total_estimated_synapses / max(1, total_cells), 1),
             "lobe_breakdown": lobe_metrics,
@@ -93,7 +93,6 @@ class AdultOctopusConnectomeSynthesizer:
             lobe = self.atlas.lobes["vertical_lobe"]
 
         # 1. Allocate 3D spatial coordinates inside the physical lobe bounding sphere
-        radius = lobe.bounding_radius_mm
         cx, cy, cz = lobe.center_pos_mm
 
         # 1. Microcircuit template
@@ -183,11 +182,9 @@ class AdultOctopusConnectomeSynthesizer:
 
         # Connect lobes biologically
         for i, src in enumerate(lobe_ids):
-            src_lobe = self.atlas.lobes[src]
             for j, tgt in enumerate(lobe_ids):
                 if i == j:
                     continue
-                tgt_lobe = self.atlas.lobes[tgt]
 
                 # SFL -> VL connection
                 if "superior_frontal" in src and "vertical" in tgt:

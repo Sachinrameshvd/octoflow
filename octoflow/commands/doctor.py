@@ -41,7 +41,7 @@ def run_doctor(workspace: str = ".", fix: bool = False):
 
     # 1. Python Runtime
     py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    if sys.version_info >= (3, 10):
+    if sys.version_info >= (3, 10):  # noqa: UP036 - intentional runtime diagnostic check for CLI users
         doc_table.add_row(
             "Python Runtime",
             f"[{theme.rich_success}]● PASS[/{theme.rich_success}]",

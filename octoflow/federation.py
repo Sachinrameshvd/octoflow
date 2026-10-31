@@ -10,6 +10,7 @@ currently experimental, unused prototypes. Networking for federation is not impl
 """
 
 import hashlib
+import logging
 import re
 import time
 from enum import Enum
@@ -24,7 +25,7 @@ class PIIAction(str, Enum):
     BLOCK = "BLOCK"
     REDACT = "REDACT"
     HASH = "HASH"
-    PASS = "PASS"
+    PASS = "PASS"  # noqa: S105 - action enum variant name, not a hardcoded credential
 
 
 class PeerTrustLevel(str, Enum):
@@ -211,10 +212,11 @@ class FederationGuard:
                 elif act == PIIAction.REDACT:
                     sanitized = compiled_regex.sub(rule.replacement, sanitized)
                 elif act == PIIAction.HASH:
+                    rule_name = rule.name
 
-                    def _hasher(m: re.Match) -> str:
+                    def _hasher(m: re.Match, rname: str = rule_name) -> str:
                         h = hashlib.sha256(m.group(0).encode()).hexdigest()[:12]
-                        return f"[HASHED_{rule.name}_{h}]"
+                        return f"[HASHED_{rname}_{h}]"
 
                     sanitized = compiled_regex.sub(_hasher, sanitized)
                 elif act == PIIAction.PASS:
@@ -287,8 +289,6 @@ class FederationGuard:
 
 # Global Singleton for system-wide zero-trust federation
 GLOBAL_FEDERATION_GUARD = FederationGuard()
-
-import logging
 
 
 class SecretSanitizingLogFilter(logging.Filter):

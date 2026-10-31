@@ -750,7 +750,7 @@ class SupraesophagealConductor:
                     coalition_context=c_ctx,
                     max_steps=max_cycles,
                 )
-                for arm, c_ctx in zip(active_arms, arm_contexts)
+                for arm, c_ctx in zip(active_arms, arm_contexts, strict=False)
             ]
             try:
                 step_results: list[ArmStepResult] = await asyncio.gather(*tasks)
@@ -759,7 +759,7 @@ class SupraesophagealConductor:
                 break
 
             # Conductor processes step results and updates coalition attention
-            for arm, step_res in zip(active_arms, step_results):
+            for arm, step_res in zip(active_arms, step_results, strict=False):
                 self.total_tokens_used += step_res.tokens_used
                 self.total_cost += step_res.cost_dollars
                 self.estimated_chatty_tokens += step_res.tokens_used * 8

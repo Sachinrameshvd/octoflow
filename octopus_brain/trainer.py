@@ -99,7 +99,7 @@ class OctopusTrainer:
         hazard_collisions = 0
         total_reward = 0.0
 
-        for t in range(self.env.max_steps):
+        for _t in range(self.env.max_steps):
             obs_list.append(obs.detach().clone())
             out = self.model.step(obs, deterministic=False)
             actions = out["actions"][0].detach().cpu().numpy()

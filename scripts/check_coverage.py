@@ -49,7 +49,7 @@ def load_coverage_data(json_path: Path) -> dict[str, Any]:
 
 def find_file_entry(
     files_dict: dict[str, Any], target_rel: str
-) -> tuple[Optional[str], Optional[dict[str, Any]]]:
+) -> tuple[str | None, dict[str, Any] | None]:
     norm_target = target_rel.replace("\\", "/").lstrip("./")
     for file_key, data in files_dict.items():
         norm_key = file_key.replace("\\", "/").lstrip("./")

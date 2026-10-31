@@ -83,7 +83,7 @@ def test_trainer_checkpoint_save_and_load():
         new_trainer.load_checkpoint(ckpt_path)
 
         # Verify weights match
-        for p1, p2 in zip(model.parameters(), new_model.parameters()):
+        for p1, p2 in zip(model.parameters(), new_model.parameters(), strict=False):
             assert torch.allclose(p1, p2)
 
 

@@ -587,7 +587,7 @@ def print_audit_report(report: AuditReport, console: Console | None = None) -> N
     table.add_column("Bar", width=24)
     table.add_column("Status", justify="center", width=12)
 
-    for cat_key, cat in report.categories.items():
+    for _cat_key, cat in report.categories.items():
         ratio = cat.score / cat.max_score
         bar_len = int(ratio * 16)
         bar_str = "█" * bar_len + "░" * (16 - bar_len)

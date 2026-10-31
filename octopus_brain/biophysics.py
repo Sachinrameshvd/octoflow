@@ -161,7 +161,7 @@ class BiophysicalConnectomeSimulator:
         n_steps = int(np.ceil(duration_ms / self.dt))
         all_spikes = []
 
-        for step_idx in range(n_steps):
+        for _step_idx in range(n_steps):
             t_ms = self.current_time_ms
             i_ext = current_stimulus_fn(t_ms) if current_stimulus_fn else None
             spikes = self.step(i_ext)

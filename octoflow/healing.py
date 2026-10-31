@@ -75,7 +75,6 @@ def parse_pytest_failures(output: str) -> list[dict[str, Any]]:
     failures = []
     lines = output.splitlines()
 
-    current_failure = None
     for line in lines:
         # Match lines like "FAILED tests/test_auth.py::test_login - AssertionError: ..."
         m_failed = re.search(r"FAILED\s+([^\s:]+)::([^\s\-]+)\s*-\s*(.*)", line)
@@ -193,7 +192,6 @@ def self_heal_workspace(
     )
 
     initial_failures = parse_pytest_failures(full_log)
-    initial_sig = extract_failure_signature(initial_failures, full_log)
     initial_count = count_failing_tests(initial_failures, full_log)
 
     signature_history: list[tuple[tuple[str, str], ...]] = []

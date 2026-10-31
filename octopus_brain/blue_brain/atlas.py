@@ -192,12 +192,12 @@ class AdultOctopusAtlas:
 
     def get_summary(self) -> dict[str, Any]:
         """Calculates total brain metrics."""
-        total_neurons = sum(l.neuron_count for l in self.lobes.values())
-        total_vol = sum(l.volume_mm3 for l in self.lobes.values())
+        total_neurons = sum(lobe.neuron_count for lobe in self.lobes.values())
+        total_vol = sum(lobe.volume_mm3 for lobe in self.lobes.values())
 
         by_mass = {}
-        for l in self.lobes.values():
-            by_mass[l.parent_mass] = by_mass.get(l.parent_mass, 0) + l.neuron_count
+        for lobe in self.lobes.values():
+            by_mass[lobe.parent_mass] = by_mass.get(lobe.parent_mass, 0) + lobe.neuron_count
 
         return {
             "species": "Octopus vulgaris (Adult Cephalopod Full-Scale Blue Brain Atlas)",

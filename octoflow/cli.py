@@ -162,7 +162,7 @@ def octos_callback(
 # -------------------------------------------------------------------------
 # Command Registration
 # -------------------------------------------------------------------------
-from octoflow.commands import (
+from octoflow.commands import (  # noqa: E402 - commands are registered after Typer app instances are initialized
     audit,
     bench,
     checkpoint_cmds,
@@ -228,12 +228,88 @@ ignition_cmds.register(app, octos_app)
 # -------------------------------------------------------------------------
 # Backward-Compatibility Re-Exports
 # -------------------------------------------------------------------------
-from octoflow.cockpit import (
+from octoflow.cockpit import (  # noqa: E402
+    CockpitInput,
+    CockpitSession,
+    confirm_live_cockpit,
+    get_live_cockpit_input,
+    get_live_wizard_input,
     interactive_cockpit,
+    print_welcome_banner,
+    run_cockpit,
 )
-from octoflow.commands.run import (
+from octoflow.commands.dashboard import (  # noqa: E402
+    render_consortium_dashboard,
+    render_dashboard,
+)
+from octoflow.commands.doctor import (  # noqa: E402
+    doctor_cli_cmd,
+    run_doctor,
+)
+from octoflow.commands.guard import (  # noqa: E402
+    guard_cli_cmd,
+    install_git_hooks,
+    install_hooks_cli_cmd,
+    run_guard,
+)
+from octoflow.commands.install_claude import (  # noqa: E402
+    install_claude_cli_cmd,
+)
+from octoflow.commands.report import (  # noqa: E402
+    export_cli_cmd,
+)
+from octoflow.commands.run import (  # noqa: E402
+    octos_run,
     run,
+    train,
 )
+from octoflow.commands.setup import (  # noqa: E402
+    run_setup_wizard,
+    setup_cli_cmd,
+)
+from octoflow.commands.theme import (  # noqa: E402
+    app_banner_cmd,
+    app_screensaver_cmd,
+    app_theme_cmd,
+    octos_banner_cmd,
+    octos_screensaver_cmd,
+    octos_theme_cmd,
+)
+
+__all__ = [
+    "app",
+    "octos_app",
+    "octos_main",
+    "run_cockpit",
+    "interactive_cockpit",
+    "CockpitSession",
+    "CockpitInput",
+    "get_live_cockpit_input",
+    "confirm_live_cockpit",
+    "print_welcome_banner",
+    "get_live_wizard_input",
+    "render_dashboard",
+    "render_consortium_dashboard",
+    "run",
+    "train",
+    "octos_run",
+    "run_doctor",
+    "doctor_cli_cmd",
+    "run_guard",
+    "install_git_hooks",
+    "guard_cli_cmd",
+    "install_hooks_cli_cmd",
+    "export_cli_cmd",
+    "app_theme_cmd",
+    "octos_theme_cmd",
+    "app_banner_cmd",
+    "octos_banner_cmd",
+    "app_screensaver_cmd",
+    "octos_screensaver_cmd",
+    "run_setup_wizard",
+    "setup_cli_cmd",
+    "install_claude_cli_cmd",
+]
 
 
 def octos_main():

@@ -73,7 +73,7 @@ def test_symlink_pointing_outside_blocked(sandbox_env):
     sandbox = WorkspaceSandbox(str(ws))
     res = sandbox.read_file("leak_link.txt")
     assert not res.success, "Reading through external symlink MUST be blocked"
-    assert "Path traversal detected" in res.stderr or "outside workspace" in res_read.stderr
+    assert "Path traversal detected" in res.stderr or "outside workspace" in res.stderr
 
 
 def test_deep_nesting_and_special_characters(sandbox_env):

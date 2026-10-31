@@ -21,6 +21,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+import httpx
 import numpy as np
 import torch
 
@@ -206,7 +207,7 @@ class CognitiveBridgeSession:
 
 
 # Global session instance
-SESSION: Optional[CognitiveBridgeSession] = None
+SESSION: CognitiveBridgeSession | None = None
 
 
 class CognitiveBridgeHandler(BaseHTTPRequestHandler):

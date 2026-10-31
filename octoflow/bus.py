@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
+
 
 class MessageIntent:
     """Enumeration of semantic arm communication intents."""
@@ -72,9 +74,6 @@ class BrachialMessage(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     summary: str = ""
     timestamp: float = Field(default_factory=time.time)
-
-
-from octoflow.federation import GLOBAL_FEDERATION_GUARD, FederationGuard
 
 
 class InterBrachialBus:

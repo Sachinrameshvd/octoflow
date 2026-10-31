@@ -239,7 +239,6 @@ def review_pull_request(
     # -------------------------------------------------------------------------
     overall_status = "BLOCKED" if hard_block else "PASSED"
     status_icon = "✖" if hard_block else "✔"
-    badge_color = "red" if hard_block else "green"
 
     arm6_status = "✖ BLOCKED" if any("CRITICAL" in f for f in findings_arm6) else "✔ PASSED"
     arm5_status = "✖ BLOCKED" if any("CRITICAL" in f for f in findings_arm5) else "✔ PASSED"

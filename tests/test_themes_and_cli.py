@@ -152,7 +152,7 @@ def test_render_octoflow_3d_banner_all_themes():
     from rich.console import Console
 
     test_console = Console(record=True)
-    for theme_id, theme_obj in THEMES.items():
+    for _theme_id, theme_obj in THEMES.items():
         banner = render_octoflow_3d_banner(theme_obj)
         test_console.print(banner)
         output = test_console.export_text()
@@ -209,7 +209,7 @@ def test_prompt_prefix_stripping():
         "theme",
         "/banner",
     ]
-    for inp, exp in zip(raw_inputs, expected):
+    for inp, exp in zip(raw_inputs, expected, strict=False):
         user_input = inp.strip()
         while True:
             prev_len = len(user_input)
@@ -271,7 +271,7 @@ def test_get_banner_loop_frame_all_themes():
     """Verify that every theme produces valid continuous loop frames across a full cycle."""
     from octoflow.themes import get_banner_loop_frame
 
-    for theme_id, theme_obj in THEMES.items():
+    for _theme_id, theme_obj in THEMES.items():
         for tick in range(24):
             frame = get_banner_loop_frame(theme_obj, tick=tick, subtitle="TEST SUBTITLE")
             assert frame is not None

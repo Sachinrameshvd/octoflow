@@ -193,10 +193,10 @@ def run(
             )
         except ValueError as ve:
             console.print(f"\n✖ [bold red][FAILED] Checkpoint pre-flight failed:[/bold red] {ve}\n")
-            raise typer.Exit(code=2)
+            raise typer.Exit(code=2) from ve
         except Exception as e:
             console.print(f"\n✖ [bold red][FAILED] Checkpoint error:[/bold red] {e}\n")
-            raise typer.Exit(code=2)
+            raise typer.Exit(code=2) from e
 
     host_str = host if isinstance(host, str) else "127.0.0.1"
     if host_str not in ("127.0.0.1", "localhost"):
@@ -335,7 +335,7 @@ def run(
             )
         except ProviderExhaustedError as pe:
             console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
-            raise typer.Exit(code=2)
+            raise typer.Exit(code=2) from pe
 
         try:
             with Live(console=console, refresh_per_second=6) as live:
@@ -409,7 +409,7 @@ def run(
                 finalize_run(checkpoint_meta, success=False, goal=objective)
                 finalized = True
             console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
-            raise typer.Exit(code=2)
+            raise typer.Exit(code=2) from pe
         except typer.Exit:
             raise
         except KeyboardInterrupt:
@@ -421,7 +421,7 @@ def run(
             console.print(
                 "\n[bold yellow]· Consortium paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n"
             )
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
         except Exception as e:
             if checkpoint_meta and not finalized:
                 from octoflow.checkpoint import finalize_run
@@ -440,7 +440,7 @@ def run(
                 border_style="red",
             )
             console.print(error_panel)
-            raise typer.Exit(code=2)
+            raise typer.Exit(code=2) from e
 
     # -------------------------------------------------------------------------
     # SINGLE OCTOPUS MODE (octos == 1)
@@ -516,7 +516,7 @@ def run(
         conductor = SupraesophagealConductor(config=config, telemetry_callback=on_telemetry)
     except ProviderExhaustedError as pe:
         console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from pe
 
     try:
         with Live(console=console, refresh_per_second=8) as live:
@@ -685,7 +685,7 @@ def run(
             finalize_run(checkpoint_meta, success=False, goal=objective)
             finalized = True
         console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from pe
     except typer.Exit:
         raise
     except KeyboardInterrupt:
@@ -697,7 +697,7 @@ def run(
         console.print(
             "\n[bold yellow]· Swarm execution paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n"
         )
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
     except Exception as e:
         if checkpoint_meta and not finalized:
             from octoflow.checkpoint import finalize_run
@@ -722,7 +722,7 @@ def run(
             border_style="red",
         )
         console.print(error_panel)
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
     finally:
         if checkpoint_meta and not finalized:
             try:

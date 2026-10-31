@@ -118,7 +118,7 @@ def cmd_config_set(
 ) -> None:
     """Set a single configuration key value, validate, and write atomically."""
     try:
-        updated = set_config_value(key, value)
+        set_config_value(key, value)
     except Exception as e:
         _handle_error(e)
 
