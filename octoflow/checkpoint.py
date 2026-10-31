@@ -179,15 +179,35 @@ def get_diff_summary(workspace: str | Path, from_ref: str, to_ref: str | None = 
 
 
 def save_run_metadata(meta: RunMetadata) -> Path:
-    """Save run metadata to ~/.octoflow/runs/<run_id>/meta.json."""
-    run_dir = get_runs_dir() / meta.run_id
+    """Save run metadata to ~/.octoflow/runs/<run_id>/meta.json with mode 0600."""
+    runs_dir = get_runs_dir()
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        runs_dir.chmod(0o700)
+    except OSError:
+        pass
+
+    run_dir = runs_dir / meta.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        run_dir.chmod(0o700)
+    except OSError:
+        pass
+
     meta_file = run_dir / "meta.json"
     meta_file.write_text(json.dumps(meta.model_dump(), indent=2), encoding="utf-8")
+    try:
+        meta_file.chmod(0o600)
+    except OSError:
+        pass
 
     # Record as latest run for this workspace
-    latest_file = get_runs_dir() / "latest_run_id"
+    latest_file = runs_dir / "latest_run_id"
     latest_file.write_text(meta.run_id, encoding="utf-8")
+    try:
+        latest_file.chmod(0o600)
+    except OSError:
+        pass
     return meta_file
 
 

@@ -457,6 +457,18 @@ This section documents real-world issues diagnosed and resolved across productio
 
 ---
 
+## 🔒 Privacy & Data Governance
+
+OctoFlow operates on a strict **local-first, zero-telemetry** architecture:
+- **No Telemetry Phoned Home**: No analytics, trackers, or crash reporters. Verified by continuous automated egress testing (`tests/test_egress_guard.py`).
+- **Secure Key Resolution**: Keys resolve in strict order: `Environment Variable` > `OS Keyring` (macOS Keychain, Linux SecretService, Windows Vault) > `0600 Config File`.
+- **Outbound Redaction Guard**: Cloud prompts automatically scrub 12 categories of secrets (API keys, private keys, bearer tokens, AWS credentials) before transmission.
+- **Data Purge Command**: Complete control over your data with `octos purge` (preview with `--dry-run`, skip confirmation with `--yes`).
+
+For detailed documentation on local storage, data flows, and purge procedures, see the [Privacy Statement & Data Governance Guide](docs/PRIVACY.md). For trust boundaries and vulnerability findings, see [Threat Model](docs/THREAT_MODEL.md) and [Security Model](docs/SECURITY_MODEL.md).
+
+---
+
 ## 📜 Citation & License
 
 This project is licensed under the [MIT License](./LICENSE). For third-party dependencies and supply-chain license compliance, see [Third-Party Licenses](docs/THIRD_PARTY_LICENSES.md). For dependency management guidelines, see [Dependency Policy](docs/DEPENDENCY_POLICY.md).

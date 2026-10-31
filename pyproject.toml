@@ -46,6 +46,9 @@ dev = [
     "types-requests>=2.31.0",
     "psutil>=5.9.0",
 ]
+keyring = [
+    "keyring>=24.0.0",
+]
 
 [project.scripts]
 octoflow = "octoflow.cli:app"

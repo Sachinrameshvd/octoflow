@@ -22,6 +22,11 @@ def bench_cli_cmd(
         "-p",
         help="LLM provider name: mock, fake, anthropic, openai, gemini, ollama, etc.",
     ),
+    fake: bool = typer.Option(
+        False,
+        "--fake",
+        help="Shortcut to run benchmarks using the deterministic Fake/Replay provider",
+    ),
     model: str | None = typer.Option(
         None, "--model", help="Model identifier (optional, uses provider default if omitted)"
     ),
@@ -45,10 +50,11 @@ def bench_cli_cmd(
         _notice_printed = True
     from octoflow.bench import run_benchmark_harness
 
+    resolved_provider = "fake" if fake else provider
     run_benchmark_harness(
         task=task,
         mode=mode,
-        provider=provider,
+        provider=resolved_provider,
         model=model,
         runs=runs,
         seed=seed,

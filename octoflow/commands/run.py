@@ -375,6 +375,11 @@ def run(
                 f"◈ Deployed: [bold cyan]{resolved_octos} Octopuses ({total_arms} Neural Arms)[/bold cyan]"
             )
             console.print(f"● Total Execution Time: {res.get('execution_time_seconds', 0):.2f}s")
+            c_redactions = res.get("secrets_redacted", 0)
+            if c_redactions:
+                console.print(
+                    f"● Outbound Privacy: [bold yellow]{c_redactions} secret(s) redacted before sending[/bold yellow]"
+                )
 
             ign = res.get("ignition")
             if ign and ign.get("primary_url"):
@@ -590,7 +595,17 @@ def run(
                 f"● Final Tokens Consumed: {conductor.total_tokens_used:,} (vs. ~{conductor.estimated_chatty_tokens:,} chatty baseline)"
             )
             console.print(f"● Token Savings: [bold green]{tokens_saved[0]:.1f}%[/bold green]")
-            console.print(f"● Total API Cost: ${conductor.total_cost:.4f}\n")
+            console.print(f"● Total API Cost: ${conductor.total_cost:.4f}")
+            redactions_cnt = (
+                getattr(conductor.provider, "get_redactions_count", lambda: 0)()
+                if conductor.provider
+                else 0
+            )
+            if redactions_cnt > 0:
+                console.print(
+                    f"● Outbound Privacy: [bold yellow]{redactions_cnt} secret(s) redacted before sending[/bold yellow]"
+                )
+            console.print()
 
             # Live Phase 4 Ignition
             try:

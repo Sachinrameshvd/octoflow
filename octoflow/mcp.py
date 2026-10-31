@@ -222,6 +222,10 @@ class OctoFlowMCPServer:
             f"• Execution Time: {result.get('execution_time_seconds', 0.0):.2f}s\n"
             f"• Estimated Cost: ${result.get('total_cost_dollars', 0.0):.4f}\n"
         )
+        secrets_redacted = result.get("secrets_redacted", 0)
+        if secrets_redacted:
+            text += f"• Secrets Redacted: {secrets_redacted} (outbound privacy guard)\n"
+
         payload = {
             "mode": mode_val,
             "outcome": outcome_val,
@@ -230,6 +234,8 @@ class OctoFlowMCPServer:
             "tokens_consumed": result.get("tokens_consumed", 0),
             "execution_time_seconds": result.get("execution_time_seconds", 0.0),
         }
+        if secrets_redacted:
+            payload["secrets_redacted"] = secrets_redacted
         return MCPToolCallResult(
             content=[
                 {"type": "text", "text": text},

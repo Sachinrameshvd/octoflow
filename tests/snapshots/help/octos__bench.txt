@@ -11,6 +11,8 @@
 │ --provider         -p      <str>  LLM provider name: mock, fake, anthropic, openai, gemini,      │
 │                                   ollama, etc.                                                   │
 │                                   [default: mock]                                                │
+│ --fake                            Shortcut to run benchmarks using the deterministic Fake/Replay │
+│                                   provider                                                       │
 │ --model                    <str>  Model identifier (optional, uses provider default if omitted)  │
 │ --runs             -n      <int>  Number of benchmark repetitions per task and mode (default: 3) │
 │                                   [default: 3]                                                   │

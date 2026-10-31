@@ -867,6 +867,11 @@ class SupraesophagealConductor:
             status_str = "FAILED"
 
         budget_line = self.budget_tracker.format_hud_line()
+        redactions = (
+            getattr(self.provider, "get_redactions_count", lambda: 0)()
+            if self.provider
+            else 0
+        )
         extra_dict = {
             "objective": objective,
             "status": status_str,
@@ -876,6 +881,7 @@ class SupraesophagealConductor:
             "chatty_baseline_tokens": self.estimated_chatty_tokens,
             "budget_line": budget_line,
             "budget_tracker": self.budget_tracker,
+            "secrets_redacted": redactions,
         }
         if budget_exceeded_err is not None:
             extra_dict["budget_exceeded"] = budget_exceeded_err.limit_name

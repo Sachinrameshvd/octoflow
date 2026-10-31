@@ -181,6 +181,7 @@ from octoflow.commands import (  # noqa: E402 - commands are registered after Ty
     mcp,
     monorepo,
     notify,
+    purge,
     record,
     report,
     review_pr,
@@ -201,6 +202,7 @@ consortium.register_octopolis(octos_app)
 ui.register_octos_ui(octos_app)
 theme.register(app, octos_app)
 setup.register(app, octos_app)
+purge.register(app, octos_app)
 doctor.register(app, octos_app)
 mcp.register_mcp(app, octos_app)
 guard.register(app, octos_app)
@@ -255,6 +257,9 @@ from octoflow.commands.guard import (  # noqa: E402
 from octoflow.commands.install_claude import (  # noqa: E402
     install_claude_cli_cmd,
 )
+from octoflow.commands.purge import (  # noqa: E402
+    purge_cli_cmd,
+)
 from octoflow.commands.report import (  # noqa: E402
     export_cli_cmd,
 )
@@ -308,6 +313,7 @@ __all__ = [
     "octos_screensaver_cmd",
     "run_setup_wizard",
     "setup_cli_cmd",
+    "purge_cli_cmd",
     "install_claude_cli_cmd",
 ]
 

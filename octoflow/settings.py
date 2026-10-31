@@ -209,6 +209,12 @@ class DefaultsSettings(BaseModel):
         return v
 
 
+class PrivacySettings(BaseModel):
+    """Privacy and data governance settings."""
+
+    redact_outbound: bool = True
+
+
 class Settings(BaseModel):
     """Root typed configuration container for OctoFlow (Schema Version 1)."""
 
@@ -216,6 +222,7 @@ class Settings(BaseModel):
     defaults: DefaultsSettings = Field(default_factory=DefaultsSettings)
     ui: UISettings = Field(default_factory=UISettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
+    privacy: PrivacySettings = Field(default_factory=PrivacySettings)
     budget: RunBudget = Field(default_factory=RunBudget)
     providers: dict[str, ProviderSettings] = Field(default_factory=dict)
     extras: dict[str, Any] = Field(default_factory=dict)
@@ -233,6 +240,7 @@ class Settings(BaseModel):
             "defaults",
             "ui",
             "server",
+            "privacy",
             "budget",
             "providers",
             "extras",

@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Key Storage, Outbound Redaction, and Privacy Statement (P5.4)**:
+  - **Environment-First Key Resolution Order**: Added `resolve_api_key(provider_name)` in `octoflow/keyring_store.py` enforcing strict resolution hierarchy: `Environment Variables (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)` > `OS Keyring` > `0600 Config File (~/.octoflow/config.json)`.
+  - **Optional Keyring Integration**: Added `[keyring]` optional extra (`pip install "octoflow[keyring]"`) integrating OS-level secure storage (macOS Keychain, Linux SecretService, Windows Credential Vault) with zero runtime dependencies when not installed.
+  - **Setup Wizard Security Hardening**: Enhanced `octoflow setup` to offer secure OS Keyring storage when available, and display a prominent warning when writing plaintext keys to `~/.octoflow/config.json` (`0600`).
+  - **Outbound Prompt Redaction Guard**: Implemented `octoflow.redactor` scanning prompts before cloud LLM transmission, replacing credentials across 12 secret categories with deterministic `[REDACTED:<type>]` placeholders. Tracked and displayed in CLI run summary and MCP payloads. Controlled via `privacy.redact_outbound` (default: `True`) and `OCTOFLOW_REDACT_OUTBOUND`.
+  - **Zero-Phoning-Home Egress Guard**: Autouse and dedicated egress fixtures verifying zero non-loopback network connections during full fake-provider missions, `doctor`, `report`, and `bench --fake` runs. Intentional external connection attempts are blocked with clear exceptions.
+  - **Automated Data Purge Command**: Added `octoflow purge` (and `octos purge`) CLI command allowing users to inspect reclaimable space (`--dry-run`) and safely delete all local state, configurations, logs, runs, Hebbian memory, and workspace audit reports (`--yes`, `--workspace-only`, `--global-only`).
+  - **Privacy Documentation**: Authored `docs/PRIVACY.md` detailing local storage inventory, permissions (`0600`/`0700`), provider data flows, redaction guarantees, and manual/automated deletion procedures. Linked in `README.md`.
 - **Optional PyTorch / ML Dependencies with Strict Gate Parity (P2.5 / Decision D2)**:
   - Made PyTorch, ONNXRuntime, and SciPy optional by isolating them in `[project.optional-dependencies] ml` (`pip install "octoflow[ml]"`).
   - Default base installation (`pip install octoflow` / `pip install -r requirements.txt`) is lightweight, fast, and 100% NumPy-only.

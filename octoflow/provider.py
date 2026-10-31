@@ -29,7 +29,9 @@ from octoflow.errors import (
     ProviderTransientError,
     ProviderUnavailableError,
 )
+from octoflow.keyring_store import resolve_api_key
 from octoflow.logging_config import get_logger
+from octoflow.redactor import redact_outbound_text
 from octoflow.usage import UsageLedger, estimate_tokens_from_chars
 
 logger = get_logger("provider")
@@ -506,6 +508,30 @@ class BaseLLMProvider(ABC):
     asleep_fn: Callable[[float], Any] | None = None
     timeout: httpx.Timeout | None = None
     usage_ledger: UsageLedger | None = None
+    redact_outbound: bool = True
+    outbound_redactions_count: int = 0
+
+    def is_local(self) -> bool:
+        """Check if this provider executes locally on-device without outbound cloud network egress."""
+        if self.provider_name in ("mock", "fake", "replay", "ollama"):
+            return True
+        base = getattr(self, "base_url", "") or ""
+        if any(h in base for h in ("localhost", "127.0.0.1", "0.0.0.0", "::1")):
+            return True
+        return False
+
+    def sanitize_outbound_prompt(self, prompt: str, system_prompt: str = "") -> tuple[str, str]:
+        """Scrub sensitive credentials/tokens from outbound cloud prompts if redaction is enabled."""
+        if not self.redact_outbound or self.is_local():
+            return prompt, system_prompt
+        clean_p, n_p = redact_outbound_text(prompt)
+        clean_s, n_s = redact_outbound_text(system_prompt)
+        self.outbound_redactions_count += (n_p + n_s)
+        return clean_p, clean_s
+
+    def get_redactions_count(self) -> int:
+        """Return cumulative count of secrets scrubbed from outbound prompts."""
+        return self.outbound_redactions_count
 
     def set_ledger(self, ledger: UsageLedger | None) -> None:
         """Attach a UsageLedger to accumulate token consumption."""
@@ -787,8 +813,9 @@ class AnthropicProvider(BaseLLMProvider):
         timeout: httpx.Timeout | None = None,
         sleep_fn: Callable[[float], None] | None = None,
         asleep_fn: Callable[[float], Any] | None = None,
+        redact_outbound: bool = True,
     ):
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.api_key = api_key or resolve_api_key("anthropic")[0]
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable or parameter required.")
         self.model = model
@@ -796,6 +823,7 @@ class AnthropicProvider(BaseLLMProvider):
         self.timeout = timeout or DEFAULT_CLOUD_TIMEOUT
         self.sleep_fn = sleep_fn
         self.asleep_fn = asleep_fn
+        self.redact_outbound = redact_outbound
 
     def generate(
         self,
@@ -804,6 +832,7 @@ class AnthropicProvider(BaseLLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 2048,
     ) -> LLMResponse:
+        prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
         headers = {
             "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",
@@ -860,6 +889,7 @@ class AnthropicProvider(BaseLLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 2048,
     ) -> LLMResponse:
+        prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
         headers = {
             "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",
@@ -921,8 +951,9 @@ class OpenAIProvider(BaseLLMProvider):
         timeout: httpx.Timeout | None = None,
         sleep_fn: Callable[[float], None] | None = None,
         asleep_fn: Callable[[float], Any] | None = None,
+        redact_outbound: bool = True,
     ):
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.api_key = api_key or resolve_api_key("openai")[0]
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable or parameter required.")
         self.model = model
@@ -934,6 +965,7 @@ class OpenAIProvider(BaseLLMProvider):
         self.timeout = timeout or DEFAULT_CLOUD_TIMEOUT
         self.sleep_fn = sleep_fn
         self.asleep_fn = asleep_fn
+        self.redact_outbound = redact_outbound
 
     def generate(
         self,
@@ -942,6 +974,7 @@ class OpenAIProvider(BaseLLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 2048,
     ) -> LLMResponse:
+        prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -1001,6 +1034,7 @@ class OpenAIProvider(BaseLLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 2048,
     ) -> LLMResponse:
+        prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -1064,7 +1098,7 @@ class GeminiProvider(OpenAIProvider):
         base_url: str | None = None,
         **kwargs: Any,
     ):
-        key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        key = api_key or resolve_api_key("gemini")[0]
         if not key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable required.")
         url = base_url or "https://generativelanguage.googleapis.com/v1beta/openai"
@@ -1083,7 +1117,7 @@ class GrokProvider(OpenAIProvider):
         base_url: str | None = None,
         **kwargs: Any,
     ):
-        key = api_key or os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
+        key = api_key or resolve_api_key("grok")[0]
         if not key:
             raise ValueError("XAI_API_KEY or GROK_API_KEY environment variable required.")
         url = base_url or "https://api.x.ai/v1"
@@ -1102,7 +1136,7 @@ class DeepSeekProvider(OpenAIProvider):
         base_url: str | None = None,
         **kwargs: Any,
     ):
-        key = api_key or os.getenv("DEEPSEEK_API_KEY")
+        key = api_key or resolve_api_key("deepseek")[0]
         if not key:
             raise ValueError("DEEPSEEK_API_KEY environment variable required.")
         url = base_url or "https://api.deepseek.com/v1"
@@ -1401,11 +1435,17 @@ class FailoverLLMProvider(BaseLLMProvider):
             failures=failures,
         )
 
+    def get_redactions_count(self) -> int:
+        cnt = getattr(self.primary, "get_redactions_count", lambda: 0)()
+        for fb in self.fallbacks:
+            cnt += getattr(fb, "get_redactions_count", lambda: 0)()
+        return cnt
+
 
 def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> BaseLLMProvider:
     """Build a concrete provider instance from an individual pool configuration entry."""
     p_name = entry.provider.lower().strip()
-    key = entry.api_key or os.getenv(f"{p_name.upper()}_API_KEY") or os.getenv("API_KEY")
+    key = entry.api_key or resolve_api_key(p_name)[0]
     is_dry = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
 
     if p_name in ["gemini", "google"]:
@@ -1738,6 +1778,12 @@ class CascadePoolLLMProvider(BaseLLMProvider):
             self.generate, prompt, system_prompt, temperature, max_tokens
         )
 
+    def get_redactions_count(self) -> int:
+        cnt = 0
+        for p in self.providers.values():
+            cnt += getattr(p, "get_redactions_count", lambda: 0)()
+        return cnt
+
 
 def _build_single_provider(
     provider_name: str, config: OctoFlowConfig, tier: str | None = None, dry_run: bool = False
@@ -1745,6 +1791,7 @@ def _build_single_provider(
     """Helper to instantiate an individual provider backend."""
     p_name = provider_name.lower().strip()
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
+    redact_flag = getattr(config, "privacy_redact_outbound", True)
 
     if p_name in ("fake", "replay"):
         from octoflow.bench import FakeBenchmarkProvider
@@ -1762,7 +1809,7 @@ def _build_single_provider(
         )
 
     elif p_name == "anthropic":
-        api_key = config.anthropic_api_key or config.api_key or os.getenv("ANTHROPIC_API_KEY")
+        api_key = config.anthropic_api_key or config.api_key or resolve_api_key("anthropic")[0]
         if tier == "fast":
             model = config.fast_model or "claude-3-5-haiku-20241022"
         elif tier == "frontier":
@@ -1778,10 +1825,10 @@ def _build_single_provider(
                     {"provider": "anthropic", "model": model, "reason": "missing ANTHROPIC_API_KEY"}
                 ],
             )
-        return AnthropicProvider(api_key=api_key, model=model)
+        return AnthropicProvider(api_key=api_key, model=model, redact_outbound=redact_flag)
 
     elif p_name == "openai":
-        api_key = config.openai_api_key or config.api_key or os.getenv("OPENAI_API_KEY")
+        api_key = config.openai_api_key or config.api_key or resolve_api_key("openai")[0]
         if tier == "fast":
             model = config.fast_model or "gpt-4o-mini"
         elif tier == "frontier":
@@ -1806,15 +1853,10 @@ def _build_single_provider(
                     {"provider": "openai", "model": model, "reason": "missing OPENAI_API_KEY"}
                 ],
             )
-        return OpenAIProvider(api_key=api_key, model=model, base_url=base_url)
+        return OpenAIProvider(api_key=api_key, model=model, base_url=base_url, redact_outbound=redact_flag)
 
     elif p_name in ["gemini", "google"]:
-        api_key = (
-            config.gemini_api_key
-            or config.api_key
-            or os.getenv("GEMINI_API_KEY")
-            or os.getenv("GOOGLE_API_KEY")
-        )
+        api_key = config.gemini_api_key or config.api_key or resolve_api_key("gemini")[0]
         model = config.model_name if "gemini" in config.model_name else "gemini-2.0-flash"
         if not api_key:
             if is_dry:
@@ -1825,15 +1867,10 @@ def _build_single_provider(
                     {"provider": "gemini", "model": model, "reason": "missing GEMINI_API_KEY"}
                 ],
             )
-        return GeminiProvider(api_key=api_key, model=model)
+        return GeminiProvider(api_key=api_key, model=model, redact_outbound=redact_flag)
 
     elif p_name in ["grok", "xai"]:
-        api_key = (
-            config.grok_api_key
-            or config.api_key
-            or os.getenv("XAI_API_KEY")
-            or os.getenv("GROK_API_KEY")
-        )
+        api_key = config.grok_api_key or config.api_key or resolve_api_key("grok")[0]
         model = config.model_name if "grok" in config.model_name else "grok-2-1212"
         if not api_key:
             if is_dry:
@@ -1842,10 +1879,10 @@ def _build_single_provider(
                 "Grok provider misconfigured: missing GROK_API_KEY",
                 failures=[{"provider": "grok", "model": model, "reason": "missing GROK_API_KEY"}],
             )
-        return GrokProvider(api_key=api_key, model=model)
+        return GrokProvider(api_key=api_key, model=model, redact_outbound=redact_flag)
 
     elif p_name in ["deepseek"]:
-        api_key = config.deepseek_api_key or config.api_key or os.getenv("DEEPSEEK_API_KEY")
+        api_key = config.deepseek_api_key or config.api_key or resolve_api_key("deepseek")[0]
         model = config.model_name if "deepseek" in config.model_name else "deepseek-chat"
         if not api_key:
             if is_dry:
@@ -1856,7 +1893,7 @@ def _build_single_provider(
                     {"provider": "deepseek", "model": model, "reason": "missing DEEPSEEK_API_KEY"}
                 ],
             )
-        return DeepSeekProvider(api_key=api_key, model=model)
+        return DeepSeekProvider(api_key=api_key, model=model, redact_outbound=redact_flag)
 
     elif p_name == "ollama":
         url = config.base_url or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434"

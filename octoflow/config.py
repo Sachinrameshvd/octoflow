@@ -465,6 +465,9 @@ class OctoFlowConfig(BaseModel):
     enable_3d_telemetry: bool = True
     telemetry_port: int = 8088
 
+    # Privacy & Egress Hardening
+    privacy_redact_outbound: bool = True
+
     # Biological Neural Core Settings
     neural_checkpoint_path: str | None = None
     obs_dim: int = 16
@@ -472,78 +475,74 @@ class OctoFlowConfig(BaseModel):
     message_dim: int = 32
 
     def model_post_init(self, __context: Any) -> None:
-        """Auto-populate API keys and defaults from ~/.octoflow/config.json if not provided."""
-        user_cfg = load_secure_config()
-        if user_cfg:
-            try:
-                if not self.anthropic_api_key:
-                    self.anthropic_api_key = user_cfg.get("anthropic_api_key") or os.getenv(
-                        "ANTHROPIC_API_KEY"
-                    )
-                if not self.openai_api_key:
-                    self.openai_api_key = user_cfg.get("openai_api_key") or os.getenv(
-                        "OPENAI_API_KEY"
-                    )
-                if not self.gemini_api_key:
-                    self.gemini_api_key = (
-                        user_cfg.get("gemini_api_key")
-                        or os.getenv("GEMINI_API_KEY")
-                        or os.getenv("GOOGLE_API_KEY")
-                    )
-                if not self.grok_api_key:
-                    self.grok_api_key = (
-                        user_cfg.get("grok_api_key")
-                        or os.getenv("XAI_API_KEY")
-                        or os.getenv("GROK_API_KEY")
-                    )
-                if not self.deepseek_api_key:
-                    self.deepseek_api_key = user_cfg.get("deepseek_api_key") or os.getenv(
-                        "DEEPSEEK_API_KEY"
-                    )
+        """Auto-populate API keys and defaults from ENV > KEYRING > CONFIG."""
+        from octoflow.keyring_store import resolve_api_key
 
-                if not self.frontier_provider:
-                    self.frontier_provider = user_cfg.get("frontier_provider")
-                if not self.fast_provider:
-                    self.fast_provider = user_cfg.get("fast_provider")
-                if not self.frontier_model:
-                    self.frontier_model = user_cfg.get("frontier_model")
-                if not self.fast_model:
-                    self.fast_model = user_cfg.get("fast_model")
+        user_cfg = load_secure_config() or {}
+        try:
+            env_redact = os.getenv("OCTOFLOW_REDACT_OUTBOUND")
+            if env_redact is not None:
+                self.privacy_redact_outbound = env_redact.lower() not in ("0", "false", "no", "off")
+            elif user_cfg and "privacy" in user_cfg and isinstance(user_cfg["privacy"], dict):
+                if "redact_outbound" in user_cfg["privacy"]:
+                    self.privacy_redact_outbound = bool(user_cfg["privacy"]["redact_outbound"])
+            elif user_cfg and "privacy_redact_outbound" in user_cfg:
+                self.privacy_redact_outbound = bool(user_cfg["privacy_redact_outbound"])
 
-                if (
-                    not self.llm_pool
-                    and "llm_pool" in user_cfg
-                    and isinstance(user_cfg["llm_pool"], list)
-                ):
-                    for entry_data in user_cfg["llm_pool"]:
-                        try:
-                            self.llm_pool.append(LLMConfigEntry(**entry_data))
-                        except Exception:
-                            pass
+            if not self.anthropic_api_key:
+                self.anthropic_api_key = resolve_api_key("anthropic", user_cfg)[0]
+            if not self.openai_api_key:
+                self.openai_api_key = resolve_api_key("openai", user_cfg)[0]
+            if not self.gemini_api_key:
+                self.gemini_api_key = resolve_api_key("gemini", user_cfg)[0]
+            if not self.grok_api_key:
+                self.grok_api_key = resolve_api_key("grok", user_cfg)[0]
+            if not self.deepseek_api_key:
+                self.deepseek_api_key = resolve_api_key("deepseek", user_cfg)[0]
 
-                if not self.api_key:
-                    if self.model_provider == "anthropic":
-                        self.api_key = self.anthropic_api_key
-                    elif self.model_provider == "openai":
-                        self.api_key = self.openai_api_key
-                    elif self.model_provider in ["gemini", "google"]:
-                        self.api_key = self.gemini_api_key
-                    elif self.model_provider in ["grok", "xai"]:
-                        self.api_key = self.grok_api_key
-                    elif self.model_provider == "deepseek":
-                        self.api_key = self.deepseek_api_key
+            if not self.frontier_provider:
+                self.frontier_provider = user_cfg.get("frontier_provider")
+            if not self.fast_provider:
+                self.fast_provider = user_cfg.get("fast_provider")
+            if not self.frontier_model:
+                self.frontier_model = user_cfg.get("frontier_model")
+            if not self.fast_model:
+                self.fast_model = user_cfg.get("fast_model")
 
-                if not self.base_url and self.model_provider == "ollama":
-                    self.base_url = user_cfg.get("ollama_base_url") or "http://localhost:11434"
-                if not self.webhook_url:
-                    self.webhook_url = (
-                        user_cfg.get("webhook_url")
-                        or os.getenv("OCTOFLOW_WEBHOOK_URL")
-                        or os.getenv("SLACK_WEBHOOK_URL")
-                        or os.getenv("DISCORD_WEBHOOK_URL")
-                    )
-            except Exception:
-                pass
+            if (
+                not self.llm_pool
+                and "llm_pool" in user_cfg
+                and isinstance(user_cfg["llm_pool"], list)
+            ):
+                for entry_data in user_cfg["llm_pool"]:
+                    try:
+                        self.llm_pool.append(LLMConfigEntry(**entry_data))
+                    except Exception:
+                        pass
+
+            if not self.api_key:
+                if self.model_provider == "anthropic":
+                    self.api_key = self.anthropic_api_key
+                elif self.model_provider == "openai":
+                    self.api_key = self.openai_api_key
+                elif self.model_provider in ["gemini", "google"]:
+                    self.api_key = self.gemini_api_key
+                elif self.model_provider in ["grok", "xai"]:
+                    self.api_key = self.grok_api_key
+                elif self.model_provider == "deepseek":
+                    self.api_key = self.deepseek_api_key
+
+            if not self.base_url and self.model_provider == "ollama":
+                self.base_url = user_cfg.get("ollama_base_url") or "http://localhost:11434"
+            if not self.webhook_url:
+                self.webhook_url = (
+                    user_cfg.get("webhook_url")
+                    or os.getenv("OCTOFLOW_WEBHOOK_URL")
+                    or os.getenv("SLACK_WEBHOOK_URL")
+                    or os.getenv("DISCORD_WEBHOOK_URL")
+                )
+        except Exception:
+            pass
 
     def get_roster(self) -> list[ArmRoleConfig]:
         """Retrieve the 8-arm configuration for current morphology or custom community guild."""

@@ -1,0 +1,15 @@
+                                                                                                    
+ Usage: octos purge [OPTIONS]                                                                       
+                                                                                                    
+ Purge OctoFlow local storage: config, logs, run histories, memory, and reports.                    
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --yes             -y             Skip confirmation prompt and proceed immediately                │
+│ --dry-run                        List files and directories that would be deleted without        │
+│                                  deleting                                                        │
+│ --workspace-only                 Purge only workspace artifacts (.octoflow, reports)             │
+│ --global-only                    Purge only global ~/.octoflow directory                         │
+│ --dir             -d      <str>  Workspace directory for local artifact cleanup [default: .]     │
+│ --help                           Show this message and exit.                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

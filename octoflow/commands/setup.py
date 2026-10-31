@@ -17,6 +17,11 @@ from octoflow.config import (
     mask_credential,
     save_secure_config,
 )
+from octoflow.keyring_store import (
+    is_keyring_available,
+    resolve_api_key,
+    set_keyring_key,
+)
 from octoflow.themes import load_saved_theme, save_theme_preference
 
 console = Console()
@@ -133,48 +138,54 @@ def run_setup_wizard(launch_after: bool = False):
                 val = ""
         return val if val else current_val
 
+    def _handle_key_storage(provider_id: str, secret_key: str):
+        if not secret_key:
+            return
+        os.environ[f"{provider_id.upper()}_API_KEY"] = secret_key
+
+        if is_keyring_available():
+            try:
+                use_keyring = input("Store API key securely in OS Keyring? [Y/n]: ").strip().lower() != "n"
+            except Exception:
+                use_keyring = True
+            if use_keyring:
+                if set_keyring_key(provider_id, secret_key):
+                    existing_cfg[f"{provider_id}_api_key"] = "[keyring]"
+                    console.print(f"[{cur_theme.rich_success}]✔ Stored {provider_id.upper()} key securely in OS Keyring.[/{cur_theme.rich_success}]")
+                    return
+        # Fallback or keyring declined / unavailable:
+        existing_cfg[f"{provider_id}_api_key"] = secret_key
+        console.print(
+            "[{color}]Notice: Storing API key in plaintext in ~/.octoflow/config.json (mode 0600). "
+            "For OS Keyring storage, install 'octoflow[keyring]'.[/{color}]".format(
+                color=cur_theme.rich_warning if hasattr(cur_theme, "rich_warning") else "yellow"
+            )
+        )
+
     if chosen_provider == "anthropic":
-        env_key = os.getenv("ANTHROPIC_API_KEY") or existing_cfg.get("anthropic_api_key", "")
-        saved_key = _prompt_secret_key("ANTHROPIC_API_KEY", env_key)
-        if saved_key:
-            existing_cfg["anthropic_api_key"] = saved_key
-            os.environ["ANTHROPIC_API_KEY"] = saved_key
+        cur_val = resolve_api_key("anthropic", config=existing_cfg)[0] or ""
+        saved_key = _prompt_secret_key("ANTHROPIC_API_KEY", cur_val)
+        _handle_key_storage("anthropic", saved_key)
 
     elif chosen_provider == "openai":
-        env_key = os.getenv("OPENAI_API_KEY") or existing_cfg.get("openai_api_key", "")
-        saved_key = _prompt_secret_key("OPENAI_API_KEY", env_key)
-        if saved_key:
-            existing_cfg["openai_api_key"] = saved_key
-            os.environ["OPENAI_API_KEY"] = saved_key
+        cur_val = resolve_api_key("openai", config=existing_cfg)[0] or ""
+        saved_key = _prompt_secret_key("OPENAI_API_KEY", cur_val)
+        _handle_key_storage("openai", saved_key)
 
     elif chosen_provider == "gemini":
-        env_key = (
-            os.getenv("GEMINI_API_KEY")
-            or os.getenv("GOOGLE_API_KEY")
-            or existing_cfg.get("gemini_api_key", "")
-        )
-        saved_key = _prompt_secret_key("GEMINI_API_KEY", env_key)
-        if saved_key:
-            existing_cfg["gemini_api_key"] = saved_key
-            os.environ["GEMINI_API_KEY"] = saved_key
+        cur_val = resolve_api_key("gemini", config=existing_cfg)[0] or ""
+        saved_key = _prompt_secret_key("GEMINI_API_KEY", cur_val)
+        _handle_key_storage("gemini", saved_key)
 
     elif chosen_provider == "grok":
-        env_key = (
-            os.getenv("XAI_API_KEY")
-            or os.getenv("GROK_API_KEY")
-            or existing_cfg.get("grok_api_key", "")
-        )
-        saved_key = _prompt_secret_key("XAI_API_KEY", env_key)
-        if saved_key:
-            existing_cfg["grok_api_key"] = saved_key
-            os.environ["XAI_API_KEY"] = saved_key
+        cur_val = resolve_api_key("grok", config=existing_cfg)[0] or ""
+        saved_key = _prompt_secret_key("XAI_API_KEY", cur_val)
+        _handle_key_storage("grok", saved_key)
 
     elif chosen_provider == "deepseek":
-        env_key = os.getenv("DEEPSEEK_API_KEY") or existing_cfg.get("deepseek_api_key", "")
-        saved_key = _prompt_secret_key("DEEPSEEK_API_KEY", env_key)
-        if saved_key:
-            existing_cfg["deepseek_api_key"] = saved_key
-            os.environ["DEEPSEEK_API_KEY"] = saved_key
+        cur_val = resolve_api_key("deepseek", config=existing_cfg)[0] or ""
+        saved_key = _prompt_secret_key("DEEPSEEK_API_KEY", cur_val)
+        _handle_key_storage("deepseek", saved_key)
 
     elif chosen_provider == "ollama":
         base_url = get_live_wizard_input(
