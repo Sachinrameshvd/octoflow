@@ -7,6 +7,55 @@ on:
     branches: [ main, master ]
 
 jobs:
+  lint:
+    name: Lint & Style (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install Lint Tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+
+    - name: Ruff Check
+      run: |
+        ruff check .
+
+    - name: Ruff Format Check
+      run: |
+        ruff format --check .
+
+  typecheck:
+    name: Gradual Typecheck (mypy)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install Package & Type Stubs
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install mypy types-requests
+
+    - name: Run mypy
+      run: |
+        mypy
+
   test-base:
     name: Base Package Unit Tests (No Torch/ML)
     runs-on: ${{ matrix.os }}
