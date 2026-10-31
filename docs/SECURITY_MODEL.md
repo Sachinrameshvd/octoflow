@@ -2,6 +2,10 @@
 
 This document defines OctoFlow's defense-in-depth security model across tool sandboxing, localhost network services, telemetry streaming, and credential management.
 
+For the comprehensive STRIDE threat model across all 8 trust boundaries and the complete audit findings from Phase 5.1, see:
+- [Threat Model (STRIDE Analysis across 8 Boundaries)](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/THREAT_MODEL.md)
+- [P5.1 Security Audit & Vulnerability Findings](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/audit/P5.1-security-findings.md)
+
 ---
 
 ## 1. Local Telemetry Server
