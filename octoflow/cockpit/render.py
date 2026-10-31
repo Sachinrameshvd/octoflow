@@ -8,7 +8,9 @@ Renders rich terminal UI components for the interactive cockpit:
 - Welcome 3D banner rendering
 """
 
+import os
 import subprocess
+import time
 from typing import Any
 
 from rich.console import Console
@@ -25,22 +27,57 @@ from octoflow.themes import (
 )
 
 
-def build_hud_panel(session: CockpitSession) -> Panel:
-    """Build the top HUD panel displaying workspace state, git branch, model, and budget."""
-    theme = session.theme
-    git_branch = "no git"
+def _get_git_branch_fast(workspace: Any) -> str:
+    """Read git branch directly from filesystem metadata or fast fallback."""
     try:
+        from pathlib import Path
+
+        ws = Path(workspace)
+        git_dir = ws / ".git"
+        if git_dir.is_dir():
+            head_file = git_dir / "HEAD"
+            if head_file.is_file():
+                content = head_file.read_text(encoding="utf-8").strip()
+                if content.startswith("ref: refs/heads/"):
+                    return f"git: {content[16:]}"
+                if content:
+                    return f"git: {content[:7]}"
+        elif git_dir.is_file():
+            head_ref = git_dir.read_text(encoding="utf-8").strip()
+            if head_ref.startswith("gitdir:"):
+                actual_git = ws / head_ref[7:].strip()
+                if actual_git.is_dir():
+                    head_file = actual_git / "HEAD"
+                    if head_file.is_file():
+                        content = head_file.read_text(encoding="utf-8").strip()
+                        if content.startswith("ref: refs/heads/"):
+                            return f"git: {content[16:]}"
+        # Fallback to subprocess if not directly resolved
         res = subprocess.run(
             ["git", "branch", "--show-current"],
-            cwd=str(session.workspace),
+            cwd=str(ws),
             capture_output=True,
             text=True,
             timeout=1,
         )
         if res.returncode == 0 and res.stdout.strip():
-            git_branch = f"git: {res.stdout.strip()}"
+            return f"git: {res.stdout.strip()}"
     except Exception:
         pass
+    return "no git"
+
+
+def build_hud_panel(session: CockpitSession) -> Panel:
+    """Build the top HUD panel displaying workspace state, git branch, model, and budget."""
+    theme = session.theme
+    cached_branch = getattr(session, "_cached_git_branch", None)
+    cached_ws = getattr(session, "_cached_git_ws", None)
+    if cached_branch is not None and cached_ws == session.workspace:
+        git_branch = cached_branch
+    else:
+        git_branch = _get_git_branch_fast(session.workspace)
+        session._cached_git_branch = git_branch  # type: ignore[attr-defined]
+        session._cached_git_ws = session.workspace  # type: ignore[attr-defined]
 
     hud_table = Table.grid(expand=True, padding=(0, 1))
     hud_table.add_column(style=theme.rich_primary, width=16)
@@ -54,11 +91,14 @@ def build_hud_panel(session: CockpitSession) -> Panel:
     if not budget_line and getattr(session, "budget_tracker", None):
         budget_line = session.budget_tracker.format_hud_line()
     if not budget_line:
-        from octoflow.budget import BudgetTracker, RunBudget
+        budget_tracker = getattr(session, "_cached_budget_tracker", None)
+        if budget_tracker is None:
+            from octoflow.budget import BudgetTracker, RunBudget
 
-        budget = getattr(session, "budget", None) or RunBudget()
-        tracker = BudgetTracker(budget=budget)
-        budget_line = tracker.format_hud_line()
+            budget = getattr(session, "budget", None) or RunBudget()
+            budget_tracker = BudgetTracker(budget=budget)
+            session._cached_budget_tracker = budget_tracker  # type: ignore[attr-defined]
+        budget_line = budget_tracker.format_hud_line()
     hud_table.add_row("◈ BUDGET", f"{budget_line}")
     hud_table.add_row(
         "◈ SWARM TIER",
@@ -133,6 +173,8 @@ def build_cockpit_grid(
     pasted_line_count: int = 1,
 ) -> Table:
     """Composite the full animated cockpit frame grid (Banner, HUD, Topology, Runner, Prompt)."""
+    t0 = time.perf_counter() if os.getenv("OCTOFLOW_DEBUG_FRAMES") == "1" else 0.0
+
     theme = session.theme
     banner = get_banner_loop_frame(theme, tick=tick)
     is_jump = octo_y > 0
@@ -154,6 +196,11 @@ def build_cockpit_grid(
     grid.add_row(topology_text)
     grid.add_row(runner_frame)
     grid.add_row(prompt_text)
+
+    if t0 > 0.0:
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        session.last_frame_ms = elapsed_ms  # type: ignore[attr-defined]
+
     return grid
 
 
