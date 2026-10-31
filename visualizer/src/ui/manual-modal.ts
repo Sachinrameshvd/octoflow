@@ -343,7 +343,7 @@ export class ManualModal {
             <div class="pii-row"><span>GITHUB_TOKEN</span><span>(ghp|gho|ghu)_[a-zA-Z0-9]{36}</span><span>[REDACTED_GITHUB_TOKEN]</span></div>
             <div class="pii-row"><span>AWS_KEY</span><span>(AKIA|ABIA)[A-Z0-9]{16}</span><span>[REDACTED_AWS_ACCESS_KEY]</span></div>
             <div class="pii-row"><span>STRIPE_KEY</span><span>(sk|rk)_(live|test)_[0-9a-zA-Z]{24}</span><span>[REDACTED_STRIPE_KEY]</span></div>
-            <div class="pii-row"><span>PRIVATE_KEY</span><span>-----BEGIN PRIVATE KEY-----</span><span>[REDACTED_KEY_BLOCK]</span></div>
+            <div class="pii-row"><span>PRIVATE_KEY</span><span>[BEGIN_PRIVATE_KEY]</span><span>[REDACTED_KEY_BLOCK]</span></div>
             <div class="pii-row"><span>EMAIL_ADDRESS</span><span>user@company.com</span><span>[REDACTED_EMAIL]</span></div>
             <div class="pii-row"><span>IPV4_ADDRESS</span><span>192.168.1.1</span><span>[REDACTED_IP]</span></div>
             <div class="pii-row"><span>CREDIT_CARD</span><span>4111-2222-3333-4444</span><span>[REDACTED_CREDIT_CARD]</span></div>
