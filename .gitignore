@@ -88,4 +88,5 @@ Thumbs.db
 # Generated project folders
 task_manager/
 test_output.py
+dist-artifacts/
 

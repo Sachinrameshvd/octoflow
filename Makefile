@@ -2,7 +2,7 @@ PYTHON ?= $(shell which python3.12 2>/dev/null || which python3)
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: all setup test test-fast test-live check-coverage visualizer-build visualizer-sync clean
+.PHONY: all setup lock test test-fast test-live check-coverage visualizer-build visualizer-sync clean
 
 all: setup test
 
@@ -12,7 +12,22 @@ setup:
 		$(PYTHON) -m venv $(VENV); \
 	fi
 	@$(BIN)/pip install --upgrade pip setuptools wheel
-	@$(BIN)/pip install -e ".[dev]"
+	@if [ -f "requirements.lock" ]; then \
+		$(BIN)/pip install -r requirements.lock; \
+		$(BIN)/pip install --no-deps -e .; \
+	else \
+		$(BIN)/pip install -e ".[dev]"; \
+	fi
+
+lock:
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python scripts/generate_lock.py; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 scripts/generate_lock.py; \
+	else \
+		echo "Python not found. Please run 'make setup' first."; \
+		exit 1; \
+	fi
 
 test-fast:
 	@if [ -f "$(BIN)/pytest" ]; then \

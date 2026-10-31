@@ -459,7 +459,7 @@ This section documents real-world issues diagnosed and resolved across productio
 
 ## 📜 Citation & License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License](./LICENSE). For third-party dependencies and supply-chain license compliance, see [Third-Party Licenses](docs/THIRD_PARTY_LICENSES.md). For dependency management guidelines, see [Dependency Policy](docs/DEPENDENCY_POLICY.md).
 
 ```bibtex
 @software{octopus_brain_2026,
