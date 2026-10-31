@@ -2,7 +2,7 @@ PYTHON ?= $(shell which python3.12 2>/dev/null || which python3)
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: all setup test test-fast test-live check-coverage visualizer-build clean
+.PHONY: all setup test test-fast test-live check-coverage visualizer-build visualizer-sync clean
 
 all: setup test
 
@@ -59,6 +59,9 @@ visualizer-build:
 	@cd visualizer && npm ci && npm run build
 	@mkdir -p octoflow/dist
 	@cp -R visualizer/dist/* octoflow/dist/
+
+visualizer-sync:
+	@bash scripts/sync_visualizer.sh
 
 clean:
 	@echo "Cleaning build and cache artifacts..."

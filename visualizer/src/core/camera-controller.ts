@@ -430,8 +430,8 @@ export class CameraController {
     const anchor = this.anchorPosition.clone().add(new THREE.Vector3(0, 4, 0));
     const dist = 75.0;
 
-    let camPos = new THREE.Vector3();
-    let target = anchor.clone();
+    const camPos = new THREE.Vector3();
+    const target = anchor.clone();
 
     if (preset === 'FRONT') camPos.set(anchor.x, anchor.y + 10, anchor.z + dist);
     else if (preset === 'BACK') camPos.set(anchor.x, anchor.y + 10, anchor.z - dist);

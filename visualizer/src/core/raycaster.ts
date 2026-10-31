@@ -83,7 +83,7 @@ export class ConnectomeRaycaster {
 
     let closestFiber: NeuralFiber | null = null;
     let closestDist = Infinity;
-    let bestHitPoint = new THREE.Vector3();
+    const bestHitPoint = new THREE.Vector3();
 
     const fibers = this.connectome.fibers;
     const numFibers = fibers.length;

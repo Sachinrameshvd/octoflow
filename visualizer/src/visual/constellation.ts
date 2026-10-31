@@ -18,6 +18,7 @@ import { AnatomicalMeshGenerator } from './anatomical-mesh';
 import { SignalPropagator } from './signal-propagator';
 import type { CameraController } from '../core/camera-controller';
 import { ICONS } from '../ui/icons';
+import { parseTelemetryMessage, ReconnectController } from '../telemetry/parse';
 
 export interface OctopusNodeData {
   id: number;
@@ -235,6 +236,11 @@ export class CephalopodConstellationManager {
 
   private hudOverlayContainer: HTMLElement | null = null;
   private ws: WebSocket | null = null;
+  private reconnectController: ReconnectController = new ReconnectController({
+    initialDelayMs: 1000,
+    maxDelayMs: 10000,
+    backoffMultiplier: 1.5,
+  });
   public onSelectOctopus: ((data: OctopusNodeData, octo: FullCephalopod) => void) | null = null;
 
   constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, controls?: OrbitControls, cameraController?: CameraController) {
@@ -447,8 +453,8 @@ export class CephalopodConstellationManager {
 
       const customGlyph = ICONS.octoGlyph(entry.data.id, 15);
 
-        let titleDisplay = entry.data.title.toUpperCase();
-        let roleHtml = '';
+        let titleDisplay: string;
+        let roleHtml: string;
 
         if (this.domainMode === 'DUAL') {
           roleHtml = `
@@ -756,19 +762,20 @@ export class CephalopodConstellationManager {
 
     try {
       this.ws = new WebSocket(wsUrl);
+      this.ws.onopen = () => {
+        this.reconnectController.recordSuccess();
+      };
       this.ws.onmessage = (msg) => {
-        try {
-          const evt = JSON.parse(msg.data);
-          this.handleTelemetryEvent(evt);
-        } catch (e) {
-          // ignore parsing error
+        const res = parseTelemetryMessage(msg.data);
+        if (res.success && res.data) {
+          this.handleTelemetryEvent(res.data);
         }
       };
       this.ws.onclose = () => {
-        setTimeout(() => this.connectTelemetryWebSocket(), 3000);
+        this.reconnectController.schedule(() => this.connectTelemetryWebSocket());
       };
-    } catch (e) {
-      // ws unavailable
+    } catch {
+      this.reconnectController.schedule(() => this.connectTelemetryWebSocket());
     }
   }
 

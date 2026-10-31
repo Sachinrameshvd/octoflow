@@ -442,7 +442,7 @@ export class CephalopodVoiceSystem {
         ? `<span class="mode-tag-sw">SOFTWARE DEV MODE</span>`
         : `<span class="mode-tag-aiml">AI/ML RESEARCH MODE</span>`;
 
-    let rolesHtml = '';
+    let rolesHtml: string;
     if (this.domainMode === 'DUAL') {
       rolesHtml = `
         <div class="dual-roles-container">

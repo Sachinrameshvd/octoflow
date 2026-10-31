@@ -160,7 +160,7 @@ jobs:
         python experiments/infer.py --checkpoint checkpoints/ci_model.pt --episodes 2 --render terminal
 
   visualizer:
-    name: WebGL Visualizer TypeScript Build
+    name: WebGL Visualizer Quality Gates & Dist Sync
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -170,9 +170,38 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'visualizer/package-lock.json'
 
-    - name: Build Three.js Visualizer
+    - name: Install Frontend Dependencies
       run: |
         cd visualizer
-        npm ci || npm install
-        npm run build
+        npm ci
+
+    - name: TypeScript Strict Check
+      run: |
+        cd visualizer
+        npx tsc --noEmit
+
+    - name: ESLint Static Analysis
+      run: |
+        cd visualizer
+        npm run lint
+
+    - name: Vitest Unit & Reconnect Suite
+      run: |
+        cd visualizer
+        npm run test
+
+    - name: NPM Security Audit (Report-Only)
+      run: |
+        cd visualizer
+        npm audit --audit-level=high || true
+
+    - name: Build and Sync Distribution Artifacts
+      run: |
+        bash scripts/sync_visualizer.sh
+
+    - name: Distribution Staleness Check
+      run: |
+        git diff --exit-code octoflow/dist
