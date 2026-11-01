@@ -762,7 +762,7 @@ def generate_html_audit_report(
         html_content += """
     <section class="diff-section">
       <div class="section-title">
-        <span>⚡</span> Vertical Lobe Synaptic Memory (Hebbian Heuristics)
+        <span>↯</span> Vertical Lobe Synaptic Memory (Hebbian Heuristics)
       </div>
       <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
 """

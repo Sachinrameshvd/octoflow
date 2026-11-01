@@ -469,6 +469,20 @@ For detailed documentation on local storage, data flows, and purge procedures, s
 
 ---
 
+## ♿ Terminal Accessibility & Scriptability
+
+OctoFlow provides complete terminal accessibility, cross-platform emulator compatibility, and CI scriptability:
+- **Zero-Emoji Policy**: All active terminal glyphs have single display width (`wcwidth == 1`) with ASCII fallbacks to eliminate grid misalignment.
+- **NO_COLOR Standard**: Respects the `NO_COLOR` standard and `--no-color` flag (0 ANSI escapes).
+- **Pure ASCII Mode**: Force strictly 7-bit ASCII (`ord < 128`) output via `--ascii` or `OCTOFLOW_ASCII=1`.
+- **Static Mode**: Disable continuous animations via `--no-anim` or `OCTOFLOW_ANIM=0` (redraws only on input).
+- **Scriptable Plain & JSON Output**: Stream line-by-line events via `--plain`, or export machine-readable results via `--json`.
+- **Narrow Terminal Support**: Automatically scales down to a compact 1-line HUD below 60 columns or 15 rows, supporting dynamic window resizing (`SIGWINCH`) without crashing.
+
+For complete flag details, glyph tables, and developer guidelines, see the [Terminal Accessibility Guide](docs/accessibility.md).
+
+---
+
 ## 📜 Citation & License
 
 This project is licensed under the [MIT License](./LICENSE). For third-party dependencies and supply-chain license compliance, see [Third-Party Licenses](docs/THIRD_PARTY_LICENSES.md). For dependency management guidelines, see [Dependency Policy](docs/DEPENDENCY_POLICY.md).

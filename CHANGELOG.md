@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Terminal Accessibility, Zero-Emoji Glyph Audit, and Plain Mode (P6.3)**:
+  - **Central Glyph Table**: Created `octoflow/glyphs.py` defining single-width characters (`wcwidth == 1`) with 7-bit ASCII fallbacks (`ord < 128`) and optional `--legacy-glyphs` transition support.
+  - **Zero-Emoji Policy Audit**: Replaced all wide emojis and ambiguous symbols (`⚡`, `✔`, `✖`, `⏳`, `🐙`) across all terminal and CLI modules with verified single-width presentation characters (`↯`, `✓`, `✗`, `·`, `◈`).
+  - **NO_COLOR Standard**: Full compliance with the `https://no-color.org` specification (`NO_COLOR` env var and `--no-color` flag emit 0 ANSI escape sequences).
+  - **Pure ASCII Mode**: Added `--ascii` flag and `OCTOFLOW_ASCII=1` ensuring every byte emitted to stdout/stderr is strictly `< 128`.
+  - **Non-TTY & Pipe Automation**: Non-TTY streams bypass live TUI cursors and cockpit chrome, defaulting automatically to plain line-oriented output.
+  - **Scriptable Plain & Machine Modes**: Added `--plain` for line-by-line `[arm <id> <role>] <summary>` progress, `--quiet` / `-q` to suppress progress lines, and `--json` for structured machine-parseable final mission outcomes.
+  - **Narrow Terminal & Resize Resilience**: Terminals below 60 columns or 15 rows automatically collapse chrome into a compact 1-line HUD. `SIGWINCH` window resizing queries sizes per-frame without crashing.
+  - **Static Non-Animated Mode**: Added `--no-anim` / `OCTOFLOW_ANIM=0` mode where the cockpit redraws only on state/keystroke changes, ensuring two consecutive idle reads are byte-for-byte identical.
+  - **Documentation & Verification**: Added `docs/accessibility.md`, updated `.cursorrules`, `docs/CONTRIBUTING-snippet`, and comprehensive regression test suites in `tests/test_glyph_policy.py` and `tests/test_plain_mode.py`.
 - **Message Catalog, Empty States, and Help UX (P6.2)**:
   - **Canonical Error Message Catalog**: Created `octoflow/messages.py` mapping stable error codes (`E-PROV-AUTH`, `E-PROV-RATE`, `E-OLLAMA-DOWN`, `E-CONFIG-INVALID`, `E-TOOL-DENIED`, `E-BUDGET`, `E-NOGIT`, `E-PROV-TRANSIENT`, `E-PROV-REQUEST`, `E-PROV-EXHAUSTED`, `E-PROV-FAILED`, `E-USAGE-INVALID`, `E-WORKSPACE-ESCAPE`, `E-GENERAL`) with plain-language cause, operational consequence, concrete next-step command, and documentation anchors.
   - **Standardized Error Formatting**: Errors print `E-XXXX message` plus `Hint: <action>` on the next line without changing existing exit code contracts or suppressing `--trace` debug details.

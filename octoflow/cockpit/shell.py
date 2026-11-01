@@ -19,6 +19,7 @@ from rich.live import Live
 from octoflow.cockpit.input import raw_terminal_mode
 from octoflow.cockpit.render import build_confirm_grid
 from octoflow.cockpit.session import CockpitSession
+from octoflow.glyphs import glyph, is_no_anim
 from octoflow.router import (
     Route,
     execute_shell_route,
@@ -42,8 +43,9 @@ def confirm_live_cockpit(
 
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         try:
+            warn_sym = glyph("WARN")
             c.print(
-                f"[{theme.rich_warning}]⚠ Confirm execution:[/{theme.rich_warning}] "
+                f"[{theme.rich_warning}]{warn_sym} Confirm execution:[/{theme.rich_warning}] "
                 f"[bold]{route.command}[/bold] ({route.reason}) [y/N]: ",
                 end="",
             )
@@ -71,7 +73,9 @@ def confirm_live_cockpit(
             while True:
                 # Guaranteed select timeout <= 0.045s
                 rlist, _, _ = select.select([sys.stdin], [], [], 0.045)
+                has_input = False
                 if rlist:
+                    has_input = True
                     try:
                         raw_chunk = os.read(fd, 1024).decode("utf-8", errors="ignore")
                     except Exception:
@@ -89,19 +93,23 @@ def confirm_live_cockpit(
                         return True
                     return False
 
-                tick += 1
-                octo_x += octo_dx
-                if octo_x >= 45.0:
-                    octo_x = 45.0
-                    octo_dx = -1.2
-                elif octo_x <= 0.0:
-                    octo_x = 0.0
-                    octo_dx = 1.2
+                if is_no_anim():
+                    if has_input:
+                        live.update(build_confirm_grid(route, s, 0, 0.0, 0))
+                else:
+                    tick += 1
+                    octo_x += octo_dx
+                    if octo_x >= 45.0:
+                        octo_x = 45.0
+                        octo_dx = -1.2
+                    elif octo_x <= 0.0:
+                        octo_x = 0.0
+                        octo_dx = 1.2
 
-                jump_phase += 0.16
-                octo_y = 1 if math.sin(jump_phase) > 0.25 else 0
+                    jump_phase += 0.16
+                    octo_y = 1 if math.sin(jump_phase) > 0.25 else 0
 
-                live.update(build_confirm_grid(route, s, tick, octo_x, octo_y))
+                    live.update(build_confirm_grid(route, s, tick, octo_x, octo_y))
 
 
 def execute_cockpit_shell(
@@ -139,12 +147,14 @@ def execute_cockpit_shell(
         session.previous_workspace = session.workspace
         session.workspace = target_path
         log_command_history(shell_cmd, workspace=session.workspace, success=True, kind="CD")
+        ok_sym = glyph("OK")
         console.print(
-            f"[{theme.rich_success}]✔ Active workspace switched to:[/{theme.rich_success}] [bold]{session.workspace}[/bold]\n"
+            f"[{theme.rich_success}]{ok_sym} Active workspace switched to:[/{theme.rich_success}] [bold]{session.workspace}[/bold]\n"
         )
         return
 
-    console.print(f"[{theme.rich_primary}]⚡ Shell:[/{theme.rich_primary}] [dim]{shell_cmd}[/dim]")
+    bolt_sym = glyph("BOLT")
+    console.print(f"[{theme.rich_primary}]{bolt_sym} Shell:[/{theme.rich_primary}] [dim]{shell_cmd}[/dim]")
     try:
         returncode, stdout, stderr = execute_shell_route(
             route, workspace=session.workspace, timeout=60

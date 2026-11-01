@@ -104,7 +104,7 @@ TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Genesis & Foundation",
         description="System topology, package.json, vite.config.js, requirements.txt, and schemas.",
         color_hex="#00F0FF",  # Bioluminescent Cyan
-        icon="📐",
+        icon="◈",
         focus_domain="scaffolding",
     ),
     OctopusGuildConfig(
@@ -113,7 +113,7 @@ TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Backend & Intelligence",
         description="FastAPI endpoints, hardware controllers, WebSockets, DB persistence, and AI bridges.",
         color_hex="#3B82F6",  # Electric Blue
-        icon="⚡",
+        icon="↯",
         focus_domain="backend",
     ),
     OctopusGuildConfig(
@@ -122,7 +122,7 @@ TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Frontend & Experience",
         description="React components, holographic HUD visuals, state stores, and responsive animations.",
         color_hex="#EC4899",  # Neon Magenta
-        icon="🎨",
+        icon="○",
         focus_domain="frontend",
     ),
 ]
@@ -135,7 +135,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="System Architect",
         description="Topology, specifications, package manifests, and modular contracts.",
         color_hex="#00F0FF",  # Cyan
-        icon="📐",
+        icon="◈",
         focus_domain="architecture",
     ),
     OctopusGuildConfig(
@@ -144,7 +144,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Database & Storage",
         description="Data schemas, ORM models, migration bridges, and persistence connectors.",
         color_hex="#A855F7",  # Deep Purple
-        icon="🗄️",
+        icon="◇",
         focus_domain="database",
     ),
     OctopusGuildConfig(
@@ -153,7 +153,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Backend & Services",
         description="REST/WebSocket endpoints, controller logic, and OS/hardware controllers.",
         color_hex="#3B82F6",  # Electric Blue
-        icon="⚡",
+        icon="↯",
         focus_domain="backend",
     ),
     OctopusGuildConfig(
@@ -162,7 +162,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Frontend & UI",
         description="React views, CSS design system, responsive HUD, and audio visualizers.",
         color_hex="#EC4899",  # Neon Magenta
-        icon="🎨",
+        icon="○",
         focus_domain="frontend",
     ),
     OctopusGuildConfig(
@@ -171,7 +171,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="AI & Cognitive Logic",
         description="Local LLM/Ollama bridges, prompt templates, RAG indexing, and agent tools.",
         color_hex="#10B981",  # Emerald
-        icon="🧠",
+        icon="•",
         focus_domain="ai",
     ),
     OctopusGuildConfig(
@@ -180,7 +180,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Security & Sentinel",
         description="Input sanitization, authentication guards, secret masking, and dependency audits.",
         color_hex="#EF4444",  # Rose Red
-        icon="🛡️",
+        icon="▲",
         focus_domain="security",
     ),
     OctopusGuildConfig(
@@ -189,7 +189,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Chaos & QA Testing",
         description="Unit test suites, integration edge-cases, and behavioral assertions.",
         color_hex="#F59E0B",  # Amber
-        icon="🧪",
+        icon="✓",
         focus_domain="testing",
     ),
     OctopusGuildConfig(
@@ -198,7 +198,7 @@ OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Runner & DevOps",
         description="Dockerfile, server execution verification, runtime health checks, and self-healing.",
         color_hex="#EAB308",  # Solar Gold
-        icon="🚀",
+        icon="■",
         focus_domain="devops",
     ),
 ]
@@ -211,7 +211,7 @@ AIML_TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Dataset & ETL Guild",
         description="Dataset pipeline, feature scaling, DataLoader, synthetic data, and train/val/test splits.",
         color_hex="#00F0FF",
-        icon="📊",
+        icon="◈",
         focus_domain="datasets",
     ),
     OctopusGuildConfig(
@@ -220,7 +220,7 @@ AIML_TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Model & Training Loop",
         description="PyTorch neural architecture, forward passes, custom loss, AdamW optimizer, and learning rate schedulers.",
         color_hex="#F59E0B",
-        icon="🔥",
+        icon="↯",
         focus_domain="training",
     ),
     OctopusGuildConfig(
@@ -229,7 +229,7 @@ AIML_TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Eval, ONNX & MLOps",
         description="Evaluation metrics, confusion matrices, ONNX/TorchScript export, FastAPI serving, and model cards.",
         color_hex="#10B981",
-        icon="📈",
+        icon="•",
         focus_domain="mlops",
     ),
 ]
@@ -242,7 +242,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Data & Dataset ETL",
         description="Data loading, transforms, and splits.",
         color_hex="#00F0FF",
-        icon="📊",
+        icon="◈",
         focus_domain="data",
     ),
     OctopusGuildConfig(
@@ -251,7 +251,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Model Architect",
         description="PyTorch layers, attention heads, and weights.",
         color_hex="#A855F7",
-        icon="🧠",
+        icon="◇",
         focus_domain="architecture",
     ),
     OctopusGuildConfig(
@@ -260,7 +260,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Training & Loss Loop",
         description="Forward/backward passes and AMP.",
         color_hex="#EF4444",
-        icon="🔥",
+        icon="↯",
         focus_domain="training",
     ),
     OctopusGuildConfig(
@@ -269,7 +269,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="HPO & Schedulers",
         description="Hyperparameter optimization and tuning.",
         color_hex="#3B82F6",
-        icon="🎛️",
+        icon="•",
         focus_domain="hpo",
     ),
     OctopusGuildConfig(
@@ -278,7 +278,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Evaluation & Benchmark",
         description="Accuracy, ROC curves, and ablations.",
         color_hex="#F59E0B",
-        icon="📈",
+        icon="○",
         focus_domain="evaluation",
     ),
     OctopusGuildConfig(
@@ -287,7 +287,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Quantization & ONNX",
         description="INT8 quantization and ONNX graph export.",
         color_hex="#EC4899",
-        icon="⚡",
+        icon="↯",
         focus_domain="export",
     ),
     OctopusGuildConfig(
@@ -296,7 +296,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Inference & Triton API",
         description="FastAPI model serving and batching.",
         color_hex="#10B981",
-        icon="🚀",
+        icon="▲",
         focus_domain="serving",
     ),
     OctopusGuildConfig(
@@ -305,7 +305,7 @@ AIML_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="MLOps & Governance",
         description="Model cards, reproducibility, and logging.",
         color_hex="#EAB308",
-        icon="📋",
+        icon="■",
         focus_domain="mlops",
     ),
 ]
@@ -318,7 +318,7 @@ FULLSTACK_AI_TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Genesis & Data Pipelines",
         description="Project scaffold, schemas, dataset transformers, and vector store indexing.",
         color_hex="#00F0FF",
-        icon="📊",
+        icon="◈",
         focus_domain="scaffolding",
     ),
     OctopusGuildConfig(
@@ -327,7 +327,7 @@ FULLSTACK_AI_TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="LLM Engine & Backend API",
         description="FastAPI service, model inference wrappers, tokenizers, scoring algorithms, and DB state.",
         color_hex="#3B82F6",
-        icon="🧠",
+        icon="↯",
         focus_domain="backend",
     ),
     OctopusGuildConfig(
@@ -336,7 +336,7 @@ FULLSTACK_AI_TRIAD_GUILDS: list[OctopusGuildConfig] = [
         title="Interactive UI & Experience",
         description="Responsive cyber-dark dashboard, animated radial score gauge, keyword tags, and sample data loader.",
         color_hex="#EC4899",
-        icon="🎨",
+        icon="○",
         focus_domain="frontend",
     ),
 ]
@@ -349,7 +349,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Foundation & Topology",
         description="Monorepo structure, schemas, and contracts.",
         color_hex="#00F0FF",
-        icon="📐",
+        icon="◈",
         focus_domain="architecture",
     ),
     OctopusGuildConfig(
@@ -358,7 +358,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Data & Feature Pipeline",
         description="Dataset preprocessing and feature extraction.",
         color_hex="#A855F7",
-        icon="📊",
+        icon="◇",
         focus_domain="data",
     ),
     OctopusGuildConfig(
@@ -367,7 +367,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Model & Cognitive Engine",
         description="Inference pipeline, weights, and scoring.",
         color_hex="#3B82F6",
-        icon="🧠",
+        icon="•",
         focus_domain="ai",
     ),
     OctopusGuildConfig(
@@ -376,7 +376,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="FastAPI Backend Engine",
         description="High-throughput REST/WebSocket endpoints.",
         color_hex="#10B981",
-        icon="⚡",
+        icon="↯",
         focus_domain="backend",
     ),
     OctopusGuildConfig(
@@ -385,7 +385,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Interactive Web UI & HUD",
         description="Dark-mode dashboard, gauges, and state stores.",
         color_hex="#EC4899",
-        icon="🎨",
+        icon="○",
         focus_domain="frontend",
     ),
     OctopusGuildConfig(
@@ -394,7 +394,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="Security & Zero-Trust Guard",
         description="PII redaction and input validation.",
         color_hex="#EF4444",
-        icon="🛡️",
+        icon="▲",
         focus_domain="security",
     ),
     OctopusGuildConfig(
@@ -403,7 +403,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="QA & Benchmark Suite",
         description="Integration tests and latency assertions.",
         color_hex="#F59E0B",
-        icon="🧪",
+        icon="✓",
         focus_domain="testing",
     ),
     OctopusGuildConfig(
@@ -412,7 +412,7 @@ FULLSTACK_AI_OCTOPOLIS_GUILDS: list[OctopusGuildConfig] = [
         title="DevOps & Docker Deploy",
         description="Containerization, runner verification, and live ignition.",
         color_hex="#EAB308",
-        icon="🚀",
+        icon="■",
         focus_domain="devops",
     ),
 ]
@@ -513,7 +513,7 @@ def get_consortium_guilds(
                 title=f"Solo {prefix} Core",
                 description=f"Full 8-arm multi-agent {prefix.lower()} swarm.",
                 color_hex="#00F0FF",
-                icon="🐙",
+                icon="◈",
                 focus_domain="autonomous",
             )
         ]
@@ -676,7 +676,7 @@ class OctosConsortium:
                         status="RUNNING",
                         surprise=0.0,
                         threshold=0.5,
-                        summary=f"⚡ LIVE APP DEPLOYED: {ignition_manifest.primary_url}",
+                        summary=f"LIVE APP DEPLOYED: {ignition_manifest.primary_url}",
                         octopus_id=7 if self.octopus_count >= 8 else 0,
                         octopus_title="OCTO_7 RUNNER"
                         if self.octopus_count >= 8

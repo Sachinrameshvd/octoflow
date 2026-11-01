@@ -223,7 +223,7 @@ if __name__ == "__main__":
 '''
 
 
-STANDALONE_README = r"""# 🐙 Ejected OctoFlow Standalone Harness
+STANDALONE_README = r"""# ◈ Ejected OctoFlow Standalone Harness
 
 This directory contains a self-contained, lightweight multi-agent harness extracted from **OctoFlow**.
 

@@ -692,13 +692,13 @@ def generate_summary_markdown(
     # Token measurement explanation for Limitations section
     if is_estimated:
         usage_caveat = (
-            "⚠️ **Tokens were ESTIMATED**: The provider or local environment returned no direct token usage headers. "
+            "▲ **Tokens were ESTIMATED**: The provider or local environment returned no direct token usage headers. "
             "Token quantities were computed using the fallback heuristic `ceil(chars / 4)`. "
             "Character estimates are approximate and may deviate from specific BPE/WordPiece tokenizers by ±15-20%."
         )
     else:
         usage_caveat = (
-            "✔ **Tokens were MEASURED**: Token usage was obtained directly from API provider response headers "
+            "✓ **Tokens were MEASURED**: Token usage was obtained directly from API provider response headers "
             "(`prompt_tokens`, `completion_tokens`)."
         )
 

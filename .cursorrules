@@ -27,3 +27,5 @@ The swarm operates silently, minimizing LLM token consumption by up to 87.5% thr
    ```
 3. **Pre-commit safety**:
    OctoFlow enforces AST syntax verification and scans for secret leaks (Anthropic/OpenAI keys) before every git commit via `octos guard`.
+4. **Terminal Accessibility & Glyph Policy**:
+   Never use raw emojis or multi-byte wide symbols (`wcwidth > 1`). Glyphs only via `octoflow/glyphs.py`. All output must support `NO_COLOR`, `--no-anim`, `--ascii`, and `--plain`. Verify with `pytest tests/test_glyph_policy.py tests/test_plain_mode.py`.

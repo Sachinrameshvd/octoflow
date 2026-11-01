@@ -22,6 +22,27 @@ def consortium_cmd(
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Run with mock provider, write no project files"
     ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)"
+    ),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Suppress progress telemetry lines"
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Output final outcome as machine-readable JSON"
+    ),
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)"
+    ),
+    no_anim: bool = typer.Option(
+        False, "--no-anim", help="Disable animations and continuous refresh"
+    ),
+    ascii_mode: bool = typer.Option(
+        False, "--ascii", help="Force plain ASCII-only characters (< 128)"
+    ),
+    legacy_glyphs: bool = typer.Option(
+        False, "--legacy-glyphs", help="Use legacy Unicode glyphs"
+    ),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
     from octoflow.commands.run import run
@@ -38,6 +59,13 @@ def consortium_cmd(
         octos=octos,
         theme=theme,
         dry_run=dry_run,
+        plain=plain,
+        quiet=quiet,
+        json_output=json_output,
+        no_color=no_color,
+        no_anim=no_anim,
+        ascii_mode=ascii_mode,
+        legacy_glyphs=legacy_glyphs,
     )
 
 
@@ -57,6 +85,27 @@ def octos_octopolis(
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Run with mock provider, write no project files"
     ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)"
+    ),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Suppress progress telemetry lines"
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Output final outcome as machine-readable JSON"
+    ),
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)"
+    ),
+    no_anim: bool = typer.Option(
+        False, "--no-anim", help="Disable animations and continuous refresh"
+    ),
+    ascii_mode: bool = typer.Option(
+        False, "--ascii", help="Force plain ASCII-only characters (< 128)"
+    ),
+    legacy_glyphs: bool = typer.Option(
+        False, "--legacy-glyphs", help="Use legacy Unicode glyphs"
+    ),
 ):
     """Deploy the flagship 8-Octopus Octopolis (64 Neural Arms) on an objective."""
     from octoflow.commands.run import run
@@ -73,6 +122,13 @@ def octos_octopolis(
         octos="8",
         theme=theme,
         dry_run=dry_run,
+        plain=plain,
+        quiet=quiet,
+        json_output=json_output,
+        no_color=no_color,
+        no_anim=no_anim,
+        ascii_mode=ascii_mode,
+        legacy_glyphs=legacy_glyphs,
     )
 
 

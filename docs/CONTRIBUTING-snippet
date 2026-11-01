@@ -37,3 +37,9 @@ When writing or refactoring OctoFlow code, adhere to the following standards:
 6. **Zero Secret Leakage**:
    - Sensitive credentials (Anthropic `sk-ant-*`, OpenAI `sk-*`, Google `AIza*`, GitHub `ghp_*`, and Bearer tokens) are scrubbed by `RedactionFilter` before being written to disk.
    - Do not log raw prompt payloads containing credentials or auth headers.
+
+7. **Terminal Accessibility & Zero-Emoji Policy**:
+   - Never embed emojis or raw multi-byte symbols directly into terminal messages or logs.
+   - All glyphs MUST be imported via `octoflow/glyphs.py` (`from octoflow.glyphs import glyph, OK, FAIL, BOLT...`).
+   - Every active symbol must have `wcwidth == 1` and provide a single-width ASCII fallback (`ord < 128`).
+   - Respect `NO_COLOR`, `--no-color`, `--no-anim`, `--ascii`, and `--plain` flags across all new commands. All UI changes must pass `pytest tests/test_glyph_policy.py tests/test_plain_mode.py`.

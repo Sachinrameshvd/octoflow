@@ -29,6 +29,7 @@ from octoflow.cockpit.render import (
 )
 from octoflow.cockpit.session import CockpitSession
 from octoflow.cockpit.shell import confirm_live_cockpit, execute_cockpit_shell
+from octoflow.glyphs import glyph
 from octoflow.config import (
     OctoFlowConfig,
     SwarmMorphology,
@@ -1096,22 +1097,25 @@ def _run_cockpit_impl(
             elif user_input == "/ignite":
                 from octoflow.ignition import ProjectIgniter
 
+                bolt_sym = glyph("BOLT")
+                ok_sym = glyph("OK")
+                warn_sym = glyph("WARN")
                 c.print(
-                    f"[{s.theme.rich_primary}]⚡ Igniting project runtime services in {s.workspace}...[/{s.theme.rich_primary}]"
+                    f"[{s.theme.rich_primary}]{bolt_sym} Igniting project runtime services in {s.workspace}...[/{s.theme.rich_primary}]"
                 )
                 igniter = ProjectIgniter(workspace_dir=str(s.workspace))
                 manifest = igniter.ignite()
                 if manifest.primary_url:
                     c.print(
-                        f"[{s.theme.rich_success}]✔ Primary Live Service:[/{s.theme.rich_success}] {manifest.primary_url}"
+                        f"[{s.theme.rich_success}]{ok_sym} Primary Live Service:[/{s.theme.rich_success}] {manifest.primary_url}"
                     )
                 if manifest.api_docs_url:
                     c.print(
-                        f"[{s.theme.rich_success}]✔ API Docs Live:[/{s.theme.rich_success}] {manifest.api_docs_url}"
+                        f"[{s.theme.rich_success}]{ok_sym} API Docs Live:[/{s.theme.rich_success}] {manifest.api_docs_url}"
                     )
                 if manifest.status == "FAILED" or manifest.error_message:
                     c.print(
-                        f"[{s.theme.rich_warning}]▲ Notice: {manifest.error_message}[/{s.theme.rich_warning}]"
+                        f"[{s.theme.rich_warning}]{warn_sym} Notice: {manifest.error_message}[/{s.theme.rich_warning}]"
                     )
                 else:
                     c.print(
@@ -1852,7 +1856,8 @@ def _run_cockpit_impl(
             c.print()
 
         except KeyboardInterrupt:
-            c.print("\n[yellow]⚡ Swarm paused (Ctrl+C). Type /exit to quit.[/yellow]\n")
+            bolt_sym = glyph("BOLT")
+            c.print(f"\n[yellow]{bolt_sym} Swarm paused (Ctrl+C). Type /exit to quit.[/yellow]\n")
         except EOFError:
             break
 

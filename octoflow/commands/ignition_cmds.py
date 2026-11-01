@@ -6,6 +6,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from octoflow.glyphs import glyph
 from octoflow.ignition import list_active_ignitions, stop_ignition
 
 console = Console()
@@ -24,7 +25,8 @@ def ps_cli_cmd(
         console.print("\n[dim]No active ignition services found.[/dim]\n")
         return
 
-    table = Table(title="⚡ OctoFlow Active Ignition Services", border_style="cyan")
+    bolt_sym = glyph("BOLT")
+    table = Table(title=f"{bolt_sym} OctoFlow Active Ignition Services", border_style="cyan")
     table.add_column("Run ID", style="bold cyan", no_wrap=True)
     table.add_column("Service", style="bold", no_wrap=True)
     table.add_column("PID", style="dim", no_wrap=True)

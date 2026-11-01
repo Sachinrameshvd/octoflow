@@ -1,5 +1,6 @@
 """Run, Train, and Octos-Run CLI commands for deploying cephalopod swarms."""
 
+import json
 import os
 import sys
 import time
@@ -15,6 +16,19 @@ from rich.text import Text
 
 from octoflow.commands.dashboard import render_consortium_dashboard, render_dashboard
 from octoflow.config import OctoFlowConfig, SwarmMorphology
+from octoflow.glyphs import (
+    glyph,
+    is_ascii_mode,
+    is_no_anim,
+    is_no_color,
+    is_plain_mode,
+    sanitize_text,
+    set_ascii_mode,
+    set_legacy_glyphs_mode,
+    set_no_anim_mode,
+    set_no_color_mode,
+    set_plain_mode,
+)
 from octoflow.outcome import ProviderExhaustedError, RunOutcome
 from octoflow.themes import get_theme
 
@@ -94,8 +108,44 @@ def run(
     no_limits: bool = typer.Option(
         False, "--no-limits", help="Disable all execution budget limits"
     ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)"
+    ),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Suppress progress telemetry lines"
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Output final outcome as machine-readable JSON"
+    ),
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)"
+    ),
+    no_anim: bool = typer.Option(
+        False, "--no-anim", help="Disable animations and continuous refresh"
+    ),
+    ascii_mode: bool = typer.Option(
+        False, "--ascii", help="Force plain ASCII-only characters (< 128)"
+    ),
+    legacy_glyphs: bool = typer.Option(
+        False, "--legacy-glyphs", help="Use legacy Unicode glyphs (lightning bolt, heavy check)"
+    ),
 ):
     """Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an objective."""
+    if no_color:
+        set_no_color_mode(True)
+    if no_anim:
+        set_no_anim_mode(True)
+    if ascii_mode:
+        set_ascii_mode(True)
+    if legacy_glyphs:
+        set_legacy_glyphs_mode(True)
+    if plain:
+        set_plain_mode(True)
+
+    if is_no_color():
+        console.no_color = True
+
+    plain_mode_active = is_plain_mode() or plain or (not sys.stdout.isatty())
     # Lazy imports of heavy components
     from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
     from octoflow.consortium import (
@@ -110,9 +160,10 @@ def run(
     loaded_settings = load_settings()
     run_budget = loaded_settings.budget.model_copy()
 
-    if no_limits:
+    if no_limits and not json_output:
+        warn_sym = glyph("WARN")
         console.print(
-            "[bold yellow]▲ Warning: --no-limits enabled. Execution limits are disabled.[/bold yellow]"
+            f"[bold yellow]{warn_sym} Warning: --no-limits enabled. Execution limits are disabled.[/bold yellow]"
         )
         run_budget.max_tokens = None
         run_budget.max_llm_calls = None
@@ -149,7 +200,8 @@ def run(
             )
             raise typer.Exit(code=2)
 
-    selected_guild = guild or (
+    actual_guild = guild if isinstance(guild, str) else None
+    selected_guild = actual_guild or (
         mode if mode not in ["software_dev", "aiml_research", "fullstack_ai"] else None
     )
     if not selected_guild and (mode == "software_dev" or not mode):
@@ -219,9 +271,11 @@ def run(
     # -------------------------------------------------------------------------
     if str(octos).lower() in ["auto", "0"]:
         resolved_octos, rationale = estimate_elastic_octopus_count(objective, model_provider=model)
-        console.print(
-            f"\n◈ [bold cyan]Elastic Autoscaler:[/bold cyan] {rationale} -> Provisioning [bold green]{resolved_octos} Octopuses[/bold green] ({resolved_octos * 8} Neural Arms)"
-        )
+        if not plain_mode_active and not json_output:
+            diamond_sym = glyph("DIAMOND")
+            console.print(
+                f"\n{diamond_sym} [bold cyan]Elastic Autoscaler:[/bold cyan] {rationale} -> Provisioning [bold green]{resolved_octos} Octopuses[/bold green] ({resolved_octos * 8} Neural Arms)"
+            )
     else:
         try:
             resolved_octos = int(octos)
@@ -229,9 +283,11 @@ def run(
             resolved_octos, rationale = estimate_elastic_octopus_count(
                 objective, model_provider=model
             )
-            console.print(
-                f"\n◈ [bold cyan]Elastic Autoscaler:[/bold cyan] {rationale} -> Provisioning [bold green]{resolved_octos} Octopuses[/bold green] ({resolved_octos * 8} Neural Arms)"
-            )
+            if not plain_mode_active and not json_output:
+                diamond_sym = glyph("DIAMOND")
+                console.print(
+                    f"\n{diamond_sym} [bold cyan]Elastic Autoscaler:[/bold cyan] {rationale} -> Provisioning [bold green]{resolved_octos} Octopuses[/bold green] ({resolved_octos * 8} Neural Arms)"
+                )
 
     # -------------------------------------------------------------------------
     # MULTI-OCTOPUS CONSORTIUM MODE (resolved_octos > 1)
@@ -239,15 +295,18 @@ def run(
     if resolved_octos > 1:
         tier_name = "OCTOPOLIS" if resolved_octos >= 8 else "TRIAD"
         total_arms = resolved_octos * 8
-        console.print(
-            f"\n[bold cyan]◈ Launching OctosFlow Consortium with {resolved_octos} Octopuses ({total_arms} Neural Arms)...[/bold cyan]"
-        )
-        console.print(
-            f"● [bold green]Live 3D Brain Visualizer:[/bold green] [bold cyan underline]{visualizer_url}[/bold cyan underline]"
-        )
-        console.print(
-            "   [dim]● Cmd+Click the link above to watch the multi-octopus connectome fire live in your browser![/dim]\n"
-        )
+        if not plain_mode_active and not json_output:
+            diamond_sym = glyph("DIAMOND")
+            bullet_sym = glyph("BULLET")
+            console.print(
+                f"\n[bold cyan]{diamond_sym} Launching OctosFlow Consortium with {resolved_octos} Octopuses ({total_arms} Neural Arms)...[/bold cyan]"
+            )
+            console.print(
+                f"{bullet_sym} [bold green]Live 3D Brain Visualizer:[/bold green] [bold cyan underline]{visualizer_url}[/bold cyan underline]"
+            )
+            console.print(
+                f"   [dim]{bullet_sym} Cmd+Click the link above to watch the multi-octopus connectome fire live in your browser![/dim]\n"
+            )
 
         if open_ui:
             import webbrowser
@@ -303,15 +362,19 @@ def run(
                 arm_idx = event.arm_id
                 if 0 <= arm_idx < 8:
                     if event.status in ["RUNNING"]:
-                        octopus_states[oct_id]["arms"][arm_idx] = "⚡"
+                        octopus_states[oct_id]["arms"][arm_idx] = glyph("BOLT")
                     elif event.status in ["ESCALATED", "COMPLETED", "QUIESCENT"]:
-                        octopus_states[oct_id]["arms"][arm_idx] = "✔"
+                        octopus_states[oct_id]["arms"][arm_idx] = glyph("OK")
                     elif event.status in ["INITIALIZING"]:
-                        octopus_states[oct_id]["arms"][arm_idx] = "·"
+                        octopus_states[oct_id]["arms"][arm_idx] = glyph("MIDDLE_DOT")
 
             last_synaptic_event[0] = f"[{event.octopus_title} / {event.role}]: {event.summary}"
             broadcaster.broadcast(event)
-            if live_holder[0] is not None:
+            if plain_mode_active:
+                if not quiet and not json_output and event.summary and event.status != "IDLE":
+                    role_word = (event.role.split()[0] if event.role else "arm").lower()
+                    console.print(f"[arm {event.arm_id} {role_word}] {event.summary}", markup=False)
+            elif live_holder[0] is not None:
                 live_holder[0].update(
                     render_consortium_dashboard(
                         objective=objective,
@@ -334,33 +397,54 @@ def run(
                 telemetry_callback=on_consortium_telemetry,
             )
         except ProviderExhaustedError as pe:
-            console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
+            fail_sym = glyph("FAIL")
+            console.print(f"\n{fail_sym} [bold red][FAILED] {pe}[/bold red]\n")
             raise typer.Exit(code=2) from pe
 
         try:
-            with Live(console=console, refresh_per_second=6) as live:
-                live_holder[0] = live
-                live.update(
-                    render_consortium_dashboard(
-                        objective=objective,
-                        octopus_states=octopus_states,
-                        total_tokens_saved=87.5,
-                        total_cost=0.0,
-                        last_event_msg=last_synaptic_event[0],
-                        visualizer_url=visualizer_url,
-                        elapsed_seconds=time.time() - start_time,
-                        total_arms=total_arms,
-                        tier_name=tier_name,
-                        theme=active_theme,
-                    )
-                )
+            if plain_mode_active:
                 res = consortium.run_consortium(
                     objective=objective, cycles_per_octopus=4, open_browser=open_app
                 )
+            else:
+                with Live(console=console, refresh_per_second=6) as live:
+                    live_holder[0] = live
+                    live.update(
+                        render_consortium_dashboard(
+                            objective=objective,
+                            octopus_states=octopus_states,
+                            total_tokens_saved=87.5,
+                            total_cost=0.0,
+                            last_event_msg=last_synaptic_event[0],
+                            visualizer_url=visualizer_url,
+                            elapsed_seconds=time.time() - start_time,
+                            total_arms=total_arms,
+                            tier_name=tier_name,
+                            theme=active_theme,
+                        )
+                    )
+                    res = consortium.run_consortium(
+                        objective=objective, cycles_per_octopus=4, open_browser=open_app
+                    )
 
             if is_dry:
+                if json_output:
+                    res_dict = {
+                        "objective": objective,
+                        "status": "dry_run",
+                        "success": True,
+                        "outcome": "dry_run",
+                        "octopuses": resolved_octos,
+                        "arms": total_arms,
+                        "files_written": [],
+                        "execution_time_seconds": round(time.time() - start_time, 2),
+                        "secrets_redacted": 0,
+                    }
+                    console.print(json.dumps(res_dict, indent=2))
+                    raise typer.Exit(code=0)
+                diamond_sym = glyph("DIAMOND")
                 console.print(
-                    "\n◈ [bold yellow][DRY-RUN: no project files written][/bold yellow]\n"
+                    f"\n{diamond_sym} [bold yellow][DRY-RUN: no project files written][/bold yellow]\n"
                 )
                 raise typer.Exit(code=0)
 
@@ -370,15 +454,34 @@ def run(
                 finalize_run(checkpoint_meta, success=True, goal=objective)
                 finalized = True
 
-            console.print("\n[bold green]✔ OCTOSFLOW CONSORTIUM MISSION COMPLETE![/bold green]")
-            console.print(
-                f"◈ Deployed: [bold cyan]{resolved_octos} Octopuses ({total_arms} Neural Arms)[/bold cyan]"
-            )
-            console.print(f"● Total Execution Time: {res.get('execution_time_seconds', 0):.2f}s")
             c_redactions = res.get("secrets_redacted", 0)
+            if json_output:
+                res_dict = {
+                    "objective": objective,
+                    "status": "completed",
+                    "success": True,
+                    "outcome": "complete",
+                    "octopuses": resolved_octos,
+                    "arms": total_arms,
+                    "files_written": res.get("files_written", []),
+                    "execution_time_seconds": round(res.get("execution_time_seconds", time.time() - start_time), 2),
+                    "secrets_redacted": int(c_redactions),
+                }
+                console.print(json.dumps(res_dict, indent=2))
+                raise typer.Exit(code=0)
+
+            ok_sym = glyph("OK")
+            diamond_sym = glyph("DIAMOND")
+            bullet_sym = glyph("BULLET")
+            bolt_sym = glyph("BOLT")
+            console.print(f"\n[bold green]{ok_sym} OCTOSFLOW CONSORTIUM MISSION COMPLETE![/bold green]")
+            console.print(
+                f"{diamond_sym} Deployed: [bold cyan]{resolved_octos} Octopuses ({total_arms} Neural Arms)[/bold cyan]"
+            )
+            console.print(f"{bullet_sym} Total Execution Time: {res.get('execution_time_seconds', 0):.2f}s")
             if c_redactions:
                 console.print(
-                    f"● Outbound Privacy: [bold yellow]{c_redactions} secret(s) redacted before sending[/bold yellow]"
+                    f"{bullet_sym} Outbound Privacy: [bold yellow]{c_redactions} secret(s) redacted before sending[/bold yellow]"
                 )
 
             ign = res.get("ignition")
@@ -388,22 +491,22 @@ def run(
                 inf_url = ign.get("inference_url")
                 svc_type = ign.get("service_type", "app").upper().replace("_", " ")
 
-                live_text = f"[bold green]⚡ LIVE {svc_type} OPERATIONAL:[/bold green] [bold cyan underline]{prim_url}[/bold cyan underline]\n"
+                live_text = f"[bold green]{bolt_sym} LIVE {svc_type} OPERATIONAL:[/bold green] [bold cyan underline]{prim_url}[/bold cyan underline]\n"
                 if docs_url and docs_url != prim_url:
-                    live_text += f"[bold magenta]● API Swagger Docs:[/bold magenta]    [bold cyan underline]{docs_url}[/bold cyan underline]\n"
+                    live_text += f"[bold magenta]{bullet_sym} API Swagger Docs:[/bold magenta]    [bold cyan underline]{docs_url}[/bold cyan underline]\n"
                 if inf_url and inf_url != prim_url:
-                    live_text += f"[bold amber]● Inference Playground:[/bold amber] [bold cyan underline]{inf_url}[/bold cyan underline]\n"
-                live_text += f"[bold blue]● 3D Brain Telemetry:[/bold blue]    [bold cyan underline]{visualizer_url}[/bold cyan underline]\n\n"
-                live_text += "[dim]● Cmd+Click any link to test your newly built application live in browser![/dim]"
+                    live_text += f"[bold amber]{bullet_sym} Inference Playground:[/bold amber] [bold cyan underline]{inf_url}[/bold cyan underline]\n"
+                live_text += f"[bold blue]{bullet_sym} 3D Brain Telemetry:[/bold blue]    [bold cyan underline]{visualizer_url}[/bold cyan underline]\n\n"
+                live_text += f"[dim]{bullet_sym} Cmd+Click any link to test your newly built application live in browser![/dim]"
 
                 console.print(
                     Panel(
-                        live_text, title="⚡ OCTOSFLOW PHASE 4 LIVE IGNITION", border_style="cyan"
+                        live_text, title=f"{bolt_sym} OCTOSFLOW PHASE 4 LIVE IGNITION", border_style="cyan"
                     )
                 )
             else:
                 console.print(
-                    f"● 3D Brain Telemetry: [bold cyan underline]{visualizer_url}[/bold cyan underline]\n"
+                    f"{bullet_sym} 3D Brain Telemetry: [bold cyan underline]{visualizer_url}[/bold cyan underline]\n"
                 )
 
             raise typer.Exit(code=0)
@@ -413,7 +516,8 @@ def run(
 
                 finalize_run(checkpoint_meta, success=False, goal=objective)
                 finalized = True
-            console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
+            fail_sym = glyph("FAIL")
+            console.print(f"\n{fail_sym} [bold red][FAILED] {pe}[/bold red]\n")
             raise typer.Exit(code=2) from pe
         except typer.Exit:
             raise
@@ -423,8 +527,9 @@ def run(
 
                 finalize_run(checkpoint_meta, success=False, goal=objective)
                 finalized = True
+            dot_sym = glyph("MIDDLE_DOT")
             console.print(
-                "\n[bold yellow]· Consortium paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n"
+                f"\n[bold yellow]{dot_sym} Consortium paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n"
             )
             raise typer.Exit(code=1) from None
         except Exception as e:
@@ -438,9 +543,10 @@ def run(
             crash_log = log_dir / "last_error.log"
             with open(crash_log, "w") as f:
                 traceback.print_exc(file=f)
+            warn_sym = glyph("WARN")
             error_panel = Panel(
                 Text.from_markup(
-                    f"[bold red]▲ Consortium Encountered an Interrupt:[/bold red] [yellow]{e}[/yellow]"
+                    f"[bold red]{warn_sym} Consortium Encountered an Interrupt:[/bold red] [yellow]{e}[/yellow]"
                 ),
                 border_style="red",
             )
@@ -450,13 +556,16 @@ def run(
     # -------------------------------------------------------------------------
     # SINGLE OCTOPUS MODE (octos == 1)
     # -------------------------------------------------------------------------
-    console.print(f"\n[bold cyan]◈ Launching OctoFlow Swarm in {mode.upper()} mode...[/bold cyan]")
-    console.print(
-        f"● [bold green]Live 3D Brain Visualizer:[/bold green] [bold cyan underline]{visualizer_url}[/bold cyan underline]"
-    )
-    console.print(
-        "   [dim]● Cmd+Click the link above to watch the neural connectome & 8 arms fire live in your browser![/dim]\n"
-    )
+    if not plain_mode_active and not json_output:
+        diamond_sym = glyph("DIAMOND")
+        bullet_sym = glyph("BULLET")
+        console.print(f"\n[bold cyan]{diamond_sym} Launching OctoFlow Swarm in {mode.upper()} mode...[/bold cyan]")
+        console.print(
+            f"{bullet_sym} [bold green]Live 3D Brain Visualizer:[/bold green] [bold cyan underline]{visualizer_url}[/bold cyan underline]"
+        )
+        console.print(
+            f"   [dim]{bullet_sym} Cmd+Click the link above to watch the neural connectome & 8 arms fire live in your browser![/dim]\n"
+        )
 
     if open_ui:
         import webbrowser
@@ -497,7 +606,11 @@ def run(
         max_cycles_num[0] = event.max_cycles
         quiescent_count[0] = event.quiescent_count
         broadcaster.broadcast(event)
-        if live_holder[0] is not None:
+        if plain_mode_active:
+            if not quiet and not json_output and event.summary and event.status != "IDLE":
+                role_word = (event.role.split()[0] if event.role else "arm").lower()
+                console.print(f"[arm {event.arm_id} {role_word}] {event.summary}", markup=False)
+        elif live_holder[0] is not None:
             live_holder[0].update(
                 render_dashboard(
                     objective,
@@ -520,34 +633,53 @@ def run(
     try:
         conductor = SupraesophagealConductor(config=config, telemetry_callback=on_telemetry)
     except ProviderExhaustedError as pe:
-        console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
+        fail_sym = glyph("FAIL")
+        console.print(f"\n{fail_sym} [bold red][FAILED] {pe}[/bold red]\n")
         raise typer.Exit(code=2) from pe
 
     try:
-        with Live(console=console, refresh_per_second=8) as live:
-            live_holder[0] = live
-            live.update(
-                render_dashboard(
-                    objective,
-                    mode,
-                    arm_states,
-                    active_coalitions,
-                    tokens_saved[0],
-                    total_cost[0],
-                    last_event[0],
-                    visualizer_url,
-                    progress_pct[0],
-                    cycle_num[0],
-                    max_cycles_num[0],
-                    quiescent_count[0],
-                    time.time() - start_time,
-                    theme=active_theme,
-                )
-            )
+        if plain_mode_active:
             result = conductor.run_swarm(objective=objective, max_cycles=10)
+        else:
+            with Live(console=console, refresh_per_second=8) as live:
+                live_holder[0] = live
+                live.update(
+                    render_dashboard(
+                        objective,
+                        mode,
+                        arm_states,
+                        active_coalitions,
+                        tokens_saved[0],
+                        total_cost[0],
+                        last_event[0],
+                        visualizer_url,
+                        progress_pct[0],
+                        cycle_num[0],
+                        max_cycles_num[0],
+                        quiescent_count[0],
+                        time.time() - start_time,
+                        theme=active_theme,
+                    )
+                )
+                result = conductor.run_swarm(objective=objective, max_cycles=10)
 
         if is_dry:
-            console.print("\n◈ [bold yellow][DRY-RUN: no project files written][/bold yellow]\n")
+            if json_output:
+                res_dict = {
+                    "objective": objective,
+                    "status": "dry_run",
+                    "success": True,
+                    "outcome": "dry_run",
+                    "files_written": [],
+                    "tokens_saved_pct": 0.0,
+                    "total_cost": 0.0,
+                    "execution_time_seconds": round(time.time() - start_time, 2),
+                    "secrets_redacted": 0,
+                }
+                console.print(json.dumps(res_dict, indent=2))
+                return
+            diamond_sym = glyph("DIAMOND")
+            console.print(f"\n{diamond_sym} [bold yellow][DRY-RUN: no project files written][/bold yellow]\n")
             return
 
         # LIVE Mode Outcome Check
@@ -580,30 +712,50 @@ def run(
             else result.get("model", "default")
         )
 
+        redactions_cnt = (
+            getattr(conductor.provider, "get_redactions_count", lambda: 0)()
+            if conductor.provider
+            else 0
+        )
+
         if outcome == RunOutcome.COMPLETE or str(outcome).lower() == "complete":
             if checkpoint_meta and not finalized:
                 from octoflow.checkpoint import finalize_run
 
                 finalize_run(checkpoint_meta, success=True, files_written=files, goal=objective)
                 finalized = True
+
+            if json_output:
+                res_dict = {
+                    "objective": objective,
+                    "status": "completed",
+                    "success": True,
+                    "outcome": "complete",
+                    "files_written": list(files),
+                    "tokens_saved_pct": float(tokens_saved[0]),
+                    "total_cost": float(conductor.total_cost),
+                    "execution_time_seconds": round(time.time() - start_time, 2),
+                    "secrets_redacted": int(redactions_cnt),
+                }
+                console.print(json.dumps(res_dict, indent=2))
+                return
+
+            diamond_sym = glyph("DIAMOND")
+            bullet_sym = glyph("BULLET")
+            bolt_sym = glyph("BOLT")
             console.print(
-                f"\n◈ [bold green][LIVE: {prov}:{mod}] COMPLETE, {len(files)} files written[/bold green]"
+                f"\n{diamond_sym} [bold green][LIVE: {prov}:{mod}] COMPLETE, {len(files)} files written[/bold green]"
             )
             for f in files:
-                console.print(f"  • {f}")
+                console.print(f"  {bullet_sym} {f}")
             console.print(
-                f"● Final Tokens Consumed: {conductor.total_tokens_used:,} (vs. ~{conductor.estimated_chatty_tokens:,} chatty baseline)"
+                f"{bullet_sym} Final Tokens Consumed: {conductor.total_tokens_used:,} (vs. ~{conductor.estimated_chatty_tokens:,} chatty baseline)"
             )
-            console.print(f"● Token Savings: [bold green]{tokens_saved[0]:.1f}%[/bold green]")
-            console.print(f"● Total API Cost: ${conductor.total_cost:.4f}")
-            redactions_cnt = (
-                getattr(conductor.provider, "get_redactions_count", lambda: 0)()
-                if conductor.provider
-                else 0
-            )
+            console.print(f"{bullet_sym} Token Savings: [bold green]{tokens_saved[0]:.1f}%[/bold green]")
+            console.print(f"{bullet_sym} Total API Cost: ${conductor.total_cost:.4f}")
             if redactions_cnt > 0:
                 console.print(
-                    f"● Outbound Privacy: [bold yellow]{redactions_cnt} secret(s) redacted before sending[/bold yellow]"
+                    f"{bullet_sym} Outbound Privacy: [bold yellow]{redactions_cnt} secret(s) redacted before sending[/bold yellow]"
                 )
             console.print()
 
@@ -621,18 +773,18 @@ def run(
                     inf_url = ign_manifest.inference_url
                     svc_type = ign_manifest.service_type.upper().replace("_", " ")
 
-                    live_text = f"[bold green]⚡ LIVE {svc_type} OPERATIONAL:[/bold green] [bold cyan underline]{prim_url}[/bold cyan underline]\n"
+                    live_text = f"[bold green]{bolt_sym} LIVE {svc_type} OPERATIONAL:[/bold green] [bold cyan underline]{prim_url}[/bold cyan underline]\n"
                     if docs_url and docs_url != prim_url:
-                        live_text += f"[bold magenta]● API Swagger Docs:[/bold magenta]    [bold cyan underline]{docs_url}[/bold cyan underline]\n"
+                        live_text += f"[bold magenta]{bullet_sym} API Swagger Docs:[/bold magenta]    [bold cyan underline]{docs_url}[/bold cyan underline]\n"
                     if inf_url and inf_url != prim_url:
-                        live_text += f"[bold amber]● Inference Playground:[/bold amber] [bold cyan underline]{inf_url}[/bold cyan underline]\n"
-                    live_text += f"[bold blue]● 3D Brain Telemetry:[/bold blue]    [bold cyan underline]{visualizer_url}[/bold cyan underline]\n\n"
-                    live_text += "[dim]● Cmd+Click any link to test your newly built application live in browser![/dim]"
+                        live_text += f"[bold amber]{bullet_sym} Inference Playground:[/bold amber] [bold cyan underline]{inf_url}[/bold cyan underline]\n"
+                    live_text += f"[bold blue]{bullet_sym} 3D Brain Telemetry:[/bold blue]    [bold cyan underline]{visualizer_url}[/bold cyan underline]\n\n"
+                    live_text += f"[dim]{bullet_sym} Cmd+Click any link to test your newly built application live in browser![/dim]"
 
                     console.print(
                         Panel(
                             live_text,
-                            title="⚡ OCTOFLOW PHASE 4 LIVE IGNITION",
+                            title=f"{bolt_sym} OCTOFLOW PHASE 4 LIVE IGNITION",
                             border_style="cyan",
                         )
                     )
@@ -645,7 +797,7 @@ def run(
                         status="RUNNING",
                         surprise=0.0,
                         threshold=0.5,
-                        summary=f"⚡ LIVE APP DEPLOYED: {prim_url}",
+                        summary=f"{bolt_sym} LIVE APP DEPLOYED: {prim_url}",
                         octopus_id=0,
                         octopus_title="Cephalopod Core",
                         color_hex="#00F0FF",
@@ -670,6 +822,22 @@ def run(
                 if not isinstance(result, dict)
                 else result.get("reason", "partial quiescence")
             )
+            if json_output:
+                res_dict = {
+                    "objective": objective,
+                    "status": "partial",
+                    "success": False,
+                    "outcome": "partial",
+                    "reason": str(reason),
+                    "files_written": list(files),
+                    "tokens_saved_pct": float(tokens_saved[0]),
+                    "total_cost": float(conductor.total_cost),
+                    "execution_time_seconds": round(time.time() - start_time, 2),
+                    "secrets_redacted": int(redactions_cnt),
+                }
+                console.print(json.dumps(res_dict, indent=2))
+                raise typer.Exit(code=1)
+
             budget_line = ""
             if hasattr(result, "extra") and isinstance(result.extra, dict):
                 budget_line = result.extra.get("budget_line", "")
@@ -677,9 +845,11 @@ def run(
                 isinstance(result, dict) and "extra" in result and isinstance(result["extra"], dict)
             ):
                 budget_line = result["extra"].get("budget_line", "")
-            ribbon = f"\n◈ [bold yellow][PARTIAL] {reason}[/bold yellow]"
+            diamond_sym = glyph("DIAMOND")
+            bullet_sym = glyph("BULLET")
+            ribbon = f"\n{diamond_sym} [bold yellow][PARTIAL] {reason}[/bold yellow]"
             if budget_line:
-                ribbon += f" • [dim]{budget_line}[/dim]"
+                ribbon += f" {bullet_sym} [dim]{budget_line}[/dim]"
             ribbon += "\n"
             console.print(ribbon)
             raise typer.Exit(code=1)
@@ -690,7 +860,23 @@ def run(
                 finalize_run(checkpoint_meta, success=False, files_written=files, goal=objective)
                 finalized = True
             reason = getattr(result, "reason", "model produced no file changes")
-            console.print(f"\n✖ [bold red][FAILED] {reason}[/bold red]\n")
+            if json_output:
+                res_dict = {
+                    "objective": objective,
+                    "status": "failed",
+                    "success": False,
+                    "outcome": "failed",
+                    "reason": str(reason),
+                    "files_written": list(files),
+                    "tokens_saved_pct": float(tokens_saved[0]),
+                    "total_cost": float(conductor.total_cost),
+                    "execution_time_seconds": round(time.time() - start_time, 2),
+                    "secrets_redacted": int(redactions_cnt),
+                }
+                console.print(json.dumps(res_dict, indent=2))
+                raise typer.Exit(code=2)
+            fail_sym = glyph("FAIL")
+            console.print(f"\n{fail_sym} [bold red][FAILED] {reason}[/bold red]\n")
             raise typer.Exit(code=2)
 
     except ProviderExhaustedError as pe:
@@ -699,7 +885,8 @@ def run(
 
             finalize_run(checkpoint_meta, success=False, goal=objective)
             finalized = True
-        console.print(f"\n✖ [bold red][FAILED] {pe}[/bold red]\n")
+        fail_sym = glyph("FAIL")
+        console.print(f"\n{fail_sym} [bold red][FAILED] {pe}[/bold red]\n")
         raise typer.Exit(code=2) from pe
     except typer.Exit:
         raise
@@ -709,8 +896,9 @@ def run(
 
             finalize_run(checkpoint_meta, success=False, goal=objective)
             finalized = True
+        dot_sym = glyph("MIDDLE_DOT")
         console.print(
-            "\n[bold yellow]· Swarm execution paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n"
+            f"\n[bold yellow]{dot_sym} Swarm execution paused by user (Ctrl+C). Generated files preserved.[/bold yellow]\n"
         )
         raise typer.Exit(code=1) from None
     except Exception as e:
@@ -725,13 +913,15 @@ def run(
         with open(crash_log, "w") as f:
             traceback.print_exc(file=f)
 
+        warn_sym = glyph("WARN")
+        bullet_sym = glyph("BULLET")
         error_panel = Panel(
             Text.from_markup(
-                f"[bold red]▲ Swarm Encountered an Environmental Interrupt[/bold red]\n\n"
+                f"[bold red]{warn_sym} Swarm Encountered an Environmental Interrupt[/bold red]\n\n"
                 f"[white]Details:[/white] [yellow]{e}[/yellow]\n\n"
-                f"[dim]• Your generated code in [bold]{workspace}[/bold] is completely intact.\n"
-                f"• Diagnostic log saved to: [bold]{crash_log}[/bold]\n"
-                f"• Re-running with [cyan]--model ollama[/cyan] will safely resume work.[/dim]"
+                f"[dim]{bullet_sym} Your generated code in [bold]{workspace}[/bold] is completely intact.\n"
+                f"{bullet_sym} Diagnostic log saved to: [bold]{crash_log}[/bold]\n"
+                f"{bullet_sym} Re-running with [cyan]--model ollama[/cyan] will safely resume work.[/dim]"
             ),
             title="[bold red]OctoFlow Fault-Tolerance Shield[/bold red]",
             border_style="red",
@@ -824,6 +1014,27 @@ def octos_run(
     no_limits: bool = typer.Option(
         False, "--no-limits", help="Disable all execution budget limits"
     ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)"
+    ),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Suppress progress telemetry lines"
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Output final outcome as machine-readable JSON"
+    ),
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)"
+    ),
+    no_anim: bool = typer.Option(
+        False, "--no-anim", help="Disable animations and continuous refresh"
+    ),
+    ascii_mode: bool = typer.Option(
+        False, "--ascii", help="Force plain ASCII-only characters (< 128)"
+    ),
+    legacy_glyphs: bool = typer.Option(
+        False, "--legacy-glyphs", help="Use legacy Unicode glyphs"
+    ),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
     run(
@@ -848,6 +1059,13 @@ def octos_run(
         timeout=timeout,
         max_heal=max_heal,
         no_limits=no_limits,
+        plain=plain,
+        quiet=quiet,
+        json_output=json_output,
+        no_color=no_color,
+        no_anim=no_anim,
+        ascii_mode=ascii_mode,
+        legacy_glyphs=legacy_glyphs,
     )
 
 

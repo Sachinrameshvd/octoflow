@@ -15,6 +15,14 @@ from rich.console import Console
 from typer.core import TyperGroup
 
 from octoflow.errors import OctoFlowError
+from octoflow.glyphs import (
+    is_no_color,
+    set_ascii_mode,
+    set_legacy_glyphs_mode,
+    set_no_anim_mode,
+    set_no_color_mode,
+    set_plain_mode,
+)
 from octoflow.logging_config import get_log_file, get_logger, is_trace_mode, setup_logging
 
 logger = get_logger("cli")
@@ -60,6 +68,20 @@ class OctoFlowGroup(TyperGroup):
 
     def main(self, *args: Any, **kwargs: Any) -> Any:
         raw_args = args[0] if args else None
+        arg_list = list(raw_args) if isinstance(raw_args, (list, tuple)) else sys.argv[1:]
+        if "--no-color" in arg_list:
+            set_no_color_mode(True)
+        if "--no-anim" in arg_list:
+            set_no_anim_mode(True)
+        if "--ascii" in arg_list:
+            set_ascii_mode(True)
+        if "--legacy-glyphs" in arg_list:
+            set_legacy_glyphs_mode(True)
+        if "--plain" in arg_list:
+            set_plain_mode(True)
+        if is_no_color():
+            console.no_color = True
+
         trace = _is_trace_active(raw_args)
         verbose = (
             ("--verbose" in (raw_args or []))
@@ -151,10 +173,41 @@ def app_callback(
     trace: bool = typer.Option(
         False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."
     ),
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)."
+    ),
+    no_anim: bool = typer.Option(
+        False, "--no-anim", help="Disable animations and continuous refresh."
+    ),
+    ascii_mode: bool = typer.Option(
+        False, "--ascii", help="Force plain ASCII-only characters (< 128)."
+    ),
+    legacy_glyphs: bool = typer.Option(
+        False, "--legacy-glyphs", help="Use legacy Unicode glyphs (lightning bolt, heavy check)."
+    ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)."
+    ),
 ):
     """Launch interactive cockpit if no command specified."""
+    if no_color:
+        set_no_color_mode(True)
+    if no_anim:
+        set_no_anim_mode(True)
+    if ascii_mode:
+        set_ascii_mode(True)
+    if legacy_glyphs:
+        set_legacy_glyphs_mode(True)
+    if plain:
+        set_plain_mode(True)
+    if is_no_color():
+        console.no_color = True
+
     setup_logging(verbose=verbose, trace=trace)
     if ctx.invoked_subcommand is None:
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            console.print(ctx.get_help())
+            raise typer.Exit(code=0)
         from octoflow.first_run import run_guided_first_run, should_run_first_run_wizard
 
         if should_run_first_run_wizard():
@@ -175,10 +228,41 @@ def octos_callback(
     trace: bool = typer.Option(
         False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."
     ),
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)."
+    ),
+    no_anim: bool = typer.Option(
+        False, "--no-anim", help="Disable animations and continuous refresh."
+    ),
+    ascii_mode: bool = typer.Option(
+        False, "--ascii", help="Force plain ASCII-only characters (< 128)."
+    ),
+    legacy_glyphs: bool = typer.Option(
+        False, "--legacy-glyphs", help="Use legacy Unicode glyphs (lightning bolt, heavy check)."
+    ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)."
+    ),
 ):
     """Launch interactive cockpit if no command specified."""
+    if no_color:
+        set_no_color_mode(True)
+    if no_anim:
+        set_no_anim_mode(True)
+    if ascii_mode:
+        set_ascii_mode(True)
+    if legacy_glyphs:
+        set_legacy_glyphs_mode(True)
+    if plain:
+        set_plain_mode(True)
+    if is_no_color():
+        console.no_color = True
+
     setup_logging(verbose=verbose, trace=trace)
     if ctx.invoked_subcommand is None:
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            console.print(ctx.get_help())
+            raise typer.Exit(code=0)
         from octoflow.first_run import run_guided_first_run, should_run_first_run_wizard
 
         if should_run_first_run_wizard():

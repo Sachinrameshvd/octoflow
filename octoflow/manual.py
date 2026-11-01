@@ -149,7 +149,7 @@ def display_manual(
     con.print()
     con.print(
         Panel(
-            "[bold white]🐙 OCTOFLOW CEPHALOPOD DEVELOPER MANUAL & FIELD GUIDE[/bold white]\n"
+            "[bold white]◈ OCTOFLOW CEPHALOPOD DEVELOPER MANUAL & FIELD GUIDE[/bold white]\n"
             "[dim]Biological Active Inference • 8 Arm Ganglia • Master Commands • Playbooks • Zero-Trust PII[/dim]\n\n"
             "[dim]Shortcut: Press [bold]? [/bold] in the 3D Web Visualizer or run [bold]./octo manual[/bold] anytime.[/dim]",
             title="[bold cyan]Official Documentation[/bold cyan]",

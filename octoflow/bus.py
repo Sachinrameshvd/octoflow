@@ -28,37 +28,37 @@ class MessageIntent:
 INTENT_METADATA = {
     MessageIntent.AUTONOMOUS_EXPLORE: {
         "label": "Autonomous Forage",
-        "icon": "🟢",
+        "icon": "●",
         "description": "Routine local sensory sampling; no central assistance required.",
         "color": "#a6e3a1",
     },
     MessageIntent.TARGET_DETECTED: {
         "label": "Prey / Food Detected",
-        "icon": "🦐",
+        "icon": "•",
         "description": "Chemical cues confirm food item in reach radius.",
         "color": "#89b4fa",
     },
     MessageIntent.COOPERATIVE_PULL: {
         "label": "Cooperative Grip Request",
-        "icon": "🤝",
+        "icon": "↔",
         "description": "Joint target requires dual-arm bilateral synchronization.",
         "color": "#cba6f7",
     },
     MessageIntent.HAZARD_WARNING: {
         "label": "Predator / Hazard Alert",
-        "icon": "⚠️",
+        "icon": "▲",
         "description": "High prediction surprise; rapid detour or repulsion triggered.",
         "color": "#f38ba8",
     },
     MessageIntent.REACH_ELONGATION: {
         "label": "Hydrostat Elongation",
-        "icon": "↔️",
+        "icon": "→",
         "description": "Arm fully extended outward exploring perimeter.",
         "color": "#f9e2af",
     },
     MessageIntent.ANCHOR_STABILITY: {
         "label": "Substrate Anchor",
-        "icon": "⚓️",
+        "icon": "■",
         "description": "Suckers locked to ground providing leverage for other arms.",
         "color": "#94e2d5",
     },

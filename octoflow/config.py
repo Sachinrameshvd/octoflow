@@ -34,7 +34,7 @@ class ArmRoleConfig(BaseModel):
     workspace_domain: list[str] = Field(default_factory=list)
     initial_threshold: float = 0.50
     system_prompt: str = ""
-    icon: str = "🐙"
+    icon: str = "◈"
     model_tier: str = "balanced"  # "frontier", "balanced", or "fast"
 
 
@@ -47,7 +47,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="System specifications, directory topology, interface contracts, and module boundaries.",
         workspace_domain=["specs/", "docs/", "architecture/"],
         initial_threshold=0.45,
-        icon="📐",
+        icon="◈",
         model_tier="frontier",
     ),
     ArmRoleConfig(
@@ -57,7 +57,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="Data persistence models, migrations, ORM schemas, and database connectors.",
         workspace_domain=["models/", "db/", "migrations/", "schemas/"],
         initial_threshold=0.50,
-        icon="🗄️",
+        icon="◇",
     ),
     ArmRoleConfig(
         arm_id=2,
@@ -66,7 +66,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="REST/WebSocket endpoints, business logic services, routing, and controller handlers.",
         workspace_domain=["backend/", "api/", "services/", "controllers/"],
         initial_threshold=0.50,
-        icon="⚡",
+        icon="↯",
     ),
     ArmRoleConfig(
         arm_id=3,
@@ -83,7 +83,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
             "frontend/styles/",
         ],
         initial_threshold=0.55,
-        icon="🎨",
+        icon="○",
     ),
     ArmRoleConfig(
         arm_id=4,
@@ -92,7 +92,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="Client reactive state, store management, custom hooks, and client-server synchronization.",
         workspace_domain=["frontend/src/state/", "frontend/src/hooks/", "frontend/src/store/"],
         initial_threshold=0.50,
-        icon="🔄",
+        icon="•",
     ),
     ArmRoleConfig(
         arm_id=5,
@@ -101,7 +101,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="Unit tests, integration suites, edge-case coverage, and load/stress test verification.",
         workspace_domain=["tests/", "cypress/", "e2e/"],
         initial_threshold=0.40,  # Lower threshold for high vigilance
-        icon="🧪",
+        icon="✓",
         model_tier="frontier",
     ),
     ArmRoleConfig(
@@ -111,7 +111,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="Dependency vulnerability audits, input sanitization, authentication validation, and profiling.",
         workspace_domain=["security/", "audit/"],
         initial_threshold=0.40,
-        icon="🛡️",
+        icon="▲",
         model_tier="frontier",
     ),
     ArmRoleConfig(
@@ -121,7 +121,7 @@ SOFTWARE_DEV_ROSTER: list[ArmRoleConfig] = [
         description="Containerization, Dockerfile, docker-compose, CI/CD pipelines, and project README.",
         workspace_domain=["deploy/", ".github/", "Dockerfile", "docker-compose.yml", "README.md"],
         initial_threshold=0.50,
-        icon="📦",
+        icon="·",
         model_tier="fast",
     ),
 ]
@@ -135,7 +135,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="Dataset ETL, feature scaling, PyTorch Dataset & DataLoader construction, synthetic data fallbacks, and data splits.",
         workspace_domain=["data/", "datasets/", "etl/"],
         initial_threshold=0.50,
-        icon="📊",
+        icon="◈",
     ),
     ArmRoleConfig(
         arm_id=1,
@@ -144,7 +144,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="PyTorch neural architecture definition, custom layers, forward passes, and weight initialization.",
         workspace_domain=["models/", "architecture/", "layers/"],
         initial_threshold=0.45,
-        icon="🧠",
+        icon="◇",
     ),
     ArmRoleConfig(
         arm_id=2,
@@ -153,7 +153,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="PyTorch training loop with CUDA/MPS/CPU autodetection, loss functions, optimizer setup, learning rate schedulers, and AMP.",
         workspace_domain=["train/", "training/", "losses/"],
         initial_threshold=0.40,
-        icon="🔥",
+        icon="↯",
     ),
     ArmRoleConfig(
         arm_id=3,
@@ -162,7 +162,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="Validation metrics, test evaluation, ablation experiments, confusion matrices, and ROC curves.",
         workspace_domain=["eval/", "benchmarks/", "metrics/"],
         initial_threshold=0.45,
-        icon="📈",
+        icon="○",
     ),
     ArmRoleConfig(
         arm_id=4,
@@ -171,7 +171,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="Hyperparameter optimization, learning rate search, batch size tuning, and regularization.",
         workspace_domain=["hpo/", "tuning/", "configs/"],
         initial_threshold=0.50,
-        icon="🎛️",
+        icon="•",
     ),
     ArmRoleConfig(
         arm_id=5,
@@ -180,7 +180,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="INT8/FP16 post-training quantization, TorchScript tracing, and ONNX Runtime graph export.",
         workspace_domain=["export/", "onnx/", "quantized/"],
         initial_threshold=0.45,
-        icon="⚡",
+        icon="✓",
     ),
     ArmRoleConfig(
         arm_id=6,
@@ -189,7 +189,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="FastAPI model inference endpoints, Triton serving wrappers, and latency benchmarking.",
         workspace_domain=["serve/", "inference/", "api/"],
         initial_threshold=0.50,
-        icon="🚀",
+        icon="▲",
     ),
     ArmRoleConfig(
         arm_id=7,
@@ -198,7 +198,7 @@ AIML_RESEARCH_ROSTER: list[ArmRoleConfig] = [
         description="Model cards, reproducibility tracking, environment lockfiles, and experiment reports.",
         workspace_domain=["mlops/", "reports/", "model_card.md", "README.md"],
         initial_threshold=0.50,
-        icon="📋",
+        icon="·",
     ),
 ]
 
@@ -211,7 +211,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="Dataset pipeline, preprocessing, feature transformations, and input schema validation.",
         workspace_domain=["data/", "datasets/", "preprocessing/"],
         initial_threshold=0.50,
-        icon="📊",
+        icon="◈",
     ),
     ArmRoleConfig(
         arm_id=1,
@@ -220,7 +220,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="PyTorch neural model definition, training loop, loss computation, and checkpointing.",
         workspace_domain=["models/", "train/", "checkpoints/"],
         initial_threshold=0.45,
-        icon="🧠",
+        icon="◇",
     ),
     ArmRoleConfig(
         arm_id=2,
@@ -229,7 +229,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="FastAPI backend serving ONNX / PyTorch models, REST endpoints, and WebSocket streaming.",
         workspace_domain=["backend/", "api/", "serve/"],
         initial_threshold=0.50,
-        icon="⚡",
+        icon="↯",
     ),
     ArmRoleConfig(
         arm_id=3,
@@ -245,7 +245,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
             "frontend/src/views/",
         ],
         initial_threshold=0.55,
-        icon="🎨",
+        icon="○",
     ),
     ArmRoleConfig(
         arm_id=4,
@@ -254,7 +254,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="ONNX export, FP16/INT8 inference optimization, latency profiling, and batching.",
         workspace_domain=["export/", "opt/"],
         initial_threshold=0.50,
-        icon="⚙️",
+        icon="•",
     ),
     ArmRoleConfig(
         arm_id=5,
@@ -263,7 +263,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="End-to-end integration tests, tensor-to-API schema validation, and endpoint stress testing.",
         workspace_domain=["tests/", "e2e/"],
         initial_threshold=0.40,
-        icon="🧪",
+        icon="✓",
     ),
     ArmRoleConfig(
         arm_id=6,
@@ -272,7 +272,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="Input sanitization against adversarial inputs, memory leak inspection, and security audit.",
         workspace_domain=["security/"],
         initial_threshold=0.40,
-        icon="🛡️",
+        icon="▲",
     ),
     ArmRoleConfig(
         arm_id=7,
@@ -281,7 +281,7 @@ FULLSTACK_AI_ROSTER: list[ArmRoleConfig] = [
         description="Docker container with CUDA/GPU support, docker-compose, and full documentation.",
         workspace_domain=["deploy/", "Dockerfile", "docker-compose.yml", "README.md"],
         initial_threshold=0.50,
-        icon="📦",
+        icon="·",
     ),
 ]
 

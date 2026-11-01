@@ -21,6 +21,7 @@ from rich.console import Console
 from rich.live import Live
 
 from octoflow.cockpit.session import CockpitSession, Theme
+from octoflow.glyphs import is_no_anim
 from octoflow.runner import render_runner_frame
 from octoflow.themes import get_banner_loop_frame
 
@@ -64,6 +65,8 @@ try:
     _prev_sighup = signal.getsignal(signal.SIGHUP)
     signal.signal(signal.SIGTERM, _sigterm_handler)
     signal.signal(signal.SIGHUP, _sigterm_handler)
+    if hasattr(signal, "SIGWINCH"):
+        signal.signal(signal.SIGWINCH, lambda *_: None)
 except (ValueError, AttributeError):
     pass
 
@@ -173,7 +176,9 @@ def get_live_cockpit_keys(
             while True:
                 # Guaranteed select timeout <= 0.045s
                 rlist, _, _ = select.select([sys.stdin], [], [], 0.045)
+                has_input = False
                 if rlist:
+                    has_input = True
                     try:
                         raw_chunk = os.read(fd, 8192).decode("utf-8", errors="ignore")
                     except Exception:
@@ -249,21 +254,27 @@ def get_live_cockpit_keys(
                         else:
                             idx += 1
 
-                tick += 1
-                octo_x += octo_dx
-                if octo_x >= 45.0:
-                    octo_x = 45.0
-                    octo_dx = -1.2
-                elif octo_x <= 0.0:
-                    octo_x = 0.0
-                    octo_dx = 1.2
+                if is_no_anim():
+                    if has_input:
+                        live.update(
+                            grid_builder(buffer, cursor_pos, 0, 0.0, 0, pasted_line_count)
+                        )
+                else:
+                    tick += 1
+                    octo_x += octo_dx
+                    if octo_x >= 45.0:
+                        octo_x = 45.0
+                        octo_dx = -1.2
+                    elif octo_x <= 0.0:
+                        octo_x = 0.0
+                        octo_dx = 1.2
 
-                jump_phase += 0.16
-                octo_y = 1 if math.sin(jump_phase) > 0.25 else 0
+                    jump_phase += 0.16
+                    octo_y = 1 if math.sin(jump_phase) > 0.25 else 0
 
-                live.update(
-                    grid_builder(buffer, cursor_pos, tick, octo_x, octo_y, pasted_line_count)
-                )
+                    live.update(
+                        grid_builder(buffer, cursor_pos, tick, octo_x, octo_y, pasted_line_count)
+                    )
 
     res = CockpitInput(buffer.strip())
     res.paste_line_count = (

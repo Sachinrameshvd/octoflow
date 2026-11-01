@@ -9,8 +9,10 @@ Renders rich terminal UI components for the interactive cockpit:
 """
 
 import os
+import shutil
 import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 from rich.console import Console
@@ -19,6 +21,7 @@ from rich.table import Table
 from rich.text import Text
 
 from octoflow.cockpit.session import CockpitSession, Theme
+from octoflow.glyphs import glyph
 from octoflow.runner import render_runner_frame
 from octoflow.themes import (
     get_banner_loop_frame,
@@ -163,6 +166,24 @@ def build_prompt_text(
     return prompt_text
 
 
+def build_compact_hud_line(session: CockpitSession) -> Panel:
+    """Render a compact 1-line HUD for narrow terminals (< 60 cols or < 15 rows)."""
+    theme = session.theme
+    ws_name = Path(session.workspace).name or str(session.workspace)
+    mod = session.current_model.upper()
+    octos = session.current_octos.upper()
+    diamond = glyph("DIAMOND")
+    return Panel(
+        Text.from_markup(
+            f"{diamond} [{theme.rich_primary}]{ws_name}[/{theme.rich_primary}]  |  "
+            f"[{theme.rich_secondary}]{mod}[/{theme.rich_secondary}]  |  "
+            f"Tier: {octos}"
+        ),
+        border_style=theme.rich_border,
+        padding=(0, 1),
+    )
+
+
 def build_cockpit_grid(
     session: CockpitSession,
     buffer: str,
@@ -176,6 +197,16 @@ def build_cockpit_grid(
     t0 = time.perf_counter() if os.getenv("OCTOFLOW_DEBUG_FRAMES") == "1" else 0.0
 
     theme = session.theme
+    prompt_text = build_prompt_text(theme, buffer, cursor_pos, tick, pasted_line_count)
+
+    # Narrow terminal handling: below 60 cols or 15 rows, skip banner & runner, show 1-line HUD
+    cols, lines = shutil.get_terminal_size((80, 24))
+    if cols < 60 or lines < 15:
+        grid = Table.grid(expand=True)
+        grid.add_row(build_compact_hud_line(session))
+        grid.add_row(prompt_text)
+        return grid
+
     banner = get_banner_loop_frame(theme, tick=tick)
     is_jump = octo_y > 0
     runner_frame = render_runner_frame(
@@ -188,7 +219,6 @@ def build_cockpit_grid(
     )
     hud_panel = build_hud_panel(session)
     topology_text = build_topology_text(theme)
-    prompt_text = build_prompt_text(theme, buffer, cursor_pos, tick, pasted_line_count)
 
     grid = Table.grid(expand=True)
     grid.add_row(banner)
@@ -213,6 +243,26 @@ def build_confirm_grid(
 ) -> Table:
     """Composite confirmation prompt frame grid while preserving runner animation."""
     theme = session.theme
+    warn_sym = glyph("WARN")
+
+    prompt_text = Text()
+    prompt_text.append("\n")
+    prompt_text.append(f"{warn_sym} Confirm execution: ", style=f"bold {theme.rich_warning}")
+    cmd_str = getattr(route, "command", str(route))
+    prompt_text.append(f"{cmd_str}", style="bold white")
+    reason = getattr(route, "reason", None)
+    if reason:
+        prompt_text.append(f"  [dim]({reason})[/dim]")
+    prompt_text.append(" [y/N]: ", style=f"bold {theme.rich_primary}")
+    prompt_text.append("\n")
+
+    cols, lines = shutil.get_terminal_size((80, 24))
+    if cols < 60 or lines < 15:
+        grid = Table.grid(expand=True)
+        grid.add_row(build_compact_hud_line(session))
+        grid.add_row(prompt_text)
+        return grid
+
     banner = get_banner_loop_frame(theme, tick=tick)
     is_jump = octo_y > 0
     runner_frame = render_runner_frame(
@@ -225,17 +275,6 @@ def build_confirm_grid(
     )
     hud_panel = build_hud_panel(session)
     topology_text = build_topology_text(theme)
-
-    prompt_text = Text()
-    prompt_text.append("\n")
-    prompt_text.append("⚠ Confirm execution: ", style=f"bold {theme.rich_warning}")
-    cmd_str = getattr(route, "command", str(route))
-    prompt_text.append(f"{cmd_str}", style="bold white")
-    reason = getattr(route, "reason", None)
-    if reason:
-        prompt_text.append(f"  [dim]({reason})[/dim]")
-    prompt_text.append(" [y/N]: ", style=f"bold {theme.rich_primary}")
-    prompt_text.append("\n")
 
     grid = Table.grid(expand=True)
     grid.add_row(banner)

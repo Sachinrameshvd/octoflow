@@ -10,6 +10,7 @@ from rich.table import Table
 from rich.text import Text
 
 from octoflow.config import get_octoflow_dir, load_secure_config
+from octoflow.glyphs import glyph
 from octoflow.themes import OctoTheme, load_saved_theme
 
 
@@ -92,11 +93,13 @@ def render_consortium_dashboard(
 
         arms_list = data.get("arms", ["·"] * 8)
         arm_badges = []
+        bolt_char = glyph("BOLT")
+        ok_char = glyph("OK")
         for idx, sym in enumerate(arms_list):
-            if sym == "⚡":
-                arm_badges.append(f"[bold yellow]\\[{idx}⚡][/bold yellow]")
-            elif sym == "✔":
-                arm_badges.append(f"[bold green]\\[{idx}✔][/bold green]")
+            if sym in ("\u26a1", "↯", "!"):
+                arm_badges.append(f"[bold yellow]\\[{idx}{bolt_char}][/bold yellow]")
+            elif sym in ("✔", "✓", "+"):
+                arm_badges.append(f"[bold green]\\[{idx}{ok_char}][/bold green]")
             else:
                 arm_badges.append(f"[dim]\\[{idx}·][/dim]")
         matrix_str = " ".join(arm_badges)
@@ -112,9 +115,9 @@ def render_consortium_dashboard(
             action_disp,
         )
 
-    legend_text = "[dim]Matrix Key: [bold yellow][⚡][/bold yellow] Arm Firing  [bold green][✔][/bold green] Arm Completed  [dim][·][/dim] Neural Standby[/dim]"
+    legend_text = f"[dim]Matrix Key: [bold yellow][{bolt_char}][/bold yellow] Arm Firing  [bold green][{ok_char}][/bold green] Arm Completed  [dim][·][/dim] Neural Standby[/dim]"
     synaptic_panel = Panel(
-        Text.from_markup(f"⚡ [bold]Synaptic Event Stream:[/bold] {last_event_msg}\n{legend_text}"),
+        Text.from_markup(f"{bolt_char} [bold]Synaptic Event Stream:[/bold] {last_event_msg}\n{legend_text}"),
         title=f"[{theme.rich_secondary}]Inter-Octopus Synaptic Bus[/{theme.rich_secondary}]",
         border_style=theme.rich_secondary,
     )
@@ -236,10 +239,11 @@ def render_dashboard(
     else:
         eta_str = "estimating..."
 
+    hourglass_char = glyph("HOURGLASS")
     progress_banner = Panel(
         Text.from_markup(
             f" ● [bold white]Elapsed:[/bold white] [{theme.rich_primary}]{elapsed_str}[/{theme.rich_primary}]  |  "
-            f"⏳ [bold white]ETA:[/bold white] [{theme.rich_warning}]{eta_str}[/{theme.rich_warning}]  |  "
+            f"{hourglass_char} [bold white]ETA:[/bold white] [{theme.rich_warning}]{eta_str}[/{theme.rich_warning}]  |  "
             f"◈ [bold white]Mission Progress:[/bold white] {progress_bar_display}  "
             f"[dim](Cycle {cycle}/{max_cycles} • {quiescent_count}/8 Arms Finished)[/dim]"
         ),
@@ -309,9 +313,10 @@ def render_dashboard(
     if active_coalitions:
         coalition_desc = " ⇄ ".join([f"Coalition {c}" for c in active_coalitions])
 
+    bolt_char = glyph("BOLT")
     coalition_panel = Panel(
         Text(
-            f"⇄ Active Attention Coalitions: {coalition_desc}\n⚡ Event Stream: {last_event_msg}",
+            f"⇄ Active Attention Coalitions: {coalition_desc}\n{bolt_char} Event Stream: {last_event_msg}",
             style=theme.rich_primary,
         ),
         title=f"[{theme.rich_secondary}]Dynamic Neural Binding[/{theme.rich_secondary}]",
