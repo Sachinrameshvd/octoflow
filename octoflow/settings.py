@@ -219,6 +219,7 @@ class Settings(BaseModel):
     """Root typed configuration container for OctoFlow (Schema Version 1)."""
 
     schema_version: int = CURRENT_SCHEMA_VERSION
+    onboarding_completed: bool = False
     defaults: DefaultsSettings = Field(default_factory=DefaultsSettings)
     ui: UISettings = Field(default_factory=UISettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
@@ -237,6 +238,7 @@ class Settings(BaseModel):
 
         known_keys = {
             "schema_version",
+            "onboarding_completed",
             "defaults",
             "ui",
             "server",
@@ -525,6 +527,12 @@ def transform_legacy_config_data(raw_data: dict[str, Any]) -> dict[str, Any]:
         budget.update(raw_data["budget"])
         consumed_keys.add("budget")
 
+    # Onboarding
+    onboarding_completed = False
+    if "onboarding_completed" in raw_data:
+        onboarding_completed = bool(raw_data["onboarding_completed"])
+        consumed_keys.add("onboarding_completed")
+
     # Extras: anything not consumed
     extras = {}
     for k, v in raw_data.items():
@@ -533,6 +541,7 @@ def transform_legacy_config_data(raw_data: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "schema_version": CURRENT_SCHEMA_VERSION,
+        "onboarding_completed": onboarding_completed,
         "defaults": defaults,
         "ui": ui,
         "server": server,

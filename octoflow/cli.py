@@ -137,6 +137,11 @@ def app_callback(
     """Launch interactive cockpit if no command specified."""
     setup_logging(verbose=verbose, trace=trace)
     if ctx.invoked_subcommand is None:
+        from octoflow.first_run import run_guided_first_run, should_run_first_run_wizard
+
+        if should_run_first_run_wizard():
+            run_guided_first_run(yes=False, launch_cockpit_after=True)
+            return
         interactive_cockpit(host=host)
 
 
@@ -156,6 +161,11 @@ def octos_callback(
     """Launch interactive cockpit if no command specified."""
     setup_logging(verbose=verbose, trace=trace)
     if ctx.invoked_subcommand is None:
+        from octoflow.first_run import run_guided_first_run, should_run_first_run_wizard
+
+        if should_run_first_run_wizard():
+            run_guided_first_run(yes=False, launch_cockpit_after=True)
+            return
         interactive_cockpit(host=host)
 
 
@@ -203,6 +213,8 @@ ui.register_octos_ui(octos_app)
 theme.register(app, octos_app)
 setup.register(app, octos_app)
 purge.register(app, octos_app)
+from octoflow import first_run  # noqa: E402
+first_run.register(app, octos_app)
 doctor.register(app, octos_app)
 mcp.register_mcp(app, octos_app)
 guard.register(app, octos_app)
@@ -256,6 +268,9 @@ from octoflow.commands.guard import (  # noqa: E402
 )
 from octoflow.commands.install_claude import (  # noqa: E402
     install_claude_cli_cmd,
+)
+from octoflow.first_run import (  # noqa: E402
+    first_run_cli_cmd,
 )
 from octoflow.commands.purge import (  # noqa: E402
     purge_cli_cmd,
@@ -313,6 +328,7 @@ __all__ = [
     "octos_screensaver_cmd",
     "run_setup_wizard",
     "setup_cli_cmd",
+    "first_run_cli_cmd",
     "purge_cli_cmd",
     "install_claude_cli_cmd",
 ]

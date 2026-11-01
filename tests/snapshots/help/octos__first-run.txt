@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octos first-run [OPTIONS]                                                                   
+                                                                                                    
+ Run the guided first-run onboarding wizard.                                                        
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --yes   -y        Run non-interactively picking Ollama if available else dry-run                 │
+│ --help            Show this message and exit.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

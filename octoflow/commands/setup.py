@@ -282,9 +282,21 @@ def run_setup_wizard(launch_after: bool = False):
         interactive_cockpit()
 
 
-def setup_cli_cmd():
+def setup_cli_cmd(
+    guided: bool = typer.Option(
+        False, "--guided", "-g", help="Run the step-by-step guided first-run onboarding wizard"
+    ),
+    yes: bool = typer.Option(
+        False, "--yes", "-y", help="Run guided wizard non-interactively picking defaults"
+    ),
+):
     """Launch the interactive OctoFlow Setup Wizard."""
-    run_setup_wizard(launch_after=True)
+    if guided:
+        from octoflow.first_run import run_guided_first_run
+
+        run_guided_first_run(yes=yes, launch_cockpit_after=True)
+    else:
+        run_setup_wizard(launch_after=True)
 
 
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:

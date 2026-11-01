@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Guided First-Run Onboarding Flow (P6.1)**:
+  - **First-Run Detection & Triggers**: Added automatic first-run detection when `~/.octoflow/config.json` is missing or `onboarding_completed: false`. Supports `octoflow first-run` and `octoflow setup --guided`.
+  - **Non-Interactive Bypass**: Bypasses wizard automatically in non-TTY terminals (`not sys.stdin.isatty()`), when `--yes` is passed, or when `OCTOFLOW_NONINTERACTIVE=1` / `OCTOFLOW_SKIP_ONBOARDING=1` is set.
+  - **Pre-Flight Diagnostics**: Inspects Python runtime (>= 3.10), Git version control, and local Ollama daemon reachability/models with actionable fix hints.
+  - **3-Question Onboarding Flow**: Asks at most three questions: (1) LLM engine choice [Local Ollama, Cloud API Key, Dry-Run Demo], (2) 60-second demo confirmation, and (3) 3D visualizer launch offer.
+  - **Isolated 60-Second Demo Mission**: Runs goal `"create a function that reverses words with a pytest test"` strictly within `~/.octoflow/demo` with small token and time budgets. Shows outcome ribbon, files created (`reverse_words.py`, `test_reverse_words.py`), and token ledger metrics.
+  - **Resilient Failure Recovery**: On provider error or network timeout, displays exact step and log file, offering graceful fallback to safe dry-run mode so users are never left at a blank prompt.
+  - **Documentation**: Authored [docs/first-run.md](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/first-run.md) with transcripts of successful, missing model, and failing recovery paths.
 - **Key Storage, Outbound Redaction, and Privacy Statement (P5.4)**:
   - **Environment-First Key Resolution Order**: Added `resolve_api_key(provider_name)` in `octoflow/keyring_store.py` enforcing strict resolution hierarchy: `Environment Variables (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)` > `OS Keyring` > `0600 Config File (~/.octoflow/config.json)`.
   - **Optional Keyring Integration**: Added `[keyring]` optional extra (`pip install "octoflow[keyring]"`) integrating OS-level secure storage (macOS Keychain, Linux SecretService, Windows Credential Vault) with zero runtime dependencies when not installed.

@@ -27,6 +27,7 @@
 │ screensaver     Launch continuous ambient 3D banner screensaver until keypress.                  │
 │ setup           Launch the interactive OctoFlow Setup Wizard.                                    │
 │ purge           Purge OctoFlow local storage: config, logs, run histories, memory, and reports.  │
+│ first-run       Run the guided first-run onboarding wizard.                                      │
 │ doctor          Run OctoFlow environment and provider diagnostics (like 'ruflo doctor').         │
 │ mcp             Start OctoFlow as a Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for   │
 │                 Claude Code and Cursor.                                                          │

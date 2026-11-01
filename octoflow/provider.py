@@ -624,6 +624,40 @@ class MockLLMProvider(BaseLLMProvider):
                 f"This decision enforces clean interface boundaries, high transaction concurrency, and robust data persistence. "
                 f"All components adhere to the project specifications and pass AST pre-flight validation."
             )
+        elif "reverse_words" in prompt_lower or "reverses words" in prompt_lower or "reverse words" in prompt_lower:
+            is_qa = "you are qa" in system_prompt.lower() or "(arm 5)" in system_prompt.lower()
+            if is_qa:
+                content = json.dumps(
+                    {
+                        "action": "write_file",
+                        "path": "test_reverse_words.py",
+                        "content": (
+                            "from reverse_words import reverse_words\n\n"
+                            "def test_reverse_words_basic():\n"
+                            "    assert reverse_words('hello world') == 'world hello'\n\n"
+                            "def test_reverse_words_empty():\n"
+                            "    assert reverse_words('') == ''\n\n"
+                            "def test_reverse_words_multiple():\n"
+                            "    assert reverse_words('the quick brown fox') == 'fox brown quick the'\n"
+                        ),
+                        "explanation": "Added unit test suite in test_reverse_words.py",
+                    }
+                )
+            else:
+                content = json.dumps(
+                    {
+                        "action": "write_file",
+                        "path": "reverse_words.py",
+                        "content": (
+                            "def reverse_words(text: str) -> str:\n"
+                            "    \"\"\"Reverse the order of words in a sentence.\"\"\"\n"
+                            "    if not text.strip():\n"
+                            "        return ''\n"
+                            "    return ' '.join(reversed(text.split()))\n"
+                        ),
+                        "explanation": "Implemented reverse_words function in reverse_words.py",
+                    }
+                )
         elif "test" in prompt_lower or "pytest" in prompt_lower:
             content = json.dumps(
                 {

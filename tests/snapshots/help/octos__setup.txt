@@ -4,6 +4,8 @@
  Launch the interactive OctoFlow Setup Wizard.                                                      
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --help          Show this message and exit.                                                      │
+│ --guided  -g        Run the step-by-step guided first-run onboarding wizard                      │
+│ --yes     -y        Run guided wizard non-interactively picking defaults                         │
+│ --help              Show this message and exit.                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 
