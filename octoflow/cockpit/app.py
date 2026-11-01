@@ -53,6 +53,60 @@ from octoflow.themes import (
     save_theme_preference,
 )
 
+COCKPIT_COMMANDS: list[str] = [
+    "/help",
+    "/manual",
+    "/docs",
+    "/setup",
+    "/doctor",
+    "/init",
+    "/init-ide",
+    "/init-action",
+    "/ci",
+    "/review-pr",
+    "/heal",
+    "/fix",
+    "/triage",
+    "/notify",
+    "/export",
+    "/report",
+    "/plan",
+    "/ask",
+    "/talk",
+    "/theme",
+    "/model",
+    "/octos",
+    "/guild",
+    "/guard",
+    "/hooks",
+    "/rag",
+    "/audit",
+    "/eject",
+    "/federation",
+    "/install-claude",
+    "/bench",
+    "/monorepo",
+    "/record",
+    "/runner",
+    "/play",
+    "/banner",
+    "/screensaver",
+    "/ignite",
+    "/open",
+    "/diff",
+    "/commit",
+    "/rollback",
+    "/undo",
+    "/ui",
+    "/memory",
+    "/status",
+    "/budget",
+    "/clear",
+    "/exit",
+    "/quit",
+    "/llm",
+]
+
 
 def prompt_user_str(console: Console, prompt_text: str = "") -> str:
     """Prompt user and read line using sys.stdin.readline without blocking read calls."""
@@ -162,57 +216,7 @@ def _run_cockpit_impl(
     s.broadcaster = broadcaster
     s.visualizer_url = f"http://localhost:{broadcaster.port}"
 
-    COMMANDS = [
-        "/help",
-        "/manual",
-        "/docs",
-        "/setup",
-        "/doctor",
-        "/init",
-        "/init-ide",
-        "/init-action",
-        "/ci",
-        "/review-pr",
-        "/heal",
-        "/triage",
-        "/notify",
-        "/export",
-        "/report",
-        "/plan",
-        "/ask",
-        "/talk",
-        "/theme",
-        "/model",
-        "/octos",
-        "/guild",
-        "/guard",
-        "/hooks",
-        "/rag",
-        "/audit",
-        "/eject",
-        "/federation",
-        "/install-claude",
-        "/bench",
-        "/monorepo",
-        "/record",
-        "/runner",
-        "/play",
-        "/banner",
-        "/screensaver",
-        "/ignite",
-        "/open",
-        "/diff",
-        "/commit",
-        "/rollback",
-        "/undo",
-        "/ui",
-        "/memory",
-        "/status",
-        "/budget",
-        "/clear",
-        "/exit",
-        "/quit",
-    ]
+    COMMANDS = COCKPIT_COMMANDS
     THEME_NAMES = list(list_themes().keys())
     MODELS = ["anthropic", "openai", "gemini", "grok", "deepseek", "ollama", "mock"]
     OCTOS_MODES = ["auto", "1", "3", "8"]
@@ -398,6 +402,13 @@ def _run_cockpit_impl(
                 continue
 
             elif user_input in ["/help", "help", "?"]:
+                from octoflow.messages import PLAIN_LANGUAGE_SUMMARY, render_glossary_table
+
+                c.print(f"\n[{s.theme.rich_primary}]◈ OctoFlow Overview[/{s.theme.rich_primary}]\n")
+                c.print(f"{PLAIN_LANGUAGE_SUMMARY}\n")
+                c.print(render_glossary_table(c))
+                c.print()
+
                 help_table = Table(
                     title="OctoFlow Interactive Commands",
                     border_style=s.theme.rich_border,
@@ -1243,25 +1254,28 @@ def _run_cockpit_impl(
                 continue
 
             elif user_input == "/memory":
+                from octoflow.messages import format_empty_state
+
                 mem_path = Path.home() / ".octoflow" / "vertical_lobe.json"
                 if mem_path.exists():
                     try:
                         data = json.loads(mem_path.read_text(encoding="utf-8"))
                         entries = data.get("entries", [])
-                        c.print(
-                            f"[{s.theme.rich_primary}]◈ Vertical Lobe Memory ({len(entries)} Hebbian Heuristics):[/{s.theme.rich_primary}]"
-                        )
-                        for idx, e in enumerate(entries[:5], 1):
+                        if entries:
                             c.print(
-                                f"  {idx}. [bold]{e.get('signature', 'General')}[/bold]: {e.get('guidance', '')[:80]}..."
+                                f"[{s.theme.rich_primary}]◈ Vertical Lobe Memory ({len(entries)} Hebbian Heuristics):[/{s.theme.rich_primary}]"
                             )
-                        c.print()
+                            for idx, e in enumerate(entries[:5], 1):
+                                c.print(
+                                    f"  {idx}. [bold]{e.get('signature', 'General')}[/bold]: {e.get('guidance', '')[:80]}..."
+                                )
+                            c.print()
+                        else:
+                            c.print(f"[dim]{format_empty_state('no_memory')}[/dim]\n")
                     except Exception as err:
                         c.print(f"[dim]Could not parse memory: {err}[/dim]\n")
                 else:
-                    c.print(
-                        "[dim]Vertical Lobe memory initialized; no persisted heuristics yet.[/dim]\n"
-                    )
+                    c.print(f"[dim]{format_empty_state('no_memory')}[/dim]\n")
                 continue
 
             elif user_input == "/status":
@@ -1696,6 +1710,15 @@ def _run_cockpit_impl(
                 c.print(
                     f"[{s.theme.rich_success}]✔ Exported Asciinema .cast session to: [bold white]{saved_cast}[/bold white][/{s.theme.rich_success}]\n"
                 )
+                continue
+
+            # Check for mistyped or unknown slash commands before natural language conductor
+            if user_input.startswith("/"):
+                from octoflow.messages import format_unknown_command
+
+                cmd_word = user_input.split()[0]
+                msg = format_unknown_command(cmd_word, COCKPIT_COMMANDS)
+                c.print(f"[{s.theme.rich_warning}]▲ {msg}[/{s.theme.rich_warning}]\n")
                 continue
 
             # Intelligent Conversational Reflex: Check if user input is an Inquiry vs Action

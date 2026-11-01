@@ -1,0 +1,5 @@
+E-PROV-AUTH The inference provider rejected your credentials (HTTP 401 or 403).
+Consequence: OctoFlow cannot authenticate requests with the selected AI model provider.
+Next Step: Run 'octoflow setup' or export a valid API key (e.g. export ANTHROPIC_API_KEY='sk-...').
+Hint: Run 'octoflow setup' to configure valid credentials or export the required environment 
+variable.

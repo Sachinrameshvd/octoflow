@@ -1,0 +1,2 @@
+Local Ollama daemon is unreachable at http://127.0.0.1:11434.
+Try: ollama serve

@@ -1,0 +1,2 @@
+No test suite or testing framework detected in workspace.
+Try: pytest

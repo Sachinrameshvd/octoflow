@@ -1,0 +1,6 @@
+E-CONFIG-INVALID The settings file ~/.octoflow/config.json contains invalid keys, types, or syntax.
+Consequence: OctoFlow cannot load operational settings.
+Next Step: Inspect settings with 'octoflow config show' or reset configuration with 'octoflow 
+setup'.
+Hint: Run 'octoflow config show' to view current keys or run 'octoflow setup' to regenerate 
+configuration.

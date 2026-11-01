@@ -1,0 +1,6 @@
+E-PROV-REQUEST The request payload was rejected (HTTP 4xx) or prompt length exceeded the model's 
+context window.
+Consequence: The model refused the payload and generation was halted.
+Next Step: Reduce workspace context or configure a larger context model with 'octoflow config set 
+model <name>'.
+Hint: Prune large context files or choose a model with a larger context window.

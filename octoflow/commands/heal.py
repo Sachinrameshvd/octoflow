@@ -14,9 +14,14 @@ def heal_cli_cmd(
     attempts: int = typer.Option(3, "--attempts", "-a", help="Max healing iterations"),
 ):
     """Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend)."""
-    from octoflow.healing import self_heal_workspace
+    from octoflow.healing import detect_test_framework, self_heal_workspace
+    from octoflow.messages import format_empty_state
 
     theme = load_saved_theme()
+    if detect_test_framework(workspace) is None:
+        console.print(f"\n{format_empty_state('no_tests_found')}\n")
+        return
+
     console.print(
         f"\n[{theme.rich_primary}]◈ OctoFlow Autonomous Self-Healing: Running test suite and diagnosing...[/{theme.rich_primary}]\n"
     )

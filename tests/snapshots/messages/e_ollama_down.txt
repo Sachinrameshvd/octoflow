@@ -1,0 +1,7 @@
+E-OLLAMA-DOWN The local Ollama service is unreachable at http://127.0.0.1:11434 or requested model 
+is missing.
+Consequence: Local model inference cannot proceed.
+Next Step: Start the daemon with 'ollama serve' or pull the model with 'ollama pull 
+qwen2.5-coder:7b'.
+Hint: Run 'ollama serve' to start local inference or run 'ollama pull <model>' to download required 
+weights.

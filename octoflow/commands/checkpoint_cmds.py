@@ -79,7 +79,9 @@ def runs_cli_cmd(
     runs = list_runs(workspace_dir=ws, limit=limit)
 
     if not runs:
-        console.print("\n[dim]No recorded OctoFlow runs found.[/dim]\n")
+        from octoflow.messages import format_empty_state
+
+        console.print(f"\n{format_empty_state('no_runs')}\n")
         return
 
     table = Table(title="◈ OctoFlow Run Provenance Ledger", border_style="cyan")

@@ -109,11 +109,29 @@ class OctoFlowGroup(TyperGroup):
 # Typer apps
 app = typer.Typer(
     cls=OctoFlowGroup,
-    help="◈ OctoFlow: Decentralized Cephalopod Multi-Agent Swarm with Sensory Surprise Gating",
+    help=(
+        "OctoFlow is an autonomous multi-agent coding framework that plans, develops, and tests software projects using coordinated AI specialists. "
+        "It combines local change detection with checkpoint safety to implement goals while keeping you in full control.\n\n"
+        "Cephalopod Architecture Metaphor:\n"
+        "  • Conductor: Planner coordinating high-level objectives and task graph execution\n"
+        "  • Arm: Specialist agent executing targeted code and test operations\n"
+        "  • Gate: Change detector measuring sensory surprise on file edits\n"
+        "  • Bus: Message channel enabling low-latency agent-to-agent events\n"
+        "  • Vertical Lobe: Memory system retaining heuristics and learned patterns across runs"
+    ),
 )
 octos_app = typer.Typer(
     cls=OctoFlowGroup,
-    help="◈ OctosFlow: Multi-Cephalopod Swarm Consortium (3 to 8 Octopuses • 24 to 64 Arms)",
+    help=(
+        "OctosFlow coordinates multiple cephalopod swarms working in consortium on large-scale software engineering tasks. "
+        "It distributes complex multi-repo and monorepo objectives across specialized multi-agent teams.\n\n"
+        "Cephalopod Architecture Metaphor:\n"
+        "  • Conductor: Planner coordinating high-level objectives and task graph execution\n"
+        "  • Arm: Specialist agent executing targeted code and test operations\n"
+        "  • Gate: Change detector measuring sensory surprise on file edits\n"
+        "  • Bus: Message channel enabling low-latency agent-to-agent events\n"
+        "  • Vertical Lobe: Memory system retaining heuristics and learned patterns across runs"
+    ),
 )
 console = Console()
 
@@ -239,6 +257,19 @@ checkpoint_cmds.register(app, octos_app)
 ignition_cmds.register(app, octos_app)
 
 
+def glossary_cli_cmd() -> None:
+    """Print the plain-language mapping of OctoFlow architecture concepts."""
+    from octoflow.messages import render_glossary_table
+
+    console.print()
+    console.print(render_glossary_table(console))
+    console.print()
+
+
+app.command("glossary")(glossary_cli_cmd)
+octos_app.command("glossary")(glossary_cli_cmd)
+
+
 # -------------------------------------------------------------------------
 # Backward-Compatibility Re-Exports
 # -------------------------------------------------------------------------
@@ -331,6 +362,7 @@ __all__ = [
     "first_run_cli_cmd",
     "purge_cli_cmd",
     "install_claude_cli_cmd",
+    "glossary_cli_cmd",
 ]
 
 

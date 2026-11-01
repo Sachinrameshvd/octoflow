@@ -1,0 +1,10 @@
+                              ◈ OctoFlow Architecture Glossary                              
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Metaphor           ┃ Plain Language Meaning                                              ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Conductor          │ Planner coordinating high-level objectives and task graph execution │
+│ Arm                │ Specialist agent executing targeted code and test operations        │
+│ Gate               │ Change detector measuring sensory surprise on file edits            │
+│ Bus                │ Message channel enabling low-latency agent-to-agent events          │
+│ Vertical Lobe      │ Memory system retaining heuristics and learned patterns across runs │
+└────────────────────┴─────────────────────────────────────────────────────────────────────┘

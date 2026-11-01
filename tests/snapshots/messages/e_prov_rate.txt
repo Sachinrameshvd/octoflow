@@ -1,0 +1,7 @@
+E-PROV-RATE The inference provider throttled requests due to rate limits or exhausted account 
+credits (HTTP 429).
+Consequence: Current model requests are paused or rejected until the quota window resets.
+Next Step: Wait for the provider quota reset or switch provider using 'octoflow config set 
+llm_provider ollama'.
+Hint: Wait for your quota window to reset or switch providers using 'octoflow config set 
+llm_provider <name>'.

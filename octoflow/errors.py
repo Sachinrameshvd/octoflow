@@ -64,17 +64,24 @@ class OctoFlowError(Exception):
         message: Primary user-facing description of what failed.
         hint: Actionable advice instructing the user how to fix it.
         exit_code: Standardized process exit code (default 1).
+        code: Stable catalog error code (default E-GENERAL).
     """
+
+    code: str = "E-GENERAL"
+    default_exit_code: int = 1
 
     def __init__(
         self,
         message: str,
         hint: str | None = None,
         exit_code: int = 1,
+        code: str | None = None,
     ):
         self.message = redact_secrets(message)
         self.hint = redact_secrets(hint) if hint else None
         self.exit_code = exit_code
+        if code:
+            self.code = code
         full_msg = self.message
         if self.hint:
             full_msg += f"\nHint: {self.hint}"
@@ -82,15 +89,21 @@ class OctoFlowError(Exception):
 
     def format_one_liner(self) -> str:
         """Single line representation for concise reporting."""
-        msg = f"Error: {self.message}"
+        prefix = f"{self.code}: " if self.code else "Error: "
+        msg = f"{prefix}{self.message}"
         if self.hint:
             msg += f" (Hint: {self.hint})"
         return msg
 
     def format_cli(self) -> str:
         """Format the error and hint for CLI display in standard style."""
-        prefix = "" if self.message.startswith("Error:") else "Error: "
-        lines = [f"{prefix}{self.message}"]
+        code_prefix = f"{self.code} " if self.code else ""
+        clean_msg = self.message
+        if clean_msg.startswith(f"{self.code} "):
+            msg_line = clean_msg
+        else:
+            msg_line = f"{code_prefix}{clean_msg}"
+        lines = [msg_line]
         if self.hint:
             lines.append(f"Hint: {self.hint}")
         return "\n".join(lines)
@@ -99,18 +112,22 @@ class OctoFlowError(Exception):
 class ConfigError(OctoFlowError):
     """Configuration error: invalid schema, bad keys, or corrupted file (exit 3)."""
 
+    code = "E-CONFIG-INVALID"
+    default_exit_code = 3
+
     def __init__(
         self,
         message: str,
         hint: str | None = None,
         exit_code: int = 3,
         loc: str | None = None,
+        code: str | None = None,
     ):
         self.loc = loc or ""
         clean_msg = message
         if loc and not message.startswith(f"Configuration error in '{loc}'"):
             clean_msg = f"Configuration error in '{loc}': {message}"
-        super().__init__(clean_msg, hint=hint, exit_code=exit_code)
+        super().__init__(clean_msg, hint=hint, exit_code=exit_code, code=code or self.code)
 
 
 # Alias for compatibility with P2.3 settings module
@@ -120,17 +137,24 @@ ConfigurationError = ConfigError
 class UsageError(OctoFlowError):
     """CLI syntax, flag, or argument usage error (exit 3)."""
 
+    code = "E-USAGE-INVALID"
+    default_exit_code = 3
+
     def __init__(
         self,
         message: str,
         hint: str | None = None,
         exit_code: int = 3,
+        code: str | None = None,
     ):
-        super().__init__(message, hint=hint, exit_code=exit_code)
+        super().__init__(message, hint=hint, exit_code=exit_code, code=code or self.code)
 
 
 class ToolError(OctoFlowError):
     """Sandbox tool execution, confinement, or timeout error (exit 1)."""
+
+    code = "E-TOOL-DENIED"
+    default_exit_code = 1
 
     def __init__(
         self,
@@ -138,13 +162,17 @@ class ToolError(OctoFlowError):
         hint: str | None = None,
         exit_code: int = 1,
         tool_name: str | None = None,
+        code: str | None = None,
     ):
         self.tool_name = tool_name
-        super().__init__(message, hint=hint, exit_code=exit_code)
+        super().__init__(message, hint=hint, exit_code=exit_code, code=code or self.code)
 
 
 class WorkspaceError(OctoFlowError):
     """Workspace boundary escape, permission, or missing directory error (exit 1)."""
+
+    code = "E-WORKSPACE-ESCAPE"
+    default_exit_code = 1
 
     def __init__(
         self,
@@ -152,13 +180,38 @@ class WorkspaceError(OctoFlowError):
         hint: str | None = None,
         exit_code: int = 1,
         path: str | None = None,
+        code: str | None = None,
     ):
         self.path = path
-        super().__init__(message, hint=hint, exit_code=exit_code)
+        super().__init__(message, hint=hint, exit_code=exit_code, code=code or self.code)
+
+
+class GitError(OctoFlowError):
+    """Git repository missing or Git operation failed (exit 1)."""
+
+    code = "E-NOGIT"
+    default_exit_code = 1
+
+    def __init__(
+        self,
+        message: str,
+        hint: str | None = None,
+        exit_code: int = 1,
+        code: str | None = None,
+    ):
+        super().__init__(
+            message,
+            hint=hint or "Run 'git init' to initialize version control or run 'octoflow doctor --fix'.",
+            exit_code=exit_code,
+            code=code or self.code,
+        )
 
 
 class BudgetExceeded(OctoFlowError):
     """Execution budget limit reached (exit 1)."""
+
+    code = "E-BUDGET"
+    default_exit_code = 1
 
     def __init__(
         self,
@@ -170,6 +223,7 @@ class BudgetExceeded(OctoFlowError):
         exit_code: int = 1,
         budget: float | None = None,
         cost: float | None = None,
+        code: str | None = None,
     ):
         self.limit_name = limit_name
         self.used = used
@@ -186,7 +240,7 @@ class BudgetExceeded(OctoFlowError):
         if hint is None:
             hint = f"Increase {limit_name} limit via CLI flags (--max-tokens, --max-calls, --timeout, --max-heal) or use --no-limits."
 
-        super().__init__(message, hint=hint, exit_code=exit_code)
+        super().__init__(message, hint=hint, exit_code=exit_code, code=code or self.code)
 
 
 # -----------------------------------------------------------------------------
@@ -197,6 +251,9 @@ class BudgetExceeded(OctoFlowError):
 class ProviderError(OctoFlowError):
     """Base error for all LLM provider failures (exit code 2)."""
 
+    code = "E-PROV-FAILED"
+    default_exit_code = 2
+
     def __init__(
         self,
         message: str,
@@ -204,6 +261,7 @@ class ProviderError(OctoFlowError):
         exit_code: int = 2,
         provider: str = "unknown",
         status: int | None = None,
+        code: str | None = None,
         **kwargs: Any,
     ):
         # Support legacy positional / keyword arguments
@@ -226,17 +284,26 @@ class ProviderError(OctoFlowError):
             full_msg += f" (HTTP {status})"
         full_msg += f" {clean_msg}"
 
-        super().__init__(full_msg, hint=clean_hint if clean_hint else None, exit_code=exit_code)
+        super().__init__(
+            full_msg,
+            hint=clean_hint if clean_hint else None,
+            exit_code=exit_code,
+            code=code or self.code,
+        )
 
 
 class ProviderAuthError(ProviderError):
     """Authentication or authorization failure: 401, 403, or invalid API key."""
 
-    pass
+    code = "E-PROV-AUTH"
+    default_exit_code = 2
 
 
 class ProviderRateLimitError(ProviderError):
     """Rate limit or quota exhaustion: 429 error honoring Retry-After headers."""
+
+    code = "E-PROV-RATE"
+    default_exit_code = 2
 
     def __init__(
         self,
@@ -246,6 +313,7 @@ class ProviderRateLimitError(ProviderError):
         provider: str = "unknown",
         status: int | None = 429,
         retry_after: float | None = None,
+        code: str | None = None,
         **kwargs: Any,
     ):
         self.retry_after = retry_after
@@ -255,6 +323,7 @@ class ProviderRateLimitError(ProviderError):
             exit_code=exit_code,
             provider=provider,
             status=status,
+            code=code or self.code,
             **kwargs,
         )
 
@@ -262,23 +331,29 @@ class ProviderRateLimitError(ProviderError):
 class ProviderTransientError(ProviderError):
     """Transient service disruptions: 5xx errors, timeouts, and network drops."""
 
-    pass
+    code = "E-PROV-TRANSIENT"
+    default_exit_code = 2
 
 
 class ProviderRequestError(ProviderError):
     """Client request errors: 4xx errors, invalid payload, or context window exceeded."""
 
-    pass
+    code = "E-PROV-REQUEST"
+    default_exit_code = 2
 
 
 class ProviderUnavailableError(ProviderError):
     """Daemon or endpoint unavailable: Ollama daemon offline or model missing."""
 
-    pass
+    code = "E-OLLAMA-DOWN"
+    default_exit_code = 2
 
 
 class ProviderExhaustedError(ProviderError):
     """Raised when all configured LLM providers fail or credentials exhausted."""
+
+    code = "E-PROV-EXHAUSTED"
+    default_exit_code = 2
 
     def __init__(
         self,
@@ -286,6 +361,7 @@ class ProviderExhaustedError(ProviderError):
         failures: list[dict[str, Any]] | None = None,
         hint: str | None = None,
         exit_code: int = 2,
+        code: str | None = None,
     ):
         self.failures = failures or []
         formatted_failures = []
@@ -309,4 +385,5 @@ class ProviderExhaustedError(ProviderError):
             or "Check API keys in ~/.octoflow/config.json or pass --dry-run for mock simulation.",
             exit_code=exit_code,
             provider="all",
+            code=code or self.code,
         )

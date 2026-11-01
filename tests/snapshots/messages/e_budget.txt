@@ -1,0 +1,7 @@
+E-BUDGET The mission exceeded its configured token count, LLM call count, cost ceiling, or 
+wall-clock timeout.
+Consequence: Swarm execution was halted to prevent unintended resource consumption.
+Next Step: Increase limits via '--budget <amount>', '--max-tokens <n>', '--timeout <sec>', or pass 
+'--no-limits'.
+Hint: Increase budget limits via CLI flags (--budget, --max-tokens, --timeout) or pass 
+'--no-limits'.

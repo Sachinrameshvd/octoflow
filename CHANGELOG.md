@@ -19,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Message Catalog, Empty States, and Help UX (P6.2)**:
+  - **Canonical Error Message Catalog**: Created `octoflow/messages.py` mapping stable error codes (`E-PROV-AUTH`, `E-PROV-RATE`, `E-OLLAMA-DOWN`, `E-CONFIG-INVALID`, `E-TOOL-DENIED`, `E-BUDGET`, `E-NOGIT`, `E-PROV-TRANSIENT`, `E-PROV-REQUEST`, `E-PROV-EXHAUSTED`, `E-PROV-FAILED`, `E-USAGE-INVALID`, `E-WORKSPACE-ESCAPE`, `E-GENERAL`) with plain-language cause, operational consequence, concrete next-step command, and documentation anchors.
+  - **Standardized Error Formatting**: Errors print `E-XXXX message` plus `Hint: <action>` on the next line without changing existing exit code contracts or suppressing `--trace` debug details.
+  - **Empty States**: Added structured empty states for all 7 key situations (no runs, no memory, no reports, no providers configured, no Ollama, not a git repo, no tests found for heal) with friendly descriptions and actionable next commands.
+  - **Plain-Language Summary & Metaphor Glossary**: Updated top-level `--help` and cockpit `/help` to provide a two-sentence plain-language summary before the metaphor glossary. Added `octoflow glossary` command mapping Conductor, Arm, Gate, Bus, and Vertical Lobe to their plain-language counterparts.
+  - **Command Suggestions via difflib**: Cockpit slash commands automatically suggest close matches for typos (e.g. `/modle` -> `/model`, `/hela` -> `/heal`).
+  - **Documentation & Snapshots**: Updated `docs/TROUBLESHOOTING.md` with explicit anchors for all error codes; generated `docs/reference/errors.md`; added comprehensive test suite in `tests/test_message_catalog.py` and 23 snapshots in `tests/snapshots/messages/`.
 - **Guided First-Run Onboarding Flow (P6.1)**:
   - **First-Run Detection & Triggers**: Added automatic first-run detection when `~/.octoflow/config.json` is missing or `onboarding_completed: false`. Supports `octoflow first-run` and `octoflow setup --guided`.
   - **Non-Interactive Bypass**: Bypasses wizard automatically in non-TTY terminals (`not sys.stdin.isatty()`), when `--yes` is passed, or when `OCTOFLOW_NONINTERACTIVE=1` / `OCTOFLOW_SKIP_ONBOARDING=1` is set.

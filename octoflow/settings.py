@@ -41,15 +41,14 @@ VALID_PROVIDERS: set[str] = {
 
 _WARNED_EXTRAS: set[str] = set()
 
+from octoflow.errors import ConfigError
 
-class ConfigurationError(Exception):
+
+class ConfigurationError(ConfigError):
     """Raised when configuration validation or loading fails."""
 
     def __init__(self, message: str, loc: str | None = None, hint: str | None = None):
-        super().__init__(message)
-        self.message = message
-        self.loc = loc or ""
-        self.hint = hint or ""
+        super().__init__(message=message, hint=hint, exit_code=3, loc=loc)
 
     def format_one_liner(self) -> str:
         loc_str = f" in '{self.loc}'" if self.loc else ""

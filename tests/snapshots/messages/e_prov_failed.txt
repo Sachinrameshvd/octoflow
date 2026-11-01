@@ -1,0 +1,5 @@
+E-PROV-FAILED An unclassified operational error occurred while communicating with the AI model 
+provider.
+Consequence: Model inference failed and swarm generation stopped.
+Next Step: Inspect logs in ~/.octoflow/logs/octoflow.log or re-run with '--trace'.
+Hint: Run 'octoflow doctor' to diagnose environment health or run with '--trace'.

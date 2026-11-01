@@ -1,0 +1,4 @@
+E-GENERAL An unexpected operational error occurred during OctoFlow execution.
+Consequence: The requested operation failed.
+Next Step: Inspect logs in ~/.octoflow/logs/octoflow.log or re-run with '--trace'.
+Hint: Run 'octoflow doctor' to diagnose system issues or re-run with '--trace'.

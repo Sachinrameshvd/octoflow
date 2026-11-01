@@ -1,0 +1,4 @@
+E-NOGIT The current workspace is not a Git repository or a Git checkpoint operation failed.
+Consequence: Automatic branch snapshotting and safe rollback cannot be performed.
+Next Step: Initialize version control with 'git init' or run 'octoflow doctor --fix'.
+Hint: Run 'git init' to initialize version control or run 'octoflow doctor --fix'.

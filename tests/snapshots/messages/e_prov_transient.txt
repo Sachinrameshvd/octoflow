@@ -1,0 +1,5 @@
+E-PROV-TRANSIENT The remote provider experienced a temporary server error (HTTP 5xx), connection 
+drop, or network timeout.
+Consequence: The current inference attempt failed after automatic retry attempts.
+Next Step: Check internet connectivity and provider status page, then re-run with 'octoflow run'.
+Hint: Verify network connection and provider service status, then retry the mission.

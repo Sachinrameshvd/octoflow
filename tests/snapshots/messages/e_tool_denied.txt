@@ -1,0 +1,5 @@
+E-TOOL-DENIED A tool action violated security sandbox policies, exceeded execution timeout, or 
+returned a failure code.
+Consequence: The tool execution was blocked to preserve workspace safety.
+Next Step: Review tool parameters or increase timeout with 'octoflow config set tool_timeout 60'.
+Hint: Review tool security constraints or increase timeout via CLI flags.

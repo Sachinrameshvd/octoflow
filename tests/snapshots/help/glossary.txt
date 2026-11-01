@@ -1,0 +1,9 @@
+                                                                                                    
+ Usage: octoflow glossary [OPTIONS]                                                                 
+                                                                                                    
+ Print the plain-language mapping of OctoFlow architecture concepts.                                
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

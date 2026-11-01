@@ -1,0 +1,7 @@
+E-WORKSPACE-ESCAPE A file path operation attempted to access files outside the designated workspace 
+directory.
+Consequence: The operation was blocked to prevent reading or modifying files outside the project 
+root.
+Next Step: Use relative paths within the workspace or specify a target directory with '--dir 
+<path>'.
+Hint: Ensure all file paths stay within the workspace boundary or pass '--dir <path>'.

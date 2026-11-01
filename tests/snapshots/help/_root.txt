@@ -1,7 +1,16 @@
                                                                                                     
  Usage: octoflow [OPTIONS] COMMAND [ARGS]...                                                        
                                                                                                     
- ◈ OctoFlow: Decentralized Cephalopod Multi-Agent Swarm with Sensory Surprise Gating                
+ OctoFlow is an autonomous multi-agent coding framework that plans, develops, and tests software    
+ projects using coordinated AI specialists. It combines local change detection with checkpoint      
+ safety to implement goals while keeping you in full control.                                       
+                                                                                                    
+ Cephalopod Architecture Metaphor:                                                                  
+ • Conductor: Planner coordinating high-level objectives and task graph execution                   
+ • Arm: Specialist agent executing targeted code and test operations                                
+ • Gate: Change detector measuring sensory surprise on file edits                                   
+ • Bus: Message channel enabling low-latency agent-to-agent events                                  
+ • Vertical Lobe: Memory system retaining heuristics and learned patterns across runs               
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --host                        <str>  Telemetry server bind host (default: 127.0.0.1)             │
@@ -74,6 +83,7 @@
 │ runs            List recent OctoFlow execution runs and their git provenance status.             │
 │ ps              List actively running Phase 4 ignition application & API servers.                │
 │ stop            Stop active ignition application and API background servers.                     │
+│ glossary        Print the plain-language mapping of OctoFlow architecture concepts.              │
 │ config          Inspect, validate, and update OctoFlow typed configuration settings.             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

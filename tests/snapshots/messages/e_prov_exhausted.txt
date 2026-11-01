@@ -1,0 +1,6 @@
+E-PROV-EXHAUSTED All configured LLM providers in the fallback cascade failed or had exhausted 
+credentials.
+Consequence: OctoFlow cannot complete autonomous code generation.
+Next Step: Run 'octoflow setup' to configure working provider credentials or pass '--dry-run' for 
+mock simulation.
+Hint: Configure healthy inference credentials with 'octoflow setup' or test with '--dry-run'.
