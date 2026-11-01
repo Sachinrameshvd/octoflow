@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { isReducedMotion } from '../a11y/motion-policy';
 
 export type HierarchyLevel =
   | 'WHOLE_OCTOPUS'
@@ -150,6 +151,18 @@ export class CameraController {
       this.currentTween.stop();
       this.currentTween = null;
     }
+
+    if (isReducedMotion()) {
+      this.camera.position.copy(targetPos);
+      this.controls.target.copy(lookAtPos);
+      this.camera.lookAt(lookAtPos);
+      this.controls.enabled = true;
+      this.controls.update();
+      this.isTweening = false;
+      if (onComplete) onComplete();
+      return;
+    }
+
     this.isTweening = true;
     this.controls.enabled = true;
 
@@ -207,6 +220,18 @@ export class CameraController {
       this.currentTween.stop();
       this.currentTween = null;
     }
+
+    if (isReducedMotion()) {
+      this.camera.position.copy(targetPos);
+      this.controls.target.copy(lookAtPos);
+      this.camera.lookAt(lookAtPos);
+      this.controls.enabled = true;
+      this.controls.update();
+      this.isTweening = false;
+      if (onComplete) onComplete();
+      return;
+    }
+
     this.isTweening = true;
     this.controls.enabled = true;
 

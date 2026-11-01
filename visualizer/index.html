@@ -77,13 +77,28 @@
             <span>LIVE PROBLEM SOLVER</span>
           </button>
 
-          <button id="btn-toggle-voice" class="btn-voice-toggle" title="Toggle octopus voice transmissions (speech synthesis)">
+          <button id="btn-toggle-activity-log" title="Open accessible text activity log and arm overview table (Press L)" aria-expanded="false" aria-controls="activity-log-panel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <path d="M4 6H20M4 12H20M4 18H14" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>ACTIVITY LOG</span>
+          </button>
+
+          <button id="btn-toggle-reduced-motion" class="btn-reduced-motion" title="Toggle reduced motion (persisted in localStorage)" aria-pressed="false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" style="margin-right: 6px;">
+              <circle cx="12" cy="12" r="9" stroke="#fab387" stroke-width="1.8"/>
+              <path d="M10 8L15 12L10 16" stroke="#fab387" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span id="label-reduced-motion">MOTION: NORMAL</span>
+          </button>
+
+          <button id="btn-toggle-voice" class="btn-voice-toggle muted" aria-pressed="false" aria-label="Toggle voice synthesis (currently muted)" title="Toggle octopus voice transmissions (speech synthesis)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bio-glyph" id="icon-voice-state">
               <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M15.54 8.46C16.48 9.4 17 10.65 17 12C17 13.35 16.48 14.6 15.54 15.54" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M19.07 4.93C20.94 6.8 22 9.35 22 12C22 14.65 20.94 17.2 19.07 19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
-            <span id="label-voice-state">VOICE: ON</span>
+            <span id="label-voice-state">VOICE: OFF</span>
           </button>
 
           <button id="btn-toggle-domain-mode" class="btn-domain-toggle" title="Switch domain view: DUAL (SW+AI) / SOFTWARE DEV / AI-ML RESEARCH">
@@ -154,6 +169,12 @@
           </div>
         </div>
       </div>
+
+      <!-- Accessible Screen-Reader Periodic Summary -->
+      <div id="canvas-live-summary" class="sr-only" aria-live="polite">OctoFlow 3D Cephalopod Swarm Connectome Explorer: All 8 arms online.</div>
+
+      <!-- Accessible Non-visual Activity Log & Arm Overview Drawer -->
+      <section id="activity-log-panel" style="display: none;"></section>
 
       <!-- Hover Tooltip -->
       <div id="hover-tooltip" class="hidden"></div>

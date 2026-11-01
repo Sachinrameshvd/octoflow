@@ -172,3 +172,4 @@ def test_modes_environment_detection(monkeypatch):
     monkeypatch.delenv("OCTOFLOW_ASCII", raising=False)
     monkeypatch.setenv("OCTOFLOW_PLAIN", "1")
     assert is_plain_mode() is True
+

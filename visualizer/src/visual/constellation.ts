@@ -19,6 +19,8 @@ import { SignalPropagator } from './signal-propagator';
 import type { CameraController } from '../core/camera-controller';
 import { ICONS } from '../ui/icons';
 import { parseTelemetryMessage, ReconnectController } from '../telemetry/parse';
+import { isReducedMotion } from '../a11y/motion-policy';
+import { getArmProfile } from '../a11y/arm-profiles';
 
 export interface OctopusNodeData {
   id: number;
@@ -262,6 +264,7 @@ export class CephalopodConstellationManager {
   public domainMode: 'DUAL' | 'SOFTWARE' | 'AIML' = 'DUAL';
   public onDomainModeChange?: (mode: 'DUAL' | 'SOFTWARE' | 'AIML') => void;
   public onLiveServiceReady?: (evt: any) => void;
+  public onTelemetryEvent?: (evt: any) => void;
 
   public setDomainMode(mode: 'DUAL' | 'SOFTWARE' | 'AIML') {
     this.domainMode = mode;
@@ -432,9 +435,13 @@ export class CephalopodConstellationManager {
 
     this.octopuses.forEach((entry) => {
       const card = document.createElement('div');
+      const armProfile = getArmProfile(entry.data.id);
       card.id = `octo-card-${entry.data.id}`;
       card.className = 'glass-panel octo-badge';
       card.setAttribute('data-octo-id', String(entry.data.id));
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `Arm ${entry.data.id}: ${entry.data.title} (${armProfile.code}). Status: ${entry.data.status}`);
       card.style.cssText = `
         position: absolute;
         pointer-events: auto;
@@ -497,7 +504,7 @@ export class CephalopodConstellationManager {
             <div style="display: flex; align-items: center; gap: 6px;">
               ${customGlyph}
               <span style="font-weight: 700; font-size: 11px; letter-spacing: 0.04em; color: ${entry.data.colorHex}; font-family: 'Roboto Mono', monospace;">
-                OCTO_${entry.data.id}
+                <span aria-hidden="true" style="margin-right: 2px;">${armProfile.symbol}</span>[${armProfile.code}] ARM_${entry.data.id}
               </span>
             </div>
             <span style="font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; letter-spacing: 0.04em; font-family: 'Roboto Mono', monospace;">
@@ -523,6 +530,14 @@ export class CephalopodConstellationManager {
       card.addEventListener('click', (e) => {
         e.stopPropagation();
         this.focusOnOctopus(entry.data.id);
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          this.focusOnOctopus(entry.data.id);
+        }
       });
 
       entry.badgeCard = card;
@@ -780,6 +795,9 @@ export class CephalopodConstellationManager {
   }
 
   public handleTelemetryEvent(evt: any) {
+    if (this.onTelemetryEvent) {
+      this.onTelemetryEvent(evt);
+    }
     if (evt.type === 'THEME_CHANGE' || evt.event_type === 'THEME_CHANGE') {
       const tokens = evt.tokens;
       if (tokens) {
@@ -887,19 +905,22 @@ export class CephalopodConstellationManager {
 
   public animate(delta: number) {
     const elapsedTime = performance.now() * 0.001;
+    const reduced = isReducedMotion();
 
-    // 1. Slow cosmic orbit rotation of the entire constellation (pauses during close-up inspection)
-    if (!this.isOctopusFocused) {
+    // 1. Slow cosmic orbit rotation of the entire constellation (pauses during close-up inspection or reduced motion)
+    if (!this.isOctopusFocused && !reduced) {
       this.group.rotation.y += delta * 0.018;
     }
 
     // 2. Animate EVERY Cephalopod: biological mantle breathing, fluid tentacle ripple, action potentials
     this.octopuses.forEach((entry, id) => {
-      // Biological mantle breathing & 8-tentacle ripple
-      entry.anatomicalMesh.update(elapsedTime, id * 0.78);
-
-      // Living vertical hovering float
-      entry.group.position.y = entry.basePosition.y + Math.sin(elapsedTime * 1.4 + id * 0.8) * 2.2;
+      // Biological mantle breathing & 8-tentacle ripple (skip dynamic deformation if reduced motion is requested)
+      if (!reduced) {
+        entry.anatomicalMesh.update(elapsedTime, id * 0.78);
+        entry.group.position.y = entry.basePosition.y + Math.sin(elapsedTime * 1.4 + id * 0.8) * 2.2;
+      } else {
+        entry.group.position.y = entry.basePosition.y;
+      }
 
       // Update Neural Network GPU Shaders
       entry.neuralNetwork.update(

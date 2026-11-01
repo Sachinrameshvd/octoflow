@@ -30,17 +30,20 @@ import { ICONS } from './ui/icons';
 import { CephalopodVoiceSystem } from './audio/speech-synthesizer';
 import { ManualModal } from './ui/manual-modal';
 import { LLMCascadePanel } from './ui/llm-cascade-panel';
+import { MotionPolicy } from './a11y/motion-policy';
+import { ActivityLogPanel } from './a11y/activity-log-panel';
 
 class OctopusConnectomeApp {
   private container: HTMLElement;
-  private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
+  private scene!: THREE.Scene;
+  private camera!: THREE.PerspectiveCamera;
+  private renderer!: THREE.WebGLRenderer;
   private composer!: EffectComposer;
-  private controls: OrbitControls;
+  private controls!: OrbitControls;
   private constellation!: CephalopodConstellationManager;
   private voiceSystem!: CephalopodVoiceSystem;
   private manualModal!: ManualModal;
+  private activityLogPanel!: ActivityLogPanel;
 
   private neuralNetwork!: NeuralNetworkMesh;
   private anatomicalMesh!: AnatomicalMeshGenerator;
@@ -70,6 +73,17 @@ class OctopusConnectomeApp {
     this.container = document.getElementById('canvas-container') || document.body;
     this.tooltipElement = document.getElementById('hover-tooltip') || document.createElement('div');
 
+    // 0. WCAG WebGL Fallback check
+    if (!this.checkWebGLSupport()) {
+      console.warn('WebGL 3D hardware acceleration is unavailable. Engaging accessible text telemetry mode.');
+      this.renderWebGLFallbackNotice();
+      this.activityLogPanel = new ActivityLogPanel('activity-log-panel');
+      this.activityLogPanel.show();
+      this.voiceSystem = new CephalopodVoiceSystem();
+      this.initFallbackUI();
+      return;
+    }
+
     // 1. Three.js Scene, Camera, WebGLRenderer
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x020617); // Deep space slate
@@ -88,6 +102,17 @@ class OctopusConnectomeApp {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
+    this.renderer.domElement.setAttribute('role', 'img');
+    this.renderer.domElement.setAttribute('aria-label', '3D Cephalopod Swarm Connectome visualization');
+    this.renderer.domElement.setAttribute('tabindex', '0');
+
+    this.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      console.warn('WebGL context lost. Falling back to accessible telemetry view.');
+      this.renderWebGLFallbackNotice('WebGL context lost. Rendering in accessible non-visual telemetry mode.');
+      this.activityLogPanel.show();
+    });
+
     this.container.appendChild(this.renderer.domElement);
 
     // 1b. Calibrated Post-Processing (Clean, Subtle Bloom & Tone-Mapping)
@@ -144,6 +169,11 @@ class OctopusConnectomeApp {
 
     // 3. Initialize UI Components
     this.voiceSystem = new CephalopodVoiceSystem();
+    this.activityLogPanel = new ActivityLogPanel('activity-log-panel');
+    this.constellation.onTelemetryEvent = (evt) => {
+      this.activityLogPanel.recordEvent(evt);
+      this.updateScreenReaderSummary(evt);
+    };
     this.initUI(activeOcto.connectomeData.nodes);
 
     this.constellation.onSelectOctopus = (data, octo) => {
@@ -895,24 +925,99 @@ class OctopusConnectomeApp {
       });
     }
 
-    // Voice Audio Mute / Unmute Toggle Button
+    // Voice Audio Mute / Unmute Toggle Button (WCAG Audio Opt-in: Default to Muted/OFF)
     const btnToggleVoice = document.getElementById('btn-toggle-voice');
     const labelVoice = document.getElementById('label-voice-state');
     const iconVoice = document.getElementById('icon-voice-state');
+
+    const updateVoiceUI = (isMuted: boolean) => {
+      if (btnToggleVoice) {
+        btnToggleVoice.classList.toggle('muted', isMuted);
+        btnToggleVoice.setAttribute('aria-pressed', isMuted ? 'false' : 'true');
+        btnToggleVoice.setAttribute(
+          'aria-label',
+          isMuted ? 'Voice narration muted. Click to enable audio.' : 'Voice narration enabled. Click to mute audio.'
+        );
+      }
+      if (labelVoice) {
+        labelVoice.textContent = isMuted ? 'VOICE: OFF' : 'VOICE: ON';
+      }
+      if (iconVoice) {
+        iconVoice.innerHTML = isMuted
+          ? `<path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`
+          : `<path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46C16.48 9.4 17 10.65 17 12C17 13.35 16.48 14.6 15.54 15.54" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19.07 4.93C20.94 6.8 22 9.35 22 12C22 14.65 20.94 17.2 19.07 19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`;
+      }
+    };
+
+    updateVoiceUI(this.voiceSystem.getIsMuted());
+
     if (btnToggleVoice) {
       btnToggleVoice.addEventListener('click', () => {
         const isMuted = this.voiceSystem.toggleMute();
-        btnToggleVoice.classList.toggle('muted', isMuted);
-        if (labelVoice) {
-          labelVoice.textContent = isMuted ? 'VOICE: MUTED' : 'VOICE: ON';
-        }
-        if (iconVoice) {
-          iconVoice.innerHTML = isMuted
-            ? `<path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`
-            : `<path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46C16.48 9.4 17 10.65 17 12C17 13.35 16.48 14.6 15.54 15.54" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19.07 4.93C20.94 6.8 22 9.35 22 12C22 14.65 20.94 17.2 19.07 19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`;
-        }
+        updateVoiceUI(isMuted);
       });
     }
+
+    // Accessible Activity Log & Arm Status Toggle Button
+    const btnToggleActivityLog = document.getElementById('btn-toggle-activity-log');
+    if (btnToggleActivityLog) {
+      this.activityLogPanel.bindToggleButton(btnToggleActivityLog);
+    }
+
+    // WCAG Reduced Motion Toggle Button
+    const btnToggleReducedMotion = document.getElementById('btn-toggle-reduced-motion');
+    const labelReducedMotion = document.getElementById('label-reduced-motion');
+    const syncMotionState = (reduced: boolean) => {
+      if (btnToggleReducedMotion) {
+        btnToggleReducedMotion.classList.toggle('active', reduced);
+        btnToggleReducedMotion.setAttribute('aria-pressed', String(reduced));
+        btnToggleReducedMotion.setAttribute(
+          'aria-label',
+          reduced ? 'Reduced motion active. Click to restore normal motion.' : 'Normal motion active. Click to reduce motion.'
+        );
+      }
+      if (labelReducedMotion) {
+        labelReducedMotion.textContent = reduced ? 'MOTION: REDUCED' : 'MOTION: NORMAL';
+      }
+    };
+    syncMotionState(MotionPolicy.getInstance().isReducedMotion());
+    MotionPolicy.getInstance().addListener(syncMotionState);
+
+    if (btnToggleReducedMotion) {
+      btnToggleReducedMotion.addEventListener('click', () => {
+        const next = MotionPolicy.getInstance().toggleReducedMotion();
+        syncMotionState(next);
+      });
+    }
+
+    // Accessible Global Keyboard Handlers (Escape closes open panels; L toggles Activity Log)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.activityLogPanel?.isOpen()) {
+          this.activityLogPanel.hide();
+          return;
+        }
+        if (this.manualModal?.isOpen()) {
+          this.manualModal.close();
+          return;
+        }
+        if (this.cognitiveInspector?.container && this.cognitiveInspector.container.style.display !== 'none') {
+          this.cognitiveInspector.hide();
+          return;
+        }
+        this.inspectorPanel?.hide();
+        const sandbox = document.getElementById('live-sandbox-window');
+        if (sandbox && sandbox.style.display !== 'none') {
+          sandbox.style.display = 'none';
+          sandbox.classList.add('hidden');
+        }
+      } else if (e.key === 'l' || e.key === 'L') {
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+          this.activityLogPanel?.toggle();
+        }
+      }
+    });
 
     // Adaptive Domain Mode Toggle (DUAL -> SOFTWARE -> AIML)
     const btnDomainMode = document.getElementById('btn-toggle-domain-mode');
@@ -1069,6 +1174,88 @@ class OctopusConnectomeApp {
     this.tourHUD.show();
     this.storyTourManager.startTour();
     this.updateBreadcrumbs('WHOLE_OCTOPUS', 'ANIMATED TOUR');
+  }
+
+  private checkWebGLSupport(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      const testCanvas = document.createElement('canvas');
+      return !!(
+        window.WebGLRenderingContext &&
+        (testCanvas.getContext('webgl2') || testCanvas.getContext('webgl'))
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private renderWebGLFallbackNotice(customMessage?: string): void {
+    let el = document.getElementById('webgl-fallback-notice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'webgl-fallback-notice';
+      el.setAttribute('role', 'alert');
+      el.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(17, 24, 39, 0.95);
+        border: 1px solid #fab387;
+        color: #ffffff;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 11px;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+      `;
+      document.body.appendChild(el);
+    }
+    el.innerHTML = `
+      <span style="color: #fab387; font-weight: 700;">[A11Y FALLBACK]</span>
+      <span>${customMessage || 'WebGL 3D hardware acceleration is unavailable. Displaying real-time accessible text & arm telemetry.'}</span>
+      <button id="btn-fallback-view-table" style="background: #38bdf8; color: #0b0f19; border: none; padding: 4px 10px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 10px;">
+        OPEN TABLE & LOGS
+      </button>
+    `;
+    const btn = el.querySelector('#btn-fallback-view-table');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        this.activityLogPanel?.show();
+      });
+    }
+  }
+
+  private initFallbackUI(): void {
+    const btnToggleActivityLog = document.getElementById('btn-toggle-activity-log');
+    if (btnToggleActivityLog) {
+      this.activityLogPanel.bindToggleButton(btnToggleActivityLog);
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.activityLogPanel?.isOpen()) {
+          this.activityLogPanel.hide();
+        }
+      } else if (e.key === 'l' || e.key === 'L') {
+        if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+          this.activityLogPanel?.toggle();
+        }
+      }
+    });
+  }
+
+  private updateScreenReaderSummary(evt?: any): void {
+    const el = document.getElementById('canvas-live-summary');
+    if (!el) return;
+    const activeOcto = this.constellation?.getActiveOctopus();
+    const domain = this.voiceSystem?.getDomainMode() || 'DUAL';
+    const status = evt?.status || activeOcto?.data.status || 'ONLINE';
+    const action = evt?.summary || activeOcto?.data.currentAction || 'Running tasks';
+    el.textContent = `OctoFlow Cephalopod Swarm: 8 arms online. Domain: ${domain}. Active Arm ${activeOcto?.data.id ?? 0} (${status}): ${action}.`;
   }
 
   private animate = () => {

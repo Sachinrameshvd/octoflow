@@ -121,3 +121,97 @@ When authoring terminal output in OctoFlow:
    ```bash
    pytest tests/test_glyph_policy.py tests/test_plain_mode.py
    ```
+
+---
+
+## 3D Visualizer Accessibility (WCAG 2.2 AA)
+
+OctoFlow's neural 3D visualizer (`visualizer/`) delivers an interactive 3D constellation while guaranteeing full compliance with **WCAG 2.2 AA** guidelines across motion sensitivity, non-visual access, color perception, audio consent, and keyboard navigability.
+
+### 1. Motion Reduction & Sensitivity (`prefers-reduced-motion`)
+
+- **System Preference Detection**: Automatically detects OS-level `prefers-reduced-motion: reduce` on startup via `MotionPolicy`.
+- **Manual HUD Toggle**: A persistent button (`#btn-toggle-reduced-motion`) in the top HUD allows toggling reduced motion at any time. State is safely persisted in `localStorage["octoflow_reduced_motion"]`.
+- **Motion Suppression Behaviors**:
+  - **Camera Transitions**: Instantaneous cuts to target coordinates instead of interpolated lerp/tween animations.
+  - **Particle Systems**: Signal propagator bursts, sparks, and ring packets are suppressed while preserving logical message steps.
+  - **Orbital Mechanics**: Constellation orbital rotation and mantle breathing animations are deactivated.
+  - **Static Highlights**: Node highlights use solid rings rather than oscillating pulse animations.
+
+### 2. Audio & Speech Opt-In Policy
+
+- **Default Silent (OFF)**: Audio synthesis (`SpeechSynthesizer`) is initialized with `isMuted = true` by default. Under no circumstances will speech or sound trigger without prior user action.
+- **Explicit HUD Control**: A toggle button (`#btn-toggle-voice`) in the HUD reflects `VOICE: OFF` / `VOICE: ON`.
+- **Persistence & Cancellation**: User preference is stored in `localStorage["octoflow_voice_muted"]`. Toggling to mute immediately cancels all active and pending speech synthesis utterances via `window.speechSynthesis.cancel()`.
+
+### 3. Non-Visual Alternative & Live Semantic Feed
+
+For screen reader users and text-only workflows:
+- **ARIA Live Activity Region**: An accessible log container with `role="log"` and `aria-live="polite"` announces telemetry events.
+- **Announcement Rate Limiting**: Event speech announcements are strictly rate-limited to at most 1 announcement per second with queuing/batching to prevent screen reader audio buffer flooding.
+- **Semantic HTML Overview Table**: A comprehensive table (`.arm-status-table`) renders complete arm metadata (`<caption>`, `<th>`, `<td>`), updating in real time:
+  - Arm identifier and human-readable role.
+  - Current cognitive state (`IDLE`, `REFLEX`, `PLANNING`, `EXECUTING`, `ESCALATE`).
+  - Active tool, command, and file target.
+  - Free energy and entropy delta ($dS$ vs $\theta$).
+- **Toggleable Panel**: The activity log panel (`#activity-log-panel`) can be toggled via the HUD button or keyboard shortcut `L`.
+
+### 4. Non-Reliance on Color Alone (Visual Redundancy)
+
+To support users with color vision deficiencies (protanopia, deuteranopia, tritanopia, achromatopsia), every arm is differentiated through three orthogonal channels:
+1. **Color Hue**: Distinct high-contrast palette token.
+2. **Short 2-3 Letter Code**: Square-bracketed mnemonic code.
+3. **Geometric Symbol**: Unique Unicode geometric shape.
+
+| Arm Index | Name | Code | Symbol | Primary Hue | Hex Code | Contrast Ratio |
+|:---:|:---|:---:|:---:|:---|:---:|:---:|
+| 0 | ARCHITECT | `[ARC]` | `○` (Circle) | Cyan | `#89dceb` | 13.06:1 |
+| 1 | DATABASE | `[DB]` | `□` (Square) | Purple | `#cba6f7` | 9.07:1 |
+| 2 | BACKEND | `[BE]` | `△` (Triangle) | Blue | `#89b4fa` | 9.21:1 |
+| 3 | FRONTEND | `[FE]` | `◇` (Diamond) | Magenta | `#f5c2e7` | 12.30:1 |
+| 4 | COGNITIVE | `[COG]` | `⬡` (Hexagon) | Emerald | `#a6e3a1` | 13.56:1 |
+| 5 | SECURITY | `[SEC]` | `▽` (Inverted Triangle) | Red | `#f38ba8` | 7.91:1 |
+| 6 | QA_AUDIT | `[QA]` | `☆` (Star) | Amber | `#fab387` | 10.74:1 |
+| 7 | DEVOPS | `[OPS]` | `+` (Cross) | Gold | `#f9e2af` | 14.73:1 |
+
+Every 3D label, HUD card, log line, and table row renders with this combined format: `○ [ARC] ARCHITECT`.
+
+### 5. WebGL Fallback & Context Loss Recovery
+
+- **Capability Detection**: Prior to initializing Three.js, `checkWebGLSupport()` inspects WebGL 1.0 / 2.0 availability.
+- **Context Loss Handling**: Listens for the `webglcontextlost` event on the canvas.
+- **Fallback Banner**: If WebGL is unavailable or lost, a prominent alert (`#webgl-fallback-banner`) appears at the top of the interface:
+  > **Notice**: 3D Hardware Acceleration is unavailable. The visualizer has switched to the text-based real-time telemetry view.
+- **Automatic Panel Display**: The text activity log and arm status table automatically open in fallback mode.
+- **Canvas ARIA Label**: The canvas element is annotated with `role="img"` and `aria-label="OctoFlow Constellation 3D Neural View"`, supplemented by a hidden live region (`#canvas-live-summary`) announcing overall swarm status changes.
+
+### 6. Color Contrast Validation
+
+All interface elements satisfy or exceed WCAG 2.2 AA contrast requirements:
+- **Normal Text ($\ge 4.5:1$)**:
+  - `--text-light` (`#cdd6f4`) on background: **12.44:1**
+  - `--text-muted` (`#787c95`) on background: **4.78:1**
+- **UI Components & Borders ($\ge 3.0:1$)**:
+  - `--text-dim` (`#5e627c`) on background: **3.28:1**
+  - Interactive element borders meet or exceed **3.0:1**.
+- **Automated Validation**: Automated contrast verification is runnable via `npm run contrast` or `node scripts/check_contrast.mjs`.
+
+---
+
+## Visualizer Keyboard Navigation & Accessibility Walkthrough Checklist
+
+Use the following checklist to verify complete keyboard accessibility across all visualizer features:
+
+- [ ] **Tab Order Flow**: Pressing `Tab` cycles logically through top controls:
+  1. `[REDUCE MOTION: OFF/ON]` (`#btn-toggle-reduced-motion`)
+  2. `[VOICE: OFF/ON]` (`#btn-toggle-voice`)
+  3. `[ACTIVITY LOG]` (`#btn-toggle-activity-log`)
+  4. Interactive arm HUD cards (Arms 0–7)
+  5. Activity drawer close button (`#btn-close-activity-log`)
+- [ ] **Visible Focus Rings**: All interactive controls display a prominent 2px cyan focus ring (`outline: 2px solid var(--accent-cyan); outline-offset: 2px;`) when focused via keyboard (`:focus-visible`).
+- [ ] **Activation**: Pressing `Enter` or `Space` toggles buttons, checkboxes, and opens details.
+- [ ] **Shortcut `L`**: Pressing `L` toggles the non-visual Activity Log and Arm Overview Table panel from anywhere in the app.
+- [ ] **Shortcut `Escape`**: Pressing `Escape` closes the open Activity Log panel and returns focus cleanly.
+- [ ] **Screen Reader Verification**: Screen reader announces "OctoFlow Constellation 3D Neural View" for the canvas, and polite batched announcements for arm activity without speech stutter or lag.
+
+

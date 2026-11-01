@@ -7,6 +7,8 @@ captures logs to <workspace>/.octoflow/ignition/<service>.log, tracks PIDs/PGIDs
 ~/.octoflow/runs/<id>/ignition.json, and guarantees clean process group shutdown.
 """
 
+from __future__ import annotations
+
 import atexit
 import http.client
 import json

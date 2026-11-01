@@ -181,9 +181,12 @@ export const OCTOPUS_SPEECH_PROFILES: OctopusSpeechProfile[] = [
   },
 ];
 
+const VOICE_MUTED_STORAGE_KEY = 'octoflow_voice_muted';
+
 export class CephalopodVoiceSystem {
   private availableVoices: SpeechSynthesisVoice[] = [];
-  private isMuted: boolean = false;
+  // WCAG 2.2 Audio Opt-in Policy: Default to muted (OFF).
+  private isMuted: boolean = true;
   private domainMode: SwarmDomainMode = 'DUAL';
   private bannerContainer: HTMLElement | null = null;
   private hideTimer: number | null = null;
@@ -193,8 +196,49 @@ export class CephalopodVoiceSystem {
   public onDomainModeChange?: (mode: SwarmDomainMode) => void;
 
   constructor() {
+    const stored = this.readMuteStorage();
+    // Default to true (OFF / muted) unless explicitly saved otherwise
+    this.isMuted = stored !== null ? stored : true;
     this.initVoices();
     this.createBannerElement();
+  }
+
+  private readMuteStorage(): boolean | null {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    try {
+      const v = window.localStorage.getItem(VOICE_MUTED_STORAGE_KEY);
+      if (v === 'false') return false;
+      if (v === 'true') return true;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeMuteStorage(muted: boolean): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      window.localStorage.setItem(VOICE_MUTED_STORAGE_KEY, String(muted));
+    } catch {
+      // LocalStorage restricted
+    }
+  }
+
+  public setMuted(muted: boolean): void {
+    this.isMuted = muted;
+    this.writeMuteStorage(muted);
+    if (this.isMuted) {
+      this.stopSpeaking();
+      this.hideBanner();
+    }
+    if (this.onMuteStateChange) {
+      this.onMuteStateChange(this.isMuted);
+    }
+  }
+
+  public toggleMute(): boolean {
+    this.setMuted(!this.isMuted);
+    return this.isMuted;
   }
 
   private initVoices() {
@@ -239,18 +283,6 @@ export class CephalopodVoiceSystem {
 
   public getDomainMode(): SwarmDomainMode {
     return this.domainMode;
-  }
-
-  public toggleMute(): boolean {
-    this.isMuted = !this.isMuted;
-    if (this.isMuted) {
-      this.stopSpeaking();
-      this.hideBanner();
-    }
-    if (this.onMuteStateChange) {
-      this.onMuteStateChange(this.isMuted);
-    }
-    return this.isMuted;
   }
 
   public getIsMuted(): boolean {

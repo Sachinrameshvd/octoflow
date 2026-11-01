@@ -8,6 +8,7 @@ import { SIGNAL_PATHWAYS } from '../data/pathways';
 import type { NeuralPathway } from '../data/pathways';
 import type { OctopusConnectomeData } from './octopus-generator';
 import { ActionPotentialParticleShader } from './shaders';
+import { isReducedMotion } from '../a11y/motion-policy';
 
 interface ActionPotentialPacket {
   path: THREE.Vector3[];
@@ -441,7 +442,7 @@ export class SignalPropagator {
     numTrails: number = 8,
     trailSpacing: number = 0.04
   ) {
-    if (points.length < 2) return;
+    if (isReducedMotion() || points.length < 2) return;
     this.activePackets.push({
       path: points.map((p) => p.clone()),
       progress: 0.0,
@@ -455,7 +456,7 @@ export class SignalPropagator {
   }
 
   private spawnRingPacket(colorHex: string, speed: number = 0.25, isLoop: boolean = false, startProgress: number = 0.0) {
-    if (this.ringTrack.length < 3) return;
+    if (isReducedMotion() || this.ringTrack.length < 3) return;
     this.activePackets.push({
       path: this.ringTrack.map((p) => p.clone()),
       progress: startProgress,
@@ -475,7 +476,7 @@ export class SignalPropagator {
     colorHex: string,
     hops: number
   ) {
-    if (this.activeSparks.length > 400) return;
+    if (isReducedMotion() || this.activeSparks.length > 400) return;
     this.activeSparks.push({
       position: srcPos.clone(),
       target: tgtPos.clone(),
@@ -490,6 +491,34 @@ export class SignalPropagator {
 
   public update(deltaTime: number, speedMultiplier: number = 1.0) {
     const dt = deltaTime * speedMultiplier;
+
+    // Reduced motion policy: Suppress particle bursts and traveling impulses
+    if (isReducedMotion()) {
+      if (this.activePackets.length > 0 || this.activeSparks.length > 0) {
+        this.activePackets = [];
+        this.activeSparks = [];
+        this.particleLives.fill(0);
+        (this.particleGeometry.attributes.aLife as THREE.BufferAttribute).needsUpdate = true;
+      }
+      this.stimulusIntensity = 0.0;
+
+      // Pathway sequence still advances logically to trigger UI updates without particle motion
+      if (this.currentPathway) {
+        const step = this.currentPathway.steps[this.currentStepIndex];
+        this.stepTimer += dt * 1000;
+        if (this.stepTimer >= step.durationMs) {
+          this.stepTimer = 0;
+          this.currentStepIndex++;
+          if (this.currentStepIndex < this.currentPathway.steps.length) {
+            this.executeCurrentStep();
+          } else {
+            this.currentPathway = null;
+            if (this.onPathwayComplete) this.onPathwayComplete();
+          }
+        }
+      }
+      return;
+    }
 
     // 0. Ambient living nervous system pulses (gentle rhythmic biological field)
     this.ambientTimer += dt;
