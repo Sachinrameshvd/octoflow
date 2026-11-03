@@ -268,9 +268,24 @@ export function setupMockEnvironment() {
     },
   };
 
+  const winListeners = new Map<string, ((...args: any[]) => any)[]>();
   const win = {
     document: doc,
     localStorage: storage,
+    addEventListener: (event: string, fn: (...args: any[]) => any) => {
+      const arr = winListeners.get(event) || [];
+      arr.push(fn);
+      winListeners.set(event, arr);
+    },
+    removeEventListener: (event: string, fn: (...args: any[]) => any) => {
+      const arr = winListeners.get(event) || [];
+      winListeners.set(event, arr.filter((f) => f !== fn));
+    },
+    dispatchEvent: (event: string, data?: any) => {
+      const arr = winListeners.get(event) || [];
+      arr.forEach((f) => f(data));
+      return true;
+    },
     matchMedia: (query: string) => ({
       matches: false,
       media: query,

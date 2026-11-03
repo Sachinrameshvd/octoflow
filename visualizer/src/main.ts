@@ -32,6 +32,7 @@ import { ManualModal } from './ui/manual-modal';
 import { LLMCascadePanel } from './ui/llm-cascade-panel';
 import { MotionPolicy } from './a11y/motion-policy';
 import { ActivityLogPanel } from './a11y/activity-log-panel';
+import { ReceiptPanel } from './ui/receipt-panel';
 
 class OctopusConnectomeApp {
   private container: HTMLElement;
@@ -44,6 +45,7 @@ class OctopusConnectomeApp {
   private voiceSystem!: CephalopodVoiceSystem;
   private manualModal!: ManualModal;
   private activityLogPanel!: ActivityLogPanel;
+  private receiptPanel!: ReceiptPanel;
 
   private neuralNetwork!: NeuralNetworkMesh;
   private anatomicalMesh!: AnatomicalMeshGenerator;
@@ -170,9 +172,16 @@ class OctopusConnectomeApp {
     // 3. Initialize UI Components
     this.voiceSystem = new CephalopodVoiceSystem();
     this.activityLogPanel = new ActivityLogPanel('activity-log-panel');
+    this.receiptPanel = new ReceiptPanel('token-receipt-modal');
     this.constellation.onTelemetryEvent = (evt) => {
       this.activityLogPanel.recordEvent(evt);
       this.updateScreenReaderSummary(evt);
+      if (evt.event_type === 'FINAL_RECEIPT' || evt.type === 'FINAL_RECEIPT') {
+        const receiptData = (evt.payload && evt.payload.receipt) || evt.receipt;
+        if (receiptData) {
+          this.receiptPanel.show(receiptData);
+        }
+      }
     };
     this.initUI(activeOcto.connectomeData.nodes);
 

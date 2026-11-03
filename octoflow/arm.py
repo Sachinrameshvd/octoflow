@@ -486,7 +486,12 @@ class ArmAgent:
             max_steps=max_steps,
         )
 
-        escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
+        escalate, surprise, telemetry = self.gate.evaluate(
+            actual_obs=obs,
+            tool_result=tool_result,
+            cycle=self.step_count,
+            prompt=prompt,
+        )
 
         # 7. Update status
         is_qa_or_tester = any(
@@ -723,7 +728,12 @@ class ArmAgent:
             max_steps=max_steps,
         )
 
-        escalate, surprise, telemetry = self.gate.evaluate(actual_obs=obs, tool_result=tool_result)
+        escalate, surprise, telemetry = self.gate.evaluate(
+            actual_obs=obs,
+            tool_result=tool_result,
+            cycle=self.step_count,
+            prompt=prompt,
+        )
 
         # 7. Update status
         is_qa_or_tester = any(

@@ -48,14 +48,36 @@ export interface SwarmStepEvent {
   [key: string]: unknown;
 }
 
+export interface ReceiptTelemetryEvent {
+  event_type: 'FINAL_RECEIPT' | 'RECEIPT' | string;
+  type?: 'FINAL_RECEIPT' | 'RECEIPT' | string;
+  payload?: {
+    receipt?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  receipt?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export type TelemetryEvent =
   | ThemeChangeEvent
   | LiveServiceReadyEvent
+  | ReceiptTelemetryEvent
   | SwarmStepEvent;
 
 /** Type guard to check if an unknown value is a non-null plain record. */
 export function isRecord(val: unknown): val is Record<string, unknown> {
   return typeof val === 'object' && val !== null && !Array.isArray(val);
+}
+
+/** Type guard for final token receipt telemetry messages. */
+export function isReceiptTelemetryEvent(val: unknown): val is ReceiptTelemetryEvent {
+  if (!isRecord(val)) return false;
+  const t = val.event_type || val.type;
+  if (t === 'FINAL_RECEIPT' || t === 'RECEIPT') return true;
+  if (isRecord(val.payload) && isRecord(val.payload.receipt)) return true;
+  if (isRecord(val.receipt)) return true;
+  return false;
 }
 
 /** Type guard for theme change telemetry messages. */
@@ -93,6 +115,7 @@ export function isTelemetryEvent(val: unknown): val is TelemetryEvent {
   return (
     isThemeChangeEvent(val) ||
     isLiveServiceReadyEvent(val) ||
+    isReceiptTelemetryEvent(val) ||
     isSwarmStepEvent(val)
   );
 }

@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Truthful Token Receipts & Sensory Gate Accounting (P7.1)**:
+  - **Sensory Gate Decision Ledger**: Created `GateDecision` and `DecisionLedger` in `octoflow/gate.py` tracking arm, cycle, $\Delta S_i$, $\theta$, decision (`reflex` vs `escalate`), and prompt token avoidance estimates for every gate evaluation without storing raw prompt text.
+  - **Pydantic Token Receipt Model**: Implemented `TokenReceipt` in `octoflow/receipt.py` aggregating measured vs estimated tokens, gate evaluations, avoided tokens, budget consumption, per-arm allocations, two-sentence calculation methodology, and confidence categorization.
+  - **Boxed & Plain Terminal Renderers**: Added `render_terminal_receipt` producing a compact boxed summary at the end of every live and dry run, explicitly labeling "estimated avoided" tokens, total calls, top 3 arms, and linking to `octoflow receipt --method`. Full single-width ASCII fallback support (`< 128` bytes).
+  - **CLI Command `octoflow receipt`**: Added `octoflow receipt [run-id] [--json] [--method]` CLI command to inspect, dump schema-validated JSON, or view computation rules for any historical or current run.
+  - **Empirical Benchmark Baselines**: Linked receipts to empirical benchmark datasets in `benchmarks/results/` (`measured in benchmark: gated X vs ungated Y (median of N runs, model M)`), strictly prohibiting generic percentage claims.
+  - **Standalone HTML Report Integration**: Updated `octoflow/report.py` to embed truthful, labeled receipt totals into mission audit reports.
+  - **Visualizer Telemetry & Modal Panel**: Implemented `ReceiptPanel` in `visualizer/src/ui/receipt-panel.ts` and `FINAL_RECEIPT` WebSocket telemetry event handling with accessible keyboard navigation and complete Vitest test coverage.
+  - **Documentation & Test Suites**: Authored `docs/receipt.md` with annotated fake-provider examples and extensive test coverage in `tests/test_receipt.py`.
 - **Visualizer Accessibility & WCAG 2.2 AA Compliance (P6.4)**:
   - **Motion Reduction (`prefers-reduced-motion`)**: Integrated `MotionPolicy` querying OS preferences and managing a visible toggle (`#btn-toggle-reduced-motion`) persisted in `localStorage["octoflow_reduced_motion"]`. Disables particle bursts, sparks, and ring packets in `SignalPropagator`, deactivates orbital constellation rotation and mantle oscillations in `Constellation`, and executes instantaneous camera cuts instead of tweens in `CameraController`.
   - **Audio Opt-In Policy**: Enforced default-silent audio synthesis (`isMuted: true`). Audio/speech never plays without explicit user activation. Added persistent toggle (`#btn-toggle-voice`) and guaranteed immediate speech cancellation on mute via `speechSynthesis.cancel()`.

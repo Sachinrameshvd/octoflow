@@ -97,9 +97,8 @@ class OctoFlowGroup(TyperGroup):
             click.ClickException,
             click.exceptions.Exit,
             click.exceptions.Abort,
-            typer.exceptions.TyperException,
-            typer.exceptions.Exit,
-            typer.exceptions.Abort,
+            typer.Exit,
+            typer.Abort,
             SystemExit,
             KeyboardInterrupt,
         ):
@@ -117,9 +116,8 @@ class OctoFlowGroup(TyperGroup):
             click.ClickException,
             click.exceptions.Exit,
             click.exceptions.Abort,
-            typer.exceptions.TyperException,
-            typer.exceptions.Exit,
-            typer.exceptions.Abort,
+            typer.Exit,
+            typer.Abort,
             SystemExit,
             KeyboardInterrupt,
         ):
@@ -294,6 +292,7 @@ from octoflow.commands import (  # noqa: E402 - commands are registered after Ty
     monorepo,
     notify,
     purge,
+    receipt,
     record,
     report,
     review_pr,
@@ -339,6 +338,7 @@ runner.register(app, octos_app)
 config.register(app, octos_app)
 checkpoint_cmds.register(app, octos_app)
 ignition_cmds.register(app, octos_app)
+receipt.register(app, octos_app)
 
 
 def glossary_cli_cmd() -> None:

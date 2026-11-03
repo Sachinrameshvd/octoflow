@@ -1,5 +1,7 @@
 """Run, Train, and Octos-Run CLI commands for deploying cephalopod swarms."""
 
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -7,6 +9,7 @@ import time
 import traceback
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -29,10 +32,69 @@ from octoflow.glyphs import (
     set_no_color_mode,
     set_plain_mode,
 )
+from octoflow.logging_config import get_logger
 from octoflow.outcome import ProviderExhaustedError, RunOutcome
 from octoflow.themes import get_theme
 
 console = Console()
+logger = get_logger("run")
+
+
+def _emit_run_receipt(
+    conductor: Any,
+    run_id: str,
+    objective: str,
+    mode: str,
+    provider: str,
+    model: str,
+    start_time: float,
+    is_dry: bool,
+    broadcaster: Any | None,
+    json_output: bool = False,
+) -> Any | None:
+    """Generate, persist, broadcast, and render truthful token receipt."""
+    try:
+        from octoflow.receipt import build_token_receipt, render_terminal_receipt, save_receipt
+
+        receipt = build_token_receipt(
+            run_id=run_id,
+            conductor=conductor,
+            objective=objective,
+            mode=mode,
+            provider=provider,
+            model=model,
+            duration_seconds=time.time() - start_time,
+            dry_run=is_dry,
+        )
+        save_receipt(receipt)
+
+        if not json_output:
+            console.print()
+            console.print(render_terminal_receipt(receipt))
+            console.print()
+
+        if broadcaster:
+            from octoflow.conductor import SwarmTelemetryEvent
+
+            telemetry_evt = SwarmTelemetryEvent(
+                event_type="FINAL_RECEIPT",
+                arm_id=0,
+                role="Conductor",
+                status="COMPLETE",
+                surprise=0.0,
+                threshold=0.5,
+                summary="Token Receipt Finalized",
+                octopus_id=0,
+                octopus_title="Cephalopod Core",
+                color_hex="#00F0FF",
+                payload={"receipt": receipt.model_dump()},
+            )
+            broadcaster.broadcast(telemetry_evt)
+
+        return receipt
+    except Exception as e:
+        logger.warning("Token receipt generation failed: %s", e)
+        return None
 
 
 def run(
@@ -664,6 +726,23 @@ def run(
                 result = conductor.run_swarm(objective=objective, max_cycles=10)
 
         if is_dry:
+            rid = (
+                checkpoint_meta.run_id
+                if checkpoint_meta
+                else getattr(conductor, "run_id", f"run-{int(time.time())}")
+            )
+            receipt = _emit_run_receipt(
+                conductor=conductor,
+                run_id=rid,
+                objective=objective,
+                mode=mode,
+                provider=model,
+                model="simulation",
+                start_time=start_time,
+                is_dry=True,
+                broadcaster=broadcaster,
+                json_output=json_output,
+            )
             if json_output:
                 res_dict = {
                     "objective": objective,
@@ -675,8 +754,9 @@ def run(
                     "total_cost": 0.0,
                     "execution_time_seconds": round(time.time() - start_time, 2),
                     "secrets_redacted": 0,
+                    "receipt": receipt.model_dump() if receipt else None,
                 }
-                console.print(json.dumps(res_dict, indent=2))
+                sys.stdout.write(json.dumps(res_dict, indent=2) + "\n")
                 return
             diamond_sym = glyph("DIAMOND")
             console.print(f"\n{diamond_sym} [bold yellow][DRY-RUN: no project files written][/bold yellow]\n")
@@ -725,6 +805,24 @@ def run(
                 finalize_run(checkpoint_meta, success=True, files_written=files, goal=objective)
                 finalized = True
 
+            rid = (
+                checkpoint_meta.run_id
+                if checkpoint_meta
+                else getattr(conductor, "run_id", f"run-{int(time.time())}")
+            )
+            receipt = _emit_run_receipt(
+                conductor=conductor,
+                run_id=rid,
+                objective=objective,
+                mode=mode,
+                provider=prov,
+                model=mod,
+                start_time=start_time,
+                is_dry=False,
+                broadcaster=broadcaster,
+                json_output=json_output,
+            )
+
             if json_output:
                 res_dict = {
                     "objective": objective,
@@ -736,8 +834,9 @@ def run(
                     "total_cost": float(conductor.total_cost),
                     "execution_time_seconds": round(time.time() - start_time, 2),
                     "secrets_redacted": int(redactions_cnt),
+                    "receipt": receipt.model_dump() if receipt else None,
                 }
-                console.print(json.dumps(res_dict, indent=2))
+                sys.stdout.write(json.dumps(res_dict, indent=2) + "\n")
                 return
 
             diamond_sym = glyph("DIAMOND")

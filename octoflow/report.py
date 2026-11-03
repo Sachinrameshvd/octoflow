@@ -29,6 +29,7 @@ def collect_mission_audit_data(
     duration_seconds: float = 18.4,
     mode: str = "live",
     outcome: str = "complete",
+    receipt: Any | None = None,
 ) -> dict[str, Any]:
     """Collect git state, AST validation, diffs, and token metrics for audit export."""
     ws = Path(workspace).resolve()
@@ -122,18 +123,47 @@ def collect_mission_audit_data(
         except Exception:
             pass
 
-    # Token & ROI Economy Computation
-    # Heterogeneous Swarm vs Monolithic LLM
-    base_swarm_tokens = 14200
-    if telemetry_events:
-        base_swarm_tokens = max(len(telemetry_events) * 850, 4200)
+    # Truthful Token & Gate Accounting
+    if receipt is None:
+        try:
+            from octoflow.receipt import load_receipt
 
-    swarm_cost = round((base_swarm_tokens * 0.0000085), 3)
-    # Monolithic LLM prompt passes full context repeatedly to frontier model
-    monolithic_tokens = base_swarm_tokens * 5
-    monolithic_cost = round((monolithic_tokens * 0.000015), 3)
-    savings_pct = round(((monolithic_cost - swarm_cost) / max(monolithic_cost, 0.01)) * 100, 1)
-    roi_multiplier = round(monolithic_cost / max(swarm_cost, 0.001), 1)
+            receipt = load_receipt()
+        except Exception:
+            receipt = None
+
+    if receipt is not None:
+        r_dict = receipt.model_dump() if hasattr(receipt, "model_dump") else receipt
+        tokens_spent = int(r_dict.get("tokens_total", 0))
+        tokens_avoided = int(r_dict.get("avoided_tokens_estimated", 0))
+        confidence = str(r_dict.get("confidence", "estimated"))
+        spent_label = "measured" if confidence == "measured" else "estimated"
+        llm_calls = int(r_dict.get("llm_calls", 0))
+        gate_evaluations = int(r_dict.get("gate_evaluations", 0))
+        reflexes = int(r_dict.get("reflexes", 0))
+        escalations = int(r_dict.get("escalations", 0))
+        method_text = str(r_dict.get("method", ""))
+        baseline_comp = r_dict.get("baseline_comparison")
+        baseline_label = baseline_comp.get("label", "") if baseline_comp else ""
+        dry_run = bool(r_dict.get("dry_run", False))
+    else:
+        tokens_spent = 0
+        tokens_avoided = 0
+        confidence = "estimated"
+        spent_label = "estimated"
+        llm_calls = 0
+        gate_evaluations = 0
+        reflexes = 0
+        escalations = 0
+        method_text = ""
+        baseline_label = ""
+        dry_run = False
+
+    swarm_cost = round(tokens_spent * 0.0000085, 4)
+    monolithic_tokens = tokens_spent + tokens_avoided
+    monolithic_cost = round(monolithic_tokens * 0.000015, 4)
+    savings_pct = round((tokens_avoided / max(1, tokens_spent + tokens_avoided)) * 100, 1)
+    roi_multiplier = round(monolithic_tokens / max(1, tokens_spent), 1) if tokens_spent > 0 else 1.0
 
     # 8-Ganglia Swarm Grid
     arms_data: list[dict[str, Any]] = []
@@ -196,7 +226,18 @@ def collect_mission_audit_data(
         "commit": commit_hash,
         "workspace": str(ws),
         "token_economy": {
-            "swarm_tokens": base_swarm_tokens,
+            "tokens_spent": tokens_spent,
+            "spent_label": spent_label,
+            "tokens_avoided": tokens_avoided,
+            "confidence": confidence,
+            "llm_calls": llm_calls,
+            "gate_evaluations": gate_evaluations,
+            "reflexes": reflexes,
+            "escalations": escalations,
+            "method": method_text,
+            "baseline_label": baseline_label,
+            "dry_run": dry_run,
+            "swarm_tokens": tokens_spent,
             "swarm_cost": swarm_cost,
             "monolithic_tokens": monolithic_tokens,
             "monolithic_cost": monolithic_cost,
@@ -625,27 +666,27 @@ def generate_html_audit_report(
       </div>
     </header>
 
-    <!-- Executive Token Economy & ROI -->
+    <!-- Executive Token Economy & Gate Accounting -->
     <section class="roi-grid">
       <div class="roi-card">
-        <div class="label">Swarm Heterogeneous Cost</div>
-        <div class="value">${token_econ.get("swarm_cost", 0.0):.3f}</div>
-        <div class="subtext">{token_econ.get("swarm_tokens", 0):,} tokens consumed across 8 arms</div>
+        <div class="label">Tokens Spent ({token_econ.get("spent_label", "estimated")})</div>
+        <div class="value">{token_econ.get("tokens_spent", 0):,}</div>
+        <div class="subtext">{token_econ.get("llm_calls", 0)} LLM calls made ({token_econ.get("confidence", "estimated")})</div>
       </div>
       <div class="roi-card">
-        <div class="label">Monolithic Prompt Cost</div>
-        <div class="value" style="color: var(--text-muted);">${token_econ.get("monolithic_cost", 0.0):.3f}</div>
-        <div class="subtext">{token_econ.get("monolithic_tokens", 0):,} estimated monolithic tokens</div>
+        <div class="label">Estimated Avoided Tokens</div>
+        <div class="value" style="color: var(--secondary);">{token_econ.get("tokens_avoided", 0):,}</div>
+        <div class="subtext">Tokens avoided via local gate reflexes (estimated)</div>
       </div>
       <div class="roi-card">
-        <div class="label">Token Cost Savings</div>
-        <div class="value" style="color: var(--success);">{token_econ.get("savings_pct", 0.0)}%</div>
-        <div class="subtext">{token_econ.get("roi_multiplier", 0.0)}x efficiency vs standard LLM</div>
+        <div class="label">Sensory Gate Evaluations</div>
+        <div class="value" style="color: var(--primary);">{token_econ.get("gate_evaluations", 0)}</div>
+        <div class="subtext">{token_econ.get("reflexes", 0)} local reflexes · {token_econ.get("escalations", 0)} central escalations</div>
       </div>
       <div class="roi-card">
-        <div class="label">Active Ganglia Verification</div>
-        <div class="value" style="color: var(--primary);">8 / 8</div>
-        <div class="subtext">100% AST syntax & security validated</div>
+        <div class="label">Accounting Methodology</div>
+        <div class="value" style="font-size: 1.05rem; line-height: 1.35; color: var(--text-main); font-weight: 600;">Trustworthy Accounting</div>
+        <div class="subtext">{token_econ.get("baseline_label") or "Methodology: octoflow receipt --method"}</div>
       </div>
     </section>
 

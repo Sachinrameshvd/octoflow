@@ -20,6 +20,7 @@ from octoflow.bus import InterBrachialBus
 from octoflow.coalition import extract_coalitions_from_matrix
 from octoflow.config import ArmRoleConfig, OctoFlowConfig, SwarmMorphology
 from octoflow.errors import BudgetExceeded
+from octoflow.gate import DecisionLedger
 from octoflow.logging_config import get_logger
 from octoflow.memory import VerticalLobeMemory
 from octoflow.outcome import RunMode, RunOutcome, RunResult
@@ -187,6 +188,7 @@ class SupraesophagealConductor:
                 "Codebase vector indexing failed: %s", e
             )  # best-effort: optional RAG enhancement
         self.usage_ledger = UsageLedger()
+        self.decision_ledger = DecisionLedger()
         self.budget_tracker = BudgetTracker(budget=self.config.budget)
         self.sandbox.set_budget_tracker(self.budget_tracker)
         self.provider = get_llm_provider(self.config, dry_run=is_dry)
@@ -213,6 +215,7 @@ class SupraesophagealConductor:
                 temperature=getattr(self.config, "temperature", None),
             )
             arm_agent.budget_tracker = self.budget_tracker
+            arm_agent.gate.decision_ledger = self.decision_ledger
             self.arms.append(arm_agent)
 
         # 8x8 pairwise dynamic coalition attention matrix

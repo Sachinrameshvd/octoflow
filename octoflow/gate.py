@@ -9,11 +9,100 @@ conductor when sensory surprise exceeds the adaptive threshold θ.
 
 from __future__ import annotations
 
+import threading
+import time
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
 
 from octoflow.tools import ToolResult
+from octoflow.usage import estimate_tokens_from_chars
+
+
+@dataclass
+class GateDecision:
+    """Individual record of an event-triggered sensory gate evaluation."""
+
+    arm: int
+    cycle: int
+    dS: float
+    theta: float
+    decision: str  # "reflex" | "escalate"
+    would_have_sent_tokens: int
+    estimated: bool = True
+    timestamp: float = field(default_factory=time.time)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "arm": int(self.arm),
+            "cycle": int(self.cycle),
+            "dS": round(float(self.dS), 4),
+            "theta": round(float(self.theta), 4),
+            "decision": str(self.decision),
+            "would_have_sent_tokens": int(self.would_have_sent_tokens),
+            "estimated": bool(self.estimated),
+            "timestamp": float(self.timestamp),
+        }
+
+
+class DecisionLedger:
+    """Thread-safe ledger recording all gate evaluations and avoided token estimates."""
+
+    def __init__(self) -> None:
+        self.records: list[GateDecision] = []
+        self._lock = threading.Lock()
+
+    def record(
+        self,
+        arm: int,
+        cycle: int,
+        dS: float,
+        theta: float,
+        decision: str,
+        would_have_sent_tokens: int,
+        estimated: bool = True,
+    ) -> GateDecision:
+        rec = GateDecision(
+            arm=int(arm),
+            cycle=int(cycle),
+            dS=float(dS),
+            theta=float(theta),
+            decision=str(decision),
+            would_have_sent_tokens=max(0, int(would_have_sent_tokens)),
+            estimated=bool(estimated),
+        )
+        with self._lock:
+            self.records.append(rec)
+        return rec
+
+    @property
+    def total_evaluations(self) -> int:
+        with self._lock:
+            return len(self.records)
+
+    @property
+    def total_reflexes(self) -> int:
+        with self._lock:
+            return sum(1 for r in self.records if r.decision == "reflex")
+
+    @property
+    def total_escalations(self) -> int:
+        with self._lock:
+            return sum(1 for r in self.records if r.decision == "escalate")
+
+    @property
+    def avoided_tokens_estimated(self) -> int:
+        with self._lock:
+            return sum(r.would_have_sent_tokens for r in self.records if r.decision == "reflex")
+
+    def to_list(self) -> list[dict[str, Any]]:
+        with self._lock:
+            return [r.to_dict() for r in self.records]
+
+    def reset(self) -> None:
+        with self._lock:
+            self.records.clear()
 
 
 class SurpriseGate:
@@ -45,6 +134,8 @@ class SurpriseGate:
         self.escalation_count = 0
         self.silent_steps = 0
         self.surprise_history: list[float] = []
+        self.decisions: list[GateDecision] = []
+        self.decision_ledger: DecisionLedger | None = None
 
     def compute_surprise(
         self,
@@ -157,6 +248,9 @@ class SurpriseGate:
         actual_obs: Any | np.ndarray,
         tool_result: ToolResult,
         expected_obs: Any | np.ndarray | None = None,
+        cycle: int | None = None,
+        prompt: str | None = None,
+        would_have_sent_tokens: int | None = None,
     ) -> tuple[bool, float, dict[str, Any]]:
         """Evaluate whether to escalate or remain silent.
 
@@ -179,14 +273,47 @@ class SurpriseGate:
         else:
             should_escalate = surprise > self.threshold
 
+        cur_cycle = int(cycle) if cycle is not None else self.total_steps
+        current_threshold = self.threshold
+
         if should_escalate:
+            decision = "escalate"
             self.escalation_count += 1
             # Slightly raise threshold to prevent infinite panic loops
             self.threshold = min(0.90, self.threshold + self.adaptation_rate * 0.5)
+            avoided = 0
         else:
+            decision = "reflex"
             self.silent_steps += 1
             # Slowly decay threshold back towards baseline
             self.threshold = max(0.25, self.threshold - self.adaptation_rate * 0.1)
+            if would_have_sent_tokens is not None:
+                avoided = max(0, int(would_have_sent_tokens))
+            elif prompt:
+                avoided = estimate_tokens_from_chars(prompt)
+            else:
+                avoided = 0
+
+        dec_record = GateDecision(
+            arm=self.arm_id,
+            cycle=cur_cycle,
+            dS=surprise,
+            theta=current_threshold,
+            decision=decision,
+            would_have_sent_tokens=avoided,
+            estimated=True,
+        )
+        self.decisions.append(dec_record)
+        if self.decision_ledger is not None:
+            self.decision_ledger.record(
+                arm=self.arm_id,
+                cycle=cur_cycle,
+                dS=surprise,
+                theta=current_threshold,
+                decision=decision,
+                would_have_sent_tokens=avoided,
+                estimated=True,
+            )
 
         savings_pct = (self.silent_steps / max(1, self.total_steps)) * 100.0
 
@@ -199,6 +326,9 @@ class SurpriseGate:
             "escalations": float(self.escalation_count),
             "savings_pct": savings_pct,
             "gate_mode": self.gate_mode,
+            "decision": decision,
+            "would_have_sent_tokens": avoided,
+            "cycle": cur_cycle,
         }
 
         return should_escalate, surprise, telemetry
