@@ -1,0 +1,24 @@
+{
+  "run_id": "1793846906-660ca2",
+  "goal": "Build data models and ATS scoring module with tests for AI Resume Analyzer: models.py defining ResumeData, JobDescription, ATSScoreResult, and scoring.py computing keyword matching, section weights, and scoring heuristics with test_scoring.py",
+  "mode": "software_dev",
+  "model_provider": "ollama",
+  "created_at": 1793846906.780685,
+  "workspace_dir": "/Users/sachinrk/Desktop/Octoflow copy/examples/resume-analyzer",
+  "is_git": true,
+  "original_branch": "octos/p7-2-resume-1",
+  "original_head": "9933000955b78205b1c9c11f5fe5052ec5ad706c",
+  "run_branch": "octoflow/run-1793846906-660ca2",
+  "stash_hash": null,
+  "status": "COMPLETED",
+  "commit_hash": "5584783fa9bedcc7cdb548e5c665dea6e5443f27",
+  "files_written": [
+    "tests/test_models.py",
+    "tests/test_scoring.py",
+    "models.py",
+    "frontend/package.json",
+    "frontend/index.html",
+    "provenance/models.py",
+    "frontend/src/components/ResumeDataForm.js"
+  ]
+}
