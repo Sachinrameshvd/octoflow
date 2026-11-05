@@ -1,0 +1,21 @@
+{
+  "run_id": "1793885711-897ab6",
+  "objective": "Build PDF and text extraction module parser.py for AI Resume Analyzer using pypdf to parse resume text in memory from bytes or file-like streams without saving uploads to disk, extract contact info and sections, and generate test_parser.py using synthetic in-memory PDFs",
+  "mode": "software_dev",
+  "provider": "ollama",
+  "model": "qwen2.5-coder:7b",
+  "duration_seconds": 1956.0,
+  "dry_run": false,
+  "totals": {
+    "llm_calls": 21,
+    "gate_evaluations": 21,
+    "reflex_count": 14,
+    "escalate_count": 7,
+    "tokens_spent": 20400,
+    "tokens_spent_category": "provider-measured",
+    "avoided_tokens_estimated": 6800,
+    "confidence": "measured"
+  },
+  "outcome": "partial",
+  "notes": "Terminated as partial due to wall time budget limit (max_wall_seconds exceeded) during local Ollama 7B inference."
+}

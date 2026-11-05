@@ -1,1 +1,0 @@
-{"name": "resume-analyzer", "version": "1.0.0", "description": "AI Resume Analyzer", "main": "index.js", "scripts": {"test": "pytest tests"}, "dependencies": {"pypdf": "^3.0.0"}}

@@ -18,4 +18,20 @@ This log honestly documents every failure, incomplete code generation, syntax er
   - Created `scoring.py` with heuristic keyword matching, section completeness, and weighted scoring logic.
   - Aligned `tests/test_models.py` and `tests/test_scoring.py` to test actual schemas with proper `sys.path` resolution.
 
+### Mission 2: PDF Parsing & Text Extraction Module
+- **Run ID**: `1793885711-897ab6`
+- **Branch**: `octos/p7-2-resume-2` (switched by checkpoint runner to `octoflow/run-1793885711-897ab6`)
+- **Outcome**: `RunOutcome.PARTIAL` (Execution hit `max_wall_seconds` budget timeout during local 7B inference).
+- **Failures Identified**:
+  1. **Schema Regressive Overwrite**: Arm 1 (Model) mistook `models.py` for a neural network task and replaced the Pydantic v2 domain schemas with a toy PyTorch `nn.Module` and an uninitialized `train_loader`, breaking earlier mission code.
+  2. **Fragile String Parsing**: Arm 0/7 implemented section detection using strict string indexing (`text.index('Objective:')`), which immediately crashes with `ValueError: substring not found` on any resume missing those exact headers.
+  3. **Synthetic PDF Generation Omission**: Arm 5 generated `tests/test_parser.py` passing raw placeholder byte strings `b'...'` into `pypdf.PdfReader`, triggering `PdfStreamError` during test collection instead of constructing synthetic in-memory PDFs.
+  4. **Class vs Function API Mismatch**: `parser.py` declared `class ResumeParser`, but `tests/test_parser.py` attempted `from parser import parse_pdf`.
+- **Remediation**:
+  - Reverted `models.py` to restore Pydantic models.
+  - Implemented robust regex-based extraction in `parser.py` for email, phone, standard sections, and experience years.
+  - Authored `tests/test_parser.py` utilizing `reportlab` to dynamically construct valid synthetic binary PDFs in a `BytesIO` buffer.
+  - Verified and asserted that zero file descriptors or temporary files are persisted to disk.
+
+
 

@@ -1,38 +1,63 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+"""Data models for AI Resume & ATS Match Analyzer."""
 
-class ResumeParserModel(nn.Module):
-    def __init__(self):
-        super(ResumeParserModel, self).__init__()
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 64)
-        self.fc5 = nn.Linear(64, 32)
-        self.fc6 = nn.Linear(32, 10)
+from __future__ import annotations
 
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = torch.relu(self.fc3(x))
-        x = torch.relu(self.fc4(x))
-        x = torch.relu(self.fc5(x))
-        x = self.fc6(x)
-        return x
+from typing import Any
+from pydantic import BaseModel, Field
 
-model = ResumeParserModel()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-criterion = nn.CrossEntropyLoss()
 
-# Training loop
-for epoch in range(10):  # number of epochs
-    for data, target in train_loader:
-        optimizer.zero_grad()
-        output = model(data)
-        loss = criterion(output, target)
-        loss.backward()
-        optimizer.step()
+class ResumeData(BaseModel):
+    """Parsed structured resume data extracted from document text or PDF."""
 
-# Save model checkpoint
-torch.save(model.state_dict(), 'resume_parser_model.pth')
+    raw_text: str = Field(..., description="Full extracted raw text of the resume")
+    name: str | None = Field(default=None, description="Candidate name if detected")
+    email: str | None = Field(default=None, description="Candidate contact email")
+    phone: str | None = Field(default=None, description="Candidate phone number")
+    skills: list[str] = Field(default_factory=list, description="Extracted candidate skills")
+    experience_years: float = Field(default=0.0, description="Estimated years of experience")
+    sections: dict[str, str] = Field(
+        default_factory=dict, description="Identified sections (e.g. education, experience)"
+    )
+
+
+class JobDescription(BaseModel):
+    """Parsed structured job description input."""
+
+    raw_text: str = Field(..., description="Raw text of the target job posting")
+    title: str = Field(default="", description="Job title if provided")
+    required_skills: list[str] = Field(
+        default_factory=list, description="Mandatory technical competencies"
+    )
+    nice_to_have_skills: list[str] = Field(
+        default_factory=list, description="Preferred or bonus skills"
+    )
+    min_years_experience: float = Field(
+        default=0.0, description="Minimum recommended years of experience"
+    )
+
+
+class ATSScoreResult(BaseModel):
+    """Computed ATS gauntlet score, keyword analysis, and actionable suggestions."""
+
+    overall_score: float = Field(
+        ..., ge=0.0, le=100.0, description="Composite ATS match score (0-100)"
+    )
+    keyword_match_score: float = Field(
+        ..., ge=0.0, le=100.0, description="Keyword coverage sub-score"
+    )
+    experience_score: float = Field(
+        ..., ge=0.0, le=100.0, description="Experience alignment sub-score"
+    )
+    format_score: float = Field(
+        ..., ge=0.0, le=100.0, description="Document structure and section sub-score"
+    )
+    matching_keywords: list[str] = Field(
+        default_factory=list, description="Keywords present in both resume and JD"
+    )
+    missing_critical_keywords: list[str] = Field(
+        default_factory=list, description="Important JD requirements absent in resume"
+    )
+    suggestions: list[str] = Field(
+        default_factory=list, description="Actionable recommendations to improve ATS match"
+    )
+    summary: str = Field(default="", description="Executive summary of candidate fit")
