@@ -19,3 +19,4 @@
   "outcome": "partial",
   "notes": "Terminated as partial due to wall time budget limit (max_wall_seconds exceeded) during local Ollama 7B inference."
 }
+

@@ -1,0 +1,1 @@
+{"languages": ["Python", "JavaScript", "Java", "C++"], "backend": ["Django", "Flask", "Spring", "Express"], "frontend": ["React", "Vue", "Angular", "Svelte"], "cloud": ["AWS", "Azure", "Google Cloud", "Heroku"], "data": ["SQL", "NoSQL", "Pandas", "NumPy"], "devops": ["Docker", "Kubernetes", "CI/CD", "Jenkins"]}

@@ -1,0 +1,1 @@
+{"name": "frontend", "version": "1.0.0", "description": "Interactive web dashboard for AI Resume Analyzer", "main": "index.html", "scripts": {"dev": "vite"}, "dependencies": {"vite": "^4.0.0"}}
