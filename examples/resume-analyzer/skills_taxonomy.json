@@ -1,1 +1,24 @@
-{"languages": ["Python", "JavaScript", "Java", "C++"], "backend": ["Django", "Flask", "Spring", "Express"], "frontend": ["React", "Vue", "Angular", "Svelte"], "cloud": ["AWS", "Azure", "Google Cloud", "Heroku"], "data": ["SQL", "NoSQL", "Pandas", "NumPy"], "devops": ["Docker", "Kubernetes", "CI/CD", "Jenkins"]}
+{
+  "domains": {
+    "languages": ["python", "javascript", "typescript", "go", "golang", "rust", "java", "c++", "c#", "ruby", "php", "sql"],
+    "backend": ["fastapi", "django", "flask", "express", "nodejs", "node.js", "nest.js", "spring", "rails", "graphql", "rest", "grpc"],
+    "frontend": ["react", "vue", "angular", "svelte", "nextjs", "next.js", "tailwind", "css", "html", "redux"],
+    "cloud": ["aws", "gcp", "azure", "lambda", "s3", "ec2", "cloudformation", "terraform"],
+    "data": ["postgresql", "postgres", "mysql", "mongodb", "redis", "elasticsearch", "kafka", "pandas", "numpy", "snowflake"],
+    "devops": ["docker", "kubernetes", "k8s", "ci/cd", "github actions", "gitlab", "helm", "prometheus", "grafana"],
+    "ai_ml": ["pytorch", "tensorflow", "scikit-learn", "huggingface", "llm", "langchain", "rag", "onnx"]
+  },
+  "synonyms": {
+    "golang": "go",
+    "k8s": "kubernetes",
+    "postgres": "postgresql",
+    "nodejs": "node.js",
+    "nextjs": "next.js",
+    "js": "javascript",
+    "ts": "typescript",
+    "py": "python",
+    "amazon web services": "aws",
+    "google cloud platform": "gcp",
+    "google cloud": "gcp"
+  }
+}
