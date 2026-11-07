@@ -64,6 +64,22 @@ This log honestly documents every failure, incomplete code generation, syntax er
   - Added `tests/test_app.py` using `fastapi.testclient.TestClient` with in-memory synthetic PDF buffers generated via `reportlab`.
   - Removed `train/` and `frontend/` directories.
 
+### Mission 5: Dark-Mode Single-Page Dashboard
+- **Run ID**: `1794048922-910979`
+- **Branch**: `octos/p7-2-resume-5` (switched by checkpoint runner to `octoflow/run-1794048922-910979`)
+- **Outcome**: `RunOutcome.COMPLETE` (Swarm reported complete, but produced regressions on existing modules and misplaced frontend artifacts).
+- **Failures Identified**:
+  1. **Misplaced Frontend Assets**: Objective requested `static/index.html` and `static/app.js` served by FastAPI. Arm 3 defaulted to React/Vite files under `frontend/` requiring a node build step instead of zero-dependency static assets.
+  2. **Model Schema Regression**: Arm 1 (Model) again overwrote `models.py` with toy PyTorch classes (`nn.Linear`), breaking the Pydantic schemas required by `app.py` and `scoring.py`.
+  3. **Unrequested Subdirectories**: Arm 0 created `data/dataset_pipeline.py`, Arm 7 created `deploy/Dockerfile`.
+  4. **Regression of Existing Test Suites**: Arm 5 truncated `tests/test_app.py` and introduced brittle end-to-end stubs.
+- **Remediation**:
+  - Restored `models.py`, `app.py`, and `tests/test_app.py` from Mission 4.
+  - Implemented single-page dark-mode dashboard in `static/index.html` and `static/app.js` (drag-and-drop PDF upload, ATS score gauge, matched/missing skill badges, suggestions, keyboard accessible).
+  - Created `tests/test_dashboard.py` verifying static asset serving, ARIA landmarks, and accessibility tags.
+  - Removed stray `deploy/`, `frontend/`, `data/`, and `tests/test_end_to_end.py`.
+
+
 
 
 

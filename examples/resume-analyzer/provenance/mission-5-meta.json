@@ -1,0 +1,27 @@
+{
+  "run_id": "1794048922-910979",
+  "goal": "Build dark-mode single-page dashboard static/index.html and static/app.js served by FastAPI for AI Resume Analyzer: drag-and-drop resume upload, job description input, score display, matched/missing skills badges, suggestions, dark theme, keyboard accessible",
+  "mode": "software_dev",
+  "model_provider": "ollama",
+  "created_at": 1794048922.902982,
+  "workspace_dir": "/Users/sachinrk/Desktop/Octoflow copy/examples/resume-analyzer",
+  "is_git": true,
+  "original_branch": "octos/p7-2-resume-5",
+  "original_head": "a43eabdcbe4e4899d90a17abdf109ecb11880628",
+  "run_branch": "octoflow/run-1794048922-910979",
+  "stash_hash": null,
+  "status": "COMPLETED",
+  "commit_hash": "21720e813c3e34a4a09bcde4e58d449e24b36910",
+  "files_written": [
+    "models.py",
+    "tests/test_app.py",
+    "app.py",
+    "deploy/Dockerfile",
+    "tests/test_end_to_end.py",
+    "data/__init__.py",
+    "frontend/package.json",
+    "frontend/index.html",
+    "data/dataset_pipeline.py",
+    "frontend/vite.config.js"
+  ]
+}

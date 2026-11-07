@@ -1,1 +1,0 @@
-{"name": "ai-resume-analyzer", "version": "1.0.0", "description": "AI Resume Analyzer", "main": "index.html", "scripts": {"start": "vite"}, "dependencies": {"fastapi": "^0.70.0", "uvicorn": "^0.16.0", "vite": "^2.6.4"}}
