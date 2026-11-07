@@ -46,3 +46,4 @@ def test_accessibility_landmarks_present(client):
     assert 'role="button"' in content
     assert 'aria-label=' in content
     assert 'tabindex="0"' in content
+

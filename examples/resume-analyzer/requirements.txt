@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+onnx
+pytorch
+torchvision
+torchtext
+pytest
+pytest-cov
+python-multipart
+python-dotenv
+python-socketio
+websockets
