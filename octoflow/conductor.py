@@ -714,6 +714,46 @@ class SupraesophagealConductor:
                 arm.is_quiescent = True
                 arm.status = "QUIESCENT"
 
+        # Emit initial SWARM_INIT telemetry event with guild arm colors and metadata
+        if self.telemetry_callback:
+            try:
+                guild_name = getattr(self.config, "guild", None) or self.config.morphology.value
+                arm_colors = [getattr(a, "color_hex", "#00F0FF") for a in self.roster]
+                self.telemetry_callback(
+                    SwarmTelemetryEvent(
+                        event_type="SWARM_INIT",
+                        arm_id=0,
+                        role=self.octopus_title,
+                        status="INITIALIZED",
+                        surprise=0.0,
+                        threshold=0.5,
+                        quiescent_count=sum(1 for a in self.arms if a.is_quiescent),
+                        progress_pct=0.0,
+                        octopus_id=self.octopus_id,
+                        octopus_title=self.octopus_title,
+                        color_hex=self.color_hex,
+                        mode=mode.value,
+                        payload={
+                            "guild": guild_name,
+                            "guild_name": guild_name,
+                            "arm_colors": arm_colors,
+                            "arms": [
+                                {
+                                    "id": a.arm_id,
+                                    "name": a.name,
+                                    "title": a.title,
+                                    "color": getattr(a, "color_hex", "#00F0FF"),
+                                    "colorHex": getattr(a, "color_hex", "#00F0FF"),
+                                    "tools": getattr(a, "tools", []),
+                                }
+                                for a in self.roster
+                            ],
+                        },
+                    )
+                )
+            except Exception as e:
+                logger.debug("Initial telemetry broadcast failed: %s", e)
+
         budget_exceeded_err: BudgetExceeded | None = None
         for cycle in range(max_cycles):
             final_cycles = cycle + 1
@@ -792,6 +832,7 @@ class SupraesophagealConductor:
                     prog_pct = 100.0
 
                 if self.telemetry_callback:
+                    arm_color = getattr(arm.role, "color_hex", None) or self.color_hex
                     event = SwarmTelemetryEvent(
                         event_type=event_type,
                         arm_id=arm.arm_id,
@@ -809,8 +850,12 @@ class SupraesophagealConductor:
                         progress_pct=prog_pct,
                         octopus_id=self.octopus_id,
                         octopus_title=self.octopus_title,
-                        color_hex=self.color_hex,
+                        color_hex=arm_color,
                         mode=mode.value,
+                        payload={
+                            "arm_color": arm_color,
+                            "arm_colors": [getattr(a, "color_hex", "#00F0FF") for a in self.roster],
+                        },
                     )
                     self.telemetry_callback(event)
 
@@ -871,9 +916,7 @@ class SupraesophagealConductor:
 
         budget_line = self.budget_tracker.format_hud_line()
         redactions = (
-            getattr(self.provider, "get_redactions_count", lambda: 0)()
-            if self.provider
-            else 0
+            getattr(self.provider, "get_redactions_count", lambda: 0)() if self.provider else 0
         )
         extra_dict = {
             "objective": objective,
@@ -934,6 +977,11 @@ class SupraesophagealConductor:
                         color_hex=self.color_hex,
                         mode=mode.value,
                         outcome=outcome.value,
+                        payload={
+                            "guild": getattr(self.config, "guild", None)
+                            or self.config.morphology.value,
+                            "arm_colors": [getattr(a, "color_hex", "#00F0FF") for a in self.roster],
+                        },
                     )
                 )
             except Exception as e:

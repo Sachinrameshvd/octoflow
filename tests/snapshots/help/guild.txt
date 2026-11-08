@@ -4,8 +4,8 @@
  Manage 8-arm specialist guilds (custom community rosters).                                         
                                                                                                     
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
-│   action      <str>  Action: 'list', 'show', 'export' [default: list]                            │
-│   name        <str>  Guild name                                                                  │
+│   action      <str>  Action: 'list', 'show', 'validate', 'export' [default: list]                │
+│   name        <str>  Guild name or JSON file path                                                │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --help          Show this message and exit.                                                      │

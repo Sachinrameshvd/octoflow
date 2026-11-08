@@ -19,6 +19,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Custom Guilds via Validated Config (P8.2)**:
+  - **Pydantic Guild Schema (`octoflow/guild.py`)**: Built `ArmSpec` and `GuildSpec` models strictly enforcing 8 arms per octopus, hex color validation (`^#[0-9a-fA-F]{6}$`), bounded untrusted system prompts ($\le 2000$ chars, no null bytes), tool verification, and domain file globs.
+  - **RFC 6901 JSON Pointer Diagnostics**: Validation errors map directly to exact JSON pointer paths (e.g. `/arms`, `/arms/3/color`, `/arms/0/system_prompt`, `/arms/4/id`) for clean machine-readable developer feedback.
+  - **Three-Tier Search Precedence**: Discovers guilds in project `.octoflow/guilds/*.json` (highest priority), then user `~/.octoflow/guilds/*.json`, then built-ins (`software_dev`, `aiml_research`, `fullstack_ai`), with path traversal protection.
+  - **ToolPolicy Clamping**: Intersects requested arm tools with the global `ToolPolicy` singleton; denied tools are dropped and a warning is logged without crashing.
+  - **CLI Guild Commands (`octoflow guild`)**:
+    - `octoflow guild list` — Lists all discovered project, user, and built-in guilds.
+    - `octoflow guild validate <file.json>` — Validates guild JSON files and returns exit code 0 or 1 with JSON pointer error messages.
+    - `octoflow guild show <name>` — Displays an 8-arm breakdown table with roles, colors, tools, and domain scopes.
+    - `octoflow guild export <name>` — Scaffolds an 8-arm template JSON for customization.
+    - `octoflow run --guild <name>` — Seamlessly loads and applies custom 8-arm specialist rosters in swarm missions.
+  - **3D Visualizer Dynamic Palettes**: Emits initial `SWARM_INIT` telemetry packet with guild arm colors and identities, dynamically adapting visualizer 3D nodes and HUD profiles.
+  - **Flagship Data Science Guild (`examples/guilds/data_science.json`)**: Authoring 8 specialized data science arms (Data Ingestion, EDA, Feature Engineering, Modeling, HPO, Eval, XAI, Deployment).
+  - **Documentation**: Created `docs/extending/guilds.md` and updated root `README.md`.
 - **Provider Contract Tests & Custom Provider Template (P8.1)**:
   - **BaseLLMProvider Interface Tightening**: Added `supports_tools: bool = False`, optional `transport: httpx.BaseTransport | None = None`, and comprehensive contract docstrings to `BaseLLMProvider`. Concrete providers (`AnthropicProvider`, `OpenAIProvider`, `GeminiProvider`, `OllamaProvider`) now declare `supports_tools = True` and accept custom `transport` instances for zero-network testing.
   - **Dynamic Provider Registry**: Implemented `octoflow.register_provider(name, provider_cls)`, `octoflow.unregister_provider(name)`, `octoflow.get_registered_provider(name)`, and `octoflow.list_registered_providers()`, allowing 3rd-party providers (e.g. vLLM, LM Studio) to be registered dynamically at runtime and utilized by CLI `--provider` and cascade pools.

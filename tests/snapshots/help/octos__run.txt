@@ -31,6 +31,13 @@
 │ --timeout                <int>    Maximum wall time in seconds                                   │
 │ --max-heal               <int>    Maximum healing iterations                                     │
 │ --no-limits                       Disable all execution budget limits                            │
+│ --plain                           Force plain line-oriented output (no Live TUI dashboard)       │
+│ --quiet          -q               Suppress progress telemetry lines                              │
+│ --json                            Output final outcome as machine-readable JSON                  │
+│ --no-color                        Disable ANSI color codes (respects NO_COLOR standard)          │
+│ --no-anim                         Disable animations and continuous refresh                      │
+│ --ascii                           Force plain ASCII-only characters (< 128)                      │
+│ --legacy-glyphs                   Use legacy Unicode glyphs                                      │
 │ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

@@ -36,6 +36,8 @@ class ArmRoleConfig(BaseModel):
     system_prompt: str = ""
     icon: str = "◈"
     model_tier: str = "balanced"  # "frontier", "balanced", or "fast"
+    color_hex: str = "#00F0FF"
+    tools: list[str] = Field(default_factory=list)
 
 
 # Default 8-Arm Roster for Full-Stack Software Engineering
@@ -570,27 +572,41 @@ def get_guilds_dir() -> Path:
 
 def list_available_guilds() -> dict[str, str]:
     """List all built-in and community-installed 8-arm specialist guilds."""
-    guilds = {
-        "software_dev": "Full-Stack Software Engineering Guild (Arch, DB, API, UI, State, QA, Sec, DevOps)",
-        "aiml_research": "AI/ML Research & Model Training Guild (ETL, Architect, Training, Eval, Tune, ONNX, FastServe, Docs)",
-        "fullstack_ai": "Fullstack AI Product Guild (Pipeline, PyTorch, FastAPI, UI Views, ONNX, E2E QA, Sec, Docker)",
-    }
-    guild_dir = get_guilds_dir()
-    for f in sorted(guild_dir.glob("*.json")):
-        try:
-            import json
+    try:
+        from octoflow.guild import list_guilds
 
-            data = json.loads(f.read_text(encoding="utf-8"))
-            desc = data.get("description", "Community 8-Arm Custom Guild")
-            guilds[f.stem] = desc
-        except Exception:
-            guilds[f.stem] = "Custom Guild"
-    return guilds
+        entries = list_guilds()
+        return {g["name"]: g["description"] for g in entries}
+    except Exception:
+        guilds = {
+            "software_dev": "Full-Stack Software Engineering Guild (Arch, DB, API, UI, State, QA, Sec, DevOps)",
+            "aiml_research": "AI/ML Research & Model Training Guild (ETL, Architect, Training, Eval, Tune, ONNX, FastServe, Docs)",
+            "fullstack_ai": "Fullstack AI Product Guild (Pipeline, PyTorch, FastAPI, UI Views, ONNX, E2E QA, Sec, Docker)",
+        }
+        guild_dir = get_guilds_dir()
+        for f in sorted(guild_dir.glob("*.json")):
+            try:
+                import json
+
+                data = json.loads(f.read_text(encoding="utf-8"))
+                desc = data.get("description", "Community 8-Arm Custom Guild")
+                guilds[f.stem] = desc
+            except Exception:
+                guilds[f.stem] = "Custom Guild"
+        return guilds
 
 
 def load_custom_guild(guild_name: str) -> list[ArmRoleConfig] | None:
-    """Load a custom 8-arm roster from ~/.octoflow/guilds/<guild_name>.json."""
+    """Load a custom 8-arm roster from project/user guilds or built-ins."""
     clean_name = guild_name.strip().lower()
+    try:
+        from octoflow.guild import load_guild
+
+        spec = load_guild(clean_name)
+        return spec.to_arm_roster()
+    except Exception:
+        pass
+
     if clean_name in ["software_dev", "software-dev"]:
         return SOFTWARE_DEV_ROSTER
     elif clean_name in ["aiml_research", "aiml-research", "ml"]:
@@ -600,7 +616,6 @@ def load_custom_guild(guild_name: str) -> list[ArmRoleConfig] | None:
 
     guild_file = get_guilds_dir() / f"{clean_name}.json"
     if not guild_file.exists():
-        # Check current workspace .octoflow/guilds/
         ws_file = Path.cwd() / ".octoflow" / "guilds" / f"{clean_name}.json"
         if ws_file.exists():
             guild_file = ws_file
@@ -611,7 +626,9 @@ def load_custom_guild(guild_name: str) -> list[ArmRoleConfig] | None:
         import json
 
         payload = json.loads(guild_file.read_text(encoding="utf-8"))
-        roster_data = payload.get("roster", payload if isinstance(payload, list) else [])
+        roster_data = payload.get(
+            "roster", payload.get("arms", payload if isinstance(payload, list) else [])
+        )
         roles: list[ArmRoleConfig] = []
         for item in roster_data:
             roles.append(ArmRoleConfig(**item))
@@ -624,13 +641,36 @@ def load_custom_guild(guild_name: str) -> list[ArmRoleConfig] | None:
 
 def save_custom_guild(name: str, roster: list[ArmRoleConfig], description: str = "") -> Path:
     """Export or save an 8-arm roster to ~/.octoflow/guilds/<name>.json."""
-    import json
+    try:
+        from octoflow.guild import ArmSpec, GuildSpec, save_guild
 
-    guild_file = get_guilds_dir() / f"{name.strip().lower()}.json"
-    payload = {
-        "name": name,
-        "description": description or f"Custom {name} specialist roster",
-        "roster": [r.model_dump() for r in roster],
-    }
-    guild_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    return guild_file
+        arms = [
+            ArmSpec(
+                id=r.arm_id,
+                role=r.name,
+                focus=r.description or r.title,
+                color=getattr(r, "color_hex", "#00F0FF"),
+                system_prompt=r.system_prompt,
+                tools=getattr(r, "tools", ["read_file", "write_file", "run_command", "list_dir"])
+                or ["read_file", "write_file", "run_command", "list_dir"],
+                file_scope=r.workspace_domain,
+            )
+            for r in roster
+        ]
+        spec = GuildSpec(
+            name=name,
+            description=description or f"Custom {name} specialist roster",
+            arms=arms,
+        )
+        return save_guild(spec)
+    except Exception:
+        import json
+
+        guild_file = get_guilds_dir() / f"{name.strip().lower()}.json"
+        payload = {
+            "name": name,
+            "description": description or f"Custom {name} specialist roster",
+            "roster": [r.model_dump() for r in roster],
+        }
+        guild_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return guild_file

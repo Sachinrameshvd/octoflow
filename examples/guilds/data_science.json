@@ -1,0 +1,149 @@
+{
+  "name": "data_science",
+  "description": "End-to-end Data Science & Machine Learning Guild (Ingestion, EDA, Features, Modeling, HPO, Eval, XAI, Reporting)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "data_ingestion",
+      "focus": "Data Ingestion & Cleaning: CSV/Parquet loading, schema verification, and null imputation.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Data Ingestion). Specialize in dataset ingestion, validating input schemas, handling missing values, and formatting tabular and tensor pipelines.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "data/",
+        "datasets/",
+        "ingestion/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "eda_profiling",
+      "focus": "Exploratory Data Analysis: Descriptive statistics, correlation matrices, and distribution profiling.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (EDA Profiling). Specialize in exploratory data analysis, summary statistics, correlation profiling, and anomaly discovery.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "eda/",
+        "notebooks/",
+        "profiles/"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "feature_engineering",
+      "focus": "Feature Engineering & Transforms: Categorical encoding, standard scaling, and feature interactions.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (Feature Engineering). Specialize in feature extraction, column transformers, scaling, and dimensionality reduction pipelines.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "features/",
+        "transforms/"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "model_training",
+      "focus": "Baseline & Advanced Modeling: Estimator selection, PyTorch/LightGBM training, and cross-validation.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (Model Training). Specialize in model selection, training loops, baseline benchmarking, and cross-validation folding.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "models/",
+        "training/",
+        "checkpoints/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "hyperparameter_tuning",
+      "focus": "HPO & Model Calibration: Hyperparameter search, learning rate optimization, and probability calibration.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Hyperparameter Tuning). Specialize in search spaces, Bayesian optimization, learning rate schedules, and probability calibration.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tuning/",
+        "experiments/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "evaluation_metrics",
+      "focus": "Model Diagnostics & Metrics: Precision, recall, ROC-AUC, regression losses, and confusion matrices.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (Evaluation & Metrics). Specialize in quantitative scoring, ROC-AUC, PR curves, regression metrics, and confusion matrix auditing.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "eval/",
+        "metrics/",
+        "benchmarks/"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "explainability_governance",
+      "focus": "Explainability & Safety: SHAP feature attributions, fairness audits, and model governance cards.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Explainability & Governance). Specialize in SHAP values, feature importance, bias auditing, and model card documentation.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "explainability/",
+        "governance/",
+        "model_card.md"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "pipeline_deployment",
+      "focus": "Serving & Pipeline Deployment: FastAPI inference endpoints, ONNX export, and pipeline lockfiles.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Pipeline Deployment). Specialize in packaging trained artifacts, export to ONNX runtime, FastAPI inference endpoints, and Docker containerization.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "serve/",
+        "api/",
+        "Dockerfile",
+        "README.md"
+      ]
+    }
+  ]
+}

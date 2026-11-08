@@ -73,6 +73,13 @@ _LAZY_EXPORTS = {
     "MCPToolCallResult": "octoflow.mcp",
     # consortium
     "OctosConsortium": "octoflow.consortium",
+    # guild
+    "ArmSpec": "octoflow.guild",
+    "GuildSpec": "octoflow.guild",
+    "ToolPolicy": "octoflow.guild",
+    "load_guild": "octoflow.guild",
+    "list_guilds": "octoflow.guild",
+    "validate_guild_file": "octoflow.guild",
     "InterOctopusSynapticBus": "octoflow.consortium",
     "SynapticContractEvent": "octoflow.consortium",
     "estimate_elastic_octopus_count": "octoflow.consortium",

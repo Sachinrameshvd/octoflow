@@ -1,0 +1,14 @@
+                                                                                                    
+ Usage: octos receipt [OPTIONS] [run_id]                                                            
+                                                                                                    
+ Display the truthful token receipt and sensory gate savings for an OctoFlow run.                   
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│   run_id      <str>  Optional run ID. Defaults to the latest execution run.                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --json            Emit receipt as machine-readable JSON matching schema.                         │
+│ --method          Display the exact mathematical calculation methodology.                        │
+│ --help            Show this message and exit.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

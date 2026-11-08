@@ -21,11 +21,8 @@ from octoflow.commands.dashboard import render_consortium_dashboard, render_dash
 from octoflow.config import OctoFlowConfig, SwarmMorphology
 from octoflow.glyphs import (
     glyph,
-    is_ascii_mode,
-    is_no_anim,
     is_no_color,
     is_plain_mode,
-    sanitize_text,
     set_ascii_mode,
     set_legacy_glyphs_mode,
     set_no_anim_mode,
@@ -173,9 +170,7 @@ def run(
     plain: bool = typer.Option(
         False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)"
     ),
-    quiet: bool = typer.Option(
-        False, "--quiet", "-q", help="Suppress progress telemetry lines"
-    ),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress progress telemetry lines"),
     json_output: bool = typer.Option(
         False, "--json", help="Output final outcome as machine-readable JSON"
     ),
@@ -266,20 +261,33 @@ def run(
     selected_guild = actual_guild or (
         mode if mode not in ["software_dev", "aiml_research", "fullstack_ai"] else None
     )
-    if not selected_guild and (mode == "software_dev" or not mode):
+    custom_roster_spec = None
+    if selected_guild:
+        try:
+            from octoflow.guild import load_guild
+
+            guild_spec = load_guild(selected_guild)
+            custom_roster_spec = guild_spec.to_arm_roster()
+            morphology_enum = SwarmMorphology.CUSTOM
+        except Exception as e:
+            console.print(
+                f"\n✖ [bold red]Guild '{selected_guild}' could not be loaded: {e}[/bold red]\n"
+            )
+            raise typer.Exit(code=1) from e
+    elif mode == "software_dev" or not mode:
         from octoflow.consortium import detect_morphology_from_objective
 
         morphology_enum = detect_morphology_from_objective(objective)
     else:
-        morphology_enum = (
-            SwarmMorphology.CUSTOM if selected_guild else SwarmMorphology(mode.lower())
-        )
+        morphology_enum = SwarmMorphology(mode.lower())
+
     port_val = 8088 if not isinstance(port, int) else port
     active_theme = get_theme(theme)
     sandbox_str = sandbox if isinstance(sandbox, str) else "local"
     config = OctoFlowConfig(
         morphology=morphology_enum,
         guild=selected_guild,
+        custom_roster=custom_roster_spec or [],
         model_provider=model,
         max_budget_dollars=budget,
         budget=run_budget,
@@ -526,7 +534,9 @@ def run(
                     "octopuses": resolved_octos,
                     "arms": total_arms,
                     "files_written": res.get("files_written", []),
-                    "execution_time_seconds": round(res.get("execution_time_seconds", time.time() - start_time), 2),
+                    "execution_time_seconds": round(
+                        res.get("execution_time_seconds", time.time() - start_time), 2
+                    ),
                     "secrets_redacted": int(c_redactions),
                 }
                 console.print(json.dumps(res_dict, indent=2))
@@ -536,11 +546,15 @@ def run(
             diamond_sym = glyph("DIAMOND")
             bullet_sym = glyph("BULLET")
             bolt_sym = glyph("BOLT")
-            console.print(f"\n[bold green]{ok_sym} OCTOSFLOW CONSORTIUM MISSION COMPLETE![/bold green]")
+            console.print(
+                f"\n[bold green]{ok_sym} OCTOSFLOW CONSORTIUM MISSION COMPLETE![/bold green]"
+            )
             console.print(
                 f"{diamond_sym} Deployed: [bold cyan]{resolved_octos} Octopuses ({total_arms} Neural Arms)[/bold cyan]"
             )
-            console.print(f"{bullet_sym} Total Execution Time: {res.get('execution_time_seconds', 0):.2f}s")
+            console.print(
+                f"{bullet_sym} Total Execution Time: {res.get('execution_time_seconds', 0):.2f}s"
+            )
             if c_redactions:
                 console.print(
                     f"{bullet_sym} Outbound Privacy: [bold yellow]{c_redactions} secret(s) redacted before sending[/bold yellow]"
@@ -563,7 +577,9 @@ def run(
 
                 console.print(
                     Panel(
-                        live_text, title=f"{bolt_sym} OCTOSFLOW PHASE 4 LIVE IGNITION", border_style="cyan"
+                        live_text,
+                        title=f"{bolt_sym} OCTOSFLOW PHASE 4 LIVE IGNITION",
+                        border_style="cyan",
                     )
                 )
             else:
@@ -621,7 +637,9 @@ def run(
     if not plain_mode_active and not json_output:
         diamond_sym = glyph("DIAMOND")
         bullet_sym = glyph("BULLET")
-        console.print(f"\n[bold cyan]{diamond_sym} Launching OctoFlow Swarm in {mode.upper()} mode...[/bold cyan]")
+        console.print(
+            f"\n[bold cyan]{diamond_sym} Launching OctoFlow Swarm in {mode.upper()} mode...[/bold cyan]"
+        )
         console.print(
             f"{bullet_sym} [bold green]Live 3D Brain Visualizer:[/bold green] [bold cyan underline]{visualizer_url}[/bold cyan underline]"
         )
@@ -759,7 +777,9 @@ def run(
                 sys.stdout.write(json.dumps(res_dict, indent=2) + "\n")
                 return
             diamond_sym = glyph("DIAMOND")
-            console.print(f"\n{diamond_sym} [bold yellow][DRY-RUN: no project files written][/bold yellow]\n")
+            console.print(
+                f"\n{diamond_sym} [bold yellow][DRY-RUN: no project files written][/bold yellow]\n"
+            )
             return
 
         # LIVE Mode Outcome Check
@@ -850,7 +870,9 @@ def run(
             console.print(
                 f"{bullet_sym} Final Tokens Consumed: {conductor.total_tokens_used:,} (vs. ~{conductor.estimated_chatty_tokens:,} chatty baseline)"
             )
-            console.print(f"{bullet_sym} Token Savings: [bold green]{tokens_saved[0]:.1f}%[/bold green]")
+            console.print(
+                f"{bullet_sym} Token Savings: [bold green]{tokens_saved[0]:.1f}%[/bold green]"
+            )
             console.print(f"{bullet_sym} Total API Cost: ${conductor.total_cost:.4f}")
             if redactions_cnt > 0:
                 console.print(
@@ -1116,9 +1138,7 @@ def octos_run(
     plain: bool = typer.Option(
         False, "--plain", help="Force plain line-oriented output (no Live TUI dashboard)"
     ),
-    quiet: bool = typer.Option(
-        False, "--quiet", "-q", help="Suppress progress telemetry lines"
-    ),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress progress telemetry lines"),
     json_output: bool = typer.Option(
         False, "--json", help="Output final outcome as machine-readable JSON"
     ),
@@ -1131,9 +1151,7 @@ def octos_run(
     ascii_mode: bool = typer.Option(
         False, "--ascii", help="Force plain ASCII-only characters (< 128)"
     ),
-    legacy_glyphs: bool = typer.Option(
-        False, "--legacy-glyphs", help="Use legacy Unicode glyphs"
-    ),
+    legacy_glyphs: bool = typer.Option(False, "--legacy-glyphs", help="Use legacy Unicode glyphs"),
 ):
     """Deploy the multi-cephalopod consortium (3 to 8 octopuses • 24 to 64 arms) on a project."""
     run(

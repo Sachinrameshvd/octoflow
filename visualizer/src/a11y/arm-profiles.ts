@@ -106,3 +106,21 @@ export function formatArmLabel(armId: number): string {
   return `${profile.symbol} [${profile.code}] Arm ${profile.id}: ${profile.name}`;
 }
 
+/** Update arm profiles dynamically from loaded guild telemetry payload (P8.2). */
+export function updateArmProfilesFromGuild(
+  arms: Array<{ id: number; name?: string; title?: string; color?: string; colorHex?: string }>
+): void {
+  for (const arm of arms) {
+    const profile = ARM_A11Y_PROFILES.find((p) => p.id === arm.id);
+    if (profile) {
+      if (arm.title) profile.name = arm.title;
+      else if (arm.name) profile.name = arm.name;
+      const col = arm.colorHex || arm.color;
+      if (col && typeof col === 'string') {
+        profile.colorHex = col;
+      }
+    }
+  }
+}
+
+

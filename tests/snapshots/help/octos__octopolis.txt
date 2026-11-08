@@ -7,14 +7,22 @@
 │ *    objective      <str>  Engineering goal for the 8-octopus Octopolis (64 Arms) [required]     │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --model            <str>    LLM backend [default: mock]                                          │
-│ --budget   -b      <float>  Max cost dollars [default: 15.0]                                     │
-│ --dir      -d      <str>    Workspace folder [default: .]                                        │
-│ --port     -p      <int>    3D Visualizer port [default: 8088]                                   │
-│ --host             <str>    Telemetry server bind host (default: 127.0.0.1) [default: 127.0.0.1] │
-│ --ui                        Auto-open visualizer                                                 │
-│ --theme    -t      <str>    Theme palette                                                        │
-│ --dry-run                   Run with mock provider, write no project files                       │
-│ --help                      Show this message and exit.                                          │
+│ --model                  <str>    LLM backend [default: mock]                                    │
+│ --budget         -b      <float>  Max cost dollars [default: 15.0]                               │
+│ --dir            -d      <str>    Workspace folder [default: .]                                  │
+│ --port           -p      <int>    3D Visualizer port [default: 8088]                             │
+│ --host                   <str>    Telemetry server bind host (default: 127.0.0.1)                │
+│                                   [default: 127.0.0.1]                                           │
+│ --ui                              Auto-open visualizer                                           │
+│ --theme          -t      <str>    Theme palette                                                  │
+│ --dry-run                         Run with mock provider, write no project files                 │
+│ --plain                           Force plain line-oriented output (no Live TUI dashboard)       │
+│ --quiet          -q               Suppress progress telemetry lines                              │
+│ --json                            Output final outcome as machine-readable JSON                  │
+│ --no-color                        Disable ANSI color codes (respects NO_COLOR standard)          │
+│ --no-anim                         Disable animations and continuous refresh                      │
+│ --ascii                           Force plain ASCII-only characters (< 128)                      │
+│ --legacy-glyphs                   Use legacy Unicode glyphs                                      │
+│ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

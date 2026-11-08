@@ -494,6 +494,24 @@ OctoFlow enables adding custom LLM backends (such as **vLLM**, **LM Studio**, **
 
 ---
 
+## 🐙 Custom 8-Arm Specialist Guilds
+
+OctoFlow lets teams define declarative, domain-tailored 8-arm specialist rosters in safe JSON files without writing Python code:
+- **Strict 8-Arm Cephalopod Morphology**: All custom guilds define exactly 8 peripheral brachial arms with specialized roles, domain scopes, hex colors, and bounded system prompts.
+- **Zero-Code Execution & RFC 6901 Validation**: Guild files are pure data; validation errors pinpoint exact RFC 6901 JSON pointer paths (e.g. `/arms/3/color`).
+- **Global Tool Policy Clamping**: Requested arm tools are automatically intersected with the system `ToolPolicy`. Denied tools are clamped with a logged warning without crashing.
+- **Dynamic 3D Visualizer Palettes**: Custom arm colors and role names flow into the 3D connectome visualizer via the `SWARM_INIT` telemetry packet.
+- **Search Precedence**: Discovered from project `.octoflow/guilds/*.json`, user `~/.octoflow/guilds/*.json`, or built-in fallbacks.
+- **CLI Commands**:
+  - `octoflow guild list` — List all discovered project, user, and built-in guilds.
+  - `octoflow guild validate <file.json>` — Validate a guild JSON schema with JSON pointer diagnostics.
+  - `octoflow guild show <name>` — Display a Rich table breakdown of the 8 arm roles, colors, and domains.
+  - `octoflow run --guild <name>` — Run a swarm mission using the custom guild.
+- **Flagship Example**: See [`examples/guilds/data_science.json`](examples/guilds/data_science.json) for an end-to-end Data Science & ML guild.
+- **Documentation**: For complete schema rules and authoring guides, see the [Custom Guilds Guide](docs/extending/guilds.md).
+
+---
+
 ## 📜 Citation & License
 
 This project is licensed under the [MIT License](./LICENSE). For third-party dependencies and supply-chain license compliance, see [Third-Party Licenses](docs/THIRD_PARTY_LICENSES.md). For dependency management guidelines, see [Dependency Policy](docs/DEPENDENCY_POLICY.md).

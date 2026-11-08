@@ -20,7 +20,7 @@ import type { CameraController } from '../core/camera-controller';
 import { ICONS } from '../ui/icons';
 import { parseTelemetryMessage, ReconnectController } from '../telemetry/parse';
 import { isReducedMotion } from '../a11y/motion-policy';
-import { getArmProfile } from '../a11y/arm-profiles';
+import { getArmProfile, updateArmProfilesFromGuild } from '../a11y/arm-profiles';
 
 export interface OctopusNodeData {
   id: number;
@@ -829,6 +829,17 @@ export class CephalopodConstellationManager {
       } else if (evt.morphology === 'fullstack_ai' && this.domainMode !== 'DUAL') {
         this.setDomainMode('DUAL');
       }
+    }
+
+    if (evt.payload && Array.isArray((evt.payload as any).arms)) {
+      updateArmProfilesFromGuild((evt.payload as any).arms);
+    } else if (evt.payload && Array.isArray((evt.payload as any).arm_colors)) {
+      updateArmProfilesFromGuild(
+        ((evt.payload as any).arm_colors as string[]).map((c: string, idx: number) => ({
+          id: idx,
+          colorHex: c,
+        }))
+      );
     }
 
     if (evt.event_type === 'LIVE_SERVICE_READY' || evt.service_url) {
