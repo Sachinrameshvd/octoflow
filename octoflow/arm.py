@@ -721,6 +721,23 @@ class ArmAgent:
                 explanation=f"Error executing {action_type}: {e}",
             )
 
+        try:
+            from octoflow.trace import get_active_tracer
+
+            tracer = get_active_tracer()
+            if tracer and tracer.enabled:
+                tracer.log_tool_call(
+                    arm_id=self.arm_id,
+                    role=self.role.name,
+                    tool_name=action_type,
+                    args=action_data,
+                    success=tool_result.success,
+                    returncode=tool_result.returncode,
+                    error=tool_result.error or (tool_result.stderr if not tool_result.success else None),
+                )
+        except Exception:
+            pass
+
         # 6. Encode into sensory observation & evaluate Surprise Gate
         obs = self.encoder.encode(
             result=tool_result,

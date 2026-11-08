@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Debug Aids & Contributor Inner Loop (P8.4)**:
+  - **Structured Trace Logging (`--trace` & `OCTOFLOW_TRACE=1`)**: Appends comprehensive execution trace events to `~/.octoflow/runs/<id>/trace.jsonl` (mode `0600`): gate evaluations (arm, cycle, $\Delta S$, $\theta$, reflex vs. escalate), tool calls (sanitized args, return code, duration), provider requests (model, token counts, latency, status), and real-time telemetry.
+  - **Zero-Prompt Privacy Default**: Trace logs omit all prompt and response text by default. Only when `--trace-prompts` is passed are redacted prompts recorded, accompanied by a prominent warning banner.
+  - **Deterministic Swarm Replay (`octoflow replay`)**: Replays recorded trace files in chronological sequence into the terminal as clean plain lines while re-broadcasting events to the 3D connectome visualizer bridge. Supports `--speed <multiplier>` (including `--speed 0` for instant replay) and `--no-visualizer`.
+  - **Inner-Loop Dev Stack (`make dev` & `make dev-stop`)**: Orchestrates the Python WebSocket telemetry bridge (port 8088, dev_mode allowing origin 5173) and the Vite 3D Visualizer dev server (port 5173) with single-command startup and clean PID termination.
+  - **Machine-Readable Diagnostics & Bug Reports**: Implemented `octoflow doctor --json` and `octoflow bugreport`, outputting a complete, sanitized Markdown summary (OS, versions, git state, doctor findings, masked settings, and redacted logs) with zero credential leakage.
+  - **VS Code Debugging**: Provided pre-configured `.vscode/launch.json` targets (CLI dry-run with trace, replay, doctor, bugreport, and pytest) and `.vscode/tasks.json` dev tasks.
+  - **Testing & Documentation**: Created `tests/test_trace_replay.py` and `tests/test_bugreport.py`; authored `docs/debugging.md` and added contributor guide to `CONTRIBUTING.md`.
 - **Model Context Protocol (MCP) Server Conformance & Integration (P8.3)**:
   - **JSON-RPC 2.0 Stdio Server (`octoflow/mcp.py`)**: Built a hardened, specification-conformant MCP server implementing handshake protocol negotiation (`initialize` with versions `2024-11-05`, `2024-10-07`, `2025-03-26`, `2026-07-28`; `serverInfo` `name="octoflow"`, `notifications/initialized`, `ping`).
   - **8 Core Tools with Draft 2020-12 Schemas**: Complete inputSchema with required properties and descriptions documenting side-effects and workspace confinement:

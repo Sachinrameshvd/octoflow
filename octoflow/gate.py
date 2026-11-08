@@ -315,6 +315,22 @@ class SurpriseGate:
                 estimated=True,
             )
 
+        try:
+            from octoflow.trace import get_active_tracer
+
+            tracer = get_active_tracer()
+            if tracer and tracer.enabled:
+                tracer.log_gate_eval(
+                    arm_id=self.arm_id,
+                    cycle=cur_cycle,
+                    surprise=surprise,
+                    threshold=current_threshold,
+                    decision=decision,
+                    tokens_avoided=avoided,
+                )
+        except Exception:
+            pass
+
         savings_pct = (self.silent_steps / max(1, self.total_steps)) * 100.0
 
         telemetry = {

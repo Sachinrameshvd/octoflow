@@ -186,6 +186,16 @@ def run(
     legacy_glyphs: bool = typer.Option(
         False, "--legacy-glyphs", help="Use legacy Unicode glyphs (lightning bolt, heavy check)"
     ),
+    trace: bool = typer.Option(
+        False,
+        "--trace",
+        help="Write detailed JSONL execution trace under ~/.octoflow/runs/<id>/trace.jsonl (0600)",
+    ),
+    trace_prompts: bool = typer.Option(
+        False,
+        "--trace-prompts",
+        help="Include redacted prompts/responses in trace (requires --trace)",
+    ),
 ):
     """Deploy the cephalopod swarm (1 to 8 octopuses • 8 to 64 arms) to execute an objective."""
     if no_color:
@@ -201,6 +211,14 @@ def run(
 
     if is_no_color():
         console.no_color = True
+
+    is_trace = bool(trace or (os.getenv("OCTOFLOW_TRACE") == "1"))
+    is_trace_prompts = bool(trace_prompts or (os.getenv("OCTOFLOW_TRACE_PROMPTS") == "1"))
+
+    if is_trace_prompts and not json_output:
+        console.print(
+            "[yellow]▲ WARNING: --trace-prompts is active. Prompts and responses will be recorded to trace.jsonl (redacted). Ensure this file is not distributed publicly.[/yellow]"
+        )
 
     plain_mode_active = is_plain_mode() or plain or (not sys.stdout.isatty())
     # Lazy imports of heavy components
@@ -319,6 +337,30 @@ def run(
         except Exception as e:
             console.print(f"\n✖ [bold red][FAILED] Checkpoint error:[/bold red] {e}\n")
             raise typer.Exit(code=2) from e
+
+    active_run_id = (
+        checkpoint_meta.run_id
+        if checkpoint_meta
+        else getattr(config, "run_id", f"run-{int(time.time())}")
+    )
+    from octoflow.trace import init_tracer
+
+    tracer = init_tracer(
+        run_id=active_run_id,
+        enabled=is_trace,
+        trace_prompts=is_trace_prompts,
+    )
+    if is_trace:
+        tracer.log_event(
+            "mission_start",
+            {
+                "objective": objective,
+                "mode": mode,
+                "model": model,
+                "dry_run": is_dry,
+                "octos": octos,
+            },
+        )
 
     host_str = host if isinstance(host, str) else "127.0.0.1"
     if host_str not in ("127.0.0.1", "localhost"):
@@ -440,6 +482,8 @@ def run(
 
             last_synaptic_event[0] = f"[{event.octopus_title} / {event.role}]: {event.summary}"
             broadcaster.broadcast(event)
+            if tracer.enabled:
+                tracer.log_telemetry(event)
             if plain_mode_active:
                 if not quiet and not json_output and event.summary and event.status != "IDLE":
                     role_word = (event.role.split()[0] if event.role else "arm").lower()
@@ -686,6 +730,8 @@ def run(
         max_cycles_num[0] = event.max_cycles
         quiescent_count[0] = event.quiescent_count
         broadcaster.broadcast(event)
+        if tracer.enabled:
+            tracer.log_telemetry(event)
         if plain_mode_active:
             if not quiet and not json_output and event.summary and event.status != "IDLE":
                 role_word = (event.role.split()[0] if event.role else "arm").lower()
@@ -761,6 +807,11 @@ def run(
                 broadcaster=broadcaster,
                 json_output=json_output,
             )
+            if tracer.enabled:
+                tracer.log_event(
+                    "mission_end",
+                    {"outcome": "dry_run", "execution_time": round(time.time() - start_time, 2)},
+                )
             if json_output:
                 res_dict = {
                     "objective": objective,
@@ -780,6 +831,10 @@ def run(
             console.print(
                 f"\n{diamond_sym} [bold yellow][DRY-RUN: no project files written][/bold yellow]\n"
             )
+            if is_trace and not json_output:
+                console.print(
+                    f"[{active_theme.rich_success}]✔ Execution trace recorded: [bold]{tracer.trace_file}[/bold] (mode 0600)[/{active_theme.rich_success}]\n"
+                )
             return
 
         # LIVE Mode Outcome Check
@@ -930,6 +985,15 @@ def run(
                     broadcaster.broadcast(telemetry_evt)
             except Exception:
                 pass
+            if tracer.enabled:
+                tracer.log_event(
+                    "mission_end",
+                    {"outcome": "complete", "execution_time": round(time.time() - start_time, 2)},
+                )
+            if is_trace and not json_output:
+                console.print(
+                    f"[{active_theme.rich_success}]✔ Execution trace recorded: [bold]{tracer.trace_file}[/bold] (mode 0600)[/{active_theme.rich_success}]\n"
+                )
             return
 
         elif outcome == RunOutcome.PARTIAL or str(outcome).lower() == "partial":
@@ -943,6 +1007,19 @@ def run(
                 if not isinstance(result, dict)
                 else result.get("reason", "partial quiescence")
             )
+            if tracer.enabled:
+                tracer.log_event(
+                    "mission_end",
+                    {
+                        "outcome": "partial",
+                        "reason": str(reason),
+                        "execution_time": round(time.time() - start_time, 2),
+                    },
+                )
+            if is_trace and not json_output:
+                console.print(
+                    f"[{active_theme.rich_warning}]▲ Execution trace recorded: [bold]{tracer.trace_file}[/bold] (mode 0600)[/{active_theme.rich_warning}]\n"
+                )
             if json_output:
                 res_dict = {
                     "objective": objective,
@@ -981,6 +1058,15 @@ def run(
                 finalize_run(checkpoint_meta, success=False, files_written=files, goal=objective)
                 finalized = True
             reason = getattr(result, "reason", "model produced no file changes")
+            if tracer.enabled:
+                tracer.log_event(
+                    "mission_end",
+                    {
+                        "outcome": "failed",
+                        "reason": str(reason),
+                        "execution_time": round(time.time() - start_time, 2),
+                    },
+                )
             if json_output:
                 res_dict = {
                     "objective": objective,
@@ -998,6 +1084,10 @@ def run(
                 raise typer.Exit(code=2)
             fail_sym = glyph("FAIL")
             console.print(f"\n{fail_sym} [bold red][FAILED] {reason}[/bold red]\n")
+            if is_trace and not json_output:
+                console.print(
+                    f"[{active_theme.rich_danger}]✖ Execution trace recorded: [bold]{tracer.trace_file}[/bold] (mode 0600)[/{active_theme.rich_danger}]\n"
+                )
             raise typer.Exit(code=2)
 
     except ProviderExhaustedError as pe:

@@ -2,7 +2,7 @@ PYTHON ?= $(shell which python3.12 2>/dev/null || which python3)
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: all setup lock test test-fast test-live check-coverage visualizer-build visualizer-sync clean
+.PHONY: all setup lock test test-fast test-live check-coverage visualizer-build visualizer-sync clean dev dev-stop
 
 all: setup test
 
@@ -84,3 +84,21 @@ clean:
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.py[cod]" -delete 2>/dev/null || true
 	@rm -rf .pytest_cache .ruff_cache htmlcov .coverage .coverage.*
+
+dev:
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python scripts/dev_servers.py start; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 scripts/dev_servers.py start; \
+	else \
+		$(PYTHON) scripts/dev_servers.py start; \
+	fi
+
+dev-stop:
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python scripts/dev_servers.py stop; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 scripts/dev_servers.py stop; \
+	else \
+		$(PYTHON) scripts/dev_servers.py stop; \
+	fi

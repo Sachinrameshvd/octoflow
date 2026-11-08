@@ -559,6 +559,22 @@ class BaseLLMProvider(ABC):
                 provider=self.provider_name,
                 model=self.model,
             )
+        try:
+            from octoflow.trace import get_active_tracer
+
+            tracer = get_active_tracer()
+            if tracer and tracer.enabled:
+                tracer.log_provider_request(
+                    provider=self.provider_name,
+                    model=self.model,
+                    prompt_tokens=response.tokens_prompt,
+                    completion_tokens=response.tokens_completion,
+                    total_tokens=response.total_tokens,
+                    latency_ms=getattr(response, "latency_ms", 0.0),
+                    status="success",
+                )
+        except Exception:
+            pass
 
     @abstractmethod
     def generate(

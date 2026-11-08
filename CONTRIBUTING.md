@@ -62,3 +62,33 @@ Synchronize the built distribution into the Python package using:
 ```bash
 make visualizer-sync
 ```
+
+---
+
+## 4. Contributor Inner Loop & Debugging
+
+For comprehensive debugging and inner-loop guides, see [`docs/debugging.md`](docs/debugging.md).
+
+### Live Development Stack (`make dev` & `make dev-stop`)
+Run both the Python telemetry bridge and the Vite 3D Visualizer dev server concurrently with Hot Module Replacement:
+```bash
+make dev
+```
+- Telemetry WebSocket server: `http://127.0.0.1:8088` (`ws://127.0.0.1:8088/ws/telemetry`)
+- Vite 3D Visualizer: `http://localhost:5173` (cross-origin 5173 allowed)
+
+To terminate both background servers:
+```bash
+make dev-stop
+```
+
+### Execution Tracing & Replay
+- Run with `--trace` (or `OCTOFLOW_TRACE=1`) to record structured JSONL events to `~/.octoflow/runs/<id>/trace.jsonl` (mode 0600, zero prompt text by default).
+- Replay a recorded run into the terminal and 3D visualizer:
+  ```bash
+  octoflow replay latest --speed 1.0
+  ```
+
+### Bug Reports & Environment Diagnostics
+- Run `octoflow doctor --json` for machine-readable subsystem health diagnostics.
+- Run `octoflow bugreport` to generate a redacted Markdown environment summary with all secrets masked for pasting into GitHub issues.

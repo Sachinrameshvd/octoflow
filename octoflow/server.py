@@ -413,3 +413,25 @@ class TelemetryBroadcaster:
                     "Error closing websocket during server stop: %s", e
                 )  # best-effort: socket may already be closed
         self.active_sockets.clear()
+
+
+def main() -> None:
+    """CLI entrypoint for standalone telemetry server invocation."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="OctoFlow Telemetry Bridge Server")
+    parser.add_argument("--port", type=int, default=8088, help="Port to listen on (default: 8088)")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host interface to bind")
+    parser.add_argument(
+        "--dev", action="store_true", default=False, help="Enable dev mode (allow origin 5173)"
+    )
+    args = parser.parse_args()
+
+    broadcaster = TelemetryBroadcaster(port=args.port, host=args.host, dev_mode=args.dev)
+    app = broadcaster.create_app()
+    if FASTAPI_AVAILABLE and app:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+
+
+if __name__ == "__main__":
+    main()

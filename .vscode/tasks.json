@@ -1,0 +1,72 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "OctoFlow: Start Dev Stack (make dev)",
+      "type": "shell",
+      "command": "make dev",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "OctoFlow: Stop Dev Stack (make dev-stop)",
+      "type": "shell",
+      "command": "make dev-stop",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "OctoFlow: Run Unit Tests",
+      "type": "shell",
+      "command": "pytest tests/ -m 'not live' -q",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "OctoFlow: Lint & Format Check",
+      "type": "shell",
+      "command": "ruff check . && ruff format --check .",
+      "problemMatcher": []
+    },
+    {
+      "label": "OctoFlow: Launch Cockpit",
+      "type": "shell",
+      "command": "octos",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "OctoFlow: 3D Visualizer",
+      "type": "shell",
+      "command": "octos ui",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "OctoFlow: Doctor Diagnostics",
+      "type": "shell",
+      "command": "octoflow doctor",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

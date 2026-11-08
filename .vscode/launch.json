@@ -1,0 +1,86 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "OctoFlow CLI: Run (Dry-run with Trace)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "octoflow.cli",
+      "args": [
+        "run",
+        "Implement a rate limiter with sliding window counter in Python",
+        "--dry-run",
+        "--trace",
+        "--plain"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "OCTOFLOW_DRY_RUN": "1"
+      }
+    },
+    {
+      "name": "OctoFlow CLI: Replay Latest Run",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "octoflow.cli",
+      "args": [
+        "replay",
+        "latest",
+        "--speed",
+        "1.0"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "OctoFlow CLI: Doctor Diagnostics",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "octoflow.cli",
+      "args": [
+        "doctor",
+        "--json"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "OctoFlow CLI: Bug Report",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "octoflow.cli",
+      "args": [
+        "bugreport"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Pytest: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-v"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Pytest: Fast Unit Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/",
+        "-m",
+        "not live",
+        "-q"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
