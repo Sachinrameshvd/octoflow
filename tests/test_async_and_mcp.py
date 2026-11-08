@@ -119,7 +119,7 @@ async def test_mcp_server_protocol(temp_workspace):
     }
     init_resp = await server.handle_json_rpc_message(init_req)
     assert init_resp["id"] == 1
-    assert init_resp["result"]["serverInfo"]["name"] == "octoflow-mcp"
+    assert init_resp["result"]["serverInfo"]["name"] == "octoflow"
     assert "tools" in init_resp["result"]["capabilities"]
 
     # 2. Tools list
@@ -127,7 +127,7 @@ async def test_mcp_server_protocol(temp_workspace):
     list_resp = await server.handle_json_rpc_message(list_req)
     assert list_resp["id"] == 2
     tool_names = [t["name"] for t in list_resp["result"]["tools"]]
-    assert "octoflow_run_swarm" in tool_names
+    assert "octoflow_run" in tool_names
     assert "octoflow_inspect_arms" in tool_names
     assert "octoflow_recall_memory" in tool_names
 

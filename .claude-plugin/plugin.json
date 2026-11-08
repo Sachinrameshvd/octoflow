@@ -1,6 +1,6 @@
 {
   "name": "octoflow",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Biological Cephalopod Multi-Agent Harness with Active Inference Sensory Gating & 3D Connectome",
   "author": "OctoFlow Consortium",
   "homepage": "https://github.com/octopus-brain/octopus-brain",
@@ -8,33 +8,33 @@
   "commands": {
     "/octo": {
       "description": "Launch interactive OctoFlow cephalopod cockpit & 20 FPS benthic runner",
-      "action": "./octo"
+      "action": "octoflow"
     },
     "/octo:audit": {
       "description": "Grade workspace readiness, test density, and security on a 1-100 scale",
-      "action": "./octo audit"
+      "action": "octoflow audit"
     },
     "/octo:swarm": {
       "description": "Deploy N-Octopus autonomous cephalopod swarm consortium",
-      "action": "./octos run"
+      "action": "octos run"
     },
     "/octo:heal": {
       "description": "Run automated AST error triage, lint remediation, and self-repair loop",
-      "action": "./octo heal"
+      "action": "octoflow heal"
     },
     "/octo:connectome": {
       "description": "Launch hardware-accelerated 3D WebGL neural connectome visualizer",
-      "action": "./octos ui"
+      "action": "octos ui"
     },
     "/octo:eject": {
       "description": "Export self-contained standalone cephalopod agent harness to any repo",
-      "action": "./octo eject"
+      "action": "octoflow eject"
     }
   },
   "mcp": {
     "server": "octoflow",
-    "command": "python3",
-    "args": ["-m", "octoflow.cli", "mcp-serve"]
+    "command": "octoflow",
+    "args": ["mcp"]
   },
   "hooks": {
     "manifest": ".claude-plugin/hooks/hooks.json"

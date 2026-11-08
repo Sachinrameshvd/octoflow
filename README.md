@@ -312,13 +312,13 @@ Run `./octos init` to automatically configure:
 - **VS Code:** Configures `.vscode/tasks.json` with 4 Command Palette shortcuts.
 - **Git Hooks:** Installs pre-commit secret leak and AST syntax verification.
 
-Manual MCP configuration snippet:
+Manual MCP configuration snippet (for full details, see the [Model Context Protocol Integration Guide](docs/integrations/mcp.md)):
 
 ```json
 {
   "mcpServers": {
     "octoflow": {
-      "command": "/path/to/Octoflow/octos",
+      "command": "octoflow",
       "args": ["mcp"]
     }
   }

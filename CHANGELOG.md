@@ -19,6 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Model Context Protocol (MCP) Server Conformance & Integration (P8.3)**:
+  - **JSON-RPC 2.0 Stdio Server (`octoflow/mcp.py`)**: Built a hardened, specification-conformant MCP server implementing handshake protocol negotiation (`initialize` with versions `2024-11-05`, `2024-10-07`, `2025-03-26`, `2026-07-28`; `serverInfo` `name="octoflow"`, `notifications/initialized`, `ping`).
+  - **8 Core Tools with Draft 2020-12 Schemas**: Complete inputSchema with required properties and descriptions documenting side-effects and workspace confinement:
+    - `octoflow_run` (alias: `octoflow_run_swarm`): Launches 8-arm swarm missions with sensory surprise gating; supports `async` / `async_run` backgrounding and `timeout_seconds`.
+    - `octoflow_get_run_status` (aliases: `status`, `get_run_status`, `octoflow_status`): Real-time polling for arm cycle progress, latest thoughts, files written, and execution state.
+    - `octoflow_inspect_arms` (alias: `octoflow_arms_status`): Live inspection of sensory surprise deltas ($\Delta S$), reflex thresholds ($\theta$), and current tools across all 8 ganglia.
+    - `octoflow_recall_memory`: Fast associative memory recall in the Vertical Lobe.
+    - `octoflow_audit`: 1-100 system readiness, test density, and security scan confined to `--dir`.
+    - `octoflow_guild_list`: Discovery of 8-arm specialist guilds across project, user, and built-ins.
+    - `octoflow_receipt`: Truthful token receipts and cost accounting.
+    - `octoflow_read_file`: Path-traversal-guarded file reader strictly within workspace boundaries.
+  - **Stdio Protocol Hygiene**: Integrated `StdoutGuard` to divert internal logging, arbitrary prints, and third-party outputs to `sys.stderr`, guaranteeing 100% valid JSON-RPC payloads on `stdout`.
+  - **Strict Workspace Confinement**: Enforced workspace root confinement via `--dir` flag; blocks `..` traversals, absolute escaping paths, and null-byte injection with `isError: true` responses.
+  - **Clean Process Lifecycle**: Handles EOF on standard input cleanly with immediate resource deallocation and exit code 0 (zero zombie processes).
+  - **Manifests & Documentation**: Updated `.mcp.json` and `.claude-plugin/plugin.json` to canonical `octoflow mcp` command form without absolute paths; authored `docs/integrations/mcp.md` for Claude Code and Cursor.
+  - **Conformance Test Suite (`tests/test_mcp_protocol.py`)**: 9 subprocess lifecycle tests verifying handshake, schema validity via `jsonschema.Draft202012Validator`, protocol errors (-32700, -32601, -32602), async status polling, path traversal rejection, clean EOF exit, and manifest compliance.
 - **Custom Guilds via Validated Config (P8.2)**:
   - **Pydantic Guild Schema (`octoflow/guild.py`)**: Built `ArmSpec` and `GuildSpec` models strictly enforcing 8 arms per octopus, hex color validation (`^#[0-9a-fA-F]{6}$`), bounded untrusted system prompts ($\le 2000$ chars, no null bytes), tool verification, and domain file globs.
   - **RFC 6901 JSON Pointer Diagnostics**: Validation errors map directly to exact JSON pointer paths (e.g. `/arms`, `/arms/3/color`, `/arms/0/system_prompt`, `/arms/4/id`) for clean machine-readable developer feedback.
