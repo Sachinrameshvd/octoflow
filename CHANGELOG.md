@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Provider Contract Tests & Custom Provider Template (P8.1)**:
+  - **BaseLLMProvider Interface Tightening**: Added `supports_tools: bool = False`, optional `transport: httpx.BaseTransport | None = None`, and comprehensive contract docstrings to `BaseLLMProvider`. Concrete providers (`AnthropicProvider`, `OpenAIProvider`, `GeminiProvider`, `OllamaProvider`) now declare `supports_tools = True` and accept custom `transport` instances for zero-network testing.
+  - **Dynamic Provider Registry**: Implemented `octoflow.register_provider(name, provider_cls)`, `octoflow.unregister_provider(name)`, `octoflow.get_registered_provider(name)`, and `octoflow.list_registered_providers()`, allowing 3rd-party providers (e.g. vLLM, LM Studio) to be registered dynamically at runtime and utilized by CLI `--provider` and cascade pools.
+  - **Reusable Contract Test Suite (`tests/contract/provider_contract.py`)**: Built `ProviderContractSuite` testing 12 universal contract requirements: text and token usage return, async agenerate parity, usage ledger recording, empty response handling without crashes, error taxonomy mapping (401/403 -> `ProviderAuthError`, 429 -> `ProviderRateLimitError`, 5xx -> `ProviderTransientError`, timeouts -> `ProviderTransientError(408)`), secret key scrubbing, custom timeout honoring, and async cancellation.
+  - **Scrubbed Fixtures**: Created mock transport fixtures in `tests/contract/fixtures/` for Anthropic, OpenAI, Gemini, and Ollama.
+  - **Built-in Provider Verification**: Implemented contract test runners for all 4 core providers (`test_anthropic_contract.py`, `test_openai_contract.py`, `test_gemini_contract.py`, `test_ollama_contract.py`), passing 50/50 test cases.
+  - **Custom Provider Example (`examples/custom_provider/`)**: Built minimal OpenAI-compatible `LMStudioProvider` in ~60 lines (`lmstudio_provider.py`), contract test suite (`test_custom_provider.py`), and documentation (`README.md`).
+  - **Documentation**: Authored step-by-step extension guide in `docs/extending/providers.md` and linked from root `README.md`.
 - **Truthful Token Receipts & Sensory Gate Accounting (P7.1)**:
   - **Sensory Gate Decision Ledger**: Created `GateDecision` and `DecisionLedger` in `octoflow/gate.py` tracking arm, cycle, $\Delta S_i$, $\theta$, decision (`reflex` vs `escalate`), and prompt token avoidance estimates for every gate evaluation without storing raw prompt text.
   - **Pydantic Token Receipt Model**: Implemented `TokenReceipt` in `octoflow/receipt.py` aggregating measured vs estimated tokens, gate evaluations, avoided tokens, budget consumption, per-arm allocations, two-sentence calculation methodology, and confidence categorization.

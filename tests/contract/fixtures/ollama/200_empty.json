@@ -1,0 +1,9 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-11-08T00:00:00.000000Z",
+  "response": "",
+  "done": true,
+  "prompt_eval_count": 10,
+  "eval_count": 0
+}
+

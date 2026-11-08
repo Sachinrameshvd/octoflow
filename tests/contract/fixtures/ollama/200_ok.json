@@ -1,0 +1,10 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-11-08T00:00:00.000000Z",
+  "response": "Contract verification completed: Ollama provider returned valid completion text.",
+  "done": true,
+  "done_reason": "stop",
+  "prompt_eval_count": 22,
+  "eval_count": 14
+}
+

@@ -483,6 +483,17 @@ For complete flag details, glyph tables, and developer guidelines, see the [Term
 
 ---
 
+## 🔌 Custom Providers & Extension Contract
+
+OctoFlow enables adding custom LLM backends (such as **vLLM**, **LM Studio**, **LocalAI**, or private inference clusters) in an afternoon:
+- **Universal Provider Contract**: All backends inherit from `BaseLLMProvider` and are verified by `ProviderContractSuite` (`tests/contract/provider_contract.py`).
+- **Dynamic Registration**: Call `octoflow.register_provider("name", CustomProvider)` to register a provider at runtime.
+- **Cascade Pool Integration**: Custom backends seamlessly participate in multi-URL fallback pools and automatic failover chains.
+- **Example Provider**: See [`examples/custom_provider/`](examples/custom_provider/) for a ~60-line OpenAI-compatible provider template.
+- **Documentation**: For step-by-step instructions and contract checklists, see the [Extending OctoFlow with Custom Providers Guide](docs/extending/providers.md).
+
+---
+
 ## 📜 Citation & License
 
 This project is licensed under the [MIT License](./LICENSE). For third-party dependencies and supply-chain license compliance, see [Third-Party Licenses](docs/THIRD_PARTY_LICENSES.md). For dependency management guidelines, see [Dependency Policy](docs/DEPENDENCY_POLICY.md).

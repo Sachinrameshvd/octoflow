@@ -1,0 +1,8 @@
+{
+  "type": "error",
+  "error": {
+    "type": "api_error",
+    "message": "Anthropic internal server error occurred"
+  }
+}
+

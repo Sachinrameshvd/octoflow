@@ -1,0 +1,22 @@
+{
+  "id": "chatcmpl-contract-gemini-200",
+  "object": "chat.completion",
+  "created": 1700000000,
+  "model": "gemini-2.0-flash",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Contract verification completed: Gemini provider returned valid completion text."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 14,
+    "completion_tokens": 10,
+    "total_tokens": 24
+  }
+}
+

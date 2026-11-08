@@ -65,7 +65,7 @@ def redact_secrets(text: str) -> str:
     # API keys: Anthropic, OpenAI, Grok, etc. (sk-...)
     text = re.sub(r"sk-[a-zA-Z0-9_\-]{16,}", "[REDACTED_KEY]", text)
     # Google AI keys (AIza...)
-    text = re.sub(r"AIza[0-9A-Za-z\-_]{30,}", "[REDACTED_KEY]", text)
+    text = re.sub(r"AIza[0-9A-Za-z\-_]{16,}", "[REDACTED_KEY]", text)
     # GitHub personal access tokens
     text = re.sub(r"(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}", "[REDACTED_GITHUB_TOKEN]", text)
     # Key-value query/header assignments
@@ -498,15 +498,27 @@ class LLMResponse(BaseModel):
 
 
 class BaseLLMProvider(ABC):
-    """Abstract interface for LLM backends."""
+    """Abstract interface for LLM backends.
+
+    Any provider implementation must satisfy the provider contract:
+    1. Returns a valid `LLMResponse` containing `content: str` and token counts.
+    2. Handles empty responses gracefully (returns empty content without crashing).
+    3. Maps HTTP 401/403 to `ProviderAuthError` and disables the provider session.
+    4. Maps HTTP 429 to `ProviderRateLimitError` (parsing Retry-After header or body).
+    5. Maps HTTP 5xx and timeouts to `ProviderTransientError` with retry attempts.
+    6. Scrubbing: Never leaks raw API keys or sensitive authorization tokens.
+    7. Supports timeout and cancellation interplay for run budgets and failover.
+    """
 
     provider_name: str = "base"
     model: str = "default"
+    supports_tools: bool = False
     is_disabled: bool = False
     disabled_reason: str | None = None
     sleep_fn: Callable[[float], None] | None = None
     asleep_fn: Callable[[float], Any] | None = None
     timeout: httpx.Timeout | None = None
+    transport: httpx.BaseTransport | None = None
     usage_ledger: UsageLedger | None = None
     redact_outbound: bool = True
     outbound_redactions_count: int = 0
@@ -839,6 +851,7 @@ class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude API Provider (Claude 3.5 Sonnet / Opus)."""
 
     provider_name = "anthropic"
+    supports_tools = True
 
     def __init__(
         self,
@@ -848,6 +861,7 @@ class AnthropicProvider(BaseLLMProvider):
         sleep_fn: Callable[[float], None] | None = None,
         asleep_fn: Callable[[float], Any] | None = None,
         redact_outbound: bool = True,
+        transport: httpx.BaseTransport | None = None,
     ):
         self.api_key = api_key or resolve_api_key("anthropic")[0]
         if not self.api_key:
@@ -858,6 +872,7 @@ class AnthropicProvider(BaseLLMProvider):
         self.sleep_fn = sleep_fn
         self.asleep_fn = asleep_fn
         self.redact_outbound = redact_outbound
+        self.transport = transport
 
     def generate(
         self,
@@ -879,7 +894,7 @@ class AnthropicProvider(BaseLLMProvider):
             "system": system_prompt,
             "messages": [{"role": "user", "content": prompt}],
         }
-        with httpx.Client(timeout=self.timeout) as client:
+        with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             http_resp = execute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
@@ -887,7 +902,8 @@ class AnthropicProvider(BaseLLMProvider):
             )
             data = http_resp.json()
 
-        content = data["content"][0]["text"]
+        items = data.get("content", [])
+        content = items[0].get("text", "") if items else ""
         usage = data.get("usage")
         if (
             usage
@@ -936,7 +952,7 @@ class AnthropicProvider(BaseLLMProvider):
             "system": system_prompt,
             "messages": [{"role": "user", "content": prompt}],
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport) as client:
             http_resp = await aexecute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
@@ -944,7 +960,8 @@ class AnthropicProvider(BaseLLMProvider):
             )
             data = http_resp.json()
 
-        content = data["content"][0]["text"]
+        items = data.get("content", [])
+        content = items[0].get("text", "") if items else ""
         usage = data.get("usage")
         if (
             usage
@@ -976,6 +993,7 @@ class OpenAIProvider(BaseLLMProvider):
     """OpenAI API Provider (GPT-4o, GPT-4o-mini)."""
 
     provider_name = "openai"
+    supports_tools = True
 
     def __init__(
         self,
@@ -986,6 +1004,7 @@ class OpenAIProvider(BaseLLMProvider):
         sleep_fn: Callable[[float], None] | None = None,
         asleep_fn: Callable[[float], Any] | None = None,
         redact_outbound: bool = True,
+        transport: httpx.BaseTransport | None = None,
     ):
         self.api_key = api_key or resolve_api_key("openai")[0]
         if not self.api_key:
@@ -1000,6 +1019,7 @@ class OpenAIProvider(BaseLLMProvider):
         self.sleep_fn = sleep_fn
         self.asleep_fn = asleep_fn
         self.redact_outbound = redact_outbound
+        self.transport = transport
 
     def generate(
         self,
@@ -1024,7 +1044,7 @@ class OpenAIProvider(BaseLLMProvider):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        with httpx.Client(timeout=self.timeout) as client:
+        with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             http_resp = execute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
@@ -1032,7 +1052,8 @@ class OpenAIProvider(BaseLLMProvider):
             )
             data = http_resp.json()
 
-        content = data["choices"][0]["message"]["content"]
+        choices = data.get("choices", [])
+        content = (choices[0].get("message", {}).get("content") or "") if choices else ""
         usage = data.get("usage")
         if (
             usage
@@ -1084,7 +1105,7 @@ class OpenAIProvider(BaseLLMProvider):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport) as client:
             http_resp = await aexecute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
                 provider=self,
@@ -1092,7 +1113,8 @@ class OpenAIProvider(BaseLLMProvider):
             )
             data = http_resp.json()
 
-        content = data["choices"][0]["message"]["content"]
+        choices = data.get("choices", [])
+        content = (choices[0].get("message", {}).get("content") or "") if choices else ""
         usage = data.get("usage")
         if (
             usage
@@ -1181,6 +1203,7 @@ class OllamaProvider(BaseLLMProvider):
     """Local, offline, 100% free Ollama Provider (DeepSeek-Coder, Qwen2.5, Llama-3)."""
 
     provider_name = "ollama"
+    supports_tools = True
 
     def __init__(
         self,
@@ -1189,12 +1212,14 @@ class OllamaProvider(BaseLLMProvider):
         timeout: httpx.Timeout | None = None,
         sleep_fn: Callable[[float], None] | None = None,
         asleep_fn: Callable[[float], Any] | None = None,
+        transport: httpx.BaseTransport | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout or DEFAULT_OLLAMA_TIMEOUT
         self.sleep_fn = sleep_fn
         self.asleep_fn = asleep_fn
+        self.transport = transport
         self._semaphore: asyncio.Semaphore | None = None
 
     def generate(
@@ -1212,7 +1237,7 @@ class OllamaProvider(BaseLLMProvider):
             "options": {"temperature": temperature, "num_predict": max_tokens},
         }
         endpoint = f"{self.base_url}/api/generate"
-        with httpx.Client(timeout=self.timeout) as client:
+        with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             http_resp = execute_with_retry(
                 lambda: client.post(endpoint, json=payload),
                 provider=self,
@@ -1263,7 +1288,7 @@ class OllamaProvider(BaseLLMProvider):
         }
         endpoint = f"{self.base_url}/api/generate"
         async with sem:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport) as client:
                 http_resp = await aexecute_with_retry(
                     lambda: client.post(endpoint, json=payload),
                     provider=self,
@@ -1476,11 +1501,54 @@ class FailoverLLMProvider(BaseLLMProvider):
         return cnt
 
 
+# ==============================================================================
+# Custom Provider Registry (P8.1)
+# ==============================================================================
+_CUSTOM_PROVIDERS: dict[str, type[BaseLLMProvider] | Callable[..., BaseLLMProvider]] = {}
+
+
+def register_provider(
+    name: str,
+    provider_cls_or_factory: type[BaseLLMProvider] | Callable[..., BaseLLMProvider],
+) -> None:
+    """Register a custom LLM provider backend under a normalized name."""
+    _CUSTOM_PROVIDERS[name.lower().strip()] = provider_cls_or_factory
+
+
+def unregister_provider(name: str) -> None:
+    """Unregister a custom LLM provider (useful for test isolation)."""
+    _CUSTOM_PROVIDERS.pop(name.lower().strip(), None)
+
+
+def get_registered_provider(
+    name: str,
+) -> type[BaseLLMProvider] | Callable[..., BaseLLMProvider] | None:
+    """Look up a custom registered provider by name."""
+    return _CUSTOM_PROVIDERS.get(name.lower().strip())
+
+
+def list_registered_providers() -> list[str]:
+    """Return a list of all currently registered custom provider names."""
+    return sorted(_CUSTOM_PROVIDERS.keys())
+
+
 def _build_from_pool_entry(entry: LLMConfigEntry, dry_run: bool = False) -> BaseLLMProvider:
     """Build a concrete provider instance from an individual pool configuration entry."""
     p_name = entry.provider.lower().strip()
     key = entry.api_key or resolve_api_key(p_name)[0]
     is_dry = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
+
+    # Check custom provider registry
+    custom_cls = get_registered_provider(p_name)
+    if custom_cls is not None:
+        try:
+            return custom_cls(
+                base_url=entry.base_url,
+                model=entry.model or "default",
+                api_key=key,
+            )
+        except TypeError:
+            return custom_cls()
 
     if p_name in ["gemini", "google"]:
         model = entry.model if entry.model and entry.model != "default" else "gemini-2.0-flash"
@@ -1826,6 +1894,19 @@ def _build_single_provider(
     p_name = provider_name.lower().strip()
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
     redact_flag = getattr(config, "privacy_redact_outbound", True)
+
+    # Check custom provider registry first
+    custom_cls = get_registered_provider(p_name)
+    if custom_cls is not None:
+        try:
+            return custom_cls(
+                base_url=config.base_url,
+                model=config.model_name or "default",
+                api_key=config.api_key,
+                timeout=getattr(config, "timeout", None),
+            )
+        except TypeError:
+            return custom_cls()
 
     if p_name in ("fake", "replay"):
         from octoflow.bench import FakeBenchmarkProvider

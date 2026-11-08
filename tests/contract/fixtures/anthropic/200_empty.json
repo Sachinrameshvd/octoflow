@@ -1,0 +1,13 @@
+{
+  "id": "msg_contract_anthropic_empty",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-5-sonnet-20241022",
+  "content": [],
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 12,
+    "output_tokens": 0
+  }
+}
+

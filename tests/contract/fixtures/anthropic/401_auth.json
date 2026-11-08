@@ -1,0 +1,8 @@
+{
+  "type": "error",
+  "error": {
+    "type": "authentication_error",
+    "message": "Invalid x-api-key provided: sk-ant-api03-testsecretkey"
+  }
+}
+
