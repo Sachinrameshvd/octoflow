@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **README Rewrite & Documentation Decoupling (P9.1)**:
+  - **30-Second Understanding, 5-Minute Quickstart**: Streamlined `README.md` to under 170 lines with transparent positioning, an Alpha status/maturity matrix, quickstart steps, truthful receipt excerpt from a verified live run, 6-sentence architecture summary, and measured benchmark links.
+  - **Zero-Emoji & Single-Width Glyphs**: Audited and eliminated all emoji from `README.md`, ensuring all active characters have single display width (`wcwidth <= 1`).
+  - **Documentation Decoupling**: Moved extensive biophysical models, RL benchmark milestones, 3D continuum physics, and ONNX/WASM architecture to `docs/architecture.md`; preserved comprehensive CLI playbooks, configuration reference, and troubleshooting field guides in `docs/manual.md` (`docs/MANUAL.md`).
+  - **CLI `init` Alias**: Added `octoflow init` as an alias to `init-ide` alongside existing `octos init`.
 - **Debug Aids & Contributor Inner Loop (P8.4)**:
   - **Structured Trace Logging (`--trace` & `OCTOFLOW_TRACE=1`)**: Appends comprehensive execution trace events to `~/.octoflow/runs/<id>/trace.jsonl` (mode `0600`): gate evaluations (arm, cycle, $\Delta S$, $\theta$, reflex vs. escalate), tool calls (sanitized args, return code, duration), provider requests (model, token counts, latency, status), and real-time telemetry.
   - **Zero-Prompt Privacy Default**: Trace logs omit all prompt and response text by default. Only when `--trace-prompts` is passed are redacted prompts recorded, accompanied by a prominent warning banner.

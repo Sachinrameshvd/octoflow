@@ -80,6 +80,7 @@ def init_action_cli_cmd(
 
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:
     """Register init commands with Typer apps."""
+    app.command("init")(init_ide_cli_cmd)
     app.command("init-ide")(init_ide_cli_cmd)
     octos_app.command("init")(init_ide_cli_cmd)
     octos_app.command("init-ide")(init_ide_cli_cmd)
