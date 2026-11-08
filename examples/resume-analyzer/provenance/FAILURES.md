@@ -79,6 +79,27 @@ This log honestly documents every failure, incomplete code generation, syntax er
   - Created `tests/test_dashboard.py` verifying static asset serving, ARIA landmarks, and accessibility tags.
   - Removed stray `deploy/`, `frontend/`, `data/`, and `tests/test_end_to_end.py`.
 
+### Mission 6: Project Wiring, Synthetic Samples, Smoke Script & README
+- **Run ID**: `1794049840-56720e`
+- **Branch**: `octos/p7-2-resume-6` (switched by checkpoint runner to `octoflow/run-1794049840-56720e`)
+- **Outcome**: `RunOutcome.COMPLETE` (Swarm reported complete, but produced framework syntax confusion).
+- **Failures Identified**:
+  1. **Synthetic Sample Format Mismatch**: Objective requested 3 synthetic PDF resumes. Arm 0 wrote `scripts/generate_samples.py` attempting to write JSON using non-existent `.to_dict()`.
+  2. **Framework Hallucination (Flask vs FastAPI)**:
+     - Arm 5 wrote `tests/test_privacy.py` using Flask's `app.test_client()` and property `response.json`, crashing under FastAPI.
+     - Arm 5 wrote `tests/test_smoke.sh` querying port `5000` (Flask default) instead of `8000` (FastAPI/Uvicorn default) and route `/analyze` instead of `/api/analyze`.
+  3. **Recurrent Model Overwrite**: Arm 1 again attempted to overwrite `models.py` with toy classes.
+  4. **Misplaced Smoke Script**: Arm 5 placed smoke test at `tests/test_smoke.sh` instead of `scripts/smoke.sh`.
+- **Remediation**:
+  - Restored verified `models.py`.
+  - Implemented `scripts/generate_samples.py` with `reportlab` generating 3 synthetic non-PII PDF resumes (`sample_backend_senior.pdf`, `sample_frontend_mid.pdf`, `sample_data_engineer.pdf`).
+  - Authored executable `scripts/smoke.sh` testing `/health` and `/api/analyze` using `curl`.
+  - Authored `tests/test_privacy.py` using `fastapi.testclient.TestClient` verifying zero files are written to disk.
+  - Authored clean `requirements.txt`.
+  - Authored comprehensive `examples/resume-analyzer/README.md` with complete provenance table and receipt metrics.
+  - Removed stray `deploy/`, `frontend/`, `opt/`, `train/`, and placeholder test stubs.
+
+
 
 
 

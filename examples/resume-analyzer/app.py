@@ -112,9 +112,15 @@ async def analyze_resume(
             file_bytes = await file.read()
             if not file_bytes:
                 raise HTTPException(status_code=400, detail="Uploaded file is empty")
-            resume_data = parse_resume(file_bytes, filename=file.filename)
+            try:
+                resume_data = parse_resume(file_bytes, filename=file.filename)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to parse resume: {e}")
         elif resume_text:
-            resume_data = parse_resume(resume_text)
+            try:
+                resume_data = parse_resume(resume_text)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to parse resume text: {e}")
         else:
             raise HTTPException(
                 status_code=400, detail="Must provide either a PDF file upload or resume_text"

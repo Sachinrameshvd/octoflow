@@ -1,0 +1,30 @@
+{
+  "run_id": "1794049840-56720e",
+  "goal": "Complete AI Resume Analyzer project wiring: requirements.txt, scripts/generate_samples.py generating 3 synthetic non-PII test resumes into samples/, scripts/smoke.sh calling health and analyze endpoints, test_privacy.py asserting zero uploads persisted to disk, and README.md with architecture overview, receipts table, and manual vs generated provenance",
+  "mode": "software_dev",
+  "model_provider": "ollama",
+  "created_at": 1794049840.177224,
+  "workspace_dir": "/Users/sachinrk/Desktop/Octoflow copy/examples/resume-analyzer",
+  "is_git": true,
+  "original_branch": "octos/p7-2-resume-6",
+  "original_head": "c53755e1daa05dcae34c1dec4ebc86d77210984e",
+  "run_branch": "octoflow/run-1794049840-56720e",
+  "stash_hash": null,
+  "status": "COMPLETED",
+  "commit_hash": "97ebc390c0bd007dc3813a19b4dfb79888d900ad",
+  "files_written": [
+    "deploy/Dockerfile",
+    "scripts/generate_samples.py",
+    "tests/test_end_to_end.py",
+    "requirements.txt",
+    "tests/test_privacy.py",
+    "frontend/package.json",
+    "models.py",
+    "frontend/index.html",
+    "opt/onnx_optimize.py",
+    "train/train.py",
+    "tests/test_generate_samples.py",
+    "tests/test_smoke.sh",
+    "tests/test_e2e.py"
+  ]
+}
