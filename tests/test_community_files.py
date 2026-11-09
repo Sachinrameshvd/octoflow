@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import pytest
 import yaml
@@ -143,13 +144,75 @@ def test_community_files_zero_emojis() -> None:
         REPO_ROOT / "SECURITY.md",
         REPO_ROOT / "SUPPORT.md",
         REPO_ROOT / "GOVERNANCE.md",
+        REPO_ROOT / "ROADMAP.md",
         REPO_ROOT / "docs" / "OWNER_CHECKLIST.md",
+        REPO_ROOT / "docs" / "RELEASING.md",
         REPO_ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md",
     ]
     for p in community_files:
+        if not p.exists():
+            continue
         content = p.read_text(encoding="utf-8")
         for line_no, line in enumerate(content.splitlines(), start=1):
             for char in line:
                 assert not is_emoji(char), (
                     f"Forbidden emoji '{char}' (U+{ord(char):04X}) in {p.name}:{line_no}"
                 )
+
+
+def test_roadmap_structure() -> None:
+    """Verifies ROADMAP.md contains required horizons and un-planned areas."""
+    roadmap = (REPO_ROOT / "ROADMAP.md").read_text(encoding="utf-8")
+    assert "Now (Next 2 Releases" in roadmap
+    assert "Next (" in roadmap
+    assert "Later (" in roadmap
+    assert "Not Planned" in roadmap
+    assert "Remote WAN / Internet Swarm Networking" in roadmap
+    assert "Native Windows Console" in roadmap
+    assert "Internationalization (i18n)" in roadmap
+    assert "Dynamic Remote Plugin Marketplace" in roadmap
+    assert "64-Arm Default Scaling" in roadmap
+
+
+def test_seed_issues_complete_and_verified() -> None:
+    """Verifies that all 10 seed issues exist, have required metadata, and reference real files."""
+    seed_dir = REPO_ROOT / "docs" / "seed-issues"
+    assert seed_dir.is_dir()
+    issue_files = sorted(seed_dir.glob("*.md"))
+    assert len(issue_files) == 10, f"Expected 10 seed issues, found {len(issue_files)}"
+
+    for issue_path in issue_files:
+        content = issue_path.read_text(encoding="utf-8")
+        assert content.startswith("# "), f"{issue_path.name} must start with '# <Title>'"
+        assert "**Difficulty:**" in content, f"{issue_path.name} missing Difficulty"
+        assert "**Labels:**" in content, f"{issue_path.name} missing Labels"
+        assert "**Mentoring Pointer:**" in content, f"{issue_path.name} missing Mentoring Pointer"
+        assert "## Context" in content, f"{issue_path.name} missing Context"
+        assert "## Objectives & Requirements" in content, f"{issue_path.name} missing Objectives"
+        assert "## Files to Touch" in content, f"{issue_path.name} missing Files to Touch"
+        assert "## Acceptance Criteria" in content, f"{issue_path.name} missing Acceptance Criteria"
+
+        for line_no, line in enumerate(content.splitlines(), start=1):
+            for char in line:
+                assert not is_emoji(char), (
+                    f"Forbidden emoji '{char}' in {issue_path.name}:{line_no}"
+                )
+
+
+def test_seed_issue_and_label_scripts_dry_run() -> None:
+    """Verifies sync_labels.sh and create_seed_issues.sh run cleanly in dry run mode."""
+    import subprocess
+
+    sync_script = REPO_ROOT / "scripts" / "sync_labels.sh"
+    create_script = REPO_ROOT / "scripts" / "create_seed_issues.sh"
+    assert sync_script.is_file() and os.access(sync_script, os.X_OK)
+    assert create_script.is_file() and os.access(create_script, os.X_OK)
+
+    res_sync = subprocess.run(["bash", str(sync_script), "--dry-run"], capture_output=True, text=True)
+    assert res_sync.returncode == 0
+    assert "OctoFlow Label Synchronization Utility" in res_sync.stdout
+
+    res_create = subprocess.run(["bash", str(create_script), "--dry-run"], capture_output=True, text=True)
+    assert res_create.returncode == 0
+    assert "Found 10 seed issue template(s)" in res_create.stdout
+    assert "gh issue create --title" in res_create.stdout

@@ -156,6 +156,7 @@ Two-thirds of an octopus's neurons reside in its eight arms rather than its cent
 
 ## Contributing and License
 
+* **Roadmap:** See [ROADMAP.md](ROADMAP.md) for current release priorities and un-planned areas.
 * **Contributing:** We welcome contributions! Read [CONTRIBUTING.md](CONTRIBUTING.md) for dev environment setup, testing standards, and pull request guidelines.
 * **Code of Conduct:** We adhere to the Contributor Covenant. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 * **Governance & Support:** Read [GOVERNANCE.md](GOVERNANCE.md) for our maintainership model and [SUPPORT.md](SUPPORT.md) for help channels.
