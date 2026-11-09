@@ -144,6 +144,7 @@ class UISettings(BaseModel):
     animation: bool = True
     color: bool = True
     ascii: bool = False
+    show_feedback_prompt: bool = True
 
 
 class ServerSettings(BaseModel):
@@ -219,6 +220,7 @@ class Settings(BaseModel):
 
     schema_version: int = CURRENT_SCHEMA_VERSION
     onboarding_completed: bool = False
+    feedback_prompted: bool = False
     defaults: DefaultsSettings = Field(default_factory=DefaultsSettings)
     ui: UISettings = Field(default_factory=UISettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
@@ -238,6 +240,7 @@ class Settings(BaseModel):
         known_keys = {
             "schema_version",
             "onboarding_completed",
+            "feedback_prompted",
             "defaults",
             "ui",
             "server",

@@ -319,10 +319,8 @@ def doctor_cli_cmd(
     run_doctor(workspace=workspace, fix=fix, json_output=json_output)
 
 
-def bugreport_cli_cmd(
-    workspace: str = typer.Option(".", "--dir", "-d", help="Target project workspace folder"),
-):
-    """Generate a redacted environment summary to paste into GitHub issues."""
+def generate_bugreport_text(workspace: str = ".") -> str:
+    """Generate a sanitized environment and diagnostic markdown summary."""
     import platform
 
     from octoflow import __version__
@@ -457,7 +455,15 @@ def bugreport_cli_cmd(
 """
     # Final defense-in-depth scrubbing
     final_output, _ = redact_outbound_text(redact_secrets(report_md))
-    console.print(final_output)
+    return final_output
+
+
+def bugreport_cli_cmd(
+    workspace: str = typer.Option(".", "--dir", "-d", help="Target project workspace folder"),
+):
+    """Generate a redacted environment summary to paste into GitHub issues."""
+    report_text = generate_bugreport_text(workspace=workspace)
+    console.print(report_text)
 
 
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:

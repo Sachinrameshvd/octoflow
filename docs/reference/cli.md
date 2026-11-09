@@ -27,6 +27,7 @@ OctoFlow exposes three CLI entrypoint aliases with identical semantics:
 | [`octoflow eject`](#octoflow-eject) | Eject autonomous standalone cephalopod agent harness into any repository. (Experimental) | `octoflow eject [OPTIONS]` |
 | [`octoflow export`](#octoflow-export) | Generate standalone self-contained HTML mission audit report with interactive connectome replay. | `octoflow export [OPTIONS]` |
 | [`octoflow federation`](#octoflow-federation) | Zero-trust multi-machine agent federation and PII redaction pipeline. (Experimental) | `octoflow federation [OPTIONS]` |
+| [`octoflow feedback`](#octoflow-feedback) | Open or print a prefilled voluntary feedback URL (zero background telemetry). | `octoflow feedback [OPTIONS]` |
 | [`octoflow first-run`](#octoflow-first-run) | Run the guided first-run onboarding wizard. | `octoflow first-run [OPTIONS]` |
 | [`octoflow fix`](#octoflow-fix) | Execute autonomous closed-loop test repair with Arm 5 (QA) and Arm 2 (Backend). | `octoflow fix [OPTIONS]` |
 | [`octoflow glossary`](#octoflow-glossary) | Print the plain-language mapping of OctoFlow architecture concepts. | `octoflow glossary [OPTIONS]` |
@@ -316,6 +317,28 @@ octoflow federation [OPTIONS]
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `--text`, `-t` | `str` | `None` | Text to test against 14-rule PII filter |
+
+---
+
+### <a id="octoflow-feedback"></a>`octoflow feedback`
+
+Open or print a prefilled voluntary feedback URL (zero background telemetry).
+
+**Usage:**
+```bash
+octoflow feedback [OPTIONS]
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--category`, `-c` | `str` | `feedback` | Feedback category: 'feedback', 'bug', 'idea', 'show-and-tell' |
+| `--title`, `-t` | `str` | `None` | Optional custom title |
+| `--diagnostics`, `-d`, `--no-diagnostics`, `-D` | `bool` | `None` | Attach sanitized environment diagnostics from octoflow bugreport |
+| `--browser`, `--no-browser` | `bool` | `true` | Open prefilled URL in system browser |
+| `--dry-run` | `bool` | `false` | Preview prefilled issue URL without opening browser |
+| `--dir`, `-w` | `str` | `.` | Workspace directory for diagnostics |
 
 ---
 

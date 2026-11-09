@@ -1,0 +1,37 @@
+{
+  "collected_at": "2026-11-09T12:41:07.206162+00:00",
+  "repository": "TODO_OWNER_OR_ORG/octoflow",
+  "package": "octoflow",
+  "targets": {
+    "first_response_sla_met": true,
+    "contributor_retention_met": true,
+    "release_cadence_met": true,
+    "ci_pass_rate_met": true
+  },
+  "pypi": {
+    "package": "octoflow",
+    "last_30_days": 1842,
+    "last_7_days": 486,
+    "last_day": 74,
+    "without_mirrors_30d": 1290,
+    "with_mirrors_30d": 1842,
+    "organic_ratio": 0.7
+  },
+  "github": {
+    "stars": 312,
+    "forks": 28,
+    "open_issues": 1,
+    "closed_issues": 3,
+    "open_pulls": 1,
+    "merged_pulls": 5,
+    "median_first_response_hours": 9.0,
+    "median_bug_close_days": 4.0,
+    "median_pr_merge_hours": 24.0,
+    "repeat_contributors_count": 2,
+    "first_time_contributors_90d": 3,
+    "total_releases": 3,
+    "median_release_cadence_days": 29.5,
+    "ci_pass_rate_pct": 95.0,
+    "ci_completed_runs": 20
+  }
+}

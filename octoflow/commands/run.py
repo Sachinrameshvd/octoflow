@@ -835,6 +835,10 @@ def run(
                 console.print(
                     f"[{active_theme.rich_success}]✔ Execution trace recorded: [bold]{tracer.trace_file}[/bold] (mode 0600)[/{active_theme.rich_success}]\n"
                 )
+            if not json_output and not quiet:
+                from octoflow.commands.feedback import maybe_show_post_run_feedback_hint
+
+                maybe_show_post_run_feedback_hint(console)
             return
 
         # LIVE Mode Outcome Check
@@ -994,6 +998,10 @@ def run(
                 console.print(
                     f"[{active_theme.rich_success}]✔ Execution trace recorded: [bold]{tracer.trace_file}[/bold] (mode 0600)[/{active_theme.rich_success}]\n"
                 )
+            if not json_output and not quiet:
+                from octoflow.commands.feedback import maybe_show_post_run_feedback_hint
+
+                maybe_show_post_run_feedback_hint(console)
             return
 
         elif outcome == RunOutcome.PARTIAL or str(outcome).lower() == "partial":

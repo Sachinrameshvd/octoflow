@@ -147,3 +147,26 @@ rm -rf .octoflow .octoflow-mission
 rm -f octoflow-audit-*.html octoflow-report-*.html octoflow-bench-*.json octoflow-bench-*.md
 ```
 
+---
+
+## 7. Public Metrics & Voluntary Feedback
+
+OctoFlow tracks project health and community responsiveness without sacrificing user privacy:
+
+1. **Still Zero Telemetry**: OctoFlow has no telemetry in current or future releases. There is no phone-home mechanism, no unique machine identifier, and no background reporting.
+2. **Public Registry & Repository Metrics**: Project adoption is estimated exclusively through public, non-identifying aggregate data:
+   - PyPI download counts (via `pypistats.org`, analyzing clean installs without automated mirror traffic).
+   - GitHub API statistics (issues, pull requests, release intervals, and CI pass rates).
+   - Full methodology: [`docs/METRICS.md`](METRICS.md).
+3. **Voluntary Feedback (`octoflow feedback`)**:
+   - Feedback submission is 100% voluntary and user-initiated.
+   - The CLI command performs **zero network requests**; it constructs a prefilled URL and opens it in your local browser (or prints it to stdout).
+   - If you opt in to attaching diagnostic output (`--diagnostics`), the sanitized report is displayed for your inspection before URL generation.
+4. **Post-Run Feedback Hint**:
+   - A single-line hint (`Did this work? Run 'octoflow feedback'`) appears at most once on interactive runs.
+   - You can permanently disable this hint by running:
+     ```bash
+     octoflow config set ui.show_feedback_prompt false
+     ```
+   - Or by setting the environment variable: `export OCTOFLOW_NO_FEEDBACK_PROMPT=1`.
+

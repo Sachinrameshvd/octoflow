@@ -31,6 +31,7 @@ OctoFlow uses a strictly typed, versioned, validated configuration system built 
 | :--- | :--- | :--- | :--- |
 | `schema_version` | `int` | `1` | Schema version identifier |
 | `onboarding_completed` | `bool` | `false` | Whether the first-run guided onboarding wizard has been completed |
+| `feedback_prompted` | `bool` | `false` | - |
 | `defaults` | `DefaultsSettings` | `None` | Core execution parameters |
 | `ui` | `UISettings` | `None` | Terminal UI & styling preferences |
 | `server` | `ServerSettings` | `None` | Localhost telemetry server settings |
@@ -59,6 +60,7 @@ OctoFlow uses a strictly typed, versioned, validated configuration system built 
 | `animation` | `bool` | `true` | Enable 20 FPS animated headers and spinners |
 | `color` | `bool` | `true` | Enable Rich 256-color / truecolor ANSI rendering |
 | `ascii` | `bool` | `false` | Force pure ASCII rendering (no Unicode bio-glyphs) |
+| `show_feedback_prompt` | `bool` | `true` | - |
 
 ### `ServerSettings`
 

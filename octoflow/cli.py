@@ -304,6 +304,7 @@ from octoflow.commands import (  # noqa: E402 - commands are registered after Ty
     consortium,
     doctor,
     eject,
+    feedback,
     federation,
     guard,
     guild,
@@ -342,6 +343,7 @@ purge.register(app, octos_app)
 from octoflow import first_run  # noqa: E402
 first_run.register(app, octos_app)
 doctor.register(app, octos_app)
+feedback.register(app, octos_app)
 mcp.register_mcp(app, octos_app)
 guard.register(app, octos_app)
 init.register(app, octos_app)
