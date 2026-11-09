@@ -1,0 +1,29 @@
+{
+  "task": "fastapi_todo",
+  "task_name": "Tiny FastAPI Todo API",
+  "category": "Web",
+  "mode": "gated",
+  "provider": "ollama",
+  "model": "qwen2.5-coder:7b",
+  "seed": 46,
+  "temperature": 0.0,
+  "wall_time_seconds": 271.497,
+  "llm_calls": 4,
+  "tokens": {
+    "prompt_tokens": 2106,
+    "completion_tokens": 1087,
+    "total_tokens": 3193,
+    "estimated": false
+  },
+  "files_written": [
+    "app.py"
+  ],
+  "acceptance_test_passed": true,
+  "outcome": "complete",
+  "settings": {
+    "temperature": 0.0,
+    "gate_mode": "gated",
+    "seed": 46,
+    "max_cycles": 3
+  }
+}

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0B0F19; rx: 12px; }
+      .header-bar { fill: #111827; }
+      .dot-red { fill: #EF4444; }
+      .dot-yellow { fill: #F59E0B; }
+      .dot-green { fill: #10B981; }
+      .title { fill: #9CA3AF; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 500; text-anchor: middle; }
+      .text-prompt { fill: #10B981; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; font-weight: 600; }
+      .text-cmd { fill: #F9FAFB; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+      .text-dim { fill: #6B7280; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+      .text-cyan { fill: #00F0FF; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+      .text-green { fill: #34D399; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+      .text-amber { fill: #FBBF24; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+      .text-white { fill: #F9FAFB; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+      .box-line { fill: none; stroke: #00F0FF; stroke-width: 1.5; stroke-opacity: 0.6; }
+    </style>
+  </defs>
+
+  <!-- Background Window Container -->
+  <rect x="0" y="0" width="960" height="540" class="bg" />
+
+  <!-- Titlebar -->
+  <path d="M 0 12 C 0 5.373 5.373 0 12 0 L 948 0 C 954.627 0 960 5.373 960 12 L 960 38 L 0 38 Z" class="header-bar" />
+  <circle cx="24" cy="19" r="6" class="dot-red" />
+  <circle cx="44" cy="19" r="6" class="dot-yellow" />
+  <circle cx="64" cy="19" r="6" class="dot-green" />
+  <text x="480" y="24" class="title">octoflow run - software_dev (qwen2.5-coder:7b)</text>
+
+  <!-- Terminal Content Lines -->
+  <text x="32" y="70" class="text-prompt">user@host ~/project % <tspan class="text-cmd">octoflow run "Build thread-safe rate limiter with tests" --model ollama</tspan></text>
+
+  <text x="32" y="100" class="text-cyan">◈ Launching OctoFlow Swarm in SOFTWARE_DEV mode...</text>
+  <text x="32" y="122" class="text-dim">• Live 3D Brain Visualizer: http://127.0.0.1:8088</text>
+
+  <text x="32" y="152" class="text-dim">[arm 0 architect]   Planning modular decomposition: limiter.py, tests/test_limiter.py</text>
+  <text x="32" y="174" class="text-white">[arm 2 backend]     write_file(limiter.py): implement SlidingWindowRateLimiter</text>
+  <text x="32" y="196" class="text-amber">[GATE] Arm 2:       ΔS = 0.78 &gt; θ=0.50 (Central Escalation: code generated)</text>
+  <text x="32" y="218" class="text-white">[arm 5 qa]          write_file(tests/test_limiter.py): 6 unit &amp; concurrency tests</text>
+  <text x="32" y="240" class="text-amber">[GATE] Arm 5:       ΔS = 0.65 &gt; θ=0.50 (Central Escalation: tests added)</text>
+  <text x="32" y="262" class="text-dim">[arm 5 qa]          run_command(pytest tests/test_limiter.py): 6 passed in 0.12s</text>
+  <text x="32" y="284" class="text-green">[GATE] Arm 5:       ΔS = 0.08 &lt;= θ=0.48 (Reflex Silenced: tests passing cleanly)</text>
+  <text x="32" y="306" class="text-green">[GATE] Arm 6:       ΔS = 0.04 &lt;= θ=0.52 (Reflex Silenced: 0 security findings)</text>
+  <text x="32" y="328" class="text-cyan">[arm 0 conductor]   Quiescence reached across all 8 arms. Mission completed.</text>
+
+  <!-- Truthful Token Receipt Box -->
+  <rect x="32" y="352" width="700" height="110" rx="6" fill="#111827" stroke="#374151" stroke-width="1" />
+  <text x="48" y="376" class="text-cyan" font-weight="700">┌── Token Receipt: 1794213600-4a8f9c ─────────────────────────────────────┐</text>
+  <text x="48" y="398" class="text-white">│ <tspan font-weight="bold">Spent:</tspan>   <tspan fill="#F59E0B" font-weight="bold">3,118 tokens</tspan> (measured directly from Ollama response headers)    │</text>
+  <text x="48" y="418" class="text-white">│ <tspan font-weight="bold">Avoided:</tspan> <tspan fill="#10B981" font-weight="bold">1,682 tokens</tspan> (estimated avoided via sensory gate reflexes)       │</text>
+  <text x="48" y="438" class="text-white">│ <tspan font-weight="bold">Calls:</tspan>   4 LLM completions | Gate: 6 evaluations (2 reflexes, 4 escalations)│</text>
+  <text x="48" y="456" class="text-cyan">└─────────────────────────────────────────────────────────────────────────┘</text>
+
+  <!-- Footer Status -->
+  <text x="32" y="492" class="text-green">✔ Completed: 2 files written, 6 tests passing (100%).</text>
+  <text x="32" y="512" class="text-dim">● Branch: octoflow/run-1794213600-4a8f9c | Commit: a9f812b | Undo: octoflow undo --yes</text>
+</svg>

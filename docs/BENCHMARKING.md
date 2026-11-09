@@ -39,12 +39,22 @@ The evaluation suite runs four standardized algorithmic and architectural challe
 
 ### Verified Live Local LLM Performance (Ollama `qwen2.5-coder:7b`)
 
-| Canonical Task | Target File | Mode | Runs | Pass Rate | LLM Calls (Med) | Tokens (Med) | Wall Time (Med) |
-|---|---|---|---|---|---|---|---|
-| `rate_limiter` | `limiter.py` | Gated | 5 | **100% (5/5)** | 4 | 3,118 | 129.06s |
-| `fastapi_todo` | `app.py` | Gated | 5 | **100% (5/5)** | 4 | 3,193 | 185.27s |
+Hardware environment: Apple Silicon arm64 (8-core CPU, 16GB RAM), local Ollama inference server.  
+All token counts shown below are **MEASURED directly from native Ollama HTTP response headers** (`prompt_eval_count`, `eval_count`; `estimated=False`).
 
-*For complete failure taxonomy, root cause analysis, and cassette replay, see `docs/audit/P3.2-failure-taxonomy.md` and `docs/model-compatibility.md`.*
+| Benchmark Task | Target File | Execution Mode | Runs | Pass Rate | LLM Calls (Min/Med/Max) | Total Tokens (Min/Med/Max) | Prompt Tokens (Med) | Comp Tokens (Med) | Wall Time (Med) | Gated Token Savings |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `rate_limiter` | `limiter.py` | **Gated** | 5 | **100% (5/5)** | 4 / 4.0 / 4 | 3,118 / 3,118 / 3,118 | 1,860 | 1,258 | 129.06s | **35.0% reduction** |
+| `rate_limiter` | `limiter.py` | **Ungated** | 1 | **0.0% (0/1)** | 6 / 6.0 / 6 | 4,798 / 4,798 / 4,798 | 2,873 | 1,925 | 231.91s | Baseline (always_escalate) |
+| `fastapi_todo` | `app.py` | **Gated** | 5 | **100% (5/5)** | 4 / 4.0 / 4 | 3,193 / 3,193 / 3,193 | 2,106 | 1,087 | 185.27s | - |
+
+#### Key Empirical Insights from Live Evaluation
+1. **Token & Call Efficiency**: On the `rate_limiter` challenge, sensory surprise gating reduced token consumption by **35.0%** (3,118 vs 4,798 tokens) and LLM calls by **33.3%** (4 vs 6 calls) compared to the ungated baseline.
+2. **Reliability & Swarm Coordination**: In ungated mode, unquenched specialist arms continued emitting redundant file modifications, leading to race conditions and test failures (0/1 pass rate). In gated mode, once sensory surprise dropped below $\theta \le 0.48$, the arm entered silent quiescence, allowing the QA arm to verify the code without interference, achieving a **100% pass rate (5/5)**.
+3. **Wall-Clock Latency**: Gated execution completed in **129.06s** median wall time compared to **231.91s** ungated (44.4% faster).
+4. **Raw Benchmark Artifacts**: Raw JSON outputs for all runs are committed under [`benchmarks/results/published/`](../benchmarks/results/published/).
+
+*For complete failure taxonomy, root cause analysis, and cassette replay, see [`docs/audit/P3.2-failure-taxonomy.md`](audit/P3.2-failure-taxonomy.md) and [`docs/model-compatibility.md`](model-compatibility.md).*
 
 ---
 

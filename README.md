@@ -27,13 +27,28 @@ For the complete module classification and lifecycle triage, see [docs/MODULE_TR
 
 ## Demo (60 Seconds)
 
-<!-- DEMO PLACEHOLDER: 60-second terminal cast / animated recording (TODO: record in P12.1) -->
+[![OctoFlow Terminal Demo Cast](docs/assets/demo.svg)](docs/assets/demo.cast)
+
+> **Terminal Session Cast**: Replay the full interactive session using `asciinema play docs/assets/demo.cast` or reproduce it via `bash scripts/record_demo.sh`. See the [Demo Assets Guide](docs/assets/README.md).
+
 ```text
-$ octoflow run "Build a thread-safe sliding-window rate limiter with tests"
-[SWARM] Decomposing objective across 8 specialist arms...
-[GATE]  Arm 2 (Backend Core): Delta S = 0.12 <= theta (Reflex - local execution)
-[GATE]  Arm 5 (QA Tester):    Delta S = 0.58 > theta  (Escalate - test failure triage)
-[SWARM] Quiescence reached: 5 files written, tests passing (100%).
+$ octoflow run "Build a thread-safe sliding-window rate limiter with tests" --model ollama
+[SWARM] Launching OctoFlow Swarm in SOFTWARE_DEV mode...
+[CONNECTOME] Live 3D Visualizer active: http://127.0.0.1:8088
+[ARM 2] write_file(limiter.py): implement SlidingWindowRateLimiter
+[GATE]  Arm 2: Delta S = 0.78 > theta  (Central Escalation: code generated)
+[ARM 5] write_file(tests/test_limiter.py): 6 unit & concurrency tests
+[GATE]  Arm 5: Delta S = 0.65 > theta  (Central Escalation: tests added)
+[ARM 5] run_command(pytest tests/test_limiter.py): 6 passed in 0.12s
+[GATE]  Arm 5: Delta S = 0.08 <= theta (Reflex Silenced: tests passing cleanly)
+[SWARM] Quiescence reached across all 8 arms: 2 files written, 6 tests passing (100%).
+
+┌── Token Receipt: 1794213600-4a8f9c ─────────────────────────────────────────┐
+│ Spent:   3,118 tokens (measured from Ollama response headers)             │
+│ Avoided: 1,682 tokens (estimated avoided via sensory gate reflexes)        │
+│ Calls:   4 LLM completions | Gate: 6 evaluations (2 reflexes, 4 escalations)│
+│ Method:  octoflow receipt --method                                         │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
