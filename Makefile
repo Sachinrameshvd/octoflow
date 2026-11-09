@@ -2,7 +2,7 @@ PYTHON ?= $(shell which python3.12 2>/dev/null || which python3)
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: all setup lock docs-ref check-docs-ref check-docs test test-fast test-live check-coverage visualizer-build visualizer-sync clean dev dev-stop
+.PHONY: all setup lock docs-ref check-docs-ref check-docs test test-fast test-live check-coverage visualizer-build visualizer-sync build clean dev dev-stop
 
 all: setup test
 
@@ -104,6 +104,15 @@ visualizer-build:
 
 visualizer-sync:
 	@bash scripts/sync_visualizer.sh
+
+build: visualizer-sync
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python -m build; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 -m build; \
+	else \
+		python -m build; \
+	fi
 
 clean:
 	@echo "Cleaning build and cache artifacts..."

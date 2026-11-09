@@ -668,10 +668,10 @@ def test_generate_html_audit_report(tmp_path):
     assert "http://" not in html.split("<head>")[1].split("</head>")[0]
     assert "https://" not in html.split("<head>")[1].split("</head>")[0]
 
-    # 2. Executive Token ROI
-    assert "Swarm Heterogeneous Cost" in html
-    assert "Monolithic Prompt Cost" in html
-    assert "Token Cost Savings" in html
+    # 2. Executive Token ROI & Truthful Accounting
+    assert "Tokens Spent" in html
+    assert "Estimated Avoided Tokens" in html
+    assert "Sensory Gate Evaluations" in html
 
     # 3. Interactive SVG Connectome & Scrubber
     assert '<svg class="connectome-svg"' in html
