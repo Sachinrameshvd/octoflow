@@ -61,7 +61,7 @@ Before proposing any new dependency, the author must address the following check
 ## 5. Vulnerability Exception & Risk Acceptance Process
 
 If `pip-audit` or `npm audit` detects a vulnerability that cannot be immediately remediated (e.g., a dev-only tool with breaking upstream changes):
-1. The maintainer must document an accepted-risk entry in [`docs/audit/dependency-exceptions.md`](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/audit/dependency-exceptions.md).
+1. The maintainer must document an accepted-risk entry in [`docs/audit/dependency-exceptions.md`](audit/dependency-exceptions.md).
 2. The entry must specify:
    - Package name and affected version range.
    - CVE or GitHub Advisory ID.

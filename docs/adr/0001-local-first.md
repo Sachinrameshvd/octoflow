@@ -28,3 +28,4 @@ OctoFlow is designed with a strict **local-first, zero-telemetry** privacy archi
 
 ## What Would Change This Decision
 If confidential computing enclaves with client-verifiable cryptographic hardware attestation become commoditized, enabling provably zero-knowledge cloud inference without client-side trust assumptions.
+

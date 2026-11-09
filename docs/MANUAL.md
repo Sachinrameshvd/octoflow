@@ -6,18 +6,18 @@ Welcome to the comprehensive operational manual and developer field guide for **
 
 ## Table of Contents
 
-1. [Architectural Overview & Biological Principles](#1-architectural-overview--biological-principles)
+1. [Architectural Overview & Biological Principles](#1-architectural-overview-biological-principles)
 2. [The 8 Specialized Neural Arm Ganglia](#2-the-8-specialized-neural-arm-ganglia)
-3. [Swarm Morphologies: Solo, Triad & Octopolis](#3-swarm-morphologies-solo-triad--octopolis)
-4. [Execution Modes & Truthful Outcomes](#4-execution-modes--truthful-outcomes)
+3. [Swarm Morphologies: Solo, Triad & Octopolis](#3-swarm-morphologies-solo-triad-octopolis)
+4. [Execution Modes & Truthful Outcomes](#4-execution-modes-truthful-outcomes)
 5. [Master Command Directory](#5-master-command-directory)
-6. [Interactive Cockpit & Keyboard Shortcuts](#6-interactive-cockpit--keyboard-shortcuts)
-7. [Cockpit Shell Pass-Through & Routing Safety](#7-cockpit-shell-pass-through--routing-safety)
+6. [Interactive Cockpit & Keyboard Shortcuts](#6-interactive-cockpit-keyboard-shortcuts)
+7. [Cockpit Shell Pass-Through & Routing Safety](#7-cockpit-shell-pass-through-routing-safety)
 8. [Configuration Reference](#8-configuration-reference)
-9. [Troubleshooting & Production Field Guide](#9-troubleshooting--production-field-guide)
-10. [Terminal Accessibility & Scriptability](#10-terminal-accessibility--scriptability)
-11. [Enterprise MetaHarness & Zero-Trust Federation](#11-enterprise-metaharness--zero-trust-federation)
-12. [Extensibility: Custom Providers & Custom Guilds](#12-extensibility-custom-providers--custom-guilds)
+9. [Troubleshooting & Production Field Guide](#9-troubleshooting-production-field-guide)
+10. [Terminal Accessibility & Scriptability](#10-terminal-accessibility-scriptability)
+11. [Enterprise MetaHarness & Zero-Trust Federation](#11-enterprise-metaharness-zero-trust-federation)
+12. [Extensibility: Custom Providers & Custom Guilds](#12-extensibility-custom-providers-custom-guilds)
 
 ---
 
@@ -177,7 +177,7 @@ Destructive commands always trigger a non-blocking confirmation prompt (`Confirm
 
 ## 8. Configuration Reference
 
-OctoFlow reads configuration from environment variables, OS Keyring, and `~/.octoflow/config.json`. See [`.env.example`](./.env.example) for a pre-populated template with safe placeholders.
+OctoFlow reads configuration from environment variables, OS Keyring, and `~/.octoflow/config.json`. See [`.env.example`](../.env.example) for a pre-populated template with safe placeholders.
 
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |

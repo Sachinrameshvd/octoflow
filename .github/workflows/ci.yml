@@ -33,6 +33,10 @@ jobs:
       run: |
         ruff format --check .
 
+    - name: Documentation Integrity & Link Check
+      run: |
+        python scripts/check_docs.py
+
   typecheck:
     name: Gradual Typecheck (mypy)
     runs-on: ubuntu-latest

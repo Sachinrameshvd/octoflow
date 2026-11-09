@@ -4,7 +4,7 @@
 > **Schema Version:** `1` (`CURRENT_SCHEMA_VERSION = 1`)  
 > **File Location:** `~/.octoflow/config.json`  
 > **Permissions:** Directory `0700` (`rwx------`), File `0600` (`rw-------`)  
-> **Module:** [`octoflow/settings.py`](file:///Users/sachinrk/Desktop/Octoflow%20copy/octoflow/settings.py)
+> **Module:** [`octoflow/settings.py`](../../octoflow/settings.py)
 
 ---
 
@@ -117,7 +117,7 @@ octoflow config show --json
 ### 2. View Configuration File Path
 ```bash
 octoflow config path
-# Output: /Users/username/.octoflow/config.json
+# Output: ~/.octoflow/config.json
 ```
 
 ### 3. Update Configuration Value

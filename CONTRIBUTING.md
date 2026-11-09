@@ -24,7 +24,7 @@ make test        # Run full test suite with coverage
 
 ## 2. Dependency Management & Pinning Policy
 
-OctoFlow adheres to a strict supply-chain policy (see [`docs/DEPENDENCY_POLICY.md`](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/DEPENDENCY_POLICY.md)):
+OctoFlow adheres to a strict supply-chain policy (see [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md)):
 
 1. **Minimal Dependencies:** Avoid external packages if the functionality can be implemented cleanly with Python's standard library (`importlib`, `pathlib`, `json`, `ast`, etc.).
 2. **Library Version Ranges (`pyproject.toml`):**
@@ -37,14 +37,14 @@ OctoFlow adheres to a strict supply-chain policy (see [`docs/DEPENDENCY_POLICY.m
    make lock
    ```
 4. **License Compatibility:**
-   Every new dependency must use an OSI-approved permissive license (MIT, BSD-2/3-Clause, Apache-2.0, ISC, PSF). Copyleft licenses (GPL, AGPL, SSPL) are strictly prohibited. See [`docs/THIRD_PARTY_LICENSES.md`](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/THIRD_PARTY_LICENSES.md).
+   Every new dependency must use an OSI-approved permissive license (MIT, BSD-2/3-Clause, Apache-2.0, ISC, PSF). Copyleft licenses (GPL, AGPL, SSPL) are strictly prohibited. See [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md).
 5. **Security Auditing:**
    Verify that your proposed changes do not introduce new vulnerabilities:
    ```bash
    pip-audit
    cd visualizer && npm audit
    ```
-   If a high-severity finding cannot be avoided, an approved exception must be documented in [`docs/audit/dependency-exceptions.md`](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/audit/dependency-exceptions.md).
+   If a high-severity finding cannot be avoided, an approved exception must be documented in [`docs/audit/dependency-exceptions.md`](docs/audit/dependency-exceptions.md).
 
 ---
 

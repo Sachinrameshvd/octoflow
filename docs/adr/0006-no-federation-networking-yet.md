@@ -29,3 +29,4 @@ Retain the zero-trust PII and credential redactor as a core security utility whi
 
 ## What Would Change This Decision
 When an explicit enterprise requirement emerges for distributed cluster execution, backed by formal threat modeling, audited mutual TLS certificate exchange, and end-to-end payload encryption.
+

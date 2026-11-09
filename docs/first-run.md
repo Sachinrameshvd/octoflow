@@ -99,7 +99,7 @@ Step 2/3: Ready to run 60-second reverse_words demo? [Y/n]: y
 Goal: 'create a function that reverses words with a pytest test'
 
 ✔ OCTOFLOW FIRST-RUN DEMO COMPLETE (4.21s)
-  • Files Created in /Users/developer/.octoflow/demo:
+  • Files Created in ~/.octoflow/demo:
     - reverse_words.py
     - test_reverse_words.py
   • Token Ledger: 1,420 tokens (Saved 88.2% vs baseline)
@@ -146,7 +146,7 @@ Step 2/3: Ready to run 60-second reverse_words demo? [Y/n]: y
 Goal: 'create a function that reverses words with a pytest test'
 
 ✔ OCTOFLOW FIRST-RUN DEMO COMPLETE (0.42s)
-  • Files Created in /Users/developer/.octoflow/demo:
+  • Files Created in ~/.octoflow/demo:
     - reverse_words.py
     - test_reverse_words.py
   • Token Ledger: 950 tokens (Saved 91.5% vs baseline)
@@ -167,13 +167,13 @@ When a network timeout or provider credential failure occurs, the user is **neve
 Goal: 'create a function that reverses words with a pytest test'
 
 ✖ Demo task failed using 'anthropic' (Invalid API Key signature).
-  Log file: /Users/developer/.octoflow/logs/octoflow.log
+  Log file: ~/.octoflow/logs/octoflow.log
 
 Would you like to fallback and verify in safe dry-run mode? [Y/n]: y
 
 ◈ Deploying 8-Arm Swarm in ~/.octoflow/demo...
 ✔ OCTOFLOW FIRST-RUN DEMO COMPLETE (0.38s)
-  • Files Created in /Users/developer/.octoflow/demo:
+  • Files Created in ~/.octoflow/demo:
     - reverse_words.py
     - test_reverse_words.py
   • Token Ledger: 950 tokens (Saved 91.5% vs baseline)

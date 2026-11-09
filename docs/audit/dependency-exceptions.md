@@ -2,7 +2,7 @@
 
 **Audit Date:** 2026-10-31  
 **Reviewer:** Supply-Chain Security Engineer  
-**Policy Reference:** [`docs/DEPENDENCY_POLICY.md`](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/DEPENDENCY_POLICY.md)  
+**Policy Reference:** [`docs/DEPENDENCY_POLICY.md`](../DEPENDENCY_POLICY.md)  
 **Standard:** Every High/Critical vulnerability detected by `pip-audit` or `npm audit` that cannot be immediately bumped without breaking changes must have an approved exception with a concrete justification, compensating controls, and a strict expiry date.
 
 ---

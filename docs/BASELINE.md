@@ -75,7 +75,7 @@ Installation was executed and measured from a fresh clone in `/tmp/octoflow-fres
   - `tests/test_themes_and_cli.py`
   - `tests/test_workspace_sandbox_comprehensive.py`
 
-### 3.2 Original Checkout Execution (`/Users/sachinrk/Desktop/Octoflow copy`)
+### 3.2 Original Checkout Execution (`~Desktop/Octoflow copy`)
 - **Command:** `make test`
 - **Exit Code:** `2`
 - **Execution Runtime:** `3.32 seconds`
@@ -106,9 +106,9 @@ Installation was executed and measured from a fresh clone in `/tmp/octoflow-fres
 Traceback (most recent call last):
   File "<frozen runpy>", line 189, in _run_module_as_main
   File "<frozen runpy>", line 112, in _get_module_details
-  File "/Users/sachinrk/Desktop/Octoflow copy/octoflow/__init__.py", line 18, in <module>
+  File "octoflow/__init__.py", line 18, in <module>
     from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
-ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conductor' (/Users/sachinrk/Desktop/Octoflow copy/octoflow/conductor.py)
+ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conductor' (octoflow/conductor.py)
 ```
 
 ### 5.2 `./octo doctor` Output
@@ -116,9 +116,9 @@ ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conduc
 Traceback (most recent call last):
   File "<frozen runpy>", line 189, in _run_module_as_main
   File "<frozen runpy>", line 112, in _get_module_details
-  File "/Users/sachinrk/Desktop/Octoflow copy/octoflow/__init__.py", line 18, in <module>
+  File "octoflow/__init__.py", line 18, in <module>
     from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
-ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conductor' (/Users/sachinrk/Desktop/Octoflow copy/octoflow/conductor.py)
+ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conductor' (octoflow/conductor.py)
 ```
 
 ### 5.3 `./octo audit` Output
@@ -126,9 +126,9 @@ ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conduc
 Traceback (most recent call last):
   File "<frozen runpy>", line 189, in _run_module_as_main
   File "<frozen runpy>", line 112, in _get_module_details
-  File "/Users/sachinrk/Desktop/Octoflow copy/octoflow/__init__.py", line 18, in <module>
+  File "octoflow/__init__.py", line 18, in <module>
     from octoflow.conductor import SupraesophagealConductor, SwarmTelemetryEvent
-ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conductor' (/Users/sachinrk/Desktop/Octoflow copy/octoflow/conductor.py)
+ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conductor' (octoflow/conductor.py)
 ```
 
 ### 5.4 Audit Score Evaluation
@@ -170,12 +170,12 @@ ImportError: cannot import name 'SupraesophagealConductor' from 'octoflow.conduc
 All confirmed machine-specific paths were removed and replaced with relative paths:
 
 1. **`architecture/README.md`:**
-   - Lines 47–52: Replaced 6 instances of `file:///Users/sachinrk/Desktop/Octoflow/...` with `../octoflow/...` and `../envs/...`.
+   - Lines 47–52: Replaced 6 instances of `...` with `../octoflow/...` and `../envs/...`.
 2. **`PROJECT_CONTEXT.md`:**
-   - Replaced `/Users/sachinrk/Desktop/Octoflow` repository references and top-10 file links with repository-relative paths (`octoflow/...`, `visualizer/...`).
+   - Replaced `~Desktop/Octoflow` repository references and top-10 file links with repository-relative paths (`octoflow/...`, `visualizer/...`).
 3. **`start.sh`:**
    - Replaced hardcoded `.venv/bin/python` with flexible virtualenv/python executable resolution.
-   - Removed `🐙` emoji in favor of `•` glyph to comply with the project zero-emoji policy.
+   - Removed `` emoji in favor of `•` glyph to comply with the project zero-emoji policy.
 4. **`.gitignore`:**
    - Anchored `/dist/` to root to prevent accidental exclusion of package directory `octoflow/dist/`.
    - Added ignores for `.env`, `.env.*` (preserving `!.env.example`), `node_modules/`, `*venv/`, `.octoflow/`, `.octoflow-mission/`, `.ruff_cache/`.

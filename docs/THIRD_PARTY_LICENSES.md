@@ -1,7 +1,7 @@
 # OctoFlow Third-Party Software Licenses & Compliance Report
 
 **Report Date:** 2026-10-31  
-**Primary Project License:** [MIT License](LICENSE)  
+**Primary Project License:** [MIT License](../LICENSE)  
 **Compatibility Target:** All runtime dependencies must be compatible with commercial and open-source MIT distribution. No copyleft (GPL / AGPL / SSPL) is permitted in distributed binaries.
 
 ---

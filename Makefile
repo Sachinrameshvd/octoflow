@@ -2,7 +2,7 @@ PYTHON ?= $(shell which python3.12 2>/dev/null || which python3)
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: all setup lock test test-fast test-live check-coverage visualizer-build visualizer-sync clean dev dev-stop
+.PHONY: all setup lock check-docs test test-fast test-live check-coverage visualizer-build visualizer-sync clean dev dev-stop
 
 all: setup test
 
@@ -58,6 +58,9 @@ test-live:
 		echo "pytest not found. Please run 'make setup' first."; \
 		exit 1; \
 	fi
+
+check-docs:
+	@if [ -f "/python" ]; then 		/python scripts/check_docs.py; 	elif command -v python3 >/dev/null 2>&1; then 		python3 scripts/check_docs.py; 	else 		python scripts/check_docs.py; 	fi
 
 check-coverage:
 	@if [ -f "$(BIN)/python" ]; then \

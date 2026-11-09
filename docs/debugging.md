@@ -73,7 +73,7 @@ octoflow replay latest --no-visualizer
 ### Replay Terminal Output Format
 ```text
 ◈ OctoFlow Replay: Run [run-1794146568] (252 events, speed=1.0x)
-• Trace source: /Users/username/.octoflow/runs/run-1794146568/trace.jsonl
+• Trace source: ~/[user]/.octoflow/runs/run-1794146568/trace.jsonl
 • Visualizer bridge: http://127.0.0.1:8088 (ws://127.0.0.1:8088/ws/telemetry)
 ------------------------------------------------------------------------------
 [19:32:48] MISSION START ◈ Mode: software_dev | Objective: Build rate limiter

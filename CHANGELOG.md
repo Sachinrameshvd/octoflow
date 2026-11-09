@@ -19,6 +19,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Tutorials, FAQ, Troubleshooting & Documentation Integrity Checker (P9.3)**:
+  - **Task-Oriented Tutorials (`docs/tutorials/`)**: 8 bite-sized guides (<10 mins each) with verified inputs, real command outputs, and timestamps:
+    - `01-first-project-with-ollama.md`: First project using local Ollama model (`qwen2.5-coder:7b`).
+    - `02-reading-the-token-receipt.md`: Understanding token receipts, measured vs estimated usage, local avoided tokens, and JSON exports.
+    - `03-undoing-a-run.md`: Rolling back filesystem mutations with checkpoint snapshots and `octoflow undo`.
+    - `04-building-with-a-custom-guild.md`: Defining, validating, and executing missions with custom 8-arm specialist guilds.
+    - `05-adding-a-custom-provider.md`: Subclassing `BaseLLMProvider`, provider registration, and verifying contracts with `ProviderContractSuite`.
+    - `06-using-octoflow-from-mcp.md`: Configuring OctoFlow stdio MCP server for Claude Code and Cursor.
+    - `07-watching-in-the-visualizer.md`: Live 3D connectome visualization, 8088 bridge, Three.js camera controls, and offline trace replay.
+    - `08-running-benchmarks.md`: Benchmarking local vs cloud providers, measuring token savings against ungated baselines.
+    - `docs/tutorials/README.md`: Index of all 8 tutorials with duration and summaries.
+  - **Comprehensive FAQ (`docs/FAQ.md`)**: Direct answers to top questions: why an octopus, plain-language gate mechanics, privacy and code egress, dry-run vs live execution, model recommendations, cost breakdowns, Windows support, and `octoflow bugreport`.
+  - **Troubleshooting Additions (`docs/TROUBLESHOOTING.md`)**: Added operational guidance for PTY and terminal issues (terminal reset, narrow HUD, non-TTY automation), Apple Silicon Metal acceleration and ARM64 python verification, port conflicts on 8088/5173, and exact anchors for all 14 `E-*` error codes.
+  - **Automated Documentation Checker (`scripts/check_docs.py`)**: Script that enforces:
+    - Relative link resolution and heading anchor integrity.
+    - CLI subcommand validation against registered Typer commands.
+    - Error code catalog alignment between `docs/reference/errors.md`, `octoflow/errors.py`, and `docs/TROUBLESHOOTING.md`.
+    - Zero-emoji policy enforcement across all markdown files.
+    - Absolute user path detection (`/Users/...`, `/home/...`).
+  - **Test Suite & CI Integration**: Added unit test suite `tests/test_docs_checker.py` covering link checks, anchor verification, emoji detection, command validation, and repo-wide pass. Added `make check-docs` Makefile target and CI step in `.github/workflows/ci.yml`.
 - **Architecture, Glossary & ADR Documentation (P9.2)**:
   - Authored comprehensive system architecture guide in [`docs/architecture.md`](docs/architecture.md): high-level overview diagram (Mermaid), complete 23-module mapping table, end-to-end run lifecycle sequence diagram, storage and permissions layout, threading and async model, non-blocking 20 FPS cockpit input loop, extension points (custom providers, guilds, tools, MCP), and cross-cutting design constraints.
   - Worked Gate Math Example: Documented mathematical equations for mean squared observation error and dynamic threshold adaptation with an exact worked example script [`scripts/worked_example_gate.py`](scripts/worked_example_gate.py).
@@ -96,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Documentation & Test Suites**: Documented accessibility architecture and manual keyboard walkthrough checklist in `docs/accessibility.md`. Authored automated Vitest test suites (`contrast.test.ts`, `motion-policy.test.ts`, `audio-optin.test.ts`, `activity-log.test.ts`).
 - **Terminal Accessibility, Zero-Emoji Glyph Audit, and Plain Mode (P6.3)**:
   - **Central Glyph Table**: Created `octoflow/glyphs.py` defining single-width characters (`wcwidth == 1`) with 7-bit ASCII fallbacks (`ord < 128`) and optional `--legacy-glyphs` transition support.
-  - **Zero-Emoji Policy Audit**: Replaced all wide emojis and ambiguous symbols (`⚡`, `✔`, `✖`, `⏳`, `🐙`) across all terminal and CLI modules with verified single-width presentation characters (`↯`, `✓`, `✗`, `·`, `◈`).
+  - **Zero-Emoji Policy Audit**: Replaced all wide emojis and ambiguous symbols (`[flash]`, `✔`, `✖`, `[wait]`, `[octo]`) across all terminal and CLI modules with verified single-width presentation characters (`↯`, `✓`, `✗`, `·`, `◈`).
   - **NO_COLOR Standard**: Full compliance with the `https://no-color.org` specification (`NO_COLOR` env var and `--no-color` flag emit 0 ANSI escape sequences).
   - **Pure ASCII Mode**: Added `--ascii` flag and `OCTOFLOW_ASCII=1` ensuring every byte emitted to stdout/stderr is strictly `< 128`.
   - **Non-TTY & Pipe Automation**: Non-TTY streams bypass live TUI cursors and cockpit chrome, defaulting automatically to plain line-oriented output.
@@ -118,7 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **3-Question Onboarding Flow**: Asks at most three questions: (1) LLM engine choice [Local Ollama, Cloud API Key, Dry-Run Demo], (2) 60-second demo confirmation, and (3) 3D visualizer launch offer.
   - **Isolated 60-Second Demo Mission**: Runs goal `"create a function that reverses words with a pytest test"` strictly within `~/.octoflow/demo` with small token and time budgets. Shows outcome ribbon, files created (`reverse_words.py`, `test_reverse_words.py`), and token ledger metrics.
   - **Resilient Failure Recovery**: On provider error or network timeout, displays exact step and log file, offering graceful fallback to safe dry-run mode so users are never left at a blank prompt.
-  - **Documentation**: Authored [docs/first-run.md](file:///Users/sachinrk/Desktop/Octoflow%20copy/docs/first-run.md) with transcripts of successful, missing model, and failing recovery paths.
+  - **Documentation**: Authored [docs/first-run.md](docs/first-run.md) with transcripts of successful, missing model, and failing recovery paths.
 - **Key Storage, Outbound Redaction, and Privacy Statement (P5.4)**:
   - **Environment-First Key Resolution Order**: Added `resolve_api_key(provider_name)` in `octoflow/keyring_store.py` enforcing strict resolution hierarchy: `Environment Variables (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)` > `OS Keyring` > `0600 Config File (~/.octoflow/config.json)`.
   - **Optional Keyring Integration**: Added `[keyring]` optional extra (`pip install "octoflow[keyring]"`) integrating OS-level secure storage (macOS Keychain, Linux SecretService, Windows Credential Vault) with zero runtime dependencies when not installed.

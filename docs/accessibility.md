@@ -5,10 +5,10 @@ OctoFlow provides complete terminal accessibility, cross-platform emulator compa
 ## Standards Compliance
 
 ### 1. Zero-Emoji & Single-Width Glyphs
-Terminals frequently misalign multi-column layout grids when rendering characters with ambiguous display widths or emoji presentation (such as `⚡` U+26A1 or `⏳` U+23F3). 
+Terminals frequently misalign multi-column layout grids when rendering characters with ambiguous display widths or emoji presentation (such as `[flash]` U+26A1 or `[wait]` U+23F3). 
 OctoFlow strictly enforces that **every active glyph has `wcwidth == 1`** and text presentation presentation.
 
-- `BOLT`: Replaced wide `⚡` (U+26A1, wcwidth=2) with text-presentation `↯` (U+21AF, wcwidth=1) or ASCII `!`.
+- `BOLT`: Replaced wide `[flash]` (U+26A1, wcwidth=2) with text-presentation `↯` (U+21AF, wcwidth=1) or ASCII `!`.
 - `OK`: Replaced heavy `✔` (U+2714) with text check `✓` (U+2713, wcwidth=1) or ASCII `+`.
 - `FAIL`: Replaced heavy `✖` (U+2716) with text cross `✗` (U+2717, wcwidth=1) or ASCII `x`.
 - `WARN`: Text triangle `▲` (U+25B2, wcwidth=1) or ASCII `!`.
@@ -83,7 +83,7 @@ All symbols used across OctoFlow must originate from `octoflow/glyphs.py`. Direc
 | `OK` | `✓` (U+2713) | `+` | `✔` | Task completion, test pass, verification |
 | `FAIL` | `✗` (U+2717) | `x` | `✖` | Error, failure, violation |
 | `WARN` | `▲` (U+25B2) | `!` | `▲` | Warnings, environmental interrupts |
-| `BOLT` | `↯` (U+21AF) | `!` | `⚡` | Active firing arm, live service ignition |
+| `BOLT` | `↯` (U+21AF) | `!` | `[flash]` | Active firing arm, live service ignition |
 | `BULLET` | `•` (U+2022) | `*` | `•` | List bullets, file lists |
 | `MIDDLE_DOT`| `·` (U+00B7) | `.` | `·` | Standby arms, paused state |
 | `CIRCLE` | `○` (U+25CB) | `o` | `○` | Hollow circle, frontend icon |
@@ -110,7 +110,7 @@ All symbols used across OctoFlow must originate from `octoflow/glyphs.py`. Direc
 ## Developer Policy
 
 When authoring terminal output in OctoFlow:
-1. **Never use raw emojis** (`⚡`, `🐙`, `🔥`, etc.) in terminal-facing strings.
+1. **Never use raw emojis** (`[flash]`, `[octo]`, `[fire]`, etc.) in terminal-facing strings.
 2. **Import symbols exclusively from `octoflow.glyphs`**:
    ```python
    from octoflow.glyphs import glyph

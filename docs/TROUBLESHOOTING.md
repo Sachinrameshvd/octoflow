@@ -187,6 +187,71 @@ OctoFlow issues standardized error codes in the format `E-XXXX`. Every failure p
 
 ---
 
+## PTY & Terminal Issues
+
+### Terminal Garbled After Unexpected Crash or SIGKILL
+- **Symptom**: Terminal input is invisible, echo is disabled, or line breaks produce stair-stepped text.
+- **Cause**: The interactive cockpit was killed abruptly before the `atexit` raw mode terminal restoration handler could execute.
+- **Fix**: Reset terminal state back to canonical mode:
+  ```bash
+  stty sane
+  ```
+  Or in extreme cases, type `reset` and press Enter.
+
+### Non-TTY Pipes & CI Scripting
+- **Symptom**: CI logs contain messy ANSI escape sequences (`\x1b[2K\x1b[1A`) or fail with cursor movement errors.
+- **Cause**: Running the Rich Live TUI dashboard in environments where standard output is not an interactive terminal (`sys.stdout.isatty() == False`).
+- **Fix**: Force plain line-oriented output:
+  ```bash
+  octoflow run "Build feature" --plain
+  ```
+  Or disable ANSI color codes completely:
+  ```bash
+  NO_COLOR=1 octoflow run "Build feature" --plain
+  ```
+
+### Narrow Terminal Windows (< 60 Columns)
+- **Symptom**: Swarm dashboard table wraps awkwardly or drops column headers.
+- **Cause**: Terminal viewport width is narrower than the minimum 8-column layout threshold.
+- **Fix**: OctoFlow automatically detects terminal dimensions (`shutil.get_terminal_size()`) and scales down to a compact 1-line HUD whenever width is below 60 columns or height is below 15 rows. Resize the terminal window to $\ge 80$ columns for the full visual dashboard.
+
+---
+
+## Apple Silicon Notes (M1 / M2 / M3 / M4)
+
+### Native ARM64 Runtime vs Rosetta
+- **Symptom**: Ollama inference or Python execution feels sluggish (high latency).
+- **Cause**: Running an x86_64 Python interpreter translated through Rosetta 2 rather than native ARM64.
+- **Check**: Run `python3 -c "import platform; print(platform.machine())"`. It should report `arm64`. If it reports `x86_64`, install an Apple Silicon native Python binary (e.g. from Homebrew or python.org).
+
+### Metal GPU Acceleration in Ollama
+- **Status**: Ollama natively leverages Apple Silicon unified memory and Metal GPU cores. On M-series chips with 16 GB+ unified memory, `qwen2.5-coder:7b` typically evaluates at 45-60 tokens/second.
+- **Verification**: Run `octoflow doctor` to confirm `Local Ollama: ONLINE`.
+
+---
+
+## Port Conflicts & Server Management
+
+### Port 8088 / 5173 Address Already in Use
+- **Symptom**: `OSError: [Errno 48] Address already in use` when launching `octoflow ui` or `make dev`.
+- **Cause**: A previous visualizer session or orphan telemetry broadcaster process is still bound to loopback port `8088` or `5173`.
+- **Fix**:
+  1. Terminate running background servers cleanly:
+     ```bash
+     make dev-stop
+     ```
+  2. If an orphan process persists, locate and kill the process holding port 8088:
+     ```bash
+     lsof -ti :8088 | xargs kill -9
+     lsof -ti :5173 | xargs kill -9
+     ```
+  3. Alternatively, specify an alternate port when running the visualizer:
+     ```bash
+     octoflow ui --port 8095
+     ```
+
+---
+
 ## Secret Redaction
 
 To prevent sensitive credentials from leaking into terminal output, error logs, or telemetry, all exceptions and logs pass through `redact_secrets`:

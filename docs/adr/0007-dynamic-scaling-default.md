@@ -29,3 +29,4 @@ Implement intelligent morphology auto-detection with a conservative Solo default
 
 ## What Would Change This Decision
 If heuristic prompt classification yields unacceptable false-positive scaling rates, prompting a switch to a small local embedding classifier.
+

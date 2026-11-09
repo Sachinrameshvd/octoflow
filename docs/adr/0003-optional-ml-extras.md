@@ -29,3 +29,4 @@ Decouple the package into a lightweight, pure-NumPy base installation and an opt
 
 ## What Would Change This Decision
 If a micro-footprint (<5 MB) embedded tensor runtime becomes standardized across Python distributions without platform-specific wheel compilation overhead.
+

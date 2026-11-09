@@ -25,3 +25,4 @@ Pre-compile production web assets into `octoflow/dist/` and track them directly 
 
 ## What Would Change This Decision
 When release packaging (P10.2) is fully automated with reliable cross-platform CI artifacts, and editable development installs can be transparently supported without committing compiled bundles to the git tree.
+

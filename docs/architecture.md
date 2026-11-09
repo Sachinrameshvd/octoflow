@@ -7,16 +7,16 @@ This document is the definitive technical architecture guide for OctoFlow (Octop
 ## Table of Contents
 
 1. [High-Level Architecture Overview](#1-high-level-architecture-overview)
-2. [Module Map & Responsibility Matrix](#2-module-map--responsibility-matrix)
+2. [Module Map & Responsibility Matrix](#2-module-map-responsibility-matrix)
 3. [The Run Lifecycle: End-to-End Sequence Diagram](#3-the-run-lifecycle-end-to-end-sequence-diagram)
-4. [Data & Control Flow](#4-data--control-flow)
-5. [Storage Layout & State on Disk](#5-storage-layout--state-on-disk)
-6. [Concurrency, Threading & Async Model](#6-concurrency-threading--async-model)
-7. [Cockpit Input Model & Non-Blocking Loop](#7-cockpit-input-model--non-blocking-loop)
-8. [Extension Points & Plugin Contracts](#8-extension-points--plugin-contracts)
-9. [Event-Triggered Sensory Gate Math & Worked Example](#9-event-triggered-sensory-gate-math--worked-example)
+4. [Data & Control Flow](#4-data-control-flow)
+5. [Storage Layout & State on Disk](#5-storage-layout-state-on-disk)
+6. [Concurrency, Threading & Async Model](#6-concurrency-threading-async-model)
+7. [Cockpit Input Model & Non-Blocking Loop](#7-cockpit-input-model-non-blocking-loop)
+8. [Extension Points & Plugin Contracts](#8-extension-points-plugin-contracts)
+9. [Event-Triggered Sensory Gate Math & Worked Example](#9-event-triggered-sensory-gate-math-worked-example)
 10. [System Design Constraints](#10-system-design-constraints)
-11. [Biophysical & Neural Simulation Foundations](#11-biophysical--neural-simulation-foundations)
+11. [Biophysical & Neural Simulation Foundations](#11-biophysical-neural-simulation-foundations)
 
 ---
 

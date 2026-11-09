@@ -29,3 +29,4 @@ This glossary provides an authoritative cross-reference mapping biological cepha
 | **Muscular Hydrostat** | Continuum Soft-Body Physics | `SoftBodyTentacleEnv` | `envs/soft_body_tentacle.py` | Biophysical 3D simulation of constant-volume tentacle elongation, radial contraction, and hydrodynamic fluid resistance. |
 | **Truthful Token Receipt** | Execution Accounting Summary | `TokenReceipt` | `octoflow/receipt.py` | Post-mission receipt aggregating measured LLM completions, prompt tokens, and gate-avoided tokens without synthetic multipliers. |
 | **Deterministic Replay** | Trace Event Playback Engine | `replay_trace` | `octoflow/trace.py` | Sequentially streams recorded JSONL execution traces to terminal lines and the WebSocket visualizer bridge at variable speed. |
+
