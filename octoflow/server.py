@@ -369,41 +369,70 @@ class TelemetryBroadcaster:
 
     def start_in_background(self) -> None:
         """Launch the telemetry server on a daemon background thread binding to host (default: 127.0.0.1)."""
-        if not FASTAPI_AVAILABLE:
-            return
-
         available_port = find_available_port(self.requested_port, host=self.host)
         if available_port is None:
             return
         self.port = available_port
 
-        app = self.create_app()
+        if FASTAPI_AVAILABLE:
+            app = self.create_app()
 
-        def _run():
+            def _run():
+                try:
+                    self.loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(self.loop)
+                    config = uvicorn.Config(
+                        app=app,
+                        host=self.host,
+                        port=self.port,
+                        log_level="error",
+                        ws="websockets-sansio",
+                    )
+                    self.server_instance = uvicorn.Server(config)
+                    self.loop.run_until_complete(self.server_instance.serve())
+                except Exception as e:
+                    logger.debug(
+                        "Telemetry server thread exited with error: %s", e
+                    )  # best-effort: background server shutdown
+
+            self.server_thread = threading.Thread(target=_run, daemon=True)
+            self.server_thread.start()
+        else:
+            # Fallback to standard library http.server to serve packaged visualizer assets
+            package_dist = Path(__file__).resolve().parent / "dist"
+            source_dist = Path(__file__).resolve().parent.parent / "visualizer" / "dist"
+            dist_path = package_dist if package_dist.exists() else source_dist
+            if not dist_path.exists():
+                return
+
+            import functools
+            from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+            class _QuietHandler(SimpleHTTPRequestHandler):
+                def log_message(self, format: str, *args: Any) -> None:
+                    # Suppress console logging for quiet loopback delivery
+                    pass
+
+            handler = functools.partial(_QuietHandler, directory=str(dist_path))
             try:
-                self.loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self.loop)
-                config = uvicorn.Config(
-                    app=app,
-                    host=self.host,
-                    port=self.port,
-                    log_level="error",
-                    ws="websockets-sansio",
-                )
-                self.server_instance = uvicorn.Server(config)
-                self.loop.run_until_complete(self.server_instance.serve())
+                server = ThreadingHTTPServer((self.host, self.port), handler)
+                self.server_instance = server
+                self.server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+                self.server_thread.start()
             except Exception as e:
-                logger.debug(
-                    "Telemetry server thread exited with error: %s", e
-                )  # best-effort: background server shutdown
-
-        self.server_thread = threading.Thread(target=_run, daemon=True)
-        self.server_thread.start()
+                logger.debug("Fallback http.server exited with error: %s", e)
 
     def stop(self) -> None:
         """Stop the background telemetry server cleanly."""
         if self.server_instance:
-            self.server_instance.should_exit = True
+            if hasattr(self.server_instance, "shutdown"):
+                try:
+                    self.server_instance.shutdown()
+                    self.server_instance.server_close()
+                except Exception:
+                    pass
+            if hasattr(self.server_instance, "should_exit"):
+                self.server_instance.should_exit = True
         for ws in list(self.active_sockets):
             try:
                 if self.loop and self.loop.is_running():

@@ -82,3 +82,14 @@ Before publishing or inviting public contributors, replace the following placeho
 | [`SECURITY.md`](../SECURITY.md) | `[TODO: INSERT SECURITY EMAIL HERE]` | Your private security contact address |
 | [`SUPPORT.md`](../SUPPORT.md) | `TODO_OWNER_OR_ORG` | Your GitHub organization or username in URLs |
 | [`.github/ISSUE_TEMPLATE/config.yml`](../.github/ISSUE_TEMPLATE/config.yml) | `TODO_OWNER_OR_ORG` | Your GitHub organization or username in URLs |
+
+---
+
+## 7. PyPI & Release Automation Setup
+
+See [`docs/RELEASING.md`](./RELEASING.md) for complete instructions:
+
+- [ ] **Configure PyPI Trusted Publishing:**
+  - Set up GitHub OIDC trusted publishing on [PyPI](https://pypi.org/) and [TestPyPI](https://test.pypi.org/) for workflow `release.yml`.
+- [ ] **Create GitHub Environments:**
+  - Navigate to **Settings > Environments** and configure `testpypi` (auto) and `pypi` (manual approval required).

@@ -1,7 +1,7 @@
 # ADR 0002: Visualizer Distribution Asset Bundling
 
 ## Status
-Accepted
+Accepted & Automated in Release Pipeline (P10.2)
 
 ## Context
 OctoFlow includes an interactive 3D WebGL Benthic Connectome Visualizer implemented in TypeScript with Three.js (`visualizer/`). To provide an out-of-the-box user experience via `octoflow ui` and standalone HTML report exports (`octoflow report`), the Python package requires pre-built frontend distribution assets (`octoflow/dist/`). We needed to decide whether `octoflow/dist/` should be pre-compiled and tracked in git, or generated dynamically in release CI.
@@ -23,6 +23,9 @@ Pre-compile production web assets into `octoflow/dist/` and track them directly 
 - Verification: [`octoflow/dist/index.html`](../../octoflow/dist/index.html), [`tests/test_server_security.py`](../../tests/test_server_security.py)
 - Commit: `72ea4e6` (P4.4 Visualizer quality and dist sync)
 
-## What Would Change This Decision
-When release packaging (P10.2) is fully automated with reliable cross-platform CI artifacts, and editable development installs can be transparently supported without committing compiled bundles to the git tree.
+## Resolution in P10.2 (Automated Release Packaging)
+With the implementation of automated release packaging (P10.2):
+- `make build` runs `visualizer-build` (`npm ci && npm run build`) and synchronizes bundles to `octoflow/dist/` before invoking `python -m build`.
+- CI enforces deterministic dist verification via `scripts/verify_wheel.sh`, asserting that wheels contain `octoflow/dist/index.html` and assets, while excluding tests, `node_modules`, and `.env` files.
+- Local editable checkouts (`pip install -e .`) continue to function offline with zero Node.js prerequisites, while release builds always produce fresh, verified distribution bundles.
 

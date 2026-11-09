@@ -155,3 +155,9 @@ OctoFlow is maintained by an open-source maintainer with community collaboration
 - Pull requests are reviewed thoroughly for test coverage, security boundaries, and adherence to the Hard Rules.
 - Expected initial review turnaround is **5 to 7 business days**.
 - To expedite review, keep pull requests focused on a single change and verify that all automated checks in `.github/PULL_REQUEST_TEMPLATE.md` are checked.
+
+---
+
+## 9. Cutting a Release
+
+For repository owners and maintainers cutting a public release, follow the step-by-step procedure and PyPI Trusted Publishing setup in [`docs/RELEASING.md`](docs/RELEASING.md).

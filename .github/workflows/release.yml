@@ -1,0 +1,226 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Explicit tag to release (leave empty to use current HEAD version)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Fast Test Suite Matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Base Package and Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install --no-deps -e .
+          pip install pytest
+
+      - name: Run Test Suite
+        run: |
+          pytest tests/ -v --durations=10
+
+  build:
+    name: Build Wheel, Sdist & Generate SBOM
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'visualizer/package-lock.json'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install Build and Packaging Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine cyclonedx-bom
+
+      - name: Build Package Distribution (Wheel & Sdist)
+        run: |
+          make build
+
+      - name: Verify Wheel Contents & Clean-Room Execution (Ubuntu)
+        run: |
+          bash scripts/verify_wheel.sh
+
+      - name: Generate CycloneDX v1.5 Software Bill of Materials (SBOM)
+        run: |
+          bash scripts/make_sbom.sh
+          cp dist-artifacts/bom-python.json dist/octoflow-sbom-python.cdx.json
+          cp dist-artifacts/bom-npm.json dist/octoflow-sbom-npm.cdx.json
+
+      - name: Upload Distribution Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+          retention-days: 7
+
+  verify-macos:
+    name: Verify Wheel Clean-Room (macOS)
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Download Distribution Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Install Verification Tools
+        run: |
+          python -m pip install --upgrade pip twine
+
+      - name: Run Clean-Room Wheel Verification (macOS)
+        run: |
+          bash scripts/verify_wheel.sh
+
+  publish-testpypi:
+    name: Publish to TestPyPI (Trusted Publisher OIDC)
+    needs: [build, verify-macos]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/octoflow
+    permissions:
+      id-token: write
+    steps:
+      - name: Download Distribution Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          skip-existing: true
+
+  publish-pypi:
+    name: Publish to PyPI (Manual Approval Gated)
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/octoflow
+    permissions:
+      id-token: write
+    steps:
+      - name: Download Distribution Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Publish to Production PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+  github-release:
+    name: Create GitHub Release & Upload Assets
+    needs: [build, verify-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Distribution Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Extract Release Notes from CHANGELOG.md
+        id: notes
+        run: |
+          python - << 'PYEOF'
+          import os
+          import re
+          from pathlib import Path
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          tag = os.environ.get("GITHUB_REF_NAME", "")
+          version = tag.lstrip("v")
+
+          # Look for matching section header
+          pattern = rf"## \[{re.escape(version)}\].*?\n\n(.*?)(?=\n## \[|\Z)"
+          match = re.search(pattern, changelog, re.DOTALL)
+          if match:
+              notes = match.group(1).strip()
+          else:
+              notes = f"Release {tag} of OctoFlow."
+
+          Path("RELEASE_NOTES.md").write_text(notes + "\n", encoding="utf-8")
+          PYEOF
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          if [ -z "$TAG_NAME" ] || [[ "$TAG_NAME" == *"/"* ]]; then
+            # workflow_dispatch fallback
+            PKG_VER=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+            TAG_NAME="v${PKG_VER}"
+          fi
+          gh release create "$TAG_NAME" \
+            dist/*.whl \
+            dist/*.tar.gz \
+            dist/*.json \
+            --title "OctoFlow ${TAG_NAME}" \
+            --notes-file RELEASE_NOTES.md \
+            --verify-tag

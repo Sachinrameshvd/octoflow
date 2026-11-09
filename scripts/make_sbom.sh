@@ -14,8 +14,6 @@ mkdir -p "${ARTIFACTS_DIR}"
 PYTHON_BIN=""
 if [ -f "${WORKSPACE_ROOT}/.venv/bin/python" ]; then
     PYTHON_BIN="${WORKSPACE_ROOT}/.venv/bin/python"
-elif [ -f "/Users/sachinrk/Desktop/Droct/.venv/bin/python" ]; then
-    PYTHON_BIN="/Users/sachinrk/Desktop/Droct/.venv/bin/python"
 elif command -v python3 >/dev/null 2>&1; then
     PYTHON_BIN="python3"
 else

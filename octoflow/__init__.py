@@ -8,7 +8,11 @@ dynamic multi-head coalition attention, and Vertical Lobe Hebbian memory.
 import importlib
 from typing import Any
 
-__version__ = "0.2.0"
+try:
+    from importlib.metadata import version as _get_version, PackageNotFoundError as _PkgNotFound
+    __version__ = _get_version("octoflow")
+except (_PkgNotFound, Exception):
+    __version__ = "0.3.0"
 
 _LAZY_EXPORTS = {
     # config
