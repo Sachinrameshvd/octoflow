@@ -63,6 +63,14 @@ def _handle_unexpected_error(exc: Exception, trace: bool = False) -> None:
     sys.exit(70)
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        from octoflow import __version__
+
+        typer.echo(f"OctoFlow v{__version__}")
+        raise typer.Exit()
+
+
 class OctoFlowGroup(TyperGroup):
     """Custom TyperGroup intercepting OctoFlowError and unexpected fatal exceptions."""
 
@@ -171,6 +179,14 @@ def app_callback(
     trace: bool = typer.Option(
         False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."
     ),
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show OctoFlow version and exit.",
+    ),
     no_color: bool = typer.Option(
         False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)."
     ),
@@ -225,6 +241,14 @@ def octos_callback(
     ),
     trace: bool = typer.Option(
         False, "--trace", help="Enable trace mode (DEBUG logging and tracebacks on error)."
+    ),
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show OctoFlow version and exit.",
     ),
     no_color: bool = typer.Option(
         False, "--no-color", help="Disable ANSI color codes (respects NO_COLOR standard)."
@@ -352,8 +376,17 @@ def glossary_cli_cmd() -> None:
     console.print()
 
 
+def version_cli_cmd() -> None:
+    """Show OctoFlow version and exit."""
+    from octoflow import __version__
+
+    typer.echo(f"OctoFlow v{__version__}")
+
+
 app.command("glossary")(glossary_cli_cmd)
 octos_app.command("glossary")(glossary_cli_cmd)
+app.command("version")(version_cli_cmd)
+octos_app.command("version")(version_cli_cmd)
 
 
 # -------------------------------------------------------------------------

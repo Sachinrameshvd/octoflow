@@ -193,3 +193,4 @@ If a critical flaw or security vulnerability is discovered immediately post-rele
 1. Go to repository **Releases** page.
 2. Edit the affected release tag and mark as **Pre-release** or delete the release notes.
 3. Provide an advisory notice pointing users to the patched release.
+

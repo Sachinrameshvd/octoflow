@@ -1,0 +1,16 @@
+                                                                                                    
+ Usage: octoflow replay [OPTIONS] [run_id]                                                          
+                                                                                                    
+ Replay an execution trace into the 3D connectome visualizer and terminal as plain lines.           
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│   run_id      <str>  Run ID to replay (e.g. 'run-1731000000'), or omit to replay latest run      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --speed          -s      <float>  Replay playback speed multiplier (0 = instantaneous playback)  │
+│                                   [default: 1.0]                                                 │
+│ --no-visualizer                   Disable broadcasting replayed telemetry to 3D visualizer       │
+│ --port           -p      <int>    Visualizer telemetry port to broadcast on [default: 8088]      │
+│ --help                            Show this message and exit.                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

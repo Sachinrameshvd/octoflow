@@ -124,6 +124,9 @@ echo "  • Installing built wheel into clean venv..."
 
 # 6. Verify CLI Execution
 echo "◈ Verifying installed CLI execution..."
+VERSION_OUT=$("$CLEAN_OCTO" --version)
+echo "  • 'octoflow --version' output: $VERSION_OUT"
+"$CLEAN_OCTO" version >/dev/null
 "$CLEAN_OCTO" --help >/dev/null
 echo "  • 'octoflow --help' ran successfully"
 INSTALLED_VER=$("$CLEAN_DIR/venv/bin/python" -c "import octoflow; print(octoflow.__version__)")

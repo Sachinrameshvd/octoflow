@@ -6,6 +6,7 @@
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
 │ --dir   -d      <str>  Target project workspace folder [default: .]                              │
 │ --fix                  Automatically repair missing directories and initialize git if needed     │
+│ --json                 Output diagnostic report as structured JSON                               │
 │ --help                 Show this message and exit.                                               │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

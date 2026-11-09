@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow bugreport [OPTIONS]                                                                
+                                                                                                    
+ Generate a redacted environment summary to paste into GitHub issues.                               
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace folder [default: .]                              │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

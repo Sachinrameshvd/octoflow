@@ -45,6 +45,9 @@
 │ --no-anim                         Disable animations and continuous refresh                      │
 │ --ascii                           Force plain ASCII-only characters (< 128)                      │
 │ --legacy-glyphs                   Use legacy Unicode glyphs (lightning bolt, heavy check)        │
+│ --trace                           Write detailed JSONL execution trace under                     │
+│                                   ~/.octoflow/runs/<id>/trace.jsonl (0600)                       │
+│ --trace-prompts                   Include redacted prompts/responses in trace (requires --trace) │
 │ --help                            Show this message and exit.                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

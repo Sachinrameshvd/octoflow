@@ -62,6 +62,7 @@ OctoFlow exposes three CLI entrypoint aliases with identical semantics:
 | [`octoflow triage`](#octoflow-triage) | Interactive file-by-file patch inspector and diff triage with AST validation. (Experimental) | `octoflow triage [OPTIONS]` |
 | [`octoflow ui`](#octoflow-ui) | Launch the 3D Cephalopod Connectome Visualizer bridge. | `octoflow ui [OPTIONS]` |
 | [`octoflow undo`](#octoflow-undo) | Undo an OctoFlow run: checkout original branch, discard run branch, and restore stash. | `octoflow undo [OPTIONS]` |
+| [`octoflow version`](#octoflow-version) | Show OctoFlow version and exit. | `octoflow version [OPTIONS]` |
 
 ---
 
@@ -984,5 +985,16 @@ octoflow undo [OPTIONS]
 | :--- | :--- | :--- | :--- |
 | `--yes`, `-y` | `bool` | `false` | Skip confirmation prompt and proceed immediately |
 | `--dir`, `-d` | `str` | `.` | Target project workspace folder |
+
+---
+
+### <a id="octoflow-version"></a>`octoflow version`
+
+Show OctoFlow version and exit.
+
+**Usage:**
+```bash
+octoflow version [OPTIONS]
+```
 
 ---
