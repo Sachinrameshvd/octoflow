@@ -40,3 +40,4 @@ Community developers frequently ask how to expose domain-specific tools to their
 - [ ] Emphasizes security sandbox rules (preventing path traversal).
 - [ ] `python scripts/check_docs.py` passes with 0 errors.
 - [ ] Zero emoji characters in the tutorial text.
+

@@ -34,3 +34,4 @@ When the OS keyring is unavailable, locked, or raises `keyring.errors.KeyringErr
 - [ ] Test verifies that secrets fall back to file storage with mode `0600`.
 - [ ] No raw secret strings appear in logs or test output.
 - [ ] Pytest passes: `pytest tests/test_keyring_store.py`.
+

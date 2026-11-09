@@ -35,3 +35,4 @@ Currently, the tasks focus on backend APIs (`fastapi_todo`) and pure algorithms 
 - [ ] Verification script asserts that running `migration.sql` twice does not raise `OperationalError`.
 - [ ] Foreign key enforcement and index creation are asserted.
 - [ ] Pytest suite in `tests/test_benchmark_harness.py` passes 100%.
+

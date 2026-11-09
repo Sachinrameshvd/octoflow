@@ -43,3 +43,4 @@ However, users currently have to remember keybindings (e.g. `1`-`8` to focus arm
 - [ ] Accessible semantics (`role="dialog"`, `aria-modal="true"`) pass accessibility audits.
 - [ ] Running `cd visualizer && npm test` and `npm run build` succeeds.
 - [ ] `bash scripts/sync_visualizer.sh` syncs cleanly to `octoflow/dist`.
+

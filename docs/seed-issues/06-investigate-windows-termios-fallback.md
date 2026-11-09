@@ -35,3 +35,4 @@ On native Windows environments (outside of WSL2), importing `termios` fails with
 - [ ] Arrow keys, spacebar, and character input map to standard cockpit navigation events.
 - [ ] Existing POSIX behavior on Linux and macOS remains completely unchanged and passing all tests.
 - [ ] All unit tests pass with `pytest`.
+

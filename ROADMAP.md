@@ -102,3 +102,4 @@ Want to pick up a roadmap item?
 1. Check the [Good First Issues](docs/seed-issues/) directory for self-contained starter tasks.
 2. Review [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup and testing guidelines.
 3. Open a GitHub Discussion or Issue referencing the roadmap item to align on design before writing code.
+

@@ -36,3 +36,4 @@ To prevent regressions across mathematical boundary cases, we need parameterized
 - [ ] Both NumPy and Torch backends agree within tolerance (`1e-4`).
 - [ ] Tests execute in <0.2 seconds.
 - [ ] Pytest passes: `pytest tests/test_gate_parity.py`.
+

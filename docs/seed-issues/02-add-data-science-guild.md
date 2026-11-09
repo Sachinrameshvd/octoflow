@@ -41,3 +41,4 @@ For data scientists, machine learning engineers, and analysts, these web develop
 - [ ] `octoflow guild show data_science` prints the 8-arm roster with correct tool permissions.
 - [ ] `octoflow run "Analyze dataset and build classifier" --guild data_science --dry-run` executes with the data science roles.
 - [ ] Unit tests added to `tests/test_guilds.py` pass cleanly.
+

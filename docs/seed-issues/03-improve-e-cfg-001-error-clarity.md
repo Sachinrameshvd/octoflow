@@ -38,3 +38,4 @@ Currently, the error message indicates that the configuration is invalid, but it
 - [ ] Error hint contains `octoflow doctor --fix` and `octoflow config validate`.
 - [ ] All tests in `tests/test_errors_logging.py` pass.
 - [ ] Zero emoji characters in error output (`wcwidth <= 1`).
+

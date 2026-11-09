@@ -43,3 +43,4 @@ Many data teams, engineering managers, and financial analysts prefer importing C
 - [ ] Headers match the specified column taxonomy.
 - [ ] Passing both `--json` and `--csv` emits a clear validation error.
 - [ ] All unit tests pass cleanly: `pytest tests/test_run_outcome.py`.
+
