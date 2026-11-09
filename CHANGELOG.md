@@ -7,234 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed (breaking)
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.3.0] - 2026-11-09
+
+### Breaking Changes
+- **Mock Fallback Elimination (Decision D1)**: Eliminated silent fallback to `MockLLMProvider` in live mode when real API providers fail or credentials are missing. Live runs with misconfigured or exhausted providers now raise `ProviderExhaustedError`, report `[FAILED]` with actionable configuration hints, sanitize all credentials, and exit with code 2.
 - **Python 3.9 EOL Support Dropped (P2.7)**: Raised minimum Python requirement to `>=3.10` in `pyproject.toml` following Python 3.9 end-of-life. Removed Python 3.9 classifier and updated CI matrix to Python 3.10, 3.11, and 3.12 (with 3.13 experimental allowed-failure).
-- **Mock Fallback Removed (Decision D1)**: Eliminated silent fallback to `MockLLMProvider` in live mode when real API providers fail or credentials are missing. Live runs with misconfigured or exhausted providers now raise `ProviderExhaustedError`, report `[FAILED]` with actionable configuration hints, sanitize all credentials, and exit with code 2.
-- **Truthful Run Outcomes**: Live mode runs that produce 0 filesystem modifications now report outcome `FAILED` (`model produced no file changes`) with exit code 2. Only runs that successfully commit changes report `COMPLETE`.
-- **Exit Code Contract**: Standardized exit codes across CLI:
-  - `0`: Complete success (live run with files written, or dry-run simulation finished cleanly).
-  - `1`: Partial completion (fewer than 6 arms quiescent or incomplete cycle).
-  - `2`: Failure (provider exhaustion, missing credentials, zero files written in live mode).
-  - `3`: Usage or argument syntax errors.
-- **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
+- **PyTorch & ML Extras Made Optional (P2.5)**: Decoupled mandatory `torch` dependency in favor of a pure NumPy baseline sensory encoder. Installing torch is now optional via `pip install "octoflow[ml]"`. Systems without torch run with identical gate sensitivity and 8-arm active inference using NumPy.
+- **Zero-Emoji Typography Contract (P6.3)**: Audited and removed all ambiguous, wide emoji characters (`[lightning]`, `[octo]`, `[fire]`, etc.) across all CLI ribbons, visualizer badges, terminal outputs, and MCP responses. Strictly enforced semantic single-width glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`) with verified display width (`wcwidth <= 1`) and strict 7-bit ASCII fallbacks (`--ascii`).
+- **Truthful Run Outcomes Contract (P1.1)**: Runs that produce 0 filesystem modifications or fail to converge honestly report outcome `FAILED` (`model produced no file changes`) with exit code 2. Only runs that write valid code and pass verification report `COMPLETE`.
+- **Standardized Exit Code Taxonomy (P2.4)**: Enforced strict exit codes: `0` for success, `1` for tool/workspace/budget error, `2` for LLM provider family errors, `3` for configuration and CLI usage errors, and `70` for unexpected internal runtime errors.
 
 ### Added
-- **Tutorials, FAQ, Troubleshooting & Documentation Integrity Checker (P9.3)**:
-  - **Task-Oriented Tutorials (`docs/tutorials/`)**: 8 bite-sized guides (<10 mins each) with verified inputs, real command outputs, and timestamps:
-    - `01-first-project-with-ollama.md`: First project using local Ollama model (`qwen2.5-coder:7b`).
-    - `02-reading-the-token-receipt.md`: Understanding token receipts, measured vs estimated usage, local avoided tokens, and JSON exports.
-    - `03-undoing-a-run.md`: Rolling back filesystem mutations with checkpoint snapshots and `octoflow undo`.
-    - `04-building-with-a-custom-guild.md`: Defining, validating, and executing missions with custom 8-arm specialist guilds.
-    - `05-adding-a-custom-provider.md`: Subclassing `BaseLLMProvider`, provider registration, and verifying contracts with `ProviderContractSuite`.
-    - `06-using-octoflow-from-mcp.md`: Configuring OctoFlow stdio MCP server for Claude Code and Cursor.
-    - `07-watching-in-the-visualizer.md`: Live 3D connectome visualization, 8088 bridge, Three.js camera controls, and offline trace replay.
-    - `08-running-benchmarks.md`: Benchmarking local vs cloud providers, measuring token savings against ungated baselines.
-    - `docs/tutorials/README.md`: Index of all 8 tutorials with duration and summaries.
-  - **Comprehensive FAQ (`docs/FAQ.md`)**: Direct answers to top questions: why an octopus, plain-language gate mechanics, privacy and code egress, dry-run vs live execution, model recommendations, cost breakdowns, Windows support, and `octoflow bugreport`.
-  - **Troubleshooting Additions (`docs/TROUBLESHOOTING.md`)**: Added operational guidance for PTY and terminal issues (terminal reset, narrow HUD, non-TTY automation), Apple Silicon Metal acceleration and ARM64 python verification, port conflicts on 8088/5173, and exact anchors for all 14 `E-*` error codes.
-  - **Automated Documentation Checker (`scripts/check_docs.py`)**: Script that enforces:
-    - Relative link resolution and heading anchor integrity.
-    - CLI subcommand validation against registered Typer commands.
-    - Error code catalog alignment between `docs/reference/errors.md`, `octoflow/errors.py`, and `docs/TROUBLESHOOTING.md`.
-    - Zero-emoji policy enforcement across all markdown files.
-    - Absolute user path detection (`/Users/...`, `/home/...`).
-  - **Test Suite & CI Integration**: Added unit test suite `tests/test_docs_checker.py` covering link checks, anchor verification, emoji detection, command validation, and repo-wide pass. Added `make check-docs` Makefile target and CI step in `.github/workflows/ci.yml`.
-- **Architecture, Glossary & ADR Documentation (P9.2)**:
-  - Authored comprehensive system architecture guide in [`docs/architecture.md`](docs/architecture.md): high-level overview diagram (Mermaid), complete 23-module mapping table, end-to-end run lifecycle sequence diagram, storage and permissions layout, threading and async model, non-blocking 20 FPS cockpit input loop, extension points (custom providers, guilds, tools, MCP), and cross-cutting design constraints.
-  - Worked Gate Math Example: Documented mathematical equations for mean squared observation error and dynamic threshold adaptation with an exact worked example script [`scripts/worked_example_gate.py`](scripts/worked_example_gate.py).
-  - Glossary: Created [`docs/glossary.md`](docs/glossary.md) mapping cephalopod anatomical metaphors to standard software engineering terms and verified Python identifiers.
-  - Architectural Decision Records: Created [`docs/adr/`](docs/adr/) with 7 foundational ADRs (0001 Local-first, 0002 Visualizer dist, 0003 Optional ML extras, 0004 Truthful run states, 0005 Tool policy not sandbox, 0006 No federation networking yet, 0007 Dynamic scaling default).
-- **README Rewrite & Documentation Decoupling (P9.1)**:
-  - **30-Second Understanding, 5-Minute Quickstart**: Streamlined `README.md` to under 170 lines with transparent positioning, an Alpha status/maturity matrix, quickstart steps, truthful receipt excerpt from a verified live run, 6-sentence architecture summary, and measured benchmark links.
-  - **Zero-Emoji & Single-Width Glyphs**: Audited and eliminated all emoji from `README.md`, ensuring all active characters have single display width (`wcwidth <= 1`).
-  - **Documentation Decoupling**: Moved extensive biophysical models, RL benchmark milestones, 3D continuum physics, and ONNX/WASM architecture to `docs/architecture.md`; preserved comprehensive CLI playbooks, configuration reference, and troubleshooting field guides in `docs/manual.md` (`docs/MANUAL.md`).
-  - **CLI `init` Alias**: Added `octoflow init` as an alias to `init-ide` alongside existing `octos init`.
-- **Debug Aids & Contributor Inner Loop (P8.4)**:
-  - **Structured Trace Logging (`--trace` & `OCTOFLOW_TRACE=1`)**: Appends comprehensive execution trace events to `~/.octoflow/runs/<id>/trace.jsonl` (mode `0600`): gate evaluations (arm, cycle, $\Delta S$, $\theta$, reflex vs. escalate), tool calls (sanitized args, return code, duration), provider requests (model, token counts, latency, status), and real-time telemetry.
-  - **Zero-Prompt Privacy Default**: Trace logs omit all prompt and response text by default. Only when `--trace-prompts` is passed are redacted prompts recorded, accompanied by a prominent warning banner.
-  - **Deterministic Swarm Replay (`octoflow replay`)**: Replays recorded trace files in chronological sequence into the terminal as clean plain lines while re-broadcasting events to the 3D connectome visualizer bridge. Supports `--speed <multiplier>` (including `--speed 0` for instant replay) and `--no-visualizer`.
-  - **Inner-Loop Dev Stack (`make dev` & `make dev-stop`)**: Orchestrates the Python WebSocket telemetry bridge (port 8088, dev_mode allowing origin 5173) and the Vite 3D Visualizer dev server (port 5173) with single-command startup and clean PID termination.
-  - **Machine-Readable Diagnostics & Bug Reports**: Implemented `octoflow doctor --json` and `octoflow bugreport`, outputting a complete, sanitized Markdown summary (OS, versions, git state, doctor findings, masked settings, and redacted logs) with zero credential leakage.
-  - **VS Code Debugging**: Provided pre-configured `.vscode/launch.json` targets (CLI dry-run with trace, replay, doctor, bugreport, and pytest) and `.vscode/tasks.json` dev tasks.
-  - **Testing & Documentation**: Created `tests/test_trace_replay.py` and `tests/test_bugreport.py`; authored `docs/debugging.md` and added contributor guide to `CONTRIBUTING.md`.
-- **Model Context Protocol (MCP) Server Conformance & Integration (P8.3)**:
-  - **JSON-RPC 2.0 Stdio Server (`octoflow/mcp.py`)**: Built a hardened, specification-conformant MCP server implementing handshake protocol negotiation (`initialize` with versions `2024-11-05`, `2024-10-07`, `2025-03-26`, `2026-07-28`; `serverInfo` `name="octoflow"`, `notifications/initialized`, `ping`).
-  - **8 Core Tools with Draft 2020-12 Schemas**: Complete inputSchema with required properties and descriptions documenting side-effects and workspace confinement:
-    - `octoflow_run` (alias: `octoflow_run_swarm`): Launches 8-arm swarm missions with sensory surprise gating; supports `async` / `async_run` backgrounding and `timeout_seconds`.
-    - `octoflow_get_run_status` (aliases: `status`, `get_run_status`, `octoflow_status`): Real-time polling for arm cycle progress, latest thoughts, files written, and execution state.
-    - `octoflow_inspect_arms` (alias: `octoflow_arms_status`): Live inspection of sensory surprise deltas ($\Delta S$), reflex thresholds ($\theta$), and current tools across all 8 ganglia.
-    - `octoflow_recall_memory`: Fast associative memory recall in the Vertical Lobe.
-    - `octoflow_audit`: 1-100 system readiness, test density, and security scan confined to `--dir`.
-    - `octoflow_guild_list`: Discovery of 8-arm specialist guilds across project, user, and built-ins.
-    - `octoflow_receipt`: Truthful token receipts and cost accounting.
-    - `octoflow_read_file`: Path-traversal-guarded file reader strictly within workspace boundaries.
-  - **Stdio Protocol Hygiene**: Integrated `StdoutGuard` to divert internal logging, arbitrary prints, and third-party outputs to `sys.stderr`, guaranteeing 100% valid JSON-RPC payloads on `stdout`.
-  - **Strict Workspace Confinement**: Enforced workspace root confinement via `--dir` flag; blocks `..` traversals, absolute escaping paths, and null-byte injection with `isError: true` responses.
-  - **Clean Process Lifecycle**: Handles EOF on standard input cleanly with immediate resource deallocation and exit code 0 (zero zombie processes).
-  - **Manifests & Documentation**: Updated `.mcp.json` and `.claude-plugin/plugin.json` to canonical `octoflow mcp` command form without absolute paths; authored `docs/integrations/mcp.md` for Claude Code and Cursor.
-  - **Conformance Test Suite (`tests/test_mcp_protocol.py`)**: 9 subprocess lifecycle tests verifying handshake, schema validity via `jsonschema.Draft202012Validator`, protocol errors (-32700, -32601, -32602), async status polling, path traversal rejection, clean EOF exit, and manifest compliance.
-- **Custom Guilds via Validated Config (P8.2)**:
-  - **Pydantic Guild Schema (`octoflow/guild.py`)**: Built `ArmSpec` and `GuildSpec` models strictly enforcing 8 arms per octopus, hex color validation (`^#[0-9a-fA-F]{6}$`), bounded untrusted system prompts ($\le 2000$ chars, no null bytes), tool verification, and domain file globs.
-  - **RFC 6901 JSON Pointer Diagnostics**: Validation errors map directly to exact JSON pointer paths (e.g. `/arms`, `/arms/3/color`, `/arms/0/system_prompt`, `/arms/4/id`) for clean machine-readable developer feedback.
-  - **Three-Tier Search Precedence**: Discovers guilds in project `.octoflow/guilds/*.json` (highest priority), then user `~/.octoflow/guilds/*.json`, then built-ins (`software_dev`, `aiml_research`, `fullstack_ai`), with path traversal protection.
-  - **ToolPolicy Clamping**: Intersects requested arm tools with the global `ToolPolicy` singleton; denied tools are dropped and a warning is logged without crashing.
-  - **CLI Guild Commands (`octoflow guild`)**:
-    - `octoflow guild list` — Lists all discovered project, user, and built-in guilds.
-    - `octoflow guild validate <file.json>` — Validates guild JSON files and returns exit code 0 or 1 with JSON pointer error messages.
-    - `octoflow guild show <name>` — Displays an 8-arm breakdown table with roles, colors, tools, and domain scopes.
-    - `octoflow guild export <name>` — Scaffolds an 8-arm template JSON for customization.
-    - `octoflow run --guild <name>` — Seamlessly loads and applies custom 8-arm specialist rosters in swarm missions.
-  - **3D Visualizer Dynamic Palettes**: Emits initial `SWARM_INIT` telemetry packet with guild arm colors and identities, dynamically adapting visualizer 3D nodes and HUD profiles.
-  - **Flagship Data Science Guild (`examples/guilds/data_science.json`)**: Authoring 8 specialized data science arms (Data Ingestion, EDA, Feature Engineering, Modeling, HPO, Eval, XAI, Deployment).
-  - **Documentation**: Created `docs/extending/guilds.md` and updated root `README.md`.
-- **Provider Contract Tests & Custom Provider Template (P8.1)**:
-  - **BaseLLMProvider Interface Tightening**: Added `supports_tools: bool = False`, optional `transport: httpx.BaseTransport | None = None`, and comprehensive contract docstrings to `BaseLLMProvider`. Concrete providers (`AnthropicProvider`, `OpenAIProvider`, `GeminiProvider`, `OllamaProvider`) now declare `supports_tools = True` and accept custom `transport` instances for zero-network testing.
-  - **Dynamic Provider Registry**: Implemented `octoflow.register_provider(name, provider_cls)`, `octoflow.unregister_provider(name)`, `octoflow.get_registered_provider(name)`, and `octoflow.list_registered_providers()`, allowing 3rd-party providers (e.g. vLLM, LM Studio) to be registered dynamically at runtime and utilized by CLI `--provider` and cascade pools.
-  - **Reusable Contract Test Suite (`tests/contract/provider_contract.py`)**: Built `ProviderContractSuite` testing 12 universal contract requirements: text and token usage return, async agenerate parity, usage ledger recording, empty response handling without crashes, error taxonomy mapping (401/403 -> `ProviderAuthError`, 429 -> `ProviderRateLimitError`, 5xx -> `ProviderTransientError`, timeouts -> `ProviderTransientError(408)`), secret key scrubbing, custom timeout honoring, and async cancellation.
-  - **Scrubbed Fixtures**: Created mock transport fixtures in `tests/contract/fixtures/` for Anthropic, OpenAI, Gemini, and Ollama.
-  - **Built-in Provider Verification**: Implemented contract test runners for all 4 core providers (`test_anthropic_contract.py`, `test_openai_contract.py`, `test_gemini_contract.py`, `test_ollama_contract.py`), passing 50/50 test cases.
-  - **Custom Provider Example (`examples/custom_provider/`)**: Built minimal OpenAI-compatible `LMStudioProvider` in ~60 lines (`lmstudio_provider.py`), contract test suite (`test_custom_provider.py`), and documentation (`README.md`).
-  - **Documentation**: Authored step-by-step extension guide in `docs/extending/providers.md` and linked from root `README.md`.
-- **Truthful Token Receipts & Sensory Gate Accounting (P7.1)**:
-  - **Sensory Gate Decision Ledger**: Created `GateDecision` and `DecisionLedger` in `octoflow/gate.py` tracking arm, cycle, $\Delta S_i$, $\theta$, decision (`reflex` vs `escalate`), and prompt token avoidance estimates for every gate evaluation without storing raw prompt text.
-  - **Pydantic Token Receipt Model**: Implemented `TokenReceipt` in `octoflow/receipt.py` aggregating measured vs estimated tokens, gate evaluations, avoided tokens, budget consumption, per-arm allocations, two-sentence calculation methodology, and confidence categorization.
-  - **Boxed & Plain Terminal Renderers**: Added `render_terminal_receipt` producing a compact boxed summary at the end of every live and dry run, explicitly labeling "estimated avoided" tokens, total calls, top 3 arms, and linking to `octoflow receipt --method`. Full single-width ASCII fallback support (`< 128` bytes).
-  - **CLI Command `octoflow receipt`**: Added `octoflow receipt [run-id] [--json] [--method]` CLI command to inspect, dump schema-validated JSON, or view computation rules for any historical or current run.
-  - **Empirical Benchmark Baselines**: Linked receipts to empirical benchmark datasets in `benchmarks/results/` (`measured in benchmark: gated X vs ungated Y (median of N runs, model M)`), strictly prohibiting generic percentage claims.
-  - **Standalone HTML Report Integration**: Updated `octoflow/report.py` to embed truthful, labeled receipt totals into mission audit reports.
-  - **Visualizer Telemetry & Modal Panel**: Implemented `ReceiptPanel` in `visualizer/src/ui/receipt-panel.ts` and `FINAL_RECEIPT` WebSocket telemetry event handling with accessible keyboard navigation and complete Vitest test coverage.
-  - **Documentation & Test Suites**: Authored `docs/receipt.md` with annotated fake-provider examples and extensive test coverage in `tests/test_receipt.py`.
-- **Visualizer Accessibility & WCAG 2.2 AA Compliance (P6.4)**:
-  - **Motion Reduction (`prefers-reduced-motion`)**: Integrated `MotionPolicy` querying OS preferences and managing a visible toggle (`#btn-toggle-reduced-motion`) persisted in `localStorage["octoflow_reduced_motion"]`. Disables particle bursts, sparks, and ring packets in `SignalPropagator`, deactivates orbital constellation rotation and mantle oscillations in `Constellation`, and executes instantaneous camera cuts instead of tweens in `CameraController`.
-  - **Audio Opt-In Policy**: Enforced default-silent audio synthesis (`isMuted: true`). Audio/speech never plays without explicit user activation. Added persistent toggle (`#btn-toggle-voice`) and guaranteed immediate speech cancellation on mute via `speechSynthesis.cancel()`.
-  - **Text Alternative & ARIA Live Activity Log**: Created accessible `ActivityLogPanel` with an ARIA live region (`role="log"`, `aria-live="polite"`) rate-limited to $\le 1$ announcement/sec with queuing to prevent speech buffer overflow.
-  - **Semantic Arm Overview Table**: Added fully semantic HTML table (`.arm-status-table` with `<caption>`, `<thead>`, `<th>`, `<tbody>`, `<td>`) providing comprehensive text representations of all 8 arm states, active tools, targets, and free energy metrics ($dS$ vs $\theta$).
-  - **Non-Reliance on Color Alone**: Redundantly labeled all 8 arms across 3D canvas, HUD badges, logs, and tables with unique geometric shapes (`○`, `□`, `△`, `◇`, `⬡`, `▽`, `☆`, `+`) and short mnemonic codes (`[ARC]`, `[DB]`, `[BE]`, `[FE]`, `[COG]`, `[SEC]`, `[QA]`, `[OPS]`).
-  - **Keyboard Navigation & Visible Focus**: Added universal `:focus-visible` styling with 2px cyan outline rings, full Tab traversal, shortcut `L` to toggle activity logs, and `Escape` to close drawers/modals. Canvas annotated with `role="img"` and `aria-label`, supplemented by hidden live region (`#canvas-live-summary`).
-  - **WCAG Contrast Auditing**: Validated 21 palette tokens using `scripts/check_contrast.mjs` against dark space backgrounds (`#0b0b12` and `#11111b`). Adjusted `--text-muted` (4.78:1) and `--text-dim` (3.28:1) to satisfy WCAG 2.2 AA thresholds ($\ge 4.5:1$ text, $\ge 3.0:1$ UI components).
-  - **WebGL Fallback & Recovery**: Implemented capability detection (`checkWebGLSupport()`) and context loss handling (`webglcontextlost`) that surfaces an explanatory alert banner (`#webgl-fallback-banner`) and automatically engages text telemetry view.
-  - **Documentation & Test Suites**: Documented accessibility architecture and manual keyboard walkthrough checklist in `docs/accessibility.md`. Authored automated Vitest test suites (`contrast.test.ts`, `motion-policy.test.ts`, `audio-optin.test.ts`, `activity-log.test.ts`).
-- **Terminal Accessibility, Zero-Emoji Glyph Audit, and Plain Mode (P6.3)**:
-  - **Central Glyph Table**: Created `octoflow/glyphs.py` defining single-width characters (`wcwidth == 1`) with 7-bit ASCII fallbacks (`ord < 128`) and optional `--legacy-glyphs` transition support.
-  - **Zero-Emoji Policy Audit**: Replaced all wide emojis and ambiguous symbols (`[flash]`, `✔`, `✖`, `[wait]`, `[octo]`) across all terminal and CLI modules with verified single-width presentation characters (`↯`, `✓`, `✗`, `·`, `◈`).
-  - **NO_COLOR Standard**: Full compliance with the `https://no-color.org` specification (`NO_COLOR` env var and `--no-color` flag emit 0 ANSI escape sequences).
-  - **Pure ASCII Mode**: Added `--ascii` flag and `OCTOFLOW_ASCII=1` ensuring every byte emitted to stdout/stderr is strictly `< 128`.
-  - **Non-TTY & Pipe Automation**: Non-TTY streams bypass live TUI cursors and cockpit chrome, defaulting automatically to plain line-oriented output.
-  - **Scriptable Plain & Machine Modes**: Added `--plain` for line-by-line `[arm <id> <role>] <summary>` progress, `--quiet` / `-q` to suppress progress lines, and `--json` for structured machine-parseable final mission outcomes.
-  - **Narrow Terminal & Resize Resilience**: Terminals below 60 columns or 15 rows automatically collapse chrome into a compact 1-line HUD. `SIGWINCH` window resizing queries sizes per-frame without crashing.
-  - **Static Non-Animated Mode**: Added `--no-anim` / `OCTOFLOW_ANIM=0` mode where the cockpit redraws only on state/keystroke changes, ensuring two consecutive idle reads are byte-for-byte identical.
-  - **Documentation & Verification**: Added `docs/accessibility.md`, updated `.cursorrules`, `docs/CONTRIBUTING-snippet`, and comprehensive regression test suites in `tests/test_glyph_policy.py` and `tests/test_plain_mode.py`.
-- **Message Catalog, Empty States, and Help UX (P6.2)**:
-  - **Canonical Error Message Catalog**: Created `octoflow/messages.py` mapping stable error codes (`E-PROV-AUTH`, `E-PROV-RATE`, `E-OLLAMA-DOWN`, `E-CONFIG-INVALID`, `E-TOOL-DENIED`, `E-BUDGET`, `E-NOGIT`, `E-PROV-TRANSIENT`, `E-PROV-REQUEST`, `E-PROV-EXHAUSTED`, `E-PROV-FAILED`, `E-USAGE-INVALID`, `E-WORKSPACE-ESCAPE`, `E-GENERAL`) with plain-language cause, operational consequence, concrete next-step command, and documentation anchors.
-  - **Standardized Error Formatting**: Errors print `E-XXXX message` plus `Hint: <action>` on the next line without changing existing exit code contracts or suppressing `--trace` debug details.
-  - **Empty States**: Added structured empty states for all 7 key situations (no runs, no memory, no reports, no providers configured, no Ollama, not a git repo, no tests found for heal) with friendly descriptions and actionable next commands.
-  - **Plain-Language Summary & Metaphor Glossary**: Updated top-level `--help` and cockpit `/help` to provide a two-sentence plain-language summary before the metaphor glossary. Added `octoflow glossary` command mapping Conductor, Arm, Gate, Bus, and Vertical Lobe to their plain-language counterparts.
-  - **Command Suggestions via difflib**: Cockpit slash commands automatically suggest close matches for typos (e.g. `/modle` -> `/model`, `/hela` -> `/heal`).
-  - **Documentation & Snapshots**: Updated `docs/TROUBLESHOOTING.md` with explicit anchors for all error codes; generated `docs/reference/errors.md`; added comprehensive test suite in `tests/test_message_catalog.py` and 23 snapshots in `tests/snapshots/messages/`.
-- **Guided First-Run Onboarding Flow (P6.1)**:
-  - **First-Run Detection & Triggers**: Added automatic first-run detection when `~/.octoflow/config.json` is missing or `onboarding_completed: false`. Supports `octoflow first-run` and `octoflow setup --guided`.
-  - **Non-Interactive Bypass**: Bypasses wizard automatically in non-TTY terminals (`not sys.stdin.isatty()`), when `--yes` is passed, or when `OCTOFLOW_NONINTERACTIVE=1` / `OCTOFLOW_SKIP_ONBOARDING=1` is set.
-  - **Pre-Flight Diagnostics**: Inspects Python runtime (>= 3.10), Git version control, and local Ollama daemon reachability/models with actionable fix hints.
-  - **3-Question Onboarding Flow**: Asks at most three questions: (1) LLM engine choice [Local Ollama, Cloud API Key, Dry-Run Demo], (2) 60-second demo confirmation, and (3) 3D visualizer launch offer.
-  - **Isolated 60-Second Demo Mission**: Runs goal `"create a function that reverses words with a pytest test"` strictly within `~/.octoflow/demo` with small token and time budgets. Shows outcome ribbon, files created (`reverse_words.py`, `test_reverse_words.py`), and token ledger metrics.
-  - **Resilient Failure Recovery**: On provider error or network timeout, displays exact step and log file, offering graceful fallback to safe dry-run mode so users are never left at a blank prompt.
-  - **Documentation**: Authored [docs/first-run.md](docs/first-run.md) with transcripts of successful, missing model, and failing recovery paths.
-- **Key Storage, Outbound Redaction, and Privacy Statement (P5.4)**:
-  - **Environment-First Key Resolution Order**: Added `resolve_api_key(provider_name)` in `octoflow/keyring_store.py` enforcing strict resolution hierarchy: `Environment Variables (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY)` > `OS Keyring` > `0600 Config File (~/.octoflow/config.json)`.
-  - **Optional Keyring Integration**: Added `[keyring]` optional extra (`pip install "octoflow[keyring]"`) integrating OS-level secure storage (macOS Keychain, Linux SecretService, Windows Credential Vault) with zero runtime dependencies when not installed.
-  - **Setup Wizard Security Hardening**: Enhanced `octoflow setup` to offer secure OS Keyring storage when available, and display a prominent warning when writing plaintext keys to `~/.octoflow/config.json` (`0600`).
-  - **Outbound Prompt Redaction Guard**: Implemented `octoflow.redactor` scanning prompts before cloud LLM transmission, replacing credentials across 12 secret categories with deterministic `[REDACTED:<type>]` placeholders. Tracked and displayed in CLI run summary and MCP payloads. Controlled via `privacy.redact_outbound` (default: `True`) and `OCTOFLOW_REDACT_OUTBOUND`.
-  - **Zero-Phoning-Home Egress Guard**: Autouse and dedicated egress fixtures verifying zero non-loopback network connections during full fake-provider missions, `doctor`, `report`, and `bench --fake` runs. Intentional external connection attempts are blocked with clear exceptions.
-  - **Automated Data Purge Command**: Added `octoflow purge` (and `octos purge`) CLI command allowing users to inspect reclaimable space (`--dry-run`) and safely delete all local state, configurations, logs, runs, Hebbian memory, and workspace audit reports (`--yes`, `--workspace-only`, `--global-only`).
-  - **Privacy Documentation**: Authored `docs/PRIVACY.md` detailing local storage inventory, permissions (`0600`/`0700`), provider data flows, redaction guarantees, and manual/automated deletion procedures. Linked in `README.md`.
-- **Optional PyTorch / ML Dependencies with Strict Gate Parity (P2.5 / Decision D2)**:
-  - Made PyTorch, ONNXRuntime, and SciPy optional by isolating them in `[project.optional-dependencies] ml` (`pip install "octoflow[ml]"`).
-  - Default base installation (`pip install octoflow` / `pip install -r requirements.txt`) is lightweight, fast, and 100% NumPy-only.
-  - Implemented analytical NumPy sensory observation encoding in `CodeSensoryEncoder` and NumPy surprise computation in `SurpriseGate`.
-  - Added `get_encoder(backend="auto"|"numpy"|"torch")` and `defaults.encoder_backend` in `Settings` (`OCTOFLOW_ENCODER_BACKEND`).
-  - Proved bit-for-bit feature parity ($0.00\times 10^0$ difference) and gate surprise parity ($\Delta dS \le 1.19 \times 10^{-7}$, well within the $1 \times 10^{-5}$ tolerance) across 19 golden test cases in `tests/test_gate_parity.py`.
-  - Enforced zero top-level imports of PyTorch: verified `'torch' not in sys.modules` when importing `octoflow` and its core modules (`importtime`: 2.8ms).
-  - Added Subsystem Check 8 in `octoflow doctor` reporting active backend and `[ml]` extra status with clear installation hints if misconfigured.
-  - Decoupled `octoflow` from `octopus_brain` by extracting pure NumPy `octoflow/coalition.py` and defining `MessageIntent` natively in `octoflow/bus.py`.
-  - Updated CI with dual `test-base` and `test-ml` testing pipelines.
-- **Typed Configuration System & Pydantic v2 Migration (P2.3)**:
-  - Added `octoflow.settings` with Pydantic v2 models: `Settings` (`schema_version=1`), `DefaultsSettings`, `UISettings`, `ServerSettings`, and `ProviderSettings`.
-  - Implemented deterministic configuration precedence: defaults < config file (`~/.octoflow/config.json`) < environment variables (`OCTOFLOW_*`, plus well-known provider keys) < CLI flags/overrides.
-  - Implemented automatic migration of legacy flat configuration files with timestamped backup creation (`config.json.bak-YYYYmmddHHMMSS`) with strict `0600` permissions.
-  - Added crash-safe atomic write mechanism using temporary files and `os.replace` with `0600` permissions.
-  - Added secret masking (`SecretStr`) ensuring credentials are never exposed in logs or `config show`.
-  - Added human-readable validation error reporting with exact field paths, hints, and clean exit code `3` without tracebacks.
-  - Added CLI command group `octoflow config`:
-    - `octoflow config show`: Inspect active settings with masked secrets (table or `--json`).
-    - `octoflow config path`: Display path to `config.json`.
-    - `octoflow config set <key> <value>`: Validate and set configuration keys atomically.
-    - `octoflow config validate`: Validate configuration file against schema.
-    - `octoflow config migrate`: Migrate or restore (`--down`) from backup.
-- **Split CLI Commands Architecture (P2.2)**:
-  - Modularized all CLI command groups from monolithic `cli.py` into dedicated modules in `octoflow/commands/`.
-  - Reduced `octoflow/cli.py` to 159 lines of clean Typer wiring.
-  - Implemented PEP 562 lazy exports in `octoflow/__init__.py` and deferred heavy imports (`torch`, `fastapi`, `uvicorn`, `onnxruntime`) on CLI `--help`.
-  - Achieved a 79.9% reduction in import time (1,232.1 ms -> 246.9 ms) and 3.88x faster wall-clock startup.
-- **Modularized Cockpit Package (`octoflow.cockpit`) (P2.1)**:
-  - Extracted all interactive cephalopod cockpit TUI code out of `octoflow/cli.py` into dedicated package `octoflow/cockpit/`:
-    - `octoflow.cockpit.input`: Raw/cbreak terminal mode context manager, 20 FPS keyboard polling (`select` timeout <= 0.045s), bracketed paste parsing, and guaranteed terminal restoration with `atexit` and `SIGTERM`/`SIGHUP` handlers.
-    - `octoflow.cockpit.render`: Banner loops, HUD panel, 8-arm Ganglia ring topology, animated prompt with paste badge and cursor, and composite grid composition.
-    - `octoflow.cockpit.session`: `CockpitSession` dataclass encapsulating mutable state (workspace, theme, model, budget, visualizer URL) without globals.
-    - `octoflow.cockpit.shell`: Non-blocking 20 FPS confirmation prompts, in-process `cd` directory tracking, and direct shell routing via `octoflow.router`.
-    - `octoflow.cockpit.app`: Main REPL event loop (`run_cockpit` / `interactive_cockpit`).
-  - Purged all `termios`, `select`, and `tty` imports from `octoflow/cli.py`.
-  - Reduced `octoflow/cli.py` from 3,500 lines to 1,907 lines (1,592 lines extracted).
-  - Maintained 100% backward compatibility via re-exports from `octoflow.cli`.
-  - Guaranteed zero blocking `input()` or `console.input()` calls across the entire cockpit package.
-- **Explicit Dry-Run Mode (`--dry-run`)**: Added `--dry-run` flag to `octoflow run` and `octos run`. Runs against `MockLLMProvider`, displays prominent `DRY-RUN` status ribbon and visualizer badge, redirects all file operations to `.octoflow/dry-run/` without touching the target workspace, and exits with code 0.
-- **Structured Outcome Models (`octoflow.outcome`)**: Added `RunMode`, `RunOutcome`, `OctoFlowError`, `ProviderExhaustedError`, and `RunResult` dataclass with backwards-compatible dictionary subscripting.
-- **Outcome Metadata in Telemetry and MCP**: Added `mode` and `outcome` fields to `SwarmTelemetryEvent`, mission audit reports, and `octoflow_run_swarm` MCP tool results.
-- **Provider Error Taxonomy and Backoff (P1.2)**:
-  - Added structured exception taxonomy inheriting from `ProviderError(OctoFlowError)`: `ProviderAuthError`, `ProviderRateLimitError`, `ProviderTransientError`, `ProviderRequestError`, and `ProviderUnavailableError`.
-  - Added centralized error classifier `classify_http_error` mapping status codes, network exceptions, and error payload signatures into concrete exception types with actionable user hints.
-  - Implemented backoff retry loop:
-    - Auth errors: 0 retries; provider marked disabled for session; immediate failover.
-    - Rate limits (429): Respects `Retry-After` header or applies exponential backoff with jitter capped at 30s; max 2 retries then failover.
-    - Transient errors (5xx, timeouts, connection drops): Retries up to 2 times with staged delays (~0.5s, ~1.5s plus jitter) then failover.
-    - Request errors (4xx): 0 retries; surfaces error or fails over.
-  - Added dependency injection for sleep functions (`set_sleep_functions`, `reset_sleep_functions`, `sleep_fn`, `asleep_fn`) ensuring all test suites execute without real-time delays.
-  - Added precise actionable instructions for local Ollama failures: connection refused (`start the daemon: ollama serve`) and missing model (`run: ollama pull <model>`) with zero auto-downloads.
-  - Standardized provider timeouts: connect 5s, read 120s (cloud), read 300s (Ollama).
-  - Enforced zero secret leaks with `redact_secrets` redacting Anthropic keys, OpenAI keys, Google AI keys, and Bearer tokens in all exception strings and logs.
-  - Added `docs/TROUBLESHOOTING.md` reference guide.
-- **Cockpit Shell-Router Safety & Non-Blocking Confirmation (P1.3)**:
-  - Extracted pure input router into `octoflow/router.py` with `classify_input(line: str) -> Route` and deterministic `RouteKind` evaluation (`SWARM_GOAL`, `SHELL_SIMPLE`, `SHELL_EXPLICIT`, `SLASH_COMMAND`, `EMPTY`).
-  - Implemented safe pass-through execution for `SHELL_SIMPLE` using `subprocess.run(argv, shell=False, cwd=workspace, timeout=60)` with 64 KB captured output truncation.
-  - Added prose-versus-argument heuristic disambiguating natural language goals (e.g. `make a resume analyzer`, `list the requirements.txt issues`, `touch the code up`) to `SWARM_GOAL`.
-  - Added non-blocking 20 FPS confirmation loop (`confirm_live_cockpit`) in the terminal cockpit preserving runner and banner animations during `y/N` prompts (defaulting to No).
-  - Enforced destructive command safety gates for `rm`, `rmdir`, `mv`, `cp -r`, `chmod -R`, `chown`, `dd`, `mkfs`, `sudo`, destructive git operations (`reset --hard`, `clean`, `push --force`, `checkout .`, `branch -D`), directory traversal (`..`), and out-of-workspace absolute paths.
-  - Enforced explicit command confirmation for lines prefixed with `!` or `$` before running with `shell=True`.
-  - Hardened bracketed paste handling: pasted text is placed into the input buffer for review without auto-submitting; multi-line paste displays line count badges and routes to `SWARM_GOAL` unless prefixed with `!`.
-  - Handled directory navigation (`cd`) in-process by updating the active workspace variable after verifying target directory exists, without calling global `os.chdir()`.
-  - Implemented session command history logging in memory and persisted to `~/.octoflow/history` with restricted permissions `0600`.
-  - Added deprecated escape hatch `OCTOFLOW_LEGACY_ROUTER=1`.
-  - Added 95+ table-driven, characterization, and PTY simulation tests in `tests/test_router.py`.
-- **Tool Sandbox Audit and Enforcement (P1.4)**:
-  - Hardened `WorkspaceSandbox` in `octoflow/tools.py` with strict path confinement for `read_file`, `write_file`, and `list_dir`.
-  - Enforced canonical path resolution, blocking `..` traversal, out-of-workspace absolute paths, and null-byte injection (`\x00`).
-  - Added multi-level symlink escape defenses checking direct symlinks and recursively validating parent directory hierarchy for nonexistent target files.
-  - Hardened `run_command` with argument array execution (`argv`) and `shell=False` by default, parsing commands via `shlex.split`.
-  - Added `DEFAULT_ALLOWED_COMMANDS` allowlist restricting subprocess execution to approved compilers, interpreters, test runners, package managers, and safe utilities.
-  - Added compound shell operator detection (`has_compound_operators`) blocking unquoted shell metacharacters and chaining (`|`, `;`, `&&`, `||`, `>`, `<`, backticks, `$(...)`).
-  - Added explicit, documented opt-in `allow_unrestricted=True` for commands outside the allowlist.
-  - Enforced configurable timeouts with default 60.0s and maximum 300.0s, returning exit code 124 on `TimeoutExpired` and terminating processes cleanly.
-  - Bounded stdout/stderr capture to 64 KB (`MAX_CAPTURE_BYTES = 65,536`), truncating excessive output with clear diagnostic markers.
-  - Controlled subprocess environment inheritance (`SAFE_ENV_PASSTHROUGH`), automatically scrubbing keys matching `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `CREDENTIAL`, `AUTH`, `APIKEY`.
-  - Integrated `redact_secrets` across all tool outputs, exception strings, directory listings, and error diagnostics.
-  - Standardized tool exit code reporting: 0 for success, 1 for general error, 124 for timeout, 126 for disallowed command or traversal attempt, 127 for missing executable.
-  - Created `docs/SECURITY.md` and added comprehensive security test suite in `tests/test_tools_security.py` (18 tests).
-- **Telemetry Server and Secrets Hardening (P1.5)**:
-  - Default bind host hardened to loopback `127.0.0.1` (never `0.0.0.0` by default); binding to non-localhost via `--host` displays prominent network exposure warning.
-  - Added strict WebSocket Origin validation on `/ws/telemetry`: accepts missing Origin (non-browser tests/CLI) and exact localhost/127.0.0.1 matches on served port; accepts Vite dev origin `http://localhost:5173` only in `dev_mode`; rejects untrusted origins with RFC 6455 close code `1008`.
-  - Added HTTP Host header validation middleware protecting against DNS-rebinding attacks, rejecting unauthorized Host headers with status `400`.
-  - Hardened telemetry payload sanitization: recursively strips prompts (`prompt`, `system_prompt`, `user_prompt`, `messages`), file contents (`file_content`, `diff`, `patch`), subprocess outputs (`stdout`, `stderr`, `command_output`), and credentials (`api_key`, `token`, `secret`); processes all free-text fields through `redact_secrets()`.
-  - Enforced POSIX filesystem permission hardening: creates `~/.octoflow` with mode `0700` and `config.json` with mode `0600`; automatically tightens looser permissions on load with a one-line notice.
-  - Hardened `octos setup` and cockpit credential inputs using non-echoing `getpass.getpass()`.
-  - Masked all displayed API keys across CLI listings and REST endpoints to first 3 characters followed by `****` (e.g. `sk-****`).
-  - Added `.gitignore` exclusions for `*.key`, `*.pem`, `*.checkpoint`, `checkpoints/`, `.octoflow_bench/`.
-  - Created `docs/SECURITY_MODEL.md` ("Local telemetry server") and added comprehensive test suite in `tests/test_server_security.py` (16 tests).
+- **Automated Reference Documentation Generator (P9.4)**: Created `scripts/gen_reference.py` to deterministically generate CLI reference (`docs/reference/cli.md`), configuration schema (`docs/reference/config.md`), error catalog (`docs/reference/errors.md`), and exit codes (`docs/reference/exit-codes.md`).
+- **Task-Oriented Tutorials (P9.3)**: Added 8 bite-sized tutorials under `docs/tutorials/` (<10 mins each) with verified execution outputs and timestamps:
+  - `01-first-project-with-ollama.md`: First project using local Ollama model (`qwen2.5-coder:7b`).
+  - `02-reading-the-token-receipt.md`: Understanding token receipts, measured vs estimated usage, local avoided tokens, and JSON exports.
+  - `03-undoing-a-run.md`: Rolling back filesystem mutations with checkpoint snapshots and `octoflow undo`.
+  - `04-building-with-a-custom-guild.md`: Defining, validating, and executing missions with custom 8-arm specialist guilds.
+  - `05-adding-a-custom-provider.md`: Subclassing `BaseLLMProvider`, provider registration, and verifying contracts with `ProviderContractSuite`.
+  - `06-using-octoflow-from-mcp.md`: Configuring OctoFlow stdio MCP server for Claude Code and Cursor.
+  - `07-watching-in-the-visualizer.md`: Live 3D connectome visualization, 8088 bridge, Three.js camera controls, and offline trace replay.
+  - `08-running-benchmarks.md`: Benchmarking local vs cloud providers, measuring token savings against ungated baselines.
+  - `docs/tutorials/README.md`: Index of all 8 tutorials with duration and summaries.
+- **Comprehensive FAQ (P9.3)**: Created `docs/FAQ.md` answering top architectural and operational questions: biological metaphors, gate mathematics, zero-network privacy guarantees, model recommendations, costs, Windows support, and bug reporting.
+- **Troubleshooting Additions (P9.3)**: Updated `docs/TROUBLESHOOTING.md` with guidance for PTY/terminal desync, Apple Silicon Metal acceleration, port conflicts on 8088/5173, and anchors for all 14 `E-*` error codes.
+- **Automated Documentation Integrity Checker (P9.3)**: Created `scripts/check_docs.py` and test suite `tests/test_docs_checker.py` enforcing relative links, anchor fragments, CLI subcommand accuracy, error catalog consistency, zero-emoji policy, and path confinement.
+- **Master Cephalopod Architecture & ADRs (P9.2)**: Authored `docs/architecture.md` with Mermaid diagrams, 23-module responsibility matrix, run lifecycle sequence, gate math proofs (`scripts/worked_example_gate.py`), `docs/glossary.md`, and 7 foundational ADRs (`docs/adr/0001` - `0007`).
+- **README Rewrite & Manual Decoupling (P9.1)**: Streamlined `README.md` to under 170 lines with transparent positioning, an Alpha maturity matrix, truthful live receipts, and decoupled field manual to `docs/MANUAL.md`.
+- **Developer Debug Aids & Replay Engine (P8.4)**: Added `--trace` for writing granular JSONL execution events (`trace.jsonl`), `octoflow replay` for replaying traces offline in visualizer and terminal, `doctor --json` diagnostics, and `make dev` local development stack.
+- **Model Context Protocol (MCP) Server Conformance (P8.3)**: Implemented conformant stdio JSON-RPC 2.0 server (`octoflow mcp`) exposing 8 standardized tools for Claude Code and Cursor, with complete protocol handshake and input schemas.
+- **Custom 8-Arm Specialist Guilds (P8.2)**: Implemented declarative JSON guild specification schema (`GuildSpec`), guild loader, validator (`octoflow guild validate`), and CLI exploration (`octoflow guild list|show`).
+- **Provider Extension Contract & Template (P8.1)**: Defined `BaseLLMProvider` contract specification, reusable `ProviderContractSuite` test harness, dynamic provider registry, and example custom provider template.
+- **AI Resume Analyzer Showcase (P7.2)**: Delivered complete real-world demo project built by OctoFlow in `examples/resume-analyzer/`: FastAPI backend, ATS scoring, skills-gap analysis, dark-mode dashboard, with complete provenance receipts.
+- **Truthful Token Receipts & Gate Accounting (P7.1)**: Implemented token ledger (`octoflow receipt [run_id]`) tracking measured input/output tokens, avoided prompt tokens from sensory gating, per-arm spending breakdowns, and machine-readable JSON exports (`--json`).
+- **Visualizer WCAG 2.2 AA Accessibility & WebGL Fallback (P6.4)**: Implemented WebGL context loss handling, `#webgl-fallback-banner`, text telemetry fallback, audio opt-in controls, and reduced-motion policy.
+- **Terminal Accessibility & Single-Width Glyph Policy (P6.3)**: Created `octoflow/glyphs.py` defining single-width characters (`wcwidth == 1`) with 7-bit ASCII fallbacks (`--ascii`), `NO_COLOR` standard compliance, and non-TTY plain mode (`--plain`, `--json`).
+- **Central Message Catalog & Plain-Language Help (P6.2)**: Created `octoflow/messages.py` centralizing user-facing banners, error diagnostics, and empty-state guidance.
+- **Guided First-Run Setup Wizard (P6.1)**: Implemented automatic first-run onboarding (`octoflow first-run`), pre-flight checks, 3-question setup, and isolated 60-second sandbox demo.
+- **Supply Chain Security & Dependency Policy (P5.2)**: Established dependency tiers, reproducible lockfiles (`requirements.lock`), CycloneDX SBOM generation, license compatibility auditing, and security audit checklists (`docs/SECURITY.md`, `docs/THREAT_MODEL.md`).
+- **Process Isolation & Ignition Engine (P3.4)**: Implemented supervised background service launching with readiness detection, automatic browser preview (`--open`), and registry management (`octoflow ps`, `octoflow stop`).
+- **Git Checkpoint Snapshots & Safe Undo (P3.3)**: Implemented automatic run branch creation (`octoflow/run-<id>`), dirty working tree stashing, and safe one-command rollbacks (`octoflow undo [run_id]`).
+- **Benchmark Cassette Recording & Replay Harness (P2.8, P3.2)**: Implemented reproducible benchmark harness, cassette recording, and offline replay verification suite.
+- **Typed Pydantic v2 Settings Schema & Atomic Writes (P2.3)**: Implemented versioned configuration schema (`Settings`), crash-safe atomic writes, secret masking, and `octoflow config` CLI command group.
+- **Command Router & Destructive Command Interceptor (P1.3)**: Implemented cockpit command router with destructive command interceptors (`rm`, `mv`, `dd`, `git reset --hard`), confirmation prompts, and bracketed paste protection.
+- **Workspace Sandbox & Tool Confinement (P1.4)**: Hardened workspace sandbox with path confinement, allowlist execution policy, and subprocess timeouts.
+- **Telemetry Server Hardening (P1.5)**: Hardened telemetry server with loopback binding (`127.0.0.1`), WebSocket Origin validation, and Host header check.
+
+### Changed
+- **Cockpit Modularization (P2.1 & P2.2)**: Split monolithic `octoflow/cli.py` (3,499 lines) into modular command handlers in `octoflow/commands/` and dedicated TUI engine in `octoflow.cockpit`.
+- **Modernized HTTP & WebSocket Transports (P2.7)**: Replaced blocking `requests` and legacy websockets with `httpx` and `websockets-sansio` async client.
+- **Centralized Error Hierarchy (P2.4)**: Re-parented all provider, tool, workspace, and config exceptions to `OctoFlowError`.
+- **Standardized Telemetry Binding (P1.5)**: Hardened telemetry server bind host to loopback `127.0.0.1` by default with Origin and Host header validation.
+
+### Deprecated
+- **Legacy Shell Router Mode (P1.3)**: Marked `OCTOFLOW_LEGACY_ROUTER=1` as deprecated; legacy router bypasses destructive command confirmation.
+- **Legacy Glyph Support (P6.3)**: Marked `--legacy-glyphs` transition flag as deprecated; will be removed in future major release in favor of clean bio-glyphs.
+
+### Removed
+- **Silent Mock Fallback (P1.1)**: Removed silent fallback to `MockLLMProvider` in live mode when real API providers fail or credentials are missing.
+- **Python 3.9 Runtime Support (P2.7)**: Removed Python 3.9 classifier and CI runners following upstream end-of-life.
+- **Mandatory PyTorch Dependency (P2.5)**: Removed `torch` from mandatory requirements, replacing with NumPy sensory encoder.
+- **Silent Exception Swallowing (P2.4)**: Removed broad `except Exception: pass` clauses across all core modules in favor of structured debug logging.
+
+### Fixed
+- **Destructive Command Safety Gating (P1.3)**: Prevented accidental file deletion and destructive git resets during interactive cockpit sessions.
+- **Workspace Directory Traversal (P1.4)**: Fixed symlink escapes and `..` directory traversal in tool operations (`read_file`, `write_file`, `list_dir`).
+- **Telemetry Origin Hijacking (P1.5)**: Fixed WebSocket DNS-rebinding vulnerability on port 8088 by strictly validating Host and Origin headers.
+- **Tool Call Parsing Failures (P3.2)**: Fixed JSON parsing errors on trailing commas and hallucinated tool formats from small local models.
+- **Provider Retries & Exponential Backoff (P1.2)**: Added jittered backoff retry loop honoring `Retry-After` headers on 429 rate limits.
+
+### Security
+- **Credential Storage Hierarchy (P5.4)**: Enforced strict key resolution order: Environment Variables > OS Keyring > 0600 Config File (`~/.octoflow/config.json`).
+- **Outbound Redaction & Egress Isolation (P1.5, P5.4)**: Automatically scrubbed credentials, API keys, and bearer tokens from outbound requests and logs via `redact_secrets()`.
+- **Safe Subprocess Execution (P1.4)**: Enforced argument vector execution (`argv`, `shell=False`) by default, restricting commands to approved allowlist.

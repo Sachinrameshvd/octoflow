@@ -99,3 +99,4 @@ The 3D connectome visualizer and terminal HUD automatically adopt the custom arm
 
 - Learn how to connect external LLM providers: [Tutorial 5: Adding a Custom Provider](05-adding-a-custom-provider.md)
 - Complete guild authoring specification: [docs/extending/guilds.md](../extending/guilds.md)
+

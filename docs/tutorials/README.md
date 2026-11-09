@@ -22,3 +22,4 @@ Task-oriented, practical tutorials designed to get you productive with OctoFlow 
    *Duration: 6 mins* • Launch `octoflow ui`, observe live synaptic transmission, and replay recorded missions.
 8. **[Tutorial 8: Running Swarm Algorithmic Benchmarks](08-running-benchmarks.md)**  
    *Duration: 8 mins* • Measure token consumption across gated vs. ungated runs on standardized challenges.
+

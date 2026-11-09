@@ -150,7 +150,7 @@ def check_docs(base_dir: Path | None = None) -> list[str]:
     abs_path_re = re.compile(r"/(?:Users|home)/[a-zA-Z0-9_\-]+/")
 
     # CLI command mention regex: `octoflow <cmd>` or lines starting with octoflow / $ octoflow
-    cli_re = re.compile(r"(?:octoflow|\./octo|\./octos)\s+([a-zA-Z0-9_\-]+)")
+    cli_re = re.compile(r"(?<![a-zA-Z0-9_.~/-])(?:octoflow|\./octo|\./octos)\s+([a-zA-Z0-9_\-]+)")
 
     # Common valid arguments / syntax words following octoflow
     syntax_words = {

@@ -2,7 +2,7 @@ PYTHON ?= $(shell which python3.12 2>/dev/null || which python3)
 VENV ?= .venv
 BIN = $(VENV)/bin
 
-.PHONY: all setup lock check-docs test test-fast test-live check-coverage visualizer-build visualizer-sync clean dev dev-stop
+.PHONY: all setup lock docs-ref check-docs-ref check-docs test test-fast test-live check-coverage visualizer-build visualizer-sync clean dev dev-stop
 
 all: setup test
 
@@ -59,8 +59,32 @@ test-live:
 		exit 1; \
 	fi
 
+docs-ref:
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python scripts/gen_reference.py; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 scripts/gen_reference.py; \
+	else \
+		python scripts/gen_reference.py; \
+	fi
+
+check-docs-ref:
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python scripts/gen_reference.py --check; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 scripts/gen_reference.py --check; \
+	else \
+		python scripts/gen_reference.py --check; \
+	fi
+
 check-docs:
-	@if [ -f "/python" ]; then 		/python scripts/check_docs.py; 	elif command -v python3 >/dev/null 2>&1; then 		python3 scripts/check_docs.py; 	else 		python scripts/check_docs.py; 	fi
+	@if [ -f "$(BIN)/python" ]; then \
+		$(BIN)/python scripts/check_docs.py; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 scripts/check_docs.py; \
+	else \
+		python scripts/check_docs.py; \
+	fi
 
 check-coverage:
 	@if [ -f "$(BIN)/python" ]; then \

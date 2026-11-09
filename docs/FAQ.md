@@ -98,3 +98,4 @@ octoflow bugreport
 ```
 
 This command inspects your operating system, Python runtime, Git status, doctor findings, and recent log snippets. It automatically masks all API keys and secrets, printing clean Markdown ready to paste into a GitHub issue.
+

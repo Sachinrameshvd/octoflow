@@ -33,6 +33,10 @@ jobs:
       run: |
         ruff format --check .
 
+    - name: Generated Reference Documentation Staleness Check
+      run: |
+        python scripts/gen_reference.py --check
+
     - name: Documentation Integrity & Link Check
       run: |
         python scripts/check_docs.py

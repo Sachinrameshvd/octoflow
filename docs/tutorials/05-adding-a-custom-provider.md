@@ -104,3 +104,4 @@ octoflow run "Build an LRU cache with tests" --provider fastlocal
 
 - Complete provider guide & contract checklists: [docs/extending/providers.md](../extending/providers.md)
 - Learn how to integrate with Cursor & Claude Code: [Tutorial 6: Using OctoFlow from MCP](06-using-octoflow-from-mcp.md)
+
