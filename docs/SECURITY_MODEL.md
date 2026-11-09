@@ -70,3 +70,13 @@ OctoFlow's `WorkspaceSandbox` (`octoflow/tools.py`) enforces strict boundaries o
 - **Command Allowlist:** Subprocesses execute argument arrays with `shell=False` against a curated allowlist of compilers, package managers, and test runners.
 - **Controlled Subprocess Environment:** Sensitive environment variables (API keys, tokens) are purged from child process environments (`SAFE_ENV_PASSTHROUGH`).
 - **Resource Timeouts & Bounded Capture:** Subprocesses have bounded execution timeouts (default 60s, max 300s) and bounded output buffers (64 KB).
+
+---
+
+## 4. Known Limitations & Security Boundaries
+
+1. **User-Explicit Shell Bypass (`!command`)**: Interactive cockpit commands prefixed with an exclamation mark (`!`) intentionally execute via the host shell after explicit interactive user confirmation and dangerous-operation classification. These interactive commands are strictly separated from autonomous agent tool execution; swarm arms can never trigger `shell=True` commands autonomously.
+2. **Workspace Mutability & Git Recovery**: Within the designated project workspace root, autonomous swarm arms possess read, write, and command execution capabilities against project files. While path traversal outside the project directory is blocked, files inside the workspace are mutable by design. OctoFlow relies on pre-mission git checkpointing (`octoflow undo`) to provide atomic rollback in the event of unintended modifications.
+3. **Replay Path Resolution**: The `octoflow replay` command searches for trace logs under `.octoflow/runs/`. Supplying relative paths in the `--run-id` parameter is constrained to reading existing files named `trace.jsonl` and cannot execute code or write to the filesystem.
+4. **Single-User Workstation Security Model**: OctoFlow is architected for local developer environments. In shared multi-tenant machines, isolation between local user accounts depends on POSIX file permissions (`0o600` on files, `0o700` on directories). Running OctoFlow as root or inside shared world-writable directories is strongly discouraged.
+
