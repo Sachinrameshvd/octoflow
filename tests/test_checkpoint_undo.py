@@ -382,3 +382,29 @@ def test_list_runs_filtering_and_provenance(tmp_path: Path, temp_runs_dir: Path)
     all_runs = list_runs()
     assert len(all_runs) >= 2
     assert all_runs[0].created_at >= all_runs[1].created_at
+
+
+def test_undo_on_unborn_branch_zero_commits(tmp_path: Path, temp_runs_dir: Path):
+    """Verify undo cleanly handles repositories initialized with zero initial commits (unborn HEAD)."""
+    repo = tmp_path / "unborn_repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@octoflow.dev"], cwd=repo, check=True)
+
+    # Repository has zero commits; HEAD is unborn
+    meta = preflight_and_start_run(workspace_dir=repo, goal="Run on unborn branch")
+    assert meta is not None
+    assert meta.run_branch.startswith("octoflow/run-")
+
+    # Swarm writes a file on the run branch and commits it
+    (repo / "generated.py").write_text("print('hello')", encoding="utf-8")
+    finalize_run(meta, success=True, files_written=["generated.py"])
+    assert branch_exists(repo, meta.run_branch)
+
+    # Undo should switch back to orphan/unborn original branch without crashing
+    res = undo_run(workspace_dir=repo, run_id=meta.run_id, confirm=False)
+    assert res["status"] == "SUCCESS"
+    assert not branch_exists(repo, meta.run_branch)
+    assert not (repo / "generated.py").exists()
+

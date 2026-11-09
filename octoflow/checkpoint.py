@@ -479,7 +479,11 @@ def undo_run(
         raise ValueError("Run metadata is missing original branch information.")
 
     # 3. Compute diff summary
-    diff_stat = get_diff_summary(ws, meta.original_head or meta.original_branch, run_branch)
+    if meta.original_head is None and not branch_exists(ws, meta.original_branch):
+        diff_res = run_git_cmd(["diff", "--stat", "--root", run_branch], cwd=ws)
+        diff_stat = diff_res.stdout.strip() if diff_res.returncode == 0 else ""
+    else:
+        diff_stat = get_diff_summary(ws, meta.original_head or meta.original_branch, run_branch)
 
     # 4. Ask for confirmation if requested
     if confirm and interactive_confirm:
@@ -498,9 +502,15 @@ def undo_run(
     # 5. Switch back to original branch
     checkout_res = run_git_cmd(["checkout", meta.original_branch], cwd=ws)
     if checkout_res.returncode != 0:
-        raise RuntimeError(
-            f"Failed to checkout original branch '{meta.original_branch}': {checkout_res.stderr.strip()}"
-        )
+        # If the original branch was an unborn branch (git init with no initial commit),
+        # checkout an orphan branch and clear uncommitted files to return to empty unborn state.
+        orphan_res = run_git_cmd(["checkout", "--orphan", meta.original_branch], cwd=ws)
+        if orphan_res.returncode == 0:
+            run_git_cmd(["rm", "-rf", "."], cwd=ws)
+        else:
+            raise RuntimeError(
+                f"Failed to checkout original branch '{meta.original_branch}': {checkout_res.stderr.strip()}"
+            )
 
     # 6. Delete the run branch safely (-D only on octoflow/run-* owned by metadata)
     del_res = run_git_cmd(["branch", "-D", run_branch], cwd=ws)

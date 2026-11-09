@@ -43,8 +43,9 @@ $ octoflow run "Build a thread-safe sliding-window rate limiter with tests"
 Follow these steps to run your first swarm mission:
 
 ```bash
-# 1. Install OctoFlow (TODO: pipx packaging verified in P10.3)
-pip install octoflow
+# 1. Install OctoFlow (from built wheel or local checkout)
+pip install dist/octoflow-0.3.0-py3-none-any.whl
+# Or install in editable mode from git: pip install -e .
 
 # 2. Pull local model with Ollama (or set ANTHROPIC_API_KEY / OPENAI_API_KEY)
 ollama pull qwen2.5-coder:7b
