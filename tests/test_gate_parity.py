@@ -194,3 +194,61 @@ def test_get_encoder_torch_missing_raises_clear_error(monkeypatch):
     with pytest.raises(ImportError) as exc_info:
         get_encoder(backend="torch")
     assert "pip install 'octoflow[ml]'" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "diff_lines,stdout,stderr,expected_bounded",
+    [
+        (0, "", "", True),  # Zero lines changed, empty stdout/stderr
+        (100_000, "A" * 100_000, "", True),  # Massive 100k lines and 100k stdout
+        (15, "line1\nline2\n", "", True),  # Normal code output
+        (0, "", "Traceback (most recent call last):\nTypeError: bad operand", True),  # Error output
+    ],
+)
+def test_gate_edge_cases_parameterized(diff_lines: int, stdout: str, stderr: str, expected_bounded: bool):
+    """Verify gate numerical stability on empty, large, and varied inputs (Seed Issue #10)."""
+    enc_np = CodeSensoryEncoder(obs_dim=16, backend="numpy")
+    gate_np = SurpriseGate(arm_id=1, obs_dim=16, backend="numpy")
+
+    res = ToolResult(
+        tool_name="write_file",
+        target="test.py",
+        success=True,
+        returncode=0,
+        stdout=stdout,
+        stderr=stderr,
+        diff_lines=diff_lines,
+        execution_time_ms=10.0,
+    )
+    obs = enc_np.encode(res, step=1, max_steps=10)
+    assert obs.shape == (16,)
+    assert not np.isnan(obs).any()
+    assert not np.isinf(obs).any()
+
+    # Identical consecutive states -> delta S == 0.0
+    dS_identical = gate_np.compute_surprise(obs, expected_obs=obs)
+    assert dS_identical == 0.0, f"Expected 0.0 for identical states, got {dS_identical}"
+    should_escalate, surprise, telemetry = gate_np.evaluate(obs, res, expected_obs=obs)
+    assert not should_escalate
+    assert surprise == 0.0
+
+    # Evaluate new observation bounded in [0.0, 1.0]
+    new_obs = obs.copy()
+    new_obs[0] += 0.5
+    dS = gate_np.compute_surprise(new_obs, expected_obs=obs)
+    assert 0.0 <= dS <= 1.0
+
+    # Parity with Torch if available
+    try:
+        import torch
+
+        enc_torch = CodeSensoryEncoder(obs_dim=16, backend="torch")
+        gate_torch = SurpriseGate(arm_id=1, obs_dim=16, backend="torch")
+        obs_torch = enc_torch.encode(res, step=1, max_steps=10)
+        assert abs(obs - obs_torch.detach().cpu().numpy()).max() < 1e-4
+
+        dS_torch = gate_torch.compute_surprise(torch.tensor(new_obs), expected_obs=torch.tensor(obs))
+        assert abs(dS - dS_torch) < 1e-4
+    except ImportError:
+        pass
+
