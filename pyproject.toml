@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "octoflow"
-version = "0.2.0"
+version = "0.3.0"
 description = "Biologically-inspired cephalopod multi-agent coding swarm orchestrator with 3D connectome visualizer, surprise gating, and Omni-IDE auto-onboarding"
 readme = "README.md"
 authors = [{ name = "OctoFlow Contributors" }]
