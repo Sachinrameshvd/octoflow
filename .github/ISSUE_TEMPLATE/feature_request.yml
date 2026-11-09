@@ -1,0 +1,50 @@
+name: Feature Request
+description: Propose a new feature, capability, or architectural enhancement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We prioritize features that solve real workflow bottlenecks while keeping OctoFlow fast, local-first, and truthful.
+        Please describe the problem you are experiencing before proposing the solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What limitation, friction, or problem are you experiencing?
+      placeholder: |
+        A clear and concise description of the problem. Example:
+        "When running missions in monorepo workspaces with 10+ sub-packages, Arm 0 spends excessive tokens reading root configurations instead of focusing on the targeted package."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: What capability or change would you like to see added?
+      placeholder: |
+        A detailed description of the proposed behavior, CLI flags, or API interfaces. Example:
+        "Add a `--package <name>` flag to `octoflow run` that bounds workspace discovery to that sub-directory."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives_considered
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any workarounds or alternative approaches?
+      placeholder: "I tried changing directory to the sub-package before running octoflow, but git checkpointing requires the repository root."
+    validations:
+      required: false
+  - type: checkboxes
+    id: core_moats_alignment
+    attributes:
+      label: Architectural Alignment
+      description: "Confirm that your proposal aligns with OctoFlow's Core Moats:"
+      options:
+        - label: This feature operates local-first without requiring external phoning home or mandatory telemetry.
+          required: true
+        - label: This feature maintains or respects truthful token accounting and sensory gating.
+          required: true
+        - label: Any terminal UI additions adhere to the zero-emoji single-width glyph policy.
+          required: true

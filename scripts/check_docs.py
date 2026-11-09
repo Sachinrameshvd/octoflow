@@ -133,10 +133,22 @@ def check_docs(base_dir: Path | None = None) -> list[str]:
     md_files: list[Path] = []
     if docs_dir.is_dir():
         md_files.extend(list(docs_dir.rglob("*.md")))
-    for root_doc in ["README.md", "CONTRIBUTING.md", "CHANGELOG.md"]:
+    for root_doc in [
+        "README.md",
+        "CONTRIBUTING.md",
+        "CHANGELOG.md",
+        "CODE_OF_CONDUCT.md",
+        "SECURITY.md",
+        "SUPPORT.md",
+        "GOVERNANCE.md",
+    ]:
         p = root / root_doc
         if p.is_file():
             md_files.append(p)
+
+    github_dir = root / ".github"
+    if github_dir.is_dir():
+        md_files.extend(list(github_dir.rglob("*.md")))
 
     # Cache anchors per file
     anchors_cache: dict[Path, set[str]] = {}

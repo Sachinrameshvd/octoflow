@@ -1,0 +1,81 @@
+name: Bug Report
+description: File an actionable bug report to help us improve OctoFlow.
+title: "[Bug]: "
+labels: ["bug", "needs-repro"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please verify that you are not disclosing private keys or personal paths.
+        Before reporting, run `octoflow doctor` to verify your environment health.
+  - type: input
+    id: summary
+    attributes:
+      label: One-line Summary
+      description: A concise summary of the failure or unexpected behavior.
+      placeholder: e.g. "E-TOOL-DENIED raised when executing test runner on nested directory"
+    validations:
+      required: true
+  - type: dropdown
+    id: execution_mode
+    attributes:
+      label: Execution Mode
+      description: What mode was OctoFlow running in when the error occurred?
+      options:
+        - LIVE (Autonomous execution with real LLM provider)
+        - DRY-RUN (Mock provider simulation)
+        - REPLAY (Trace replay in terminal or visualizer)
+        - BENCH (Algorithmic benchmark harness)
+        - TUI (Interactive cockpit session)
+    validations:
+      required: true
+  - type: input
+    id: provider_model
+    attributes:
+      label: Provider and Model
+      description: Which inference provider and model name were in use?
+      placeholder: e.g. "ollama / qwen2.5-coder:7b", "anthropic / claude-3-5-sonnet", or "mock"
+    validations:
+      required: true
+  - type: textarea
+    id: bugreport_output
+    attributes:
+      label: Environment Diagnostics (`octoflow bugreport`)
+      description: Paste the complete output of `octoflow bugreport` below. This command sanitizes all secrets automatically.
+      render: shell
+      placeholder: |
+        ### OctoFlow Bug Report Environment Summary
+        - OctoFlow Version: 0.2.0
+        - Python Version: ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact commands, arguments, or minimal project setup to reproduce the issue.
+      placeholder: |
+        1. Run `octoflow run "Build an LRU cache" --model ollama`
+        2. Wait for Arm 2 to finish code generation
+        3. See error E-XXXX in terminal output
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs. Actual Behavior
+      description: What did you expect to happen, and what happened instead?
+      placeholder: Expected swarm to converge to quiescence; instead received E-BUDGET after 200 tokens.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I ran `octoflow doctor` and checked for known environment issues.
+          required: true
+        - label: I searched existing GitHub issues and discussions to confirm this is not a duplicate.
+          required: true
+        - label: I confirmed that no private API keys, bearer tokens, or proprietary code are exposed in this report.
+          required: true

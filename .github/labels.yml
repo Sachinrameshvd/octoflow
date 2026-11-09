@@ -1,0 +1,47 @@
+- name: bug
+  color: d73a4a
+  description: Something isn't working as intended or tests fail.
+
+- name: enhancement
+  color: a2eeef
+  description: New feature, capability, or user-facing enhancement.
+
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers; small scope and clearly defined.
+
+- name: help wanted
+  color: 008672
+  description: Extra community attention or domain expertise needed.
+
+- name: provider
+  color: 1d76db
+  description: LLM provider backends, model routing, and provider contract tests.
+
+- name: guild
+  color: bfdadc
+  description: Custom 8-arm specialist guilds, JSON schemas, and community rosters.
+
+- name: visualizer
+  color: f9d0c4
+  description: 3D WebGL connectome visualizer, telemetry bridge, and frontend HUD.
+
+- name: docs
+  color: 0075ca
+  description: Improvements or additions to documentation, tutorials, and field guides.
+
+- name: security
+  color: b60205
+  description: Security vulnerabilities, tool sandboxing, and secret redaction.
+
+- name: needs-repro
+  color: e4e669
+  description: Needs a minimal reproduction recipe or octoflow bugreport output.
+
+- name: wontfix
+  color: "ffffff"
+  description: This will not be worked on or is intentionally out of scope.
+
+- name: experimental
+  color: fbca04
+  description: Experimental research modules or proof-of-concept features.

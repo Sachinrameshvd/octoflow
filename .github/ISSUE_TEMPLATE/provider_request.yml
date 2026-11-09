@@ -1,0 +1,56 @@
+name: Provider Request
+description: Request support for a new LLM provider or local inference backend.
+title: "[Provider Request]: "
+labels: ["provider", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        OctoFlow is designed to support local-first inference daemons and high-performance cloud providers.
+        Before requesting, check [docs/extending/providers.md](docs/extending/providers.md) to see how straightforward it is to implement a provider via `BaseLLMProvider`!
+  - type: input
+    id: provider_name
+    attributes:
+      label: Provider Name
+      description: What is the name of the LLM provider or inference backend?
+      placeholder: e.g. "vLLM", "LM Studio", "Mistral AI", "DeepSeek API", "LocalAI"
+    validations:
+      required: true
+  - type: input
+    id: documentation_url
+    attributes:
+      label: Official API Documentation
+      description: Link to the official API specification, endpoints, or Python SDK documentation.
+      placeholder: https://docs.example.com/api-reference
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol_type
+    attributes:
+      label: API Protocol Compatibility
+      description: Does this backend expose a standardized interface?
+      options:
+        - OpenAI-compatible (/v1/chat/completions)
+        - Anthropic-compatible (/v1/messages)
+        - Ollama-compatible (/api/generate, /api/chat)
+        - Proprietary REST / JSON API
+        - Local Unix Socket / Stdio
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation & Use Case
+      description: Why should this provider be integrated into OctoFlow?
+      placeholder: "vLLM provides state-of-the-art PagedAttention throughput for local self-hosted open weights with high concurrency across 8 arms."
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribution_interest
+    attributes:
+      label: Contribution
+      options:
+        - label: I am interested in implementing this provider using `BaseLLMProvider` and testing with `ProviderContractSuite`.
+          required: false
+        - label: I have access to test credentials or hardware to verify the integration.
+          required: false

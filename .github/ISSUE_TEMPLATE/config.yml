@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: OctoFlow Community Q&A & Discussions
+    url: https://github.com/TODO_OWNER_OR_ORG/octoflow/discussions
+    about: Ask questions, share ideas, get help with setup, or share custom specialist guilds.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/TODO_OWNER_OR_ORG/octoflow/security/advisories/new
+    about: Confidentially report security vulnerabilities and sandbox confinement issues.

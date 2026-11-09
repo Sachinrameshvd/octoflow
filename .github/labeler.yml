@@ -1,0 +1,43 @@
+# GitHub Actions PR Labeler Configuration (actions/labeler@v5)
+# Automatically applies labels to Pull Requests based on changed file paths.
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
+
+provider:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'octoflow/provider.py'
+          - 'octoflow/provider_*.py'
+          - 'tests/test_provider*.py'
+          - 'tests/contract/**'
+
+guild:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'octoflow/guild.py'
+          - 'octoflow/commands/guild.py'
+          - 'examples/guilds/**'
+          - 'tests/test_guilds.py'
+
+visualizer:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'visualizer/**'
+          - 'octoflow/dist/**'
+          - 'octoflow/server.py'
+          - 'octoflow/commands/ui.py'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'octoflow/tools.py'
+          - 'octoflow/keyring_store.py'
+          - 'docs/SECURITY*.md'
+          - 'docs/THREAT_MODEL.md'
+          - 'tests/test_tools_security.py'
+          - 'tests/test_server_security.py'
+          - 'tests/test_privacy.py'

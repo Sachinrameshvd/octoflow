@@ -1,0 +1,18 @@
+# OctoFlow Code Ownership
+# Lines starting with '#' are comments.
+# For more information, see: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default repository-wide code owners (TODO: Replace with actual GitHub handle or organization team)
+* @TODO_MAINTAINER_HANDLE
+
+# Core Security & Confinement Modules
+octoflow/tools.py @TODO_MAINTAINER_HANDLE
+octoflow/keyring_store.py @TODO_MAINTAINER_HANDLE
+octoflow/server.py @TODO_MAINTAINER_HANDLE
+docs/SECURITY*.md @TODO_MAINTAINER_HANDLE
+docs/THREAT_MODEL.md @TODO_MAINTAINER_HANDLE
+
+# CI & Release Workflows
+.github/workflows/ @TODO_MAINTAINER_HANDLE
+Makefile @TODO_MAINTAINER_HANDLE
+requirements.lock @TODO_MAINTAINER_HANDLE
