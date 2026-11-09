@@ -1,43 +1,43 @@
-# GitHub Actions PR Labeler Configuration (actions/labeler@v5)
-# Automatically applies labels to Pull Requests based on changed file paths.
-
-docs:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'docs/**'
-          - '*.md'
-
 provider:
   - changed-files:
       - any-glob-to-any-file:
-          - 'octoflow/provider.py'
-          - 'octoflow/provider_*.py'
-          - 'tests/test_provider*.py'
-          - 'tests/contract/**'
+          - "octoflow/provider.py"
+          - "octoflow/providers/**"
+          - "tests/test_provider_*.py"
+          - "docs/extending/providers.md"
 
 guild:
   - changed-files:
       - any-glob-to-any-file:
-          - 'octoflow/guild.py'
-          - 'octoflow/commands/guild.py'
-          - 'examples/guilds/**'
-          - 'tests/test_guilds.py'
+          - "octoflow/guilds/**"
+          - ".octoflow/guilds/**"
+          - "octoflow/commands/guild.py"
+          - "docs/extending/guilds.md"
 
 visualizer:
   - changed-files:
       - any-glob-to-any-file:
-          - 'visualizer/**'
-          - 'octoflow/dist/**'
-          - 'octoflow/server.py'
-          - 'octoflow/commands/ui.py'
+          - "visualizer/**"
+          - "octoflow/dist/**"
+          - "octoflow/server.py"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "*.md"
 
 security:
   - changed-files:
       - any-glob-to-any-file:
-          - 'octoflow/tools.py'
-          - 'octoflow/keyring_store.py'
-          - 'docs/SECURITY*.md'
-          - 'docs/THREAT_MODEL.md'
-          - 'tests/test_tools_security.py'
-          - 'tests/test_server_security.py'
-          - 'tests/test_privacy.py'
+          - "octoflow/tools.py"
+          - "octoflow/audit.py"
+          - "tests/test_tools_security.py"
+          - "tests/test_server_security.py"
+
+experimental:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "octoflow/consortium.py"
+          - "octoflow/federation.py"
+          - "octoflow/bench.py"

@@ -54,3 +54,4 @@ For guidelines on capturing 20-second screen recordings or still frames of repla
 
 - **Announcement Drafts**: [`docs/launch/announcement.md`](../launch/announcement.md)
 - **Social Preview Image Brief**: Specified in [`docs/launch/announcement.md`](../launch/announcement.md) (1280x640px text-only template).
+

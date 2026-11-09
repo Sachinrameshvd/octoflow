@@ -1,0 +1,55 @@
+name: Check Bug Report Diagnostics
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  check-diagnostics:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.title, '[Bug]') || contains(github.event.issue.labels.*.name, 'bug')
+    steps:
+      - name: Verify Bug Report Diagnostics
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = context.payload.issue.body || '';
+            const lowerBody = body.toLowerCase();
+
+            // Check if user provided actual octoflow bugreport or doctor diagnostic output
+            const hasBugreportKeywords = lowerBody.includes('octoflow bug report') ||
+                                         (lowerBody.includes('environment diagnostics') && (lowerBody.includes('platform:') || lowerBody.includes('python:'))) ||
+                                         lowerBody.includes('octoflow doctor') ||
+                                         lowerBody.includes('system diagnostic summary');
+
+            // Also check that it is not just the unmodified placeholder
+            const isPlaceholderOnly = lowerBody.includes('octoflow version: 0.2.0') && !lowerBody.includes('git commit');
+
+            if (!hasBugreportKeywords || isPlaceholderOnly) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: ['needs-repro']
+              });
+
+              const reminder = `Thank you for opening this bug report!\n\n` +
+                `To help us diagnose and reproduce the issue quickly, please run:\n\n` +
+                `\`\`\`bash\n` +
+                `octoflow bugreport\n` +
+                `\`\`\`\n\n` +
+                `and paste the sanitized terminal output into this issue. ` +
+                `This command automatically redacts API keys, tokens, and personal file paths.\n\n` +
+                `Once provided, we will prioritize investigating this behavior. Thank you!`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                body: reminder
+              });
+            }

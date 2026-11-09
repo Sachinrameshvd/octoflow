@@ -1,0 +1,46 @@
+name: Stale Issue and PR Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Runs every Monday at 00:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark and close inactive issues and PRs
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-issue-stale: 60
+          days-before-issue-close: 7
+          stale-issue-label: 'stale'
+          only-issue-labels: 'needs-repro'
+          exempt-issue-labels: 'security,good first issue,enhancement,ROADMAP,pinned'
+          stale-issue-message: >
+            Hello! This issue was labeled `needs-repro` and has been inactive for 60 days
+            without a reproduction recipe or `octoflow bugreport` output.
+
+            We are marking it as stale. If you are still experiencing this issue, please leave
+            a comment or share diagnostic details within the next 7 days to keep it open.
+          close-issue-message: >
+            Closing this issue due to inactivity after the 7-day grace period.
+
+            If you are able to reproduce this later with `octoflow bugreport`, simply leave a
+            comment with the diagnostic output and steps to reproduce, and we will happily reopen!
+          days-before-pr-stale: 60
+          days-before-pr-close: 7
+          stale-pr-label: 'stale'
+          exempt-pr-labels: 'security,good first issue,enhancement,ROADMAP,pinned,work-in-progress,wip'
+          stale-pr-message: >
+            Hello! This pull request has had no activity for 60 days. We are marking it as stale.
+            If you would like to continue working on this, please push an update or leave a comment
+            within 7 days.
+          close-pr-message: >
+            Closing this pull request due to 60+ days of inactivity. If you wish to resume work,
+            feel free to reopen or open a new pull request!

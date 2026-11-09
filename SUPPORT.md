@@ -41,5 +41,6 @@ Before opening an issue or discussion, check these quick resources:
 
 OctoFlow is maintained by an open-source maintainer with community collaboration:
 - **Discussions:** Community members often answer questions quickly. Maintainer participation occurs as time permits.
-- **Bug Reports:** Verified bug reports with reproduction steps and `octoflow bugreport` output are prioritized. Expected initial triage time is **5 to 7 business days**.
+- **Bug Reports & Issues:** Verified bug reports with reproduction steps and `octoflow bugreport` output are prioritized. Expected initial response and triage is within **3 business days**.
 - **Commercial / Enterprise SLAs:** OctoFlow does not currently offer commercial SLAs or guaranteed response times.
+- **Maintainer Pause Protocol:** If the maintainer needs to step away for scheduled leave, illness, or focus blocks, an advisory banner will be posted on the repository README, and issue triage will be temporarily held without closing issues, per the [Maintainer Operations Manual](docs/MAINTAINING.md#the-maintainer-pause-protocol).

@@ -81,3 +81,4 @@ ffmpeg -i visualizer_capture.mov -c:v libx264 -pix_fmt yuv420p -crf 22 -preset s
 # Convert to high-quality animated GIF (using custom color palette)
 ffmpeg -i visualizer_capture.mov -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 docs/assets/visualizer_demo.gif
 ```
+

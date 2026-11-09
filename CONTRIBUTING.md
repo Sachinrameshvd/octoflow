@@ -153,11 +153,23 @@ Substantial architectural changes must include an **Architectural Decision Recor
 
 OctoFlow is maintained by an open-source maintainer with community collaboration:
 - Pull requests are reviewed thoroughly for test coverage, security boundaries, and adherence to the Hard Rules.
-- Expected initial review turnaround is **5 to 7 business days**.
+- Expected initial response and triage time is **3 business days**; comprehensive code review turnaround is **5 to 7 business days**.
 - To expedite review, keep pull requests focused on a single change and verify that all automated checks in `.github/PULL_REQUEST_TEMPLATE.md` are checked.
+- Maintainers follow our standard [Maintainer Operations Manual](docs/MAINTAINING.md) and use pre-drafted [Saved Replies](docs/saved_replies.md).
 
 ---
 
-## 9. Cutting a Release
+## 9. Contributor Ladder & Leadership
 
-For repository owners and maintainers cutting a public release, follow the step-by-step procedure and PyPI Trusted Publishing setup in [`docs/RELEASING.md`](docs/RELEASING.md).
+OctoFlow offers a structured path for sustained community involvement:
+1. **Contributor**: Submits documentation fixes, bug reports, custom guilds, or seed issue PRs.
+2. **Triager**: Helps reproduce issues, label PRs, and guide new contributors.
+3. **Core Maintainer**: Reviews architecture changes, co-signs releases, and stewards core moats.
+
+For full details on rights and requirements, see [`GOVERNANCE.md`](GOVERNANCE.md) and [`docs/MAINTAINING.md`](docs/MAINTAINING.md).
+
+---
+
+## 10. Cutting a Release
+
+For repository owners and maintainers cutting a public release, follow the step-by-step procedure and PyPI Trusted Publishing setup in [`docs/RELEASING.md`](docs/RELEASING.md) and [`docs/MAINTAINING.md`](docs/MAINTAINING.md).

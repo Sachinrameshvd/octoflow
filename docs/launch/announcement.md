@@ -189,3 +189,4 @@ Before broadcasting the announcement on public channels, verify that all release
 - [ ] **GitHub Discussions**: Discussions tab enabled on repository with categories: `General`, `Show and Tell`, `Ideas`, `Q&A`.
 - [ ] **Issue Templates**: Issue templates active in `.github/ISSUE_TEMPLATE/` (Bug, Feature, Security).
 - [ ] **First-Hour Monitoring**: Ensure maintainer is available for the first 72 hours post-announcement to answer questions and triage issues.
+

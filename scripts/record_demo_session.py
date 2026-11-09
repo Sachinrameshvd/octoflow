@@ -133,3 +133,4 @@ def build_demo_cast(output_path: Path = OUTPUT_CAST) -> None:
 
 if __name__ == "__main__":
     build_demo_cast()
+

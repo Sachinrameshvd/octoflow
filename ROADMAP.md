@@ -65,7 +65,7 @@ Focused on enterprise multi-repo orchestration and production resilience:
 
 ---
 
-## 3. Not Planned (With Reasons & What Would Change Our Mind)
+## 3. Not Planned (With Reasons & What Would Change Our Mind) <a id="not-planned"></a>
 
 To maintain focus and supply-chain discipline, several popular feature requests are intentionally **not planned**:
 

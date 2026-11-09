@@ -45,3 +45,7 @@
 - name: experimental
   color: fbca04
   description: Experimental research modules or proof-of-concept features.
+
+- name: stale
+  color: cccccc
+  description: Inactive issue awaiting reproduction details or contributor response.
