@@ -17,10 +17,11 @@ To prevent regressions across mathematical boundary cases, we need parameterized
 
 ## Objectives & Requirements
 1. In [`tests/test_gate_parity.py`](../../tests/test_gate_parity.py), add parameterized tests evaluating edge cases:
-   - Empty string diffs (`""`).
-   - Completely identical consecutive states (asserting $\Delta S == 0.0$ and reflex trigger).
-   - Massive 100k-character diffs (verifying numerical stability and bounded $\Delta S \in [0.0, 1.0]$).
+   - Empty tool results: `diff_lines=0`, `stdout=""`, `stderr=""`.
+   - Completely identical consecutive states (`gate.compute_surprise(obs, expected_obs=obs) == 0.0` asserting reflex trigger).
+   - Massive 100k-character diffs/outputs: `diff_lines=100_000`, `stdout="A"*100_000` (verifying numerical stability and bounded $\Delta S \in [0.0, 1.0]$).
    - High-variance inputs crossing threshold $\theta$ (asserting escalation trigger).
+   *(Note: in `ToolResult`, `diff_lines` is an `int` line count; string diff text and traces are passed in `stdout` or `stderr`)*.
 2. Verify mathematical equivalence between NumPy and PyTorch backends across all edge cases (`assert abs(np_delta - torch_delta) < 1e-4`).
 
 ---
