@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Emoji Terminal UI**: Cleaned CLI ribbons, visualizer badges, and MCP responses to strictly enforce semantic ASCII/Unicode glyphs (`•`, `·`, `○`, `◈`, `✔`, `✖`).
 
 ### Added
+- **Architecture, Glossary & ADR Documentation (P9.2)**:
+  - Authored comprehensive system architecture guide in [`docs/architecture.md`](docs/architecture.md): high-level overview diagram (Mermaid), complete 23-module mapping table, end-to-end run lifecycle sequence diagram, storage and permissions layout, threading and async model, non-blocking 20 FPS cockpit input loop, extension points (custom providers, guilds, tools, MCP), and cross-cutting design constraints.
+  - Worked Gate Math Example: Documented mathematical equations for mean squared observation error and dynamic threshold adaptation with an exact worked example script [`scripts/worked_example_gate.py`](scripts/worked_example_gate.py).
+  - Glossary: Created [`docs/glossary.md`](docs/glossary.md) mapping cephalopod anatomical metaphors to standard software engineering terms and verified Python identifiers.
+  - Architectural Decision Records: Created [`docs/adr/`](docs/adr/) with 7 foundational ADRs (0001 Local-first, 0002 Visualizer dist, 0003 Optional ML extras, 0004 Truthful run states, 0005 Tool policy not sandbox, 0006 No federation networking yet, 0007 Dynamic scaling default).
 - **README Rewrite & Documentation Decoupling (P9.1)**:
   - **30-Second Understanding, 5-Minute Quickstart**: Streamlined `README.md` to under 170 lines with transparent positioning, an Alpha status/maturity matrix, quickstart steps, truthful receipt excerpt from a verified live run, 6-sentence architecture summary, and measured benchmark links.
   - **Zero-Emoji & Single-Width Glyphs**: Audited and eliminated all emoji from `README.md`, ensuring all active characters have single display width (`wcwidth <= 1`).

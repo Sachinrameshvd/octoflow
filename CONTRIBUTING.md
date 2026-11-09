@@ -92,3 +92,14 @@ make dev-stop
 ### Bug Reports & Environment Diagnostics
 - Run `octoflow doctor --json` for machine-readable subsystem health diagnostics.
 - Run `octoflow bugreport` to generate a redacted Markdown environment summary with all secrets masked for pasting into GitHub issues.
+
+---
+
+## 5. Architectural Reference & Design Records
+
+Before making substantial structural changes, familiarize yourself with our system design docs:
+- **System Architecture & Data Flow:** Detailed diagrams, module responsibilities, gate math, and threading models in [`docs/architecture.md`](docs/architecture.md).
+- **Anatomy & Concepts Glossary:** Cross-reference cephalopod terms to code identifiers in [`docs/glossary.md`](docs/glossary.md).
+- **Architectural Decision Records (ADRs):** Review foundational architectural decisions and trade-offs in [`docs/adr/`](docs/adr/).
+- **Field Manual:** CLI commands and playbooks in [`docs/manual.md`](docs/manual.md).
+

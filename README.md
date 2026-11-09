@@ -157,6 +157,7 @@ Two-thirds of an octopus's neurons reside in its eight arms rather than its cent
 ## Contributing and License
 
 * **Contributing:** We welcome contributions! Read [CONTRIBUTING.md](CONTRIBUTING.md) for dev environment setup, testing standards, and pull request guidelines.
+* **Architecture & Internals:** Read [docs/architecture.md](docs/architecture.md) for data flow, gate math, and threading models.
+* **Glossary & ADRs:** Cross-reference terms in [docs/glossary.md](docs/glossary.md) and architectural design records in [docs/adr/](docs/adr/).
 * **Field Manual:** Detailed CLI guides and playbooks are in [docs/manual.md](docs/manual.md).
-* **Architecture:** Full biological models and connectomics are in [docs/architecture.md](docs/architecture.md).
 * **License:** MIT License. See [LICENSE](LICENSE) and [docs/THIRD_PARTY_LICENSES.md](docs/THIRD_PARTY_LICENSES.md).
