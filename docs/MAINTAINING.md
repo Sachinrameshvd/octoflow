@@ -73,10 +73,12 @@ OctoFlow adopts a **generous, contributor-friendly stale policy**:
 
 ---
 
-## 4. Release Cadence
+## 4. Release Cadence & Maintenance Calendar
 
 - **Patch Releases (`0.3.x`)**: Shipped as needed for bug fixes, test stability, or packaging updates.
 - **Minor Releases (`0.4.0`)**: Shipped approximately monthly, aligned with [`ROADMAP.md`](../ROADMAP.md).
+- **Maintenance Calendar & 90-Day Plan**: Full cadence details for monthly provider drift checks, quarterly threat model audits, and decision gates are in [`docs/MAINTENANCE_CALENDAR.md`](MAINTENANCE_CALENDAR.md).
+- **Platform Support Matrix & Deprecation Policy**: Tested runtimes, verified models, and legacy escape hatch timelines are tracked in [`docs/SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md).
 - **Pre-Release Verification**: Every release must execute `bash scripts/verify_wheel.sh` and pass `make check-docs`.
 
 ---

@@ -8,16 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+- **Platform Support Matrix & Deprecation Policy (P12.4)**: Authored `docs/SUPPORT_MATRIX.md` defining verified operating system tiers (macOS Apple Silicon Tier 1, Ubuntu Tier 1, WSL2 Tier 2), Python 3.10-3.12 support, tested Ollama models (`qwen2.5-coder:7b`, `llama3.1:8b`), cloud provider API contracts, and pre-1.0 semantic versioning deprecation protocol with `OCTOFLOW_LEGACY_*` retirement milestones.
+- **Post-Launch Maintenance Cadence & 90-Day Plan (P12.4)**: Authored `docs/MAINTENANCE_CALENDAR.md` detailing sustainable maintainer budgets (weekly 30m, monthly 60m, quarterly 120m), monthly provider drift and benchmark sanity automation (`.github/workflows/monthly-cadence.yml`), and strategic Day 60 decision gates.
+- **Privacy-Preserving Public Metrics Collector (P12.3)**: Created `scripts/metrics.py` aggregating PyPI download counts (clean installs without mirrors) and GitHub repository/issue/PR velocity with zero telemetry. Authored `docs/METRICS.md` explaining targets and exposing star/mirror vanity traps.
+- **Client-Side Voluntary Feedback Loop (P12.3)**: Implemented `octoflow feedback` CLI command generating prefilled GitHub Issue/Discussion URLs with optional sanitized diagnostic previews and verified zero network egress. Added one-time suppressible post-run hint.
+- **Community Operations & Triage Workflows (P12.2)**: Authored `docs/MAINTAINING.md` (30-min weekly budget, 3-day first-response target, 60-day generous stale policy, Maintainer Pause Protocol), standardized saved replies (`docs/saved_replies.md`), contributor ladder, and minimal-permission GitHub Actions workflows (`first-interaction.yml`, `labeler.yml`, `stale.yml`, `check-bugreport.yml`).
+- **Launch Assets & Truthful Benchmarks (P12.1)**: Produced Asciinema v2 demo cast (`docs/assets/demo.cast`), terminal vector SVG (`docs/assets/demo.svg`), visualizer capture guide, public announcement texts (`docs/launch/announcement.md`), and updated live Ollama benchmark receipts showing 35% token reduction with sensory gating.
 
 ## [0.3.0] - 2026-11-09
 

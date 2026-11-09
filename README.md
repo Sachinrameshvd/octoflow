@@ -176,6 +176,8 @@ Two-thirds of an octopus's neurons reside in its eight arms rather than its cent
 * **Contributing:** We welcome contributions! Read [CONTRIBUTING.md](CONTRIBUTING.md) for dev environment setup, testing standards, and pull request guidelines.
 * **Code of Conduct:** We adhere to the Contributor Covenant. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 * **Governance & Support:** Read [GOVERNANCE.md](GOVERNANCE.md) for our maintainership model and [SUPPORT.md](SUPPORT.md) for help channels.
+* **Support Matrix & Deprecation Policy:** See [docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md) for verified OS, Python, model, and API versions.
+* **Maintenance Calendar:** See [docs/MAINTENANCE_CALENDAR.md](docs/MAINTENANCE_CALENDAR.md) for the 90-day post-launch plan and maintenance routine.
 * **Security Policy:** Report vulnerabilities privately according to [SECURITY.md](SECURITY.md).
 * **Architecture & Internals:** Read [docs/architecture.md](docs/architecture.md) for data flow, gate math, and threading models.
 * **Glossary & ADRs:** Cross-reference terms in [docs/glossary.md](docs/glossary.md) and architectural design records in [docs/adr/](docs/adr/).

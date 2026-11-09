@@ -1,0 +1,77 @@
+name: Monthly Provider Drift & Benchmark Sanity
+
+on:
+  schedule:
+    # Run at 02:00 UTC on the 1st day of every month
+    - cron: '0 2 1 * *'
+  workflow_dispatch:
+    inputs:
+      run_live_ollama:
+        description: "Run live Ollama smoke test (requires self-hosted or runner with Ollama installed)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  provider-contract-and-bench:
+    name: Provider Drift & Benchmark Sanity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e .
+
+      - name: Run Provider Contract Suite (Recorded Fixtures)
+        run: |
+          pytest tests/contract/ -v
+
+      - name: Run Benchmark Harness Sanity (Fake / Replay Mode)
+        run: |
+          python -m octoflow.cli bench --fake --task all -n 1 --out /tmp/monthly_bench
+          test -f /tmp/monthly_bench/summary.md
+          cat /tmp/monthly_bench/summary.md
+
+  live-ollama-smoke:
+    name: Manual Live Ollama Smoke Test
+    needs: provider-contract-and-bench
+    if: github.event_name == 'workflow_dispatch' && inputs.run_live_ollama == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e .
+
+      - name: Install and Start Ollama Daemon
+        run: |
+          curl -fsSL https://ollama.ai/install.sh | sh
+          ollama serve &
+          sleep 5
+          ollama pull qwen2.5-coder:1.5b
+
+      - name: Run Live Ollama Contract Suite
+        run: |
+          OCTOFLOW_FORCE_LIVE=1 pytest tests/contract/test_ollama_contract.py -m live -v
