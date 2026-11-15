@@ -21,7 +21,9 @@ import time
 from pathlib import Path
 
 import pytest
-from jsonschema import Draft202012Validator
+
+jsonschema = pytest.importorskip("jsonschema")
+Draft202012Validator = jsonschema.Draft202012Validator
 
 
 class MCPClientSession:
@@ -159,8 +161,13 @@ def test_mcp_tools_list_and_schemas(mcp_session: MCPClientSession):
         "octoflow_guild_list",
         "octoflow_receipt",
         "octoflow_read_file",
+        "octoflow_search_codebase",
+        "octoflow_search_symbols",
+        "octoflow_find_callers",
+        "octoflow_switch_guild",
+        "octoflow_octopolis",
     ]
-    assert len(tools) == 8, f"Expected exactly 8 canonical tools, got: {canonical_names}"
+    assert len(tools) == 13, f"Expected exactly 13 canonical tools, got: {canonical_names}"
     for exp in expected_tools:
         assert exp in canonical_names, f"Expected tool '{exp}' not in tools list"
 

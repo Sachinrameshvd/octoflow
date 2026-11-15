@@ -1,0 +1,20 @@
+                                                                                                    
+ Usage: octos feedback [OPTIONS]                                                                    
+                                                                                                    
+ Open or print a prefilled voluntary feedback URL (zero background telemetry).                      
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --category     -c                        <str>  Feedback category: 'feedback', 'bug', 'idea',    │
+│                                                 'show-and-tell'                                  │
+│                                                 [default: feedback]                              │
+│ --title        -t                        <str>  Optional custom title                            │
+│ --diagnostics  -d  --no-diagnostics  -D         Attach sanitized environment diagnostics from    │
+│                                                 octoflow bugreport                               │
+│ --browser          --no-browser                 Open prefilled URL in system browser             │
+│                                                 [default: browser]                               │
+│ --dry-run                                       Preview prefilled issue URL without opening      │
+│                                                 browser                                          │
+│ --dir          -w                        <str>  Workspace directory for diagnostics [default: .] │
+│ --help                                          Show this message and exit.                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

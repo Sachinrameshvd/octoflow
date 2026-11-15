@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 
 import pytest
-import wcwidth
+
+wcwidth = pytest.importorskip("wcwidth")
 
 from octoflow.glyphs import (
     GLYPH_TABLE,

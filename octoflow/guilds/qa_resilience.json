@@ -1,0 +1,146 @@
+{
+  "name": "qa_resilience",
+  "description": "Quality Assurance, Fault Injection & Property Testing Guild (Test Arch, Unit, Integration, Concurrency, Property Testing, Mutation, Mocks, Benchmarks)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "test_architect",
+      "focus": "Test Strategy & Pyramid: Test hierarchy design, coverage budgets, CI parallel test partitioning, and fixture matrices.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Test Architect). Specialize in overall test suite design, balancing unit vs integration density, test marker taxonomy, and CI execution budgets.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/",
+        "pytest.ini",
+        "conftest.py"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "unit_tester",
+      "focus": "Unit & Parameterized Tests: Comprehensive edge-case matrices, boundary values, error condition branches, and table tests.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (Unit Tester). Specialize in writing fast, isolated, deterministic unit tests with rich parameterized fixtures covering edge and boundary inputs.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/unit/",
+        "tests/"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "integration_verifier",
+      "focus": "End-to-End & Integration: Database transaction isolation, multi-service workflows, API contract adherence, and teardown hygiene.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (Integration Verifier). Specialize in multi-component integration testing, database lifecycle fixtures, and validating API contract boundaries.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/integration/",
+        "tests/e2e/"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "concurrency_stress",
+      "focus": "Concurrency & Stress Testing: Thread contention, race condition reproduction, deadlock detection, and socket stress.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (Concurrency Stress). Specialize in multi-threaded load tests, race condition probes, socket exhaustion, and dead lock verification.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/concurrency/",
+        "tests/stress/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "property_based_tester",
+      "focus": "Property-Based & Generative Testing: Invariant assertion with Hypothesis/QuickCheck, shrinking failing cases, and fuzzing.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Property-Based Tester). Specialize in generative property-based testing with Hypothesis, state machine modeling, and invariant shrinking.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/property/",
+        "tests/invariants/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "mutation_tester",
+      "focus": "Mutation Testing: Code mutant generation, test strength verification, killing surviving mutants, and mutation scores.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (Mutation Tester). Specialize in mutation testing (Mutmut/Stryker), identifying tests that pass on broken code, and reinforcing assertions.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/mutation/",
+        "mutmut-config.py"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "mock_harness",
+      "focus": "Mocking & Deterministic Replay: VCR network cassettes, HTTP fake servers, time-freeze mocks, and deterministic random seeds.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Mock Harness). Specialize in recording network cassettes, mocking external dependencies safely, and preventing flaky time-dependent tests.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/cassettes/",
+        "tests/mocks/",
+        "fixtures/"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "bench_profiler",
+      "focus": "Benchmark & Regression Profiling: Wall-clock latency benchmarks, memory allocation tracking, and flamegraph analysis.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Benchmark Profiler). Specialize in micro-benchmarking, memory consumption monitoring, detecting latency regressions, and outputting benchmark charts.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "benchmarks/",
+        "reports/benchmarks/",
+        "README.md"
+      ]
+    }
+  ]
+}
+

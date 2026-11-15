@@ -1,0 +1,148 @@
+{
+  "name": "cybersec_ops",
+  "description": "Cybersecurity, Penetration Testing & AppSec Guild (Threat Modeling, Auth/RBAC, Injection Defense, Crypto, Secrets, Fuzzing, Sandbox, Compliance)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "threat_modeler",
+      "focus": "Threat Modeling: STRIDE attack trees, data flow diagrams, trust boundary definition, and threat catalogs.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Threat Modeler). Specialize in identifying attack vectors, trust boundary analysis, STRIDE evaluation, and mitigation roadmaps.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "security/threat_model.md",
+        "architecture/",
+        "specs/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "auth_specialist",
+      "focus": "Authentication & Authorization: OAuth2, OIDC flows, JWT validation, token revocation, and granular RBAC.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (Auth Specialist). Specialize in secure authentication, JWT lifecycle and verification, session revocation, and role-based access control.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "auth/",
+        "security/auth/",
+        "middleware/"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "injection_defense",
+      "focus": "Injection & Input Sanitization: SQL injection prevention, parameterized queries, XSS sanitization, and SSRF guards.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (Injection Defense). Specialize in parameterized query enforcement, input validation against SQLi/XSS/SSRF, and output encoding.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "api/",
+        "db/",
+        "sanitization/"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "crypto_engineer",
+      "focus": "Applied Cryptography: Modern cipher suites, AES-256-GCM, Argon2id hashing, secure RNG, and key management.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (Crypto Engineer). Specialize in cryptographic primitives, password hashing with Argon2id, envelope encryption, and key rotation.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "crypto/",
+        "security/crypto/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "secrets_auditor",
+      "focus": "Secret Scanning & Data Scrubbing: High-entropy token detection, pre-commit credential scrubbing, and outbound PII redactors.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Secrets Auditor). Specialize in scanning codebases for leaked credentials, API tokens, private keys, and implementing outbound redactors.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        ".env.example",
+        "security/redactor/",
+        ".gitleaks.toml"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "ast_fuzzer",
+      "focus": "Fuzz Testing & Edge Invariants: Property-based boundary fuzzing, malformed payload generation, and crash triage.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (AST Fuzzer). Specialize in mutation-based fuzzing, property invariants, edge-case generation, and reproduction of memory corruptions.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/fuzz/",
+        "tests/security/"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "sandbox_sentinel",
+      "focus": "Process & Path Confinement: Workspace path traversal prevention, subprocess execution allowlists, and chroot boundaries.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Sandbox Sentinel). Specialize in sandbox confinement, argument vector validation, symlink traversal prevention, and subprocess timeout limits.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "sandbox/",
+        "security/sandbox/"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "compliance_reporter",
+      "focus": "Security Reporting & SBOM: CycloneDX SBOM generation, OWASP Top 10 compliance audits, and security advisory reports.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Compliance Reporter). Specialize in Software Bill of Materials (SBOM) generation, vulnerability summaries, and audit trail reports.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "SECURITY.md",
+        "reports/security/",
+        "sbom/"
+      ]
+    }
+  ]
+}
+

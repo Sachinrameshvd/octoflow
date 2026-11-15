@@ -103,9 +103,19 @@ def build_hud_panel(session: CockpitSession) -> Panel:
             session._cached_budget_tracker = budget_tracker  # type: ignore[attr-defined]
         budget_line = budget_tracker.format_hud_line()
     hud_table.add_row("◈ BUDGET", f"{budget_line}")
+    tier_desc = f"Octopuses: {session.current_octos.upper()}  [dim](Cross-Ring Synaptic Bus)[/dim]"
+    if getattr(session, "current_octos", "auto") == "auto":
+        try:
+            from octoflow.interview import detect_project_consortium
+
+            bp = detect_project_consortium(str(session.workspace))
+            tier_desc = f"{bp.scale_tier}  [dim]({bp.project_type})[/dim]"
+        except Exception:
+            pass
+    hud_table.add_row("◈ SWARM TIER", tier_desc)
     hud_table.add_row(
-        "◈ SWARM TIER",
-        f"Octopuses: {session.current_octos.upper()}  [dim](Cross-Ring Synaptic Bus)[/dim]",
+        "◈ SENSORY GATE",
+        f"[{theme.rich_success}]●[/{theme.rich_success}] Active Inference (θ = 0.45)  [dim](Reflexes & Avoided Tokens Enabled)[/dim]",
     )
     hud_table.add_row(
         "◈ PALETTE",
@@ -307,3 +317,41 @@ def print_welcome_banner(
 
 # Backward-compatible alias
 print_welcome = print_welcome_banner
+
+
+def build_style_a_progress_panel(
+    objective: str,
+    octopus_states: dict[Any, Any],
+    total_tokens_saved: float = 87.5,
+    total_cost: float = 0.0,
+    last_event_msg: str = "",
+    visualizer_url: str = "http://localhost:8088",
+    elapsed_seconds: float = 0.0,
+    total_arms: int = 24,
+    tier_name: str = "TRIAD",
+    theme: Any | None = None,
+    tick: int | None = None,
+    tokens_spent: int = 0,
+    tokens_avoided: int = 0,
+    blueprint: Any | None = None,
+) -> Panel:
+    """Build Style A Multi-Octopus Progress Panel with progress bars, animated activity spinners, and state labels."""
+    from octoflow.commands.dashboard import build_style_a_progress_panel as _render_panel
+
+    return _render_panel(
+        objective=objective,
+        octopus_states=octopus_states,
+        total_tokens_saved=total_tokens_saved,
+        total_cost=total_cost,
+        last_event_msg=last_event_msg,
+        visualizer_url=visualizer_url,
+        elapsed_seconds=elapsed_seconds,
+        total_arms=total_arms,
+        tier_name=tier_name,
+        theme=theme,
+        tick=tick,
+        tokens_spent=tokens_spent,
+        tokens_avoided=tokens_avoided,
+        blueprint=blueprint,
+    )
+

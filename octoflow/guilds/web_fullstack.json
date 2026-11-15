@@ -1,0 +1,154 @@
+{
+  "name": "web_fullstack",
+  "description": "Modern Web Full-Stack Guild (Clean Architecture, DB Schema, FastAPI/REST, React/Next.js, Client State, Playwright, Security, Bundling)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "fullstack_architect",
+      "focus": "Full-Stack System Design: Domain-driven design, package layout, TypeScript API types generation, and contracts.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Full-Stack Architect). Specialize in clean architecture, type-safe API boundaries between frontend and backend, and project topology.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "shared/",
+        "types/",
+        "specs/",
+        "architecture/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "database_schema",
+      "focus": "Database & Relational Persistence: PostgreSQL, SQLAlchemy / Prisma migrations, indexes, and connection pooling.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (Database Schema). Specialize in relational database modeling, foreign keys, migration scripts, index performance, and transaction scopes.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "backend/models/",
+        "backend/migrations/",
+        "prisma/",
+        "schema.prisma"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "api_services",
+      "focus": "Backend API Services: FastAPI / Node.js endpoints, async request handling, Pydantic schemas, and middleware.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (API Services). Specialize in high-performance REST/GraphQL backend routes, error handling, status code semantics, and async service layers.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "backend/api/",
+        "backend/services/",
+        "backend/main.py"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "react_frontend",
+      "focus": "Frontend UI & Components: React 19, Next.js App Router, Tailwind CSS styling, responsive layout, and accessible HTML.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (React Frontend). Specialize in responsive UI development, React component architecture, modern Tailwind CSS, and WCAG accessibility standards.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "frontend/src/components/",
+        "frontend/src/app/",
+        "frontend/src/views/",
+        "frontend/package.json"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "client_state",
+      "focus": "Client State & Data Fetching: TanStack Query (React Query), Zustand stores, optimistic updates, and cache invalidation.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Client State). Specialize in client state synchronization, TanStack Query mutations, cache invalidation, and WebSocket live updates.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "frontend/src/state/",
+        "frontend/src/hooks/",
+        "frontend/src/queries/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "e2e_playwright",
+      "focus": "End-to-End Browser Testing: Playwright test automation, user flow validation, visual regression, and headless runs.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (E2E Playwright). Specialize in writing reliable Playwright end-to-end tests, selector resilience, network mocking, and verifying critical user journeys.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "e2e/",
+        "playwright.config.ts",
+        "tests/e2e/"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "web_security",
+      "focus": "Web App Security: Content Security Policy (CSP), CORS configuration, secure cookies, rate limiting, and CSRF protection.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Web Security). Specialize in web application hardening, strict CORS policies, SameSite cookies, CSRF tokens, and security headers.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "backend/security/",
+        "frontend/next.config.js"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "bundler_deploy",
+      "focus": "Build & Deployment: Vite / Next.js standalone bundling, environment variable injection, and production Dockerfile.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Bundler & Deploy). Specialize in production frontend build optimization, asset compression, Docker multistage deployment, and README guides.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "Dockerfile",
+        "docker-compose.yml",
+        "frontend/vite.config.ts",
+        "README.md"
+      ]
+    }
+  ]
+}
+

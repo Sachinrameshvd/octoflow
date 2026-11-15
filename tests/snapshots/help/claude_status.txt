@@ -1,0 +1,10 @@
+                                                                                                    
+ Usage: octoflow claude status [OPTIONS]                                                            
+                                                                                                    
+ Inspect the status and health of the Claude Code integration.                                      
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace folder [default: .]                              │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

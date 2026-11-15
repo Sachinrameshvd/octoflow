@@ -80,6 +80,8 @@ node_modules/
 visualizer/node_modules/
 visualizer/.vite/
 .vite/
+showcase*/dist/
+showcase*/.vite/
 
 # OS metadata
 .DS_Store

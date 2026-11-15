@@ -92,9 +92,39 @@ def stop_cli_cmd(
         console.print(f"\n[dim]No running ignition processes found for {target_desc}.[/dim]\n")
 
 
+def ignite_cli_cmd(
+    workspace: str | None = typer.Option(
+        None, "--dir", "-d", help="Target project workspace folder"
+    ),
+    open_browser: bool = typer.Option(
+        False, "--open", "-o", help="Automatically open the primary web URL in default browser"
+    ),
+):
+    """Ignite and boot synthesized project runtime services (Phase 4 Live Ignition)."""
+    from octoflow.ignition import ProjectIgniter, open_url_in_browser
+
+    ws = Path(workspace).resolve() if workspace else Path.cwd()
+    igniter = ProjectIgniter(workspace_dir=str(ws))
+    manifest = igniter.ignite(open_browser=open_browser)
+    if manifest.primary_url:
+        console.print(f"\n[bold green]✔ Primary Live Service:[/] {manifest.primary_url}")
+        if open_browser:
+            open_url_in_browser(manifest.primary_url)
+    if manifest.api_docs_url:
+        console.print(f"[bold cyan]◈ API Docs:[/] {manifest.api_docs_url}")
+    if manifest.status == "FAILED" or manifest.error_message:
+        console.print(f"[bold yellow]▲ Notice:[/] {manifest.error_message}\n")
+    else:
+        console.print(
+            f"[bold green]✔ Runtime online:[/] {manifest.title} ({manifest.service_type})\n"
+        )
+
+
 def register(app: typer.Typer, octos_app: typer.Typer) -> None:
     """Register ps and stop commands with Typer applications."""
+    app.command("ignite")(ignite_cli_cmd)
     app.command("ps")(ps_cli_cmd)
     app.command("stop")(stop_cli_cmd)
+    octos_app.command("ignite")(ignite_cli_cmd)
     octos_app.command("ps")(ps_cli_cmd)
     octos_app.command("stop")(stop_cli_cmd)

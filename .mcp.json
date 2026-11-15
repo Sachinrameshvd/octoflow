@@ -2,8 +2,9 @@
   "mcpServers": {
     "octoflow": {
       "command": "octoflow",
-      "args": ["mcp"],
-      "description": "OctoFlow Cephalopod Neural Multi-Agent Harness & Connectome Tools"
+      "args": [
+        "mcp"
+      ]
     }
   }
 }

@@ -55,24 +55,51 @@ $ octoflow run "Build a thread-safe sliding-window rate limiter with tests" --mo
 
 ## Quickstart
 
-Follow these steps to run your first swarm mission:
+### Installation
+
+Install globally using `pipx` (recommended) or `pip`:
 
 ```bash
-# 1. Install OctoFlow (from built wheel or local checkout)
-pip install dist/octoflow-0.3.0-py3-none-any.whl
-# Or install in editable mode from git: pip install -e .
+# Recommended: Install isolated CLI binary via pipx
+pipx install git+https://github.com/Sachinrameshvd/octoflow.git
 
-# 2. Pull local model with Ollama (or set ANTHROPIC_API_KEY / OPENAI_API_KEY)
+# Or install in active Python environment:
+pip install git+https://github.com/Sachinrameshvd/octoflow.git
+
+# Or local editable development checkout:
+git clone https://github.com/Sachinrameshvd/octoflow.git
+cd octoflow && pip install -e .
+```
+
+### 1. Claude Code CLI & Cursor Integration (SPARC)
+
+To use OctoFlow's 8-Arm discipline directly with Anthropic's official Claude Code CLI (`claude`) or Cursor:
+
+```bash
+# Auto-configure CLAUDE.md blueprint and MCP server:
+octos claude init
+
+# Run Claude Code CLI with 8-Arm SPARC directives pre-injected:
+octos claude run "Build a rate limiter with unit tests"
+
+# Or generate and copy an 8-Arm SPARC prompt to clipboard:
+octos claude prompt "Build a rate limiter with unit tests" --copy
+```
+
+### 2. Autonomous Swarm Flight Cockpit
+
+To run an autonomous multi-agent swarm mission with live terminal telemetry:
+
+```bash
+# Free test simulation (no API key needed):
+octos run "Build a rate limiter with unit tests" --provider mock
+
+# With local open-weight model via Ollama:
 ollama pull qwen2.5-coder:7b
+octos run "Build a rate limiter with unit tests" --model ollama
 
-# 3. Launch the guided first-run wizard
-octoflow
-
-# Or run an immediate goal directly:
-octoflow run "Build a rate limiter with unit tests" --model ollama
-
-# Safe simulation (unmodified workspace, mock responses):
-octoflow run "Build a rate limiter" --dry-run
+# Launch the interactive terminal flight cockpit:
+octos
 ```
 
 For first-run transcripts and troubleshooting, see the [Guided First Run Walkthrough](docs/first-run.md).

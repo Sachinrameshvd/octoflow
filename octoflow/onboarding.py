@@ -129,6 +129,7 @@ def onboard_ide(workspace: str = ".") -> dict[str, Any]:
     details: list[str] = []
     results = {
         "cursor": False,
+        "claude_md": False,
         "claude_code": False,
         "claude_desktop": False,
         "vscode_tasks": False,
@@ -160,7 +161,17 @@ def onboard_ide(workspace: str = ".") -> dict[str, Any]:
     except Exception as e:
         details.append(f"Failed to configure .cursorrules: {e}")
 
-    # 2. Claude Code CLI (~/.claude.json)
+    # 2. Claude Code CLAUDE.md Protocol
+    try:
+        from octoflow.claude_bridge import generate_claude_md
+
+        _, md_created = generate_claude_md(workspace=ws, force=False)
+        results["claude_md"] = True
+        details.append(f"Configured CLAUDE.md 8-Arm Protocol in {ws.name}")
+    except Exception as e:
+        details.append(f"Failed to configure CLAUDE.md: {e}")
+
+    # 3. Claude Code CLI (~/.claude.json)
     try:
         claude_cli_file = Path.home() / ".claude.json"
         mcp_payload = {"mcpServers": {"octoflow": {"command": "octos", "args": ["mcp"]}}}

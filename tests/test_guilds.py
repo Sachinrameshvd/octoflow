@@ -383,8 +383,8 @@ async def test_full_run_with_custom_guild_telemetry(tmp_path: Path) -> None:
     assert init_evt.payload.get("guild") == "custom_tel_guild"
     assert init_evt.payload.get("arm_colors") == custom_colors
 
-    # Verify step events carried arm colors
-    step_events = [e for e in telemetry_events if e.event_type == "STEP"]
+    # Verify step/escalation events carried arm colors
+    step_events = [e for e in telemetry_events if e.event_type in ("STEP", "ESCALATION")]
     assert len(step_events) >= 1
     for step_e in step_events:
         assert step_e.payload is not None
@@ -477,3 +477,49 @@ def test_cli_guild_show_nonexistent(runner: CliRunner) -> None:
     result = runner.invoke(app, ["guild", "show", "nonexistent_guild_xyz"])
     assert result.exit_code == 1
     assert "not found" in result.output
+
+
+def test_64_persona_ecosystem_loads_cleanly() -> None:
+    """Verify all 8 first-party domain guilds load 64 distinct valid specialist personas."""
+    domain_guilds = [
+        "cloud_devops",
+        "cybersec_ops",
+        "data_science",
+        "enterprise_migration",
+        "mobile_apps",
+        "qa_resilience",
+        "systems_embedded",
+        "web_fullstack",
+    ]
+    total_personas = 0
+    all_roles: set[str] = set()
+
+    for guild_name in domain_guilds:
+        spec = load_guild(guild_name)
+        assert spec.name == guild_name
+        assert len(spec.arms) == 8
+        roster = spec.to_arm_roster()
+        assert len(roster) == 8
+
+        for arm in spec.arms:
+            assert 0 <= arm.id <= 7
+            assert len(arm.role) > 0
+            assert arm.color.startswith("#") and len(arm.color) == 7
+            assert len(arm.system_prompt) > 0
+            assert len(arm.tools) > 0
+            assert len(arm.file_scope) > 0
+            all_roles.add(f"{guild_name}:{arm.role}")
+            total_personas += 1
+
+    assert total_personas == 64
+    assert len(all_roles) == 64  # All 64 personas are unique across guilds
+
+
+def test_cli_guild_show_new_domain_guild(runner: CliRunner) -> None:
+    """Verify CLI can display the new first-party domain guilds."""
+    result = runner.invoke(app, ["guild", "show", "cloud_devops"])
+    assert result.exit_code == 0
+    assert "Guild Roster: cloud_devops" in result.output
+    assert "Arm 0" in result.output
+    assert "Arm 7" in result.output
+

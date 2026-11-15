@@ -5,6 +5,9 @@ circuit. Associates sensory error signatures with verified resolution policies,
 enabling sub-millisecond retrieval without expensive vector database RAG lookups.
 """
 
+from __future__ import annotations
+
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -23,7 +26,12 @@ class FixPattern:
 class VerticalLobeMemory:
     """Associative presynaptic memory using Hebbian-style pattern consolidation."""
 
-    def __init__(self, feature_dim: int = 16, recall_threshold: float = 0.75):
+    def __init__(
+        self,
+        feature_dim: int = 16,
+        recall_threshold: float = 0.75,
+        db_path: str = ":memory:",
+    ):
         self.feature_dim = feature_dim
         self.recall_threshold = recall_threshold
         self.max_weight: float = 5.0
@@ -31,6 +39,7 @@ class VerticalLobeMemory:
         self.W = np.zeros((feature_dim, feature_dim), dtype=np.float32)
         self.patterns: list[FixPattern] = []
         self._seed_common_patterns()
+        self.rag = EpisodicCodebaseRAG(db_path=db_path)
 
     def _seed_common_patterns(self) -> None:
         """Seed biophysical memory with common software/ML debugging heuristics."""
@@ -189,17 +198,41 @@ class VerticalLobeMemory:
         except Exception:
             return False
 
-    def index_codebase(self, workspace_dir: str) -> int:
+    def index_codebase(self, workspace_dir: str, db_path: str | Path | None = None) -> int:
         """Index the workspace codebase into episodic semantic vector memory."""
         if not hasattr(self, "rag") or self.rag is None:
-            self.rag = EpisodicCodebaseRAG()
+            self.rag = EpisodicCodebaseRAG(db_path=db_path)
         return self.rag.index_workspace(workspace_dir)
+
+    def index_workspace(self, workspace_dir: str, incremental: bool = True) -> int:
+        """Scan and index all workspace source files into SQLite-backed semantic chunks."""
+        if not hasattr(self, "rag") or self.rag is None:
+            self.rag = EpisodicCodebaseRAG()
+        return self.rag.index_workspace(workspace_dir, incremental=incremental)
 
     def search_codebase(self, query: str, top_k: int = 4) -> list[dict[str, Any]]:
         """Search the codebase for semantically relevant symbols, functions, or snippets."""
         if not hasattr(self, "rag") or self.rag is None:
             self.rag = EpisodicCodebaseRAG()
         return self.rag.search(query, top_k=top_k)
+
+    def search_symbols(self, query: str, top_k: int = 10) -> list[dict[str, Any]]:
+        """Search indexed codebase for exact or partial symbol names (classes, functions)."""
+        if not hasattr(self, "rag") or self.rag is None:
+            self.rag = EpisodicCodebaseRAG()
+        return self.rag.search_symbols(query, top_k=top_k)
+
+    def find_callers(self, symbol_name: str) -> list[dict[str, Any]]:
+        """Find functions or methods that invoke the specified symbol."""
+        if not hasattr(self, "rag") or self.rag is None:
+            self.rag = EpisodicCodebaseRAG()
+        return self.rag.find_callers(symbol_name)
+
+    def find_callees(self, symbol_name: str) -> list[dict[str, Any]]:
+        """Find functions or methods invoked by the specified symbol."""
+        if not hasattr(self, "rag") or self.rag is None:
+            self.rag = EpisodicCodebaseRAG()
+        return self.rag.find_callees(symbol_name)
 
 
 class CodeChunk:
@@ -213,6 +246,8 @@ class CodeChunk:
         content: str,
         symbol: str = "",
         vector: np.ndarray | None = None,
+        symbol_type: str = "",
+        docstring: str = "",
     ):
         self.file_path = file_path
         self.start_line = start_line
@@ -220,12 +255,19 @@ class CodeChunk:
         self.content = content
         self.symbol = symbol
         self.vector = vector
+        self.symbol_type = symbol_type
+        self.docstring = docstring
 
 
 class EpisodicCodebaseRAG:
-    """Semantic vector RAG over the codebase workspace using subword character hashing.
+    """Persistent SQLite-backed semantic vector RAG & AST connectome over the codebase.
 
-    Matches RuVector / AgentDB functionality with zero heavy external dependencies.
+    Provides:
+    - AST-aware symbol chunking (Python classes, functions, async functions, docstrings).
+    - Lightweight subword character n-gram dense embeddings (zero heavy external dependencies).
+    - Persistent SQLite database (~/.octoflow/memory/<repo_hash>.db or :memory:) for instant cross-session recall.
+    - Bidirectional call graph analysis (who calls whom, which symbols invoke which dependencies).
+    - Incremental indexing skipping unchanged files based on filesystem mtime.
     """
 
     SUPPORTED_EXTS = {
@@ -261,10 +303,90 @@ class EpisodicCodebaseRAG:
         "vendor",
     }
 
-    def __init__(self, vector_dim: int = 128):
+    def __init__(
+        self,
+        vector_dim: int = 128,
+        db_path: str | Path | None = None,
+    ):
         self.vector_dim = vector_dim
+        self.db_path = str(db_path) if db_path is not None else ":memory:"
         self.chunks: list[CodeChunk] = []
         self._matrix: np.ndarray | None = None
+        self._conn: Any | None = None
+        self._init_sqlite()
+
+    def _init_sqlite(self) -> None:
+        """Initialize SQLite tables for persistent semantic code indexing and call graphs."""
+        import sqlite3
+
+        if self.db_path != ":memory:":
+            p = Path(self.db_path).expanduser().resolve()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            self._conn = sqlite3.connect(str(p), check_same_thread=False)
+        else:
+            self._conn = sqlite3.connect(":memory:", check_same_thread=False)
+
+        with self._conn:
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS files_meta (
+                    file_path TEXT PRIMARY KEY,
+                    mtime REAL NOT NULL,
+                    chunk_count INTEGER NOT NULL
+                )
+                """
+            )
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chunks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    file_path TEXT NOT NULL,
+                    start_line INTEGER NOT NULL,
+                    end_line INTEGER NOT NULL,
+                    symbol TEXT,
+                    symbol_type TEXT,
+                    content TEXT NOT NULL,
+                    docstring TEXT,
+                    vector BLOB
+                )
+                """
+            )
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS symbols (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    symbol_type TEXT NOT NULL,
+                    file_path TEXT NOT NULL,
+                    start_line INTEGER NOT NULL,
+                    end_line INTEGER NOT NULL,
+                    docstring TEXT
+                )
+                """
+            )
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS call_graph (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    caller TEXT NOT NULL,
+                    callee TEXT NOT NULL,
+                    file_path TEXT NOT NULL,
+                    line_number INTEGER
+                )
+                """
+            )
+            self._conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_chunks_file ON chunks(file_path)"
+            )
+            self._conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_symbols_name ON symbols(name)"
+            )
+            self._conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_call_caller ON call_graph(caller)"
+            )
+            self._conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_call_callee ON call_graph(callee)"
+            )
 
     def _compute_vector(self, text: str) -> np.ndarray:
         """Compute a normalized subword character n-gram hash vector."""
@@ -284,20 +406,218 @@ class EpisodicCodebaseRAG:
             vec /= norm
         return vec
 
-    def index_workspace(self, workspace_dir: str) -> int:
-        """Scan and index all workspace source files into semantic chunks."""
-        from pathlib import Path
+    def _extract_python_ast(
+        self, content: str, rel_path: str, lines: list[str]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Parse Python source into AST chunks, symbol definitions, and caller edges."""
+        import ast
 
+        chunks: list[dict[str, Any]] = []
+        symbols: list[dict[str, Any]] = []
+        calls: list[dict[str, Any]] = []
+
+        try:
+            tree = ast.parse(content)
+        except Exception:
+            # Fall back to line windows if file has syntax errors
+            return self._extract_generic_chunks(rel_path, lines)
+
+        class Visitor(ast.NodeVisitor):
+            def __init__(self) -> None:
+                self.current_scope = ""
+
+            def visit_ClassDef(self, node: ast.ClassDef) -> None:
+                start_l = node.lineno
+                end_l = getattr(node, "end_lineno", node.lineno + len(node.body))
+                chunk_text = "\n".join(lines[start_l - 1 : end_l])
+                doc = ast.get_docstring(node) or ""
+                symbols.append(
+                    {
+                        "name": node.name,
+                        "symbol_type": "class",
+                        "file_path": rel_path,
+                        "start_line": start_l,
+                        "end_line": end_l,
+                        "docstring": doc,
+                    }
+                )
+                chunks.append(
+                    {
+                        "file_path": rel_path,
+                        "start_line": start_l,
+                        "end_line": end_l,
+                        "symbol": node.name,
+                        "symbol_type": "class",
+                        "content": chunk_text,
+                        "docstring": doc,
+                    }
+                )
+                old_scope = self.current_scope
+                self.current_scope = node.name
+                self.generic_visit(node)
+                self.current_scope = old_scope
+
+            def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+                self._record_func(node, "function")
+
+            def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+                self._record_func(node, "async_function")
+
+            def _record_func(
+                self, node: ast.FunctionDef | ast.AsyncFunctionDef, ftype: str
+            ) -> None:
+                start_l = node.lineno
+                end_l = getattr(node, "end_lineno", node.lineno + len(node.body))
+                chunk_text = "\n".join(lines[start_l - 1 : end_l])
+                doc = ast.get_docstring(node) or ""
+                scoped_name = (
+                    f"{self.current_scope}.{node.name}"
+                    if self.current_scope
+                    else node.name
+                )
+                stype = "method" if self.current_scope else ftype
+                symbols.append(
+                    {
+                        "name": scoped_name,
+                        "symbol_type": stype,
+                        "file_path": rel_path,
+                        "start_line": start_l,
+                        "end_line": end_l,
+                        "docstring": doc,
+                    }
+                )
+                chunks.append(
+                    {
+                        "file_path": rel_path,
+                        "start_line": start_l,
+                        "end_line": end_l,
+                        "symbol": scoped_name,
+                        "symbol_type": stype,
+                        "content": chunk_text,
+                        "docstring": doc,
+                    }
+                )
+                old_scope = self.current_scope
+                self.current_scope = scoped_name
+                self.generic_visit(node)
+                self.current_scope = old_scope
+
+            def visit_Call(self, node: ast.Call) -> None:
+                callee = ""
+                if isinstance(node.func, ast.Name):
+                    callee = node.func.id
+                elif isinstance(node.func, ast.Attribute):
+                    callee = node.func.attr
+                if callee and self.current_scope:
+                    calls.append(
+                        {
+                            "caller": self.current_scope,
+                            "callee": callee,
+                            "file_path": rel_path,
+                            "line_number": getattr(node, "lineno", 0),
+                        }
+                    )
+                self.generic_visit(node)
+
+        visitor = Visitor()
+        visitor.visit(tree)
+
+        # If no AST symbols found (e.g. flat script), fall back to sliding windows
+        if not chunks:
+            return self._extract_generic_chunks(rel_path, lines)
+
+        return chunks, symbols, calls
+
+    def _extract_generic_chunks(
+        self, rel_path: str, lines: list[str]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Generic sliding window chunker with regex symbol boundary detection."""
+        chunks: list[dict[str, Any]] = []
+        symbols: list[dict[str, Any]] = []
+        calls: list[dict[str, Any]] = []
+
+        chunk_size = 35
+        step = 25
+        for i in range(0, len(lines), step):
+            chunk_lines = lines[i : i + chunk_size]
+            chunk_text = "\n".join(chunk_lines)
+            if not chunk_text.strip():
+                continue
+
+            symbol = ""
+            symbol_type = "snippet"
+            for line in chunk_lines:
+                clean_l = line.strip()
+                if (
+                    clean_l.startswith("def ")
+                    or clean_l.startswith("class ")
+                    or clean_l.startswith("function ")
+                    or clean_l.startswith("export ")
+                    or clean_l.startswith("fn ")
+                    or clean_l.startswith("func ")
+                ):
+                    raw_name = (
+                        clean_l.split("(")[0]
+                        .replace("def ", "")
+                        .replace("class ", "")
+                        .replace("function ", "")
+                        .replace("export ", "")
+                        .replace("fn ", "")
+                        .replace("func ", "")
+                        .strip()
+                    )
+                    symbol = raw_name
+                    symbol_type = "symbol"
+                    break
+
+            chunks.append(
+                {
+                    "file_path": rel_path,
+                    "start_line": i + 1,
+                    "end_line": min(len(lines), i + chunk_size),
+                    "symbol": symbol,
+                    "symbol_type": symbol_type,
+                    "content": chunk_text,
+                    "docstring": "",
+                }
+            )
+            if symbol:
+                symbols.append(
+                    {
+                        "name": symbol,
+                        "symbol_type": symbol_type,
+                        "file_path": rel_path,
+                        "start_line": i + 1,
+                        "end_line": min(len(lines), i + chunk_size),
+                        "docstring": "",
+                    }
+                )
+
+        return chunks, symbols, calls
+
+    def index_workspace(self, workspace_dir: str, incremental: bool = True) -> int:
+        """Scan and index all workspace source files into SQLite-backed semantic chunks."""
         ws = Path(workspace_dir).resolve()
         if not ws.exists():
             return 0
 
         self.chunks = []
+        cur = self._conn.cursor()
+
+        # Load indexed file mtime cache if incremental
+        existing_mtimes: dict[str, float] = {}
+        if incremental:
+            for row in cur.execute("SELECT file_path, mtime FROM files_meta"):
+                existing_mtimes[row[0]] = float(row[1])
+
+        files_to_index: list[tuple[Path, str, float]] = []
         for file_path in ws.rglob("*"):
             if file_path.is_dir():
                 continue
             if any(
-                part.startswith(".") or "venv" in part.lower() or part in self.IGNORE_DIRS
+                part.startswith(".")
+                or "venv" in part.lower()
+                or part in self.IGNORE_DIRS
                 for part in file_path.parts[:-1]
             ):
                 continue
@@ -305,62 +625,131 @@ class EpisodicCodebaseRAG:
                 continue
 
             try:
-                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                mtime = file_path.stat().st_mtime
+                rel_path = str(file_path.relative_to(ws))
+                if incremental and rel_path in existing_mtimes and existing_mtimes[rel_path] >= mtime:
+                    continue  # Unchanged file, skip re-indexing
+                files_to_index.append((file_path, rel_path, mtime))
+            except Exception:
+                continue
+
+        # Process changed/new files
+        for fpath, rel_p, mtime in files_to_index:
+            try:
+                content = fpath.read_text(encoding="utf-8", errors="ignore")
                 lines = content.splitlines()
                 if not lines:
                     continue
 
-                rel_path = str(file_path.relative_to(ws))
+                if fpath.suffix.lower() == ".py":
+                    c_list, s_list, call_list = self._extract_python_ast(content, rel_p, lines)
+                else:
+                    c_list, s_list, call_list = self._extract_generic_chunks(rel_p, lines)
 
-                # Chunking: windows of 35 lines with 10 line overlap
-                chunk_size = 35
-                step = 25
-                for i in range(0, len(lines), step):
-                    chunk_lines = lines[i : i + chunk_size]
-                    chunk_text = "\n".join(chunk_lines)
-                    if not chunk_text.strip():
-                        continue
+                # Remove previous entries for this file
+                cur.execute("DELETE FROM chunks WHERE file_path = ?", (rel_p,))
+                cur.execute("DELETE FROM symbols WHERE file_path = ?", (rel_p,))
+                cur.execute("DELETE FROM call_graph WHERE file_path = ?", (rel_p,))
 
-                    # Extract primary symbol if python
-                    symbol = ""
-                    for line in chunk_lines:
-                        clean_l = line.strip()
-                        if (
-                            clean_l.startswith("def ")
-                            or clean_l.startswith("class ")
-                            or clean_l.startswith("function ")
-                            or clean_l.startswith("export ")
-                        ):
-                            symbol = (
-                                clean_l.split("(")[0]
-                                .replace("def ", "")
-                                .replace("class ", "")
-                                .replace("function ", "")
-                                .replace("export ", "")
-                                .strip()
-                            )
-                            break
-
-                    vec = self._compute_vector(f"{rel_path} {symbol}\n{chunk_text}")
-                    self.chunks.append(
-                        CodeChunk(
-                            file_path=rel_path,
-                            start_line=i + 1,
-                            end_line=min(len(lines), i + chunk_size),
-                            content=chunk_text,
-                            symbol=symbol,
-                            vector=vec,
-                        )
+                # Insert chunks
+                for item in c_list:
+                    vec = self._compute_vector(f"{rel_p} {item['symbol']}\n{item['content']}")
+                    cur.execute(
+                        """
+                        INSERT INTO chunks (file_path, start_line, end_line, symbol, symbol_type, content, docstring, vector)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            rel_p,
+                            item["start_line"],
+                            item["end_line"],
+                            item["symbol"],
+                            item["symbol_type"],
+                            item["content"],
+                            item["docstring"],
+                            vec.astype(np.float32).tobytes(),
+                        ),
                     )
+
+                # Insert symbols
+                for sym in s_list:
+                    cur.execute(
+                        """
+                        INSERT INTO symbols (name, symbol_type, file_path, start_line, end_line, docstring)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            sym["name"],
+                            sym["symbol_type"],
+                            rel_p,
+                            sym["start_line"],
+                            sym["end_line"],
+                            sym["docstring"],
+                        ),
+                    )
+
+                # Insert call graph edges
+                for cl in call_list:
+                    cur.execute(
+                        """
+                        INSERT INTO call_graph (caller, callee, file_path, line_number)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (cl["caller"], cl["callee"], rel_p, cl["line_number"]),
+                    )
+
+                # Update files_meta
+                cur.execute(
+                    """
+                    INSERT INTO files_meta (file_path, mtime, chunk_count)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(file_path) DO UPDATE SET mtime = excluded.mtime, chunk_count = excluded.chunk_count
+                    """,
+                    (rel_p, mtime, len(c_list)),
+                )
+
             except Exception:
                 continue
 
-        if self.chunks:
-            self._matrix = np.vstack([c.vector for c in self.chunks])
+        self._conn.commit()
+
+        # Reconstruct in-memory active matrix from SQLite
+        self._sync_in_memory_chunks()
+        return len(self.chunks)
+
+    def _sync_in_memory_chunks(self) -> None:
+        """Synchronize in-memory CodeChunk list and NumPy matrix from SQLite database."""
+        cur = self._conn.cursor()
+        self.chunks = []
+        vecs: list[np.ndarray] = []
+
+        for row in cur.execute(
+            "SELECT file_path, start_line, end_line, content, symbol, symbol_type, docstring, vector FROM chunks"
+        ):
+            blob = row[7]
+            vec = (
+                np.frombuffer(blob, dtype=np.float32).copy()
+                if blob is not None
+                else None
+            )
+            chunk = CodeChunk(
+                file_path=row[0],
+                start_line=row[1],
+                end_line=row[2],
+                content=row[3],
+                symbol=row[4] or "",
+                vector=vec,
+                symbol_type=row[5] or "",
+                docstring=row[6] or "",
+            )
+            self.chunks.append(chunk)
+            if vec is not None and len(vec) == self.vector_dim:
+                vecs.append(vec)
+
+        if vecs:
+            self._matrix = np.vstack(vecs)
         else:
             self._matrix = None
-
-        return len(self.chunks)
 
     def search(self, query: str, top_k: int = 4) -> list[dict[str, Any]]:
         """Search code chunks matching query with cosine similarity."""
@@ -371,7 +760,7 @@ class EpisodicCodebaseRAG:
         scores = np.dot(self._matrix, query_vec)
         top_indices = np.argsort(scores)[::-1][:top_k]
 
-        results = []
+        results: list[dict[str, Any]] = []
         for idx in top_indices:
             score = float(scores[idx])
             chunk = self.chunks[idx]
@@ -381,16 +770,107 @@ class EpisodicCodebaseRAG:
                     "start_line": chunk.start_line,
                     "end_line": chunk.end_line,
                     "symbol": chunk.symbol,
+                    "symbol_name": chunk.symbol,
+                    "symbol_type": getattr(chunk, "symbol_type", ""),
                     "score": round(score, 4),
+                    "similarity": round(score, 4),
                     "snippet": chunk.content[:400],
+                    "content": chunk.content,
                 }
             )
         return results
 
+    def search_symbols(self, query: str, top_k: int = 10) -> list[dict[str, Any]]:
+        """Search symbol index by name matching substring query."""
+        cur = self._conn.cursor()
+        results: list[dict[str, Any]] = []
+        clean_q = f"%{query.strip()}%"
+        for row in cur.execute(
+            """
+            SELECT name, symbol_type, file_path, start_line, end_line, docstring
+            FROM symbols
+            WHERE name LIKE ?
+            LIMIT ?
+            """,
+            (clean_q, top_k),
+        ):
+            results.append(
+                {
+                    "name": row[0],
+                    "symbol_type": row[1],
+                    "file_path": row[2],
+                    "start_line": row[3],
+                    "end_line": row[4],
+                    "docstring": row[5] or "",
+                }
+            )
+        return results
+
+    def find_callers(self, symbol_name: str) -> list[dict[str, Any]]:
+        """Find functions or methods that call the specified symbol."""
+        cur = self._conn.cursor()
+        results: list[dict[str, Any]] = []
+        target = symbol_name.strip()
+        for row in cur.execute(
+            """
+            SELECT caller, callee, file_path, line_number
+            FROM call_graph
+            WHERE callee = ? OR callee LIKE ?
+            """,
+            (target, f"%.{target}"),
+        ):
+            results.append(
+                {
+                    "caller": row[0],
+                    "callee": row[1],
+                    "file_path": row[2],
+                    "line_number": row[3],
+                }
+            )
+        return results
+
+    def find_callees(self, symbol_name: str) -> list[dict[str, Any]]:
+        """Find functions or methods called by the specified symbol."""
+        cur = self._conn.cursor()
+        results: list[dict[str, Any]] = []
+        target = symbol_name.strip()
+        for row in cur.execute(
+            """
+            SELECT caller, callee, file_path, line_number
+            FROM call_graph
+            WHERE caller = ? OR caller LIKE ?
+            """,
+            (target, f"%.{target}"),
+        ):
+            results.append(
+                {
+                    "caller": row[0],
+                    "callee": row[1],
+                    "file_path": row[2],
+                    "line_number": row[3],
+                }
+            )
+        return results
+
+    def get_stats(self) -> dict[str, Any]:
+        """Return counts of indexed files, chunks, symbols, and call graph edges."""
+        cur = self._conn.cursor()
+        f_count = cur.execute("SELECT COUNT(*) FROM files_meta").fetchone()[0]
+        c_count = cur.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+        s_count = cur.execute("SELECT COUNT(*) FROM symbols").fetchone()[0]
+        call_count = cur.execute("SELECT COUNT(*) FROM call_graph").fetchone()[0]
+        return {
+            "files_indexed": int(f_count),
+            "chunks_stored": int(c_count),
+            "symbols_indexed": int(s_count),
+            "call_graph_edges": int(call_count),
+            "vector_dimension": self.vector_dim,
+            "database_path": self.db_path,
+        }
+
     def save(self, filepath: str) -> None:
-        """Persist semantic code chunks and embeddings to disk."""
+        """Persist semantic code chunks and embeddings to disk (JSON format)."""
         import json
-        from pathlib import Path
 
         p = Path(filepath).expanduser().resolve()
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -403,6 +883,8 @@ class EpisodicCodebaseRAG:
                     "end_line": c.end_line,
                     "content": c.content,
                     "symbol": c.symbol,
+                    "symbol_type": getattr(c, "symbol_type", ""),
+                    "docstring": getattr(c, "docstring", ""),
                     "vector": c.vector.tolist() if c.vector is not None else None,
                 }
                 for c in self.chunks
@@ -413,7 +895,6 @@ class EpisodicCodebaseRAG:
     def load(self, filepath: str) -> bool:
         """Load persisted semantic code chunks and reconstruct vector matrix."""
         import json
-        from pathlib import Path
 
         p = Path(filepath).expanduser().resolve()
         if not p.exists():
@@ -422,6 +903,9 @@ class EpisodicCodebaseRAG:
             data = json.loads(p.read_text(encoding="utf-8"))
             self.vector_dim = data.get("vector_dim", self.vector_dim)
             self.chunks = []
+            cur = self._conn.cursor()
+            cur.execute("DELETE FROM chunks")
+
             for item in data.get("chunks", []):
                 vec = (
                     np.array(item["vector"], dtype=np.float32)
@@ -435,8 +919,29 @@ class EpisodicCodebaseRAG:
                     content=item["content"],
                     symbol=item.get("symbol", ""),
                     vector=vec,
+                    symbol_type=item.get("symbol_type", ""),
+                    docstring=item.get("docstring", ""),
                 )
                 self.chunks.append(chunk)
+                cur.execute(
+                    """
+                    INSERT INTO chunks (file_path, start_line, end_line, symbol, symbol_type, content, docstring, vector)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        chunk.file_path,
+                        chunk.start_line,
+                        chunk.end_line,
+                        chunk.symbol,
+                        chunk.symbol_type,
+                        chunk.content,
+                        chunk.docstring,
+                        vec.astype(np.float32).tobytes() if vec is not None else None,
+                    ),
+                )
+
+            self._conn.commit()
+
             if self.chunks and any(c.vector is not None for c in self.chunks):
                 self._matrix = np.vstack([c.vector for c in self.chunks if c.vector is not None])
             else:

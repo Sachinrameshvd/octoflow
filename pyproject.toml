@@ -62,7 +62,7 @@ include = ["octopus_brain*", "envs*", "octoflow*"]
 exclude = ["tests*", "experiments*", "visualizer*", "checkpoints*"]
 
 [tool.setuptools.package-data]
-octoflow = ["dist/**", "dist/**/*"]
+octoflow = ["dist/**", "dist/**/*", "guilds/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

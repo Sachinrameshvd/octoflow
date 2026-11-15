@@ -176,6 +176,9 @@ class OctoFlowMCPServer:
         self._real_stdout: TextIO | None = None
         self._runs: dict[str, dict[str, Any]] = {}
         self._latest_run_id: str | None = None
+        self._memory: Any | None = None
+        self._rag_indexed: bool = False
+        self.current_guild: str | None = None
         self._setup_core_tools()
 
     def _resolve_safe(self, rel_path: str) -> Path:
@@ -258,6 +261,11 @@ class OctoFlowMCPServer:
                             "type": "number",
                             "description": "Synchronous wait timeout before backgrounding (default: 60.0s).",
                             "default": 60.0,
+                        },
+                        "octos": {
+                            "type": "integer",
+                            "description": "Count of autonomous octopuses to deploy: 1 (Solo 8-arm swarm), 3 (Triad), or 8 (Task-Adaptive Octopolis with 64 neural arms).",
+                            "default": 1,
                         },
                     },
                     "required": ["objective"],
@@ -407,10 +415,154 @@ class OctoFlowMCPServer:
             handler=self._handle_read_file,
         )
 
+        # 9. Tool: octoflow_search_codebase
+        self.registry.register_tool(
+            schema=MCPToolSchema(
+                name="octoflow_search_codebase",
+                description=(
+                    "Semantic vector and lexical search across indexed workspace source files, classes, and functions "
+                    "using Episodic Codebase RAG. Returns top-k matching code snippets with file paths, line ranges, "
+                    "and similarity scores. Side effects: none (read-only query strictly within the configured workspace directory)."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Natural language query, function description, or technical concept to search.",
+                        },
+                        "top_k": {
+                            "type": "integer",
+                            "description": "Maximum number of relevant code chunks to return (default: 5).",
+                            "default": 5,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            ),
+            handler=self._handle_search_codebase,
+            aliases=["octoflow_rag_search", "search_codebase"],
+        )
+
+        # 10. Tool: octoflow_search_symbols
+        self.registry.register_tool(
+            schema=MCPToolSchema(
+                name="octoflow_search_symbols",
+                description=(
+                    "Lookup classes, functions, async functions, and methods across the codebase AST connectome. "
+                    "Returns exact or substring symbol matches with file paths, line ranges, and docstrings. "
+                    "Side effects: none (read-only query strictly within the configured workspace directory)."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Symbol name or substring pattern (e.g. 'SupraesophagealConductor', 'search_codebase').",
+                        },
+                        "top_k": {
+                            "type": "integer",
+                            "description": "Maximum number of matching symbols to return (default: 10).",
+                            "default": 10,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            ),
+            handler=self._handle_search_symbols,
+            aliases=["octoflow_symbols", "search_symbols"],
+        )
+
+        # 11. Tool: octoflow_find_callers
+        self.registry.register_tool(
+            schema=MCPToolSchema(
+                name="octoflow_find_callers",
+                description=(
+                    "Query the codebase AST call graph connectome to find all callers and call sites "
+                    "referencing a specific function, method, or class. "
+                    "Side effects: none (read-only query strictly within the configured workspace directory)."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "symbol_name": {
+                            "type": "string",
+                            "description": "Target symbol or callee name to locate callers for (e.g. 'generate', 'arun_swarm').",
+                        },
+                    },
+                    "required": ["symbol_name"],
+                },
+            ),
+            handler=self._handle_find_callers,
+            aliases=["octoflow_callers", "find_callers"],
+        )
+
+        # 12. Tool: octoflow_switch_guild
+        self.registry.register_tool(
+            schema=MCPToolSchema(
+                name="octoflow_switch_guild",
+                description=(
+                    "Dynamically switch the active 8-arm specialist guild and configure the swarm roster "
+                    "to any of the 64 personas (e.g. 'cloud_devops', 'cybersec_ops', 'data_science', "
+                    "'enterprise_migration', 'mobile_apps', 'qa_resilience', 'systems_embedded', "
+                    "'web_fullstack') or custom project guilds. "
+                    "Side effects: updates active swarm arm configuration for subsequent runs."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "guild_name": {
+                            "type": "string",
+                            "description": "Name or alias of the specialist guild to activate (e.g. 'cloud_devops', 'devops', 'secops', 'web', 'data_science').",
+                        },
+                    },
+                    "required": ["guild_name"],
+                },
+            ),
+            handler=self._handle_switch_guild,
+            aliases=["octoflow_set_guild", "switch_guild"],
+        )
+
+        # 13. Tool: octoflow_octopolis
+        self.registry.register_tool(
+            schema=MCPToolSchema(
+                name="octoflow_octopolis",
+                description=(
+                    "Deploy the flagship Task-Adaptive 8-Octopus Swarm (Octopolis - 64 Neural Arms) "
+                    "across 4 phased convergence gates on any engineering task. Dynamically adapts domain goals "
+                    "across Architecture, Database, Backend, Frontend, Cognitive Logic, Security Sentinel, QA Testing, and DevOps. "
+                    "Side effects: modifies files and executes builds strictly within the configured workspace directory (--dir)."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "objective": {
+                            "type": "string",
+                            "description": "The engineering task, bug fix, feature, or project to solve with all 8 octopuses.",
+                        },
+                        "cycles_per_octopus": {
+                            "type": "integer",
+                            "description": "Cognitive problem-solving cycles per octopus (default: 3).",
+                            "default": 3,
+                        },
+                        "dry_run": {
+                            "type": "boolean",
+                            "description": "Execute in dry-run mode without real provider credentials.",
+                            "default": False,
+                        },
+                    },
+                    "required": ["objective"],
+                },
+            ),
+            handler=self._handle_run_octopolis,
+            aliases=["octoflow_run_consortium", "octopolis"],
+        )
+
     def _get_conductor(
         self, morphology: str = "software_dev", guild: str | None = None, dry_run: bool = False
     ) -> SupraesophagealConductor:
         """Create or configure a SupraesophagealConductor instance."""
+        active_guild = guild or self.current_guild
         has_real_key = bool(
             os.getenv("ANTHROPIC_API_KEY")
             or os.getenv("OPENAI_API_KEY")
@@ -426,21 +578,21 @@ class OctoFlowMCPServer:
             is_dry = True
 
         custom_roster = None
-        morph_val = SwarmMorphology.CUSTOM if guild else SwarmMorphology(morphology)
+        morph_val = SwarmMorphology.CUSTOM if active_guild else SwarmMorphology(morphology)
 
-        if guild:
+        if active_guild:
             from octoflow.guild import load_guild
 
             try:
-                guild_spec = load_guild(guild, project_dir=self.workspace_dir)
+                guild_spec = load_guild(active_guild, project_dir=self.workspace_dir)
                 custom_roster = guild_spec.to_arm_roster()
             except Exception as e:
-                logger.warning("Failed loading guild '%s': %s", guild, e)
+                logger.warning("Failed loading guild '%s': %s", active_guild, e)
 
         config = OctoFlowConfig(
             workspace_dir=str(self.workspace_dir),
             morphology=morph_val,
-            guild=guild,
+            guild=active_guild,
             custom_roster=custom_roster or [],
             model_provider=provider_name,
             dry_run=is_dry,
@@ -507,6 +659,10 @@ class OctoFlowMCPServer:
     async def _handle_run_swarm(self, args: dict[str, Any]) -> MCPToolCallResult:
         """Handler for octoflow_run tool."""
         objective = args["objective"]
+        octos_count = int(args.get("octos", 1))
+        if octos_count >= 8 or bool(args.get("consortium", False)):
+            return await self._handle_run_octopolis(args)
+
         morphology = args.get("morphology", "software_dev")
         guild = args.get("guild")
         max_cycles = int(args.get("max_cycles", 10))
@@ -614,6 +770,68 @@ class OctoFlowMCPServer:
                 ],
                 isError=False,
             )
+
+    async def _handle_run_octopolis(self, args: dict[str, Any]) -> MCPToolCallResult:
+        """Handler for octoflow_octopolis tool deploying all 8 task-adaptive octopuses."""
+        objective = args["objective"]
+        cycles = int(args.get("cycles_per_octopus", args.get("max_cycles", 2)))
+        dry_run = bool(args.get("dry_run", False))
+
+        from octoflow.config import OctoFlowConfig
+        from octoflow.consortium import OctosConsortium
+
+        has_real_key = bool(
+            os.getenv("ANTHROPIC_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("GROK_API_KEY")
+            or os.getenv("DEEPSEEK_API_KEY")
+        )
+        is_dry = dry_run or (os.getenv("OCTOFLOW_DRY_RUN") == "1") or not has_real_key
+        provider_name = (
+            "mock" if is_dry else ("anthropic" if os.getenv("ANTHROPIC_API_KEY") else "mock")
+        )
+        if provider_name == "mock":
+            is_dry = True
+
+        config = OctoFlowConfig(
+            workspace_dir=str(self.workspace_dir),
+            model_provider=provider_name,
+            dry_run=is_dry,
+        )
+
+        consortium = OctosConsortium(
+            config=config,
+            octopus_count=8,
+        )
+
+        result = await consortium.arun_consortium(
+            objective=objective,
+            cycles_per_octopus=cycles,
+        )
+
+        total_arms = result.get("total_arms", 64)
+        total_tokens = result.get("total_tokens_consumed", 0)
+        total_cost = result.get("total_cost_dollars", 0.0)
+        exec_time = result.get("execution_time_seconds", 0.0)
+
+        text = (
+            f"◈ Task-Adaptive 8-Octopus Octopolis Run Completed (64 Neural Arms):\n"
+            f"• Objective: {objective}\n"
+            f"• Tier: Flagship Octopolis (8 Octopuses • {total_arms} Arms)\n"
+            f"• Phase Gates Completed: Architecture -> Core Engineering (DB/API/UI/AI) -> Shield (Sec/QA) -> Operations\n"
+            f"• Total Tokens Consumed: {total_tokens:,}\n"
+            f"• Execution Time: {exec_time:.2f}s\n"
+            f"• Estimated Cost: ${total_cost:.4f}\n"
+            f"• Status: ✔ ALL 8 OCTOPUSES DELIVERED\n"
+        )
+        return MCPToolCallResult(
+            content=[
+                {"type": "text", "text": text},
+                {"type": "text", "text": json.dumps(result, default=str)},
+            ],
+            isError=False,
+        )
 
     async def _handle_get_run_status(self, args: dict[str, Any]) -> MCPToolCallResult:
         """Handler for octoflow_get_run_status tool."""
@@ -835,6 +1053,229 @@ class OctoFlowMCPServer:
         except Exception as e:
             return MCPToolCallResult(
                 content=[{"type": "text", "text": f"Failed reading file '{path_arg}': {e}"}],
+                isError=True,
+            )
+
+    def _get_memory(self) -> Any:
+        """Initialize and return the VerticalLobeMemory instance with Codebase RAG."""
+        if self._memory is None:
+            from octoflow.memory import VerticalLobeMemory
+
+            db_path = self.workspace_dir / ".octoflow" / "memory" / "codebase_rag.db"
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            self._memory = VerticalLobeMemory(db_path=str(db_path))
+
+        if not self._rag_indexed:
+            try:
+                self._memory.index_workspace(str(self.workspace_dir))
+                self._rag_indexed = True
+            except Exception as e:
+                logger.warning("Codebase RAG initial indexing warning: %s", e)
+
+        return self._memory
+
+    async def _handle_search_codebase(self, args: dict[str, Any]) -> MCPToolCallResult:
+        """Handler for octoflow_search_codebase tool."""
+        query = str(args.get("query", "")).strip()
+        if not query:
+            return MCPToolCallResult(
+                content=[{"type": "text", "text": "Error: 'query' argument is required."}],
+                isError=True,
+            )
+        top_k = int(args.get("top_k", 5))
+        try:
+            mem = self._get_memory()
+            results = mem.search_codebase(query, top_k=top_k)
+            if not results:
+                return MCPToolCallResult(
+                    content=[{"type": "text", "text": f"No code snippets matched query: '{query}'"}],
+                    isError=False,
+                )
+            lines = [f"◈ Codebase RAG Search Results for '{query}' ({len(results)} matches):"]
+            for idx, r in enumerate(results, start=1):
+                sim = r.get("similarity", r.get("score", 0.0))
+                fp = r.get("file_path", "unknown")
+                sline = r.get("start_line", 1)
+                eline = r.get("end_line", 1)
+                sym = r.get("symbol_name") or r.get("symbol") or ""
+                sym_tag = f" [{sym}]" if sym else ""
+                lines.append(f"\n--- [{idx}] {fp}:{sline}-{eline}{sym_tag} (Score: {sim:.3f}) ---")
+                snippet = (r.get("content") or r.get("snippet") or "").strip()
+                lines.append(snippet)
+
+            return MCPToolCallResult(
+                content=[
+                    {"type": "text", "text": "\n".join(lines)},
+                    {"type": "text", "text": json.dumps(results, default=str)},
+                ],
+                isError=False,
+            )
+        except Exception as e:
+            return MCPToolCallResult(
+                content=[
+                    {
+                        "type": "text",
+                        "text": f"Error performing codebase search: {type(e).__name__}: {e}",
+                    }
+                ],
+                isError=True,
+            )
+
+    async def _handle_search_symbols(self, args: dict[str, Any]) -> MCPToolCallResult:
+        """Handler for octoflow_search_symbols tool."""
+        query = str(args.get("query", "")).strip()
+        if not query:
+            return MCPToolCallResult(
+                content=[{"type": "text", "text": "Error: 'query' argument is required."}],
+                isError=True,
+            )
+        top_k = int(args.get("top_k", 10))
+        try:
+            mem = self._get_memory()
+            symbols = mem.search_symbols(query, top_k=top_k)
+            if not symbols:
+                return MCPToolCallResult(
+                    content=[{"type": "text", "text": f"No symbols found matching: '{query}'"}],
+                    isError=False,
+                )
+            lines = [f"◈ Codebase AST Symbol Matches for '{query}' ({len(symbols)} found):"]
+            for s in symbols:
+                sym_name = s.get("name", "")
+                sym_type = s.get("symbol_type", "")
+                fp = s.get("file_path", "")
+                sline = s.get("start_line", 1)
+                eline = s.get("end_line", 1)
+                doc = s.get("docstring") or ""
+                doc_preview = f" - {doc.splitlines()[0][:60]}..." if doc else ""
+                lines.append(f"• {sym_name} ({sym_type}) -> {fp}:{sline}-{eline}{doc_preview}")
+
+            return MCPToolCallResult(
+                content=[
+                    {"type": "text", "text": "\n".join(lines)},
+                    {"type": "text", "text": json.dumps(symbols, default=str)},
+                ],
+                isError=False,
+            )
+        except Exception as e:
+            return MCPToolCallResult(
+                content=[
+                    {
+                        "type": "text",
+                        "text": f"Error searching symbols: {type(e).__name__}: {e}",
+                    }
+                ],
+                isError=True,
+            )
+
+    async def _handle_find_callers(self, args: dict[str, Any]) -> MCPToolCallResult:
+        """Handler for octoflow_find_callers tool."""
+        symbol_name = str(args.get("symbol_name", "")).strip()
+        if not symbol_name:
+            return MCPToolCallResult(
+                content=[{"type": "text", "text": "Error: 'symbol_name' argument is required."}],
+                isError=True,
+            )
+        try:
+            mem = self._get_memory()
+            callers = mem.find_callers(symbol_name)
+            if not callers:
+                return MCPToolCallResult(
+                    content=[
+                        {
+                            "type": "text",
+                            "text": f"No recorded callers found for symbol: '{symbol_name}'",
+                        }
+                    ],
+                    isError=False,
+                )
+            lines = [f"◈ Callers of '{symbol_name}' in AST Connectome ({len(callers)} call sites):"]
+            for c in callers:
+                caller_name = c.get("caller", "<module>")
+                fp = c.get("file_path", "")
+                ln = c.get("line_number", 0)
+                lines.append(f"• {caller_name}() at {fp}:{ln}")
+
+            return MCPToolCallResult(
+                content=[
+                    {"type": "text", "text": "\n".join(lines)},
+                    {"type": "text", "text": json.dumps(callers, default=str)},
+                ],
+                isError=False,
+            )
+        except Exception as e:
+            return MCPToolCallResult(
+                content=[
+                    {
+                        "type": "text",
+                        "text": f"Error finding callers: {type(e).__name__}: {e}",
+                    }
+                ],
+                isError=True,
+            )
+
+    async def _handle_switch_guild(self, args: dict[str, Any]) -> MCPToolCallResult:
+        """Handler for octoflow_switch_guild tool."""
+        guild_name = str(args.get("guild_name", "")).strip()
+        if not guild_name:
+            return MCPToolCallResult(
+                content=[{"type": "text", "text": "Error: 'guild_name' argument is required."}],
+                isError=True,
+            )
+        try:
+            from octoflow.guild import load_guild
+
+            guild_spec = load_guild(guild_name, project_dir=self.workspace_dir)
+            self.current_guild = guild_spec.name
+            # Reconfigure conductor with new custom roster
+            self._get_conductor(guild=guild_spec.name)
+
+            domain_val = (
+                getattr(guild_spec, "domain", None)
+                or (guild_spec.metadata.get("domain") if getattr(guild_spec, "metadata", None) else None)
+                or guild_spec.name
+            )
+
+            lines = [
+                f"◈ Activated Specialist Guild: {guild_spec.name}",
+                f"• Description: {guild_spec.description}",
+                f"• Domain: {domain_val}",
+                "• Active 8-Arm Specialist Roster:",
+            ]
+            for arm in guild_spec.arms:
+                lines.append(
+                    f"  - Arm {arm.id}: {arm.role} [{arm.focus}]"
+                )
+
+            payload = {
+                "guild": guild_spec.name,
+                "domain": domain_val,
+                "description": guild_spec.description,
+                "arms": [
+                    {
+                        "id": a.id,
+                        "role": a.role,
+                        "focus": a.focus,
+                        "color": a.color,
+                        "tools": a.tools,
+                    }
+                    for a in guild_spec.arms
+                ],
+            }
+            return MCPToolCallResult(
+                content=[
+                    {"type": "text", "text": "\n".join(lines)},
+                    {"type": "text", "text": json.dumps(payload)},
+                ],
+                isError=False,
+            )
+        except Exception as e:
+            return MCPToolCallResult(
+                content=[
+                    {
+                        "type": "text",
+                        "text": f"Failed to switch guild to '{guild_name}': {type(e).__name__}: {e}",
+                    }
+                ],
                 isError=True,
             )
 

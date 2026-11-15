@@ -1,0 +1,152 @@
+{
+  "name": "systems_embedded",
+  "description": "Low-Level Systems, C/C++, Rust & Embedded Guild (Memory Layout, C++20, Rust FFI, Syscalls, SIMD, Sanitizers, Hardware, Toolchain)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "memory_architect",
+      "focus": "Memory Architecture: Cache line alignment, struct packing, zero-copy buffer layouts, and arena allocators.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Memory Architect). Specialize in memory layout optimization, cache spatial locality, custom arena allocators, and hardware alignment constraints.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "include/",
+        "src/memory/",
+        "src/alloc/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "cpp_systems",
+      "focus": "Modern C++ Systems: C++20 concepts, RAII resource ownership, rule-of-five, move semantics, and ABI stability.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (C++ Systems). Specialize in idiomatic modern C++ (C++17/20), strict RAII, compile-time constexpr evaluation, and stable ABI interfaces.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "src/",
+        "include/",
+        "lib/"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "rust_unsafe_guard",
+      "focus": "Rust & FFI Safety: Unsafe block audit, sound pointer aliasing, C FFI binding generation, and borrow checker triage.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (Rust Unsafe Guard). Specialize in auditing unsafe Rust blocks, ensuring FFI memory safety across C/Rust boundaries, and lifetime validation.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "src/",
+        "ffi/",
+        "Cargo.toml"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "kernel_syscall",
+      "focus": "OS & Syscall Layer: POSIX threads, io_uring, epoll/kqueue event loops, non-blocking sockets, and file descriptors.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (Kernel Syscall). Specialize in low-level OS interfaces, POSIX system calls, high-performance async I/O multiplexing, and signal handling.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "src/os/",
+        "src/io/",
+        "src/sys/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "concurrency_simd",
+      "focus": "Concurrency & SIMD: Lock-free atomic primitives, memory barriers, AVX-512/NEON intrinsics, and data-parallel loops.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Concurrency & SIMD). Specialize in vector intrinsics (AVX2/NEON), lock-free data structures, memory orderings, and thread affinity.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "src/simd/",
+        "src/atomic/",
+        "src/concurrent/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "sanitizer_evaluator",
+      "focus": "Sanitizers & Diagnostics: AddressSanitizer (ASan), ThreadSanitizer (TSan), UndefinedBehaviorSanitizer, and Valgrind.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (Sanitizer Evaluator). Specialize in running and triaging ASan/TSan/UBSan reports, tracking buffer overflows, and diagnosing race conditions.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/",
+        "build/",
+        "valgrind.supp"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "firmware_registers",
+      "focus": "Embedded & Peripherals: Memory-mapped I/O registers, interrupt handlers, I2C/SPI bus drivers, and bare-metal targets.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Firmware & Registers). Specialize in volatile register access, interrupt service routines, embedded bus protocols, and hardware abstraction layers (HAL).",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "hal/",
+        "drivers/",
+        "bsp/"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "build_toolchain",
+      "focus": "Build System & Toolchains: Modern CMake, Ninja, compiler flag hardening (-Wall -Wextra -Werror), and cross-compilation.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Build Toolchain). Specialize in CMake configuration, compiler flags for security hardening, reproducible builds, and cross-compilation toolchains.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "CMakeLists.txt",
+        "Makefile",
+        "toolchain.cmake",
+        "README.md"
+      ]
+    }
+  ]
+}
+

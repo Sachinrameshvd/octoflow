@@ -89,3 +89,30 @@ def test_config_subcommand_help_snapshots(runner, sub_cmd):
     assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
     expected = snapshot_file.read_text(encoding="utf-8")
     assert result.output == expected
+
+
+def test_claude_group_help_snapshot(runner):
+    snapshot_file = SNAPSHOT_DIR / "claude.txt"
+    result = runner.invoke(app, ["claude", "--help"], prog_name="octoflow")
+    assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
+    assert result.output == expected
+
+
+@pytest.mark.parametrize(
+    "sub_cmd",
+    ["init", "run", "prompt", "status"],
+)
+def test_claude_subcommand_help_snapshots(runner, sub_cmd):
+    snapshot_file = SNAPSHOT_DIR / f"claude_{sub_cmd}.txt"
+    result = runner.invoke(app, ["claude", sub_cmd, "--help"], prog_name="octoflow")
+    assert result.exit_code == 0
+    if os.getenv("UPDATE_SNAPSHOTS") == "1":
+        snapshot_file.write_text(result.output, encoding="utf-8")
+    assert snapshot_file.exists(), f"Snapshot file not found: {snapshot_file}"
+    expected = snapshot_file.read_text(encoding="utf-8")
+    assert result.output == expected
+

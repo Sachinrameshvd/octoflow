@@ -530,6 +530,11 @@ def get_user_guilds_dir() -> Path:
     return Path.home() / ".octoflow" / "guilds"
 
 
+def get_package_guilds_dir() -> Path:
+    """Return packaged first-party octoflow/guilds directory."""
+    return Path(__file__).resolve().parent / "guilds"
+
+
 def _is_safe_guild_name(name: str) -> bool:
     """Verify that guild name contains no path traversal components."""
     if not name or ".." in name or "/" in name or "\\" in name:
@@ -611,30 +616,53 @@ def load_guild(name: str, project_dir: Path | None = None) -> GuildSpec:
     if user_file.is_file():
         return load_guild_file(user_file)
 
-    # 3. Built-in guilds
+    # 3. Built-in hardcoded guilds
     clean_aliases = {
         "software-dev": "software_dev",
         "aiml-research": "aiml_research",
         "fullstack-ai": "fullstack_ai",
         "ml": "aiml_research",
+        "devops": "cloud_devops",
+        "security": "cybersec_ops",
+        "secops": "cybersec_ops",
+        "embedded": "systems_embedded",
+        "systems": "systems_embedded",
+        "qa": "qa_resilience",
+        "testing": "qa_resilience",
+        "web": "web_fullstack",
+        "fullstack": "web_fullstack",
+        "mobile": "mobile_apps",
+        "migration": "enterprise_migration",
+        "ds": "data_science",
     }
     canonical = clean_aliases.get(clean, clean)
     if canonical in BUILTIN_GUILD_SPECS:
         return BUILTIN_GUILD_SPECS[canonical]
 
+    # 4. Packaged first-party guilds in octoflow/guilds/<name>.json
+    pkg_dir = get_package_guilds_dir()
+    pkg_file = pkg_dir / f"{canonical}.json"
+    if pkg_file.is_file():
+        return load_guild_file(pkg_file)
+
+    all_builtins = sorted(
+        set(BUILTIN_GUILD_SPECS.keys())
+        | {f.stem for f in pkg_dir.glob("*.json") if f.is_file()}
+    )
     raise FileNotFoundError(
         f"Guild '{name}' not found. Searched:\n"
         f"  1. Project: {proj_file}\n"
         f"  2. User:    {user_file}\n"
-        f"  3. Built-ins: {', '.join(sorted(BUILTIN_GUILD_SPECS.keys()))}"
+        f"  3. Package: {pkg_file}\n"
+        f"  4. Built-ins: {', '.join(all_builtins)}"
     )
 
 
 def list_guilds(project_dir: Path | None = None) -> list[dict[str, Any]]:
-    """List all available guilds across project, user, and built-ins with precedence."""
+    """List all available guilds across project, user, package, and built-ins with precedence."""
     results: dict[str, dict[str, Any]] = {}
 
-    # 1. Built-in guilds (lowest precedence)
+    # 1. Built-in hardcoded guilds (lowest precedence)
     for name, spec in BUILTIN_GUILD_SPECS.items():
         results[name] = {
             "name": name,
@@ -644,7 +672,21 @@ def list_guilds(project_dir: Path | None = None) -> list[dict[str, Any]]:
             "arms_count": 8,
         }
 
-    # 2. User ~/.octoflow/guilds/*.json
+    # 2. Packaged first-party guilds in octoflow/guilds/*.json
+    pkg_dir = get_package_guilds_dir()
+    if pkg_dir.is_dir():
+        for f in sorted(pkg_dir.glob("*.json")):
+            is_valid, _, pkg_spec = validate_guild_file(f)
+            if is_valid and pkg_spec:
+                results[pkg_spec.name] = {
+                    "name": pkg_spec.name,
+                    "description": pkg_spec.description,
+                    "source": "builtin",
+                    "path": str(f),
+                    "arms_count": len(pkg_spec.arms),
+                }
+
+    # 3. User ~/.octoflow/guilds/*.json
     user_dir = get_user_guilds_dir()
     if user_dir.is_dir():
         for f in sorted(user_dir.glob("*.json")):
@@ -658,7 +700,7 @@ def list_guilds(project_dir: Path | None = None) -> list[dict[str, Any]]:
                     "arms_count": len(user_spec.arms),
                 }
 
-    # 3. Project .octoflow/guilds/*.json (highest precedence)
+    # 4. Project .octoflow/guilds/*.json (highest precedence)
     proj_dir = get_project_guilds_dir(project_dir)
     if proj_dir.is_dir():
         for f in sorted(proj_dir.glob("*.json")):

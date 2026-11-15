@@ -1,0 +1,18 @@
+                                                                                                    
+ Usage: octoflow claude run [OPTIONS] {goal}                                                        
+                                                                                                    
+ Run official Claude Code CLI with the compiled OctoFlow 8-Arm SPARC prompt.                        
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│ *    goal      <str>  Engineering or feature goal to execute with Claude Code [required]         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir                           -d      <str>  Target project workspace folder [default: .]      │
+│ --print                         -p             Run Claude in non-interactive print mode (for     │
+│                                                pipes/scripts)                                    │
+│ --dangerously-skip-permissions                 Bypass permission prompts (sandboxed)             │
+│ --dry-run                                      Display the compiled command and prompt without   │
+│                                                executing                                         │
+│ --help                                         Show this message and exit.                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

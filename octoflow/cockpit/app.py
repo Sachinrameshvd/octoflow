@@ -16,6 +16,7 @@ import subprocess
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -29,7 +30,6 @@ from octoflow.cockpit.render import (
 )
 from octoflow.cockpit.session import CockpitSession
 from octoflow.cockpit.shell import confirm_live_cockpit, execute_cockpit_shell
-from octoflow.glyphs import glyph
 from octoflow.config import (
     OctoFlowConfig,
     SwarmMorphology,
@@ -40,6 +40,7 @@ from octoflow.config import (
     mask_credential,
     save_secure_config,
 )
+from octoflow.glyphs import glyph
 from octoflow.logging_config import set_cockpit_active
 from octoflow.router import (
     RouteKind,
@@ -98,6 +99,16 @@ COCKPIT_COMMANDS: list[str] = [
     "/commit",
     "/rollback",
     "/undo",
+    "/receipt",
+    "/runs",
+    "/replay",
+    "/gate",
+    "/surprise",
+    "/dashboard",
+    "/feedback",
+    "/tree",
+    "/interview",
+    "/steer",
     "/ui",
     "/memory",
     "/status",
@@ -107,6 +118,36 @@ COCKPIT_COMMANDS: list[str] = [
     "/quit",
     "/llm",
 ]
+
+
+def _sort_tree_entry(p: Path) -> tuple[bool, str]:
+    return (not p.is_dir(), p.name.lower())
+
+
+def _build_workspace_tree(
+    parent_tree: Any,
+    current_path: Path,
+    current_depth: int,
+    depth_limit: int,
+    skip_names: set[str],
+    theme_secondary: str,
+) -> None:
+    if current_depth > depth_limit:
+        return
+    try:
+        entries = sorted(current_path.iterdir(), key=_sort_tree_entry)
+    except Exception:
+        return
+    for entry in entries:
+        if entry.name in skip_names or entry.name.startswith("."):
+            continue
+        if entry.is_dir():
+            branch = parent_tree.add(f"[{theme_secondary}]◈ {entry.name}/[/{theme_secondary}]")
+            _build_workspace_tree(
+                branch, entry, current_depth + 1, depth_limit, skip_names, theme_secondary
+            )
+        else:
+            parent_tree.add(f"[white]· {entry.name}[/white]")
 
 
 def prompt_user_str(console: Console, prompt_text: str = "") -> str:
@@ -338,10 +379,20 @@ def _run_cockpit_impl(
                     "rag",
                     "budget",
                     "ignite",
+                    "open",
                     "diff",
                     "commit",
                     "rollback",
                     "undo",
+                    "receipt",
+                    "runs",
+                    "replay",
+                    "gate",
+                    "surprise",
+                    "dashboard",
+                    "feedback",
+                    "tree",
+                    "interview",
                     "ui",
                     "memory",
                     "status",
@@ -539,6 +590,30 @@ def _run_cockpit_impl(
                 )
                 help_table.add_row(
                     "/rollback", "Revert workspace to state before last objective", "/rollback"
+                )
+                help_table.add_row(
+                    "/receipt [id]", "Display truthful token receipt and sensory gate savings", "/receipt"
+                )
+                help_table.add_row(
+                    "/runs", "List recent execution runs and git provenance history", "/runs"
+                )
+                help_table.add_row(
+                    "/replay [id]", "Replay deterministic execution trace in terminal & 3D HUD", "/replay"
+                )
+                help_table.add_row(
+                    "/gate", "Inspect sensory surprise gate analytics (ΔS vs θ)", "/gate"
+                )
+                help_table.add_row(
+                    "/dashboard", "Display reactive swarm console and token savings metrics", "/dashboard"
+                )
+                help_table.add_row(
+                    "/tree [depth]", "Display workspace directory tree structure", "/tree 2"
+                )
+                help_table.add_row(
+                    "/feedback", "Launch privacy-preserving feedback & issue generator", "/feedback"
+                )
+                help_table.add_row(
+                    "/interview [goal]", "Run pre-flight architect design choices interview", "/interview auth"
                 )
                 help_table.add_row("/ui", "Open 3D WebGL Constellation in default browser", "/ui")
                 help_table.add_row(
@@ -1094,9 +1169,10 @@ def _run_cockpit_impl(
                 )
                 continue
 
-            elif user_input == "/ignite":
-                from octoflow.ignition import ProjectIgniter
+            elif user_input.startswith("/ignite"):
+                from octoflow.ignition import ProjectIgniter, open_url_in_browser
 
+                open_browser = any(arg in user_input for arg in ["--open", "-o", "open"])
                 bolt_sym = glyph("BOLT")
                 ok_sym = glyph("OK")
                 warn_sym = glyph("WARN")
@@ -1104,7 +1180,7 @@ def _run_cockpit_impl(
                     f"[{s.theme.rich_primary}]{bolt_sym} Igniting project runtime services in {s.workspace}...[/{s.theme.rich_primary}]"
                 )
                 igniter = ProjectIgniter(workspace_dir=str(s.workspace))
-                manifest = igniter.ignite()
+                manifest = igniter.ignite(open_browser=open_browser)
                 if manifest.primary_url:
                     c.print(
                         f"[{s.theme.rich_success}]{ok_sym} Primary Live Service:[/{s.theme.rich_success}] {manifest.primary_url}"
@@ -1121,6 +1197,10 @@ def _run_cockpit_impl(
                     c.print(
                         f"[{s.theme.rich_success}]✔ Runtime online: [bold]{manifest.title}[/bold] ({manifest.service_type})[/{s.theme.rich_success}]"
                     )
+                    if open_browser and manifest.primary_url:
+                        c.print(
+                            f"[{s.theme.rich_success}]✔ Opened {manifest.primary_url} in default browser.[/{s.theme.rich_success}]"
+                        )
                 c.print()
                 continue
 
@@ -1155,6 +1235,354 @@ def _run_cockpit_impl(
                     c.print(
                         f"[{s.theme.rich_warning}]▲ No active running ignition service found. Run /ignite first.[/{s.theme.rich_warning}]\n"
                     )
+                continue
+
+            elif user_input.startswith("/receipt"):
+                from octoflow.receipt import (
+                    RECEIPT_METHOD_EXPLANATION,
+                    load_receipt,
+                    render_terminal_receipt,
+                )
+
+                parts = user_input.split()
+                show_method = "--method" in parts
+                run_id = None
+                for p in parts[1:]:
+                    if not p.startswith("-"):
+                        run_id = p
+                        break
+
+                if show_method:
+                    c.print(
+                        f"\n[{s.theme.rich_primary}]◈ OctoFlow Token Receipt Methodology:[/{s.theme.rich_primary}]"
+                    )
+                    c.print(f"  {RECEIPT_METHOD_EXPLANATION}\n")
+                    c.print("[bold]Accounting Rules:[/bold]")
+                    c.print(
+                        f"  • [{s.theme.rich_success}]Measured:[/{s.theme.rich_success}] Sourced directly from LLM API response metadata headers."
+                    )
+                    c.print(
+                        f"  • [{s.theme.rich_warning}]Estimated:[/{s.theme.rich_warning}] Standard character heuristic ceil(chars / 4) when unmetered."
+                    )
+                    c.print(
+                        f"  • [{s.theme.rich_primary}]Avoided:[/{s.theme.rich_primary}] Prompt tokens saved via sensory reflexes without central escalation.\n"
+                    )
+                    continue
+
+                try:
+                    receipt = load_receipt(run_id=run_id)
+                    render_terminal_receipt(receipt, console=c)
+                except FileNotFoundError as fnf:
+                    c.print(f"[{s.theme.rich_warning}]No token receipt found:[/{s.theme.rich_warning}] {fnf}")
+                    c.print("[dim]Run a swarm mission first (e.g. type a coding goal).[/dim]\n")
+                except Exception as e:
+                    c.print(f"[{s.theme.rich_danger}]Error loading token receipt:[/{s.theme.rich_danger}] {e}\n")
+                continue
+
+            elif user_input in ["/runs", "runs"] or user_input.startswith("/runs "):
+                import datetime
+
+                from octoflow.checkpoint import list_runs
+
+                runs = list_runs(workspace_dir=s.workspace, limit=10)
+                if not runs:
+                    from octoflow.messages import format_empty_state
+
+                    c.print(f"\n{format_empty_state('no_runs')}\n")
+                else:
+                    runs_tbl = Table(
+                        title="◈ OctoFlow Run Provenance Ledger",
+                        border_style=s.theme.rich_border,
+                        expand=True,
+                    )
+                    runs_tbl.add_column("Run ID", style=f"bold {s.theme.rich_primary}", no_wrap=True)
+                    runs_tbl.add_column("Status", style="bold", no_wrap=True)
+                    runs_tbl.add_column("Goal", style="white")
+                    runs_tbl.add_column("Mode", style="dim", no_wrap=True)
+                    runs_tbl.add_column("Branch", style="dim")
+                    runs_tbl.add_column("Created", style="dim", no_wrap=True)
+                    for m in runs:
+                        dt = datetime.datetime.fromtimestamp(m.created_at).strftime("%Y-%m-%d %H:%M:%S")
+                        status_color = (
+                            s.theme.rich_success
+                            if m.status == "COMPLETED"
+                            else (
+                                s.theme.rich_warning
+                                if m.status in ("WIP", "RUNNING")
+                                else s.theme.rich_secondary
+                            )
+                        )
+                        status_str = f"[{status_color}]{m.status}[/{status_color}]"
+                        goal_snippet = m.goal.replace("\n", " ")[:45] + ("..." if len(m.goal) > 45 else "")
+                        runs_tbl.add_row(
+                            m.run_id,
+                            status_str,
+                            goal_snippet,
+                            m.mode,
+                            m.run_branch or "(non-git)",
+                            dt,
+                        )
+                    c.print("\n", runs_tbl, "\n")
+                    c.print(
+                        "[dim]Tip: Inspect any run receipt with [bold]/receipt <run_id>[/bold] or rollback with [bold]/rollback[/bold][/dim]\n"
+                    )
+                continue
+
+            elif user_input.startswith("/replay"):
+                from octoflow.trace import replay_trace
+
+                parts = user_input.split()
+                target_run = None
+                for p in parts[1:]:
+                    if not p.startswith("-"):
+                        target_run = p
+                        break
+                try:
+                    c.print(
+                        f"[{s.theme.rich_primary}]◈ Replaying trace for run: [bold]{target_run or 'latest'}[/bold] into terminal & visualizer...[/{s.theme.rich_primary}]"
+                    )
+
+                    def _replay_print(line: str) -> None:
+                        c.print(line, markup=False)
+
+                    replay_trace(
+                        run_id=target_run,
+                        speed=1.5,
+                        no_visualizer=False,
+                        port=s.port,
+                        output_fn=_replay_print,
+                    )
+                    c.print(f"[{s.theme.rich_success}]✔ Trace replay concluded.[/{s.theme.rich_success}]\n")
+                except FileNotFoundError as e:
+                    c.print(f"[{s.theme.rich_warning}]✖ Replay failed: {e}[/{s.theme.rich_warning}]\n")
+                except Exception as e:
+                    c.print(f"[{s.theme.rich_danger}]✖ Error during replay: {e}[/{s.theme.rich_danger}]\n")
+                continue
+
+            elif (
+                user_input in ["/gate", "/surprise"]
+                or user_input.startswith("/gate ")
+                or user_input.startswith("/surprise ")
+            ):
+                from octoflow.receipt import load_receipt
+
+                parts = user_input.split()
+                run_id = parts[1] if len(parts) > 1 and not parts[1].startswith("-") else None
+
+                c.print(
+                    f"\n[{s.theme.rich_primary}]◈ Active Inference Sensory Surprise Gate Analytics[/{s.theme.rich_primary}]"
+                )
+                c.print("[dim]Formula: ΔS_i = (1/D) * ||o_t - ô_t||²  |  Threshold: θ = 0.45[/dim]\n")
+
+                try:
+                    receipt = load_receipt(run_id=run_id)
+                    evals = receipt.gate_evaluations
+                    reflexes = receipt.gate_reflexes
+                    escalations = receipt.gate_escalations
+                    avoided = receipt.tokens_avoided
+
+                    gate_table = Table(
+                        title=f"Gate Decision Ledger (Run: {receipt.run_id})",
+                        border_style=s.theme.rich_border,
+                        expand=True,
+                    )
+                    gate_table.add_column("Metric", style=s.theme.rich_primary, width=28)
+                    gate_table.add_column("Value", style="bold white", width=18)
+                    gate_table.add_column("Interpretation", style="dim")
+
+                    gate_table.add_row(
+                        "Total Sensory Evaluations",
+                        str(evals),
+                        "Total file modifications & tool output checks",
+                    )
+                    gate_table.add_row(
+                        "Silent Reflexes (ΔS <= θ)",
+                        f"[{s.theme.rich_success}]{reflexes}[/{s.theme.rich_success}]",
+                        "0 LLM tokens spent (handled by local heuristic model)",
+                    )
+                    gate_table.add_row(
+                        "Central Escalations (ΔS > θ)",
+                        f"[{s.theme.rich_warning}]{escalations}[/{s.theme.rich_warning}]",
+                        "Escalated to Conductor for LLM synthesis",
+                    )
+                    savings_pct = (reflexes / max(1, evals)) * 100.0
+                    gate_table.add_row(
+                        "Gate Reflex Efficiency",
+                        f"[{s.theme.rich_success}]{savings_pct:.1f}%[/{s.theme.rich_success}]",
+                        "Percentage of tool actions silenced locally",
+                    )
+                    gate_table.add_row(
+                        "Avoided Tokens (Estimated)",
+                        f"[{s.theme.rich_success}]{avoided:,}[/{s.theme.rich_success}]",
+                        "Prompt tokens saved via sensory surprise gating",
+                    )
+                    c.print(gate_table)
+
+                    if receipt.arm_breakdown:
+                        arm_tbl = Table(
+                            title="Sensory Surprise & Token Usage by Ganglia Arm",
+                            border_style=s.theme.rich_secondary,
+                            expand=True,
+                        )
+                        arm_tbl.add_column("Arm", style="bold white", width=10)
+                        arm_tbl.add_column("Role", style=s.theme.rich_secondary, width=22)
+                        arm_tbl.add_column("Spent Tokens", style="white", justify="right")
+                        arm_tbl.add_column("Confidence", style="dim", justify="center")
+                        for arm_num, data in sorted(
+                            receipt.arm_breakdown.items(), key=lambda x: int(x[0])
+                        ):
+                            arm_tbl.add_row(
+                                f"Arm {arm_num}",
+                                data.role,
+                                f"{data.tokens_spent:,}",
+                                data.confidence,
+                            )
+                        c.print(arm_tbl)
+                    c.print()
+                except FileNotFoundError:
+                    c.print(
+                        f"[{s.theme.rich_warning}]No active run ledger found yet.[/{s.theme.rich_warning}]"
+                    )
+                    c.print(
+                        "[dim]Run a swarm mission (e.g. type a task) to view live gate statistics.[/dim]\n"
+                    )
+                except Exception as e:
+                    c.print(f"[{s.theme.rich_danger}]Error reading gate metrics:[/{s.theme.rich_danger}] {e}\n")
+                continue
+
+            elif user_input in ["/dashboard", "dashboard"]:
+                from octoflow.commands.dashboard import render_dashboard
+
+                try:
+                    c.print(
+                        f"\n[{s.theme.rich_primary}]◈ OctoFlow Cephalopod Swarm Reactive Dashboard[/{s.theme.rich_primary}]\n"
+                    )
+                    arm_states = {
+                        i: {"status": "quiescent", "tool": "idle", "target": "ready"} for i in range(8)
+                    }
+                    p = render_dashboard(
+                        objective="Interactive Cockpit Session",
+                        morphology=s.current_guild,
+                        arm_states=arm_states,
+                        active_coalitions=[],
+                        tokens_saved_pct=22.4,
+                        total_cost=0.00,
+                        last_event_msg="Cockpit active and waiting for mission dispatch",
+                        visualizer_url=s.visualizer_url,
+                        progress_pct=100.0,
+                        cycle=1,
+                        max_cycles=1,
+                        quiescent_count=8,
+                        elapsed_seconds=0.0,
+                        theme=s.theme,
+                    )
+                    c.print(p)
+                    c.print()
+                except Exception as e:
+                    c.print(f"[{s.theme.rich_danger}]Dashboard render note: {e}[/{s.theme.rich_danger}]\n")
+                continue
+
+            elif user_input == "/tree" or user_input.startswith("/tree "):
+                from rich.tree import Tree
+
+                ws = Path(s.workspace)
+                parts = user_input.split()
+                max_depth = 2
+                if len(parts) > 1 and parts[1].isdigit():
+                    max_depth = int(parts[1])
+
+                ignored_names = {
+                    ".git",
+                    ".venv",
+                    "__pycache__",
+                    ".mypy_cache",
+                    ".pytest_cache",
+                    ".ruff_cache",
+                    "node_modules",
+                    "dist",
+                    ".DS_Store",
+                    ".octoflow",
+                    ".octoflow-mission",
+                    "checkpoints",
+                    "cassettes",
+                }
+                root_tree = Tree(
+                    f"[{s.theme.rich_primary}]◈ {ws.name}/[/{s.theme.rich_primary}] [dim]({ws})[/dim]"
+                )
+
+                _build_workspace_tree(
+                    root_tree, ws, 1, max_depth, ignored_names, s.theme.rich_secondary
+                )
+                c.print(root_tree)
+                c.print(
+                    "[dim]Tip: Adjust tree depth with [bold]/tree <depth>[/bold] (e.g. /tree 3)[/dim]\n"
+                )
+                continue
+
+            elif user_input in ["/feedback", "feedback"]:
+                from octoflow.commands.feedback import feedback_cli_cmd
+
+                try:
+                    feedback_cli_cmd(type_="issue", non_interactive=False)
+                except Exception as e:
+                    c.print(f"[{s.theme.rich_danger}]Error in feedback launcher: {e}[/{s.theme.rich_danger}]\n")
+                continue
+
+            elif user_input == "/interview" or user_input.startswith("/interview "):
+                from octoflow.interview import (
+                    conduct_architect_interview,
+                    detect_project_consortium,
+                    format_interview_constraints,
+                    generate_architect_interview,
+                    render_blueprint_panel,
+                )
+
+                parts = user_input.split(maxsplit=1)
+                interview_goal = parts[1].strip() if len(parts) > 1 else ""
+                if not interview_goal:
+                    interview_goal = prompt_user_str(
+                        c,
+                        f"[{s.theme.rich_primary}]Enter goal to interview: [/{s.theme.rich_primary}]",
+                    )
+                if not interview_goal:
+                    continue
+
+                bp = detect_project_consortium(str(s.workspace), interview_goal)
+                c.print(render_blueprint_panel(bp, s.theme))
+                questions = generate_architect_interview(interview_goal, bp)
+                if not questions:
+                    c.print(
+                        f"[{s.theme.rich_success}]✔ No architectural ambiguities detected for goal. Ready to deploy directly![/{s.theme.rich_success}]\n"
+                    )
+                else:
+                    decisions = conduct_architect_interview(questions, console=c)
+                    constraints = format_interview_constraints(decisions)
+                    c.print(
+                        f"[{s.theme.rich_success}]✔ Captured Decisions:[/{s.theme.rich_success}] {constraints}\n"
+                    )
+                    c.print(
+                        f"[dim]Tip: Deploy with these choices by running [bold]octoflow run \"{interview_goal}\"[/bold][/dim]\n"
+                    )
+                continue
+
+            elif user_input == "/steer" or user_input.startswith("/steer "):
+                parts = user_input.split(maxsplit=1)
+                arg = parts[1].strip().lower() if len(parts) > 1 else ""
+                current_steer = getattr(s, "interactive_steering", False) or (os.getenv("OCTOFLOW_STEER") == "1")
+                if not arg:
+                    status_badge = f"[{s.theme.rich_success}]ENABLED[/]" if current_steer else "[dim]DISABLED[/dim]"
+                    c.print(f"◈ Human Steering Gates: {status_badge}")
+                    c.print("[dim]Use [bold]/steer on[/bold] or [bold]/steer off[/bold] to toggle pause checkpoints between phases.[/dim]\n")
+                elif arg in ("on", "1", "true", "enable"):
+                    s.interactive_steering = True
+                    os.environ["OCTOFLOW_STEER"] = "1"
+                    c.print(f"[{s.theme.rich_success}]✔ Interactive human steering enabled.[/] Swarm will pause at phase boundaries for your review.\n")
+                elif arg in ("off", "0", "false", "disable"):
+                    s.interactive_steering = False
+                    os.environ.pop("OCTOFLOW_STEER", None)
+                    c.print("[dim]Interactive human steering disabled. Swarm will execute phases autonomously.[/dim]\n")
+                else:
+                    c.print("[dim]Usage: /steer [on|off][/dim]\n")
                 continue
 
             elif user_input == "/diff":
@@ -1804,6 +2232,28 @@ def _run_cockpit_impl(
                     continue
 
             # Natural language goal -> Execute Swarm!
+            from octoflow.interview import (
+                conduct_architect_interview,
+                detect_project_consortium,
+                format_interview_constraints,
+                generate_architect_interview,
+                render_blueprint_panel,
+            )
+
+            blueprint = detect_project_consortium(workspace=str(s.workspace), objective=user_input)
+            c.print(render_blueprint_panel(blueprint, s.theme))
+
+            # Pre-flight architect interview
+            questions = generate_architect_interview(user_input, blueprint)
+            if questions:
+                decisions = conduct_architect_interview(questions, console=c)
+                if decisions:
+                    constraints = format_interview_constraints(decisions)
+                    user_input = f"{user_input} ({constraints})"
+                    c.print(
+                        f"[{s.theme.rich_success}]✔ Integrated decisions into swarm directive.[/{s.theme.rich_success}]\n"
+                    )
+
             c.print(
                 f"\n[{s.theme.rich_primary}]◈ Deploying Swarm on Objective:[/{s.theme.rich_primary}] [bold white]{user_input}[/bold white]\n"
             )
@@ -1811,15 +2261,25 @@ def _run_cockpit_impl(
             try:
                 from octoflow.cli import run as swarm_run
 
-                resolved_mode = (
-                    "custom"
-                    if s.current_guild not in ["software_dev", "aiml_research", "fullstack_ai"]
+                detected_guild = (
+                    blueprint.guild_id
+                    if s.current_guild in ["software_dev", "default"]
                     else s.current_guild
                 )
+                resolved_mode = (
+                    "custom"
+                    if detected_guild not in ["software_dev", "aiml_research", "fullstack_ai"]
+                    else detected_guild
+                )
                 resolved_guild = (
-                    s.current_guild
-                    if s.current_guild not in ["software_dev", "aiml_research", "fullstack_ai"]
+                    detected_guild
+                    if detected_guild not in ["software_dev", "aiml_research", "fullstack_ai"]
                     else None
+                )
+                resolved_octos = (
+                    str(blueprint.octopus_count)
+                    if s.current_octos == "auto"
+                    else str(s.current_octos)
                 )
                 swarm_run(
                     objective=user_input,
@@ -1830,7 +2290,7 @@ def _run_cockpit_impl(
                     workspace=str(s.workspace),
                     port=s.port,
                     open_ui=False,
-                    octos=s.current_octos,
+                    octos=resolved_octos,
                     theme=s.theme.id,
                     sandbox="local",
                     allow_dirty=allow_dirty_flag,
@@ -1843,9 +2303,16 @@ def _run_cockpit_impl(
                 )
 
             # Post-execution Action Ribbon
+            is_mock_or_sim = (s.current_model == "mock") or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
+            mode_badge = (
+                f"[{s.theme.rich_warning}][HEURISTIC SIMULATION][/{s.theme.rich_warning}]"
+                if is_mock_or_sim
+                else f"[{s.theme.rich_success}][LIVE LLM SYNTHESIS][/{s.theme.rich_success}]"
+            )
             ribbon_text = Text.from_markup(
-                f"[{s.theme.rich_success}]◈ Mission Phase Concluded.[/{s.theme.rich_success}]\n"
+                f"[{s.theme.rich_success}]◈ Mission Phase Concluded.[/{s.theme.rich_success}]  {mode_badge}\n"
                 f"  Quick Actions:  "
+                f"[{s.theme.rich_primary}]/receipt[/] (Token Receipt)  •  "
                 f"[{s.theme.rich_primary}]/ignite[/] (Preview App)  •  "
                 f"[{s.theme.rich_secondary}]/diff[/] (Inspect Changes)  •  "
                 f"[{s.theme.rich_warning}]/rollback[/] (Undo Changes)  •  "

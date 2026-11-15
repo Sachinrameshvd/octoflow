@@ -1,0 +1,21 @@
+{
+  "name": "octoflow-showcase",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 5174"
+  },
+  "dependencies": {
+    "three": "^0.186.1",
+    "@tweenjs/tween.js": "^25.0.0",
+    "lucide": "^1.48.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}

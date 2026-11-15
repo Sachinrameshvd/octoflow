@@ -54,9 +54,10 @@ def set_cockpit_active(active: bool = True) -> None:
 
 
 def get_log_dir() -> Path:
-    """Return path to ~/.octoflow/logs with mode 0700."""
-    home = Path.home()
-    log_dir = home / ".octoflow" / "logs"
+    """Return path to ~/.octoflow/logs (or $OCTOFLOW_DIR/logs) with mode 0700."""
+    env_dir = os.environ.get("OCTOFLOW_DIR")
+    base_dir = Path(env_dir).resolve() if env_dir else Path.home() / ".octoflow"
+    log_dir = base_dir / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     try:
         cur_mode = log_dir.stat().st_mode & 0o777
@@ -198,19 +199,22 @@ def setup_logging(
     except OSError:
         pass
 
-    file_handler = SecureRotatingFileHandler(
-        str(target_log_path),
-        maxBytes=DEFAULT_MAX_BYTES,
-        backupCount=DEFAULT_BACKUP_COUNT,
-        encoding="utf-8",
-    )
-    file_handler.setLevel(file_level)
-    file_formatter = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
-    )
-    file_handler.setFormatter(file_formatter)
-    file_handler.addFilter(RedactionFilter())
-    logger.addHandler(file_handler)
+    try:
+        file_handler = SecureRotatingFileHandler(
+            str(target_log_path),
+            maxBytes=DEFAULT_MAX_BYTES,
+            backupCount=DEFAULT_BACKUP_COUNT,
+            encoding="utf-8",
+        )
+        file_handler.setLevel(file_level)
+        file_formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
+        )
+        file_handler.setFormatter(file_formatter)
+        file_handler.addFilter(RedactionFilter())
+        logger.addHandler(file_handler)
+    except (OSError, PermissionError):
+        pass
 
     # 2. Stderr Handler (silenced during cockpit sessions)
     stderr_handler = logging.StreamHandler(sys.stderr)

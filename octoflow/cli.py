@@ -300,12 +300,13 @@ from octoflow.commands import (  # noqa: E402 - commands are registered after Ty
     audit,
     bench,
     checkpoint_cmds,
+    claude_cmds,
     config,
     consortium,
     doctor,
     eject,
-    feedback,
     federation,
+    feedback,
     guard,
     guild,
     heal,
@@ -341,6 +342,7 @@ theme.register(app, octos_app)
 setup.register(app, octos_app)
 purge.register(app, octos_app)
 from octoflow import first_run  # noqa: E402
+
 first_run.register(app, octos_app)
 doctor.register(app, octos_app)
 feedback.register(app, octos_app)
@@ -365,6 +367,7 @@ runner.register(app, octos_app)
 config.register(app, octos_app)
 checkpoint_cmds.register(app, octos_app)
 ignition_cmds.register(app, octos_app)
+claude_cmds.register(app, octos_app)
 receipt.register(app, octos_app)
 replay.register(app, octos_app)
 
@@ -405,6 +408,7 @@ from octoflow.cockpit import (  # noqa: E402
     run_cockpit,
 )
 from octoflow.commands.dashboard import (  # noqa: E402
+    build_style_a_progress_panel,
     render_consortium_dashboard,
     render_dashboard,
 )
@@ -421,8 +425,10 @@ from octoflow.commands.guard import (  # noqa: E402
 from octoflow.commands.install_claude import (  # noqa: E402
     install_claude_cli_cmd,
 )
-from octoflow.first_run import (  # noqa: E402
-    first_run_cli_cmd,
+from octoflow.claude_bridge import (  # noqa: E402
+    compile_sparc_prompt,
+    generate_claude_md,
+    get_claude_status,
 )
 from octoflow.commands.purge import (  # noqa: E402
     purge_cli_cmd,
@@ -447,6 +453,17 @@ from octoflow.commands.theme import (  # noqa: E402
     octos_screensaver_cmd,
     octos_theme_cmd,
 )
+from octoflow.first_run import (  # noqa: E402
+    first_run_cli_cmd,
+)
+from octoflow.steering import (  # noqa: E402
+    PhaseCheckpoint,
+    SteeringResult,
+    conduct_phase_steering,
+    format_steering_history,
+    render_phase_checkpoint_card,
+    save_phase_checkpoint,
+)
 
 __all__ = [
     "app",
@@ -462,6 +479,13 @@ __all__ = [
     "get_live_wizard_input",
     "render_dashboard",
     "render_consortium_dashboard",
+    "build_style_a_progress_panel",
+    "PhaseCheckpoint",
+    "SteeringResult",
+    "render_phase_checkpoint_card",
+    "conduct_phase_steering",
+    "save_phase_checkpoint",
+    "format_steering_history",
     "run",
     "train",
     "octos_run",

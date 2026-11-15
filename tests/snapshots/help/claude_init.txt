@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octoflow claude init [OPTIONS]                                                              
+                                                                                                    
+ Generate or update CLAUDE.md and register OctoFlow MCP server for Claude Code.                     
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir    -d      <str>  Target project workspace folder [default: .]                             │
+│ --force  -f             Overwrite existing CLAUDE.md completely                                  │
+│ --help                  Show this message and exit.                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

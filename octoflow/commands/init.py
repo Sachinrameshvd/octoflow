@@ -13,8 +13,17 @@ def init_ide_cli_cmd(
     workspace: str = typer.Option(
         ".", "--dir", "-d", help="Project workspace directory to onboard"
     ),
+    claude: bool = typer.Option(
+        False, "--claude", "-c", help="Configure Claude Code integration only (CLAUDE.md + MCP)"
+    ),
 ):
-    """Auto-configure Cursor (.cursorrules), Claude (MCP), VS Code (tasks), and Git (hooks)."""
+    """Auto-configure Cursor (.cursorrules), Claude (CLAUDE.md & MCP), VS Code (tasks), and Git (hooks)."""
+    if claude:
+        from octoflow.commands.claude_cmds import claude_init_cmd
+
+        claude_init_cmd(workspace=workspace, force=False)
+        return
+
     from octoflow.onboarding import onboard_ide
 
     theme = load_saved_theme()
@@ -34,6 +43,11 @@ def init_ide_cli_cmd(
         "Cursor AI (.cursorrules)",
         f"[{theme.rich_success}]✔ CONFIGURED[/]" if res["cursor"] else "[dim]SKIPPED[/]",
         "8-Arm Swarm delegation rules & architecture heuristics",
+    )
+    t.add_row(
+        "Claude Code (CLAUDE.md)",
+        f"[{theme.rich_success}]✔ CONFIGURED[/]" if res.get("claude_md") else "[dim]SKIPPED[/]",
+        "8-Arm Neuro-Specialist Roster & Sensory Gating rules",
     )
     t.add_row(
         "Claude Code CLI (~/.claude.json)",

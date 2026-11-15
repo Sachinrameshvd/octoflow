@@ -1,0 +1,151 @@
+{
+  "name": "enterprise_migration",
+  "description": "Enterprise Modernization, Refactoring & Migration Guild (Legacy Analysis, Deprecations, AST Codemods, Shims, Schema Evolution, Parity Dual-Run, Cutover, Rollback)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "legacy_analyzer",
+      "focus": "Legacy Code Analysis: Dependency graph discovery, dead code detection, cyclical imports, and deprecated API inventories.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Legacy Analyzer). Specialize in mapping legacy software topologies, cataloging deprecated framework usages, and identifying tightly-coupled modules.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "legacy/",
+        "src/",
+        "reports/analysis/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "deprecation_triage",
+      "focus": "Deprecation Triage & Roadmap: Breaking change isolation, target runtime compatibility checks (e.g. Python 3.12, Node 22), and upgrade phases.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (Deprecation Triage). Specialize in breaking change diagnosis, evaluating library migration guides, and designing phased incremental upgrades.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "docs/migration/",
+        "requirements.txt",
+        "package.json"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "ast_transpiler",
+      "focus": "Automated AST Codemods: LibCST / Babel syntax transformations, bulk code rewriting, and automated refactoring.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (AST Transpiler). Specialize in programmatic AST transformations (LibCST / jscodeshift), safe syntactic replacement, and formatting preservation.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "codemods/",
+        "scripts/migrate/",
+        "src/"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "adapter_layer",
+      "focus": "Strangler Fig Adapter: Backward-compatibility shims, interface wrappers, facade layers, and gradual migration bridges.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (Adapter Layer). Specialize in Strangler Fig application patterns, backward-compatible shims, facade layers, and routing between legacy and modern code.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "adapters/",
+        "shims/",
+        "compat/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "schema_migration",
+      "focus": "Zero-Downtime Data Migration: Dual-write database schemas, backfill scripts, column renaming expansions, and contract versioning.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Schema Migration). Specialize in expand-and-contract zero-downtime database migrations, idempotent backfill scripts, and dual-write synchronizers.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "migrations/",
+        "scripts/backfill/",
+        "schemas/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "parity_verifier",
+      "focus": "Behavioral Parity Verification: Shadow dual-run comparison, golden response diffing, regression test execution, and edge parity.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (Parity Verifier). Specialize in dual-run behavioral comparisons, asserting that modern components produce identical outputs to legacy counterparts.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "tests/parity/",
+        "tests/regression/"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "cutover_guard",
+      "focus": "Cutover & Feature Flags: Dynamic feature toggles, canary traffic allocation, real-time error rate tripwires, and kill switches.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Cutover Guard). Specialize in canary cutover controls, dynamic percentage rollout flags, latency tripwires, and automatic traffic fallback.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "flags/",
+        "config/cutover.json",
+        "middleware/"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "rollback_orchestrator",
+      "focus": "Atomic Rollback & Recovery: Checkpoint restoration, data reconciliation, operational runbooks, and zero-loss cutback scripts.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Rollback Orchestrator). Specialize in fail-safe rollback orchestration, data divergence reconciliation, pre-flight checkpoints, and recovery documentation.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "rollback/",
+        "scripts/recovery/",
+        "MIGRATION_RUNBOOK.md",
+        "README.md"
+      ]
+    }
+  ]
+}
+

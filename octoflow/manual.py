@@ -1,8 +1,10 @@
 """OctoFlow Terminal Manual & Developer Field Guide Reader.
 
 Renders syntax-highlighted, interactive Rich documentation directly in the shell
-or cockpit, with chapter navigation, search, and web-viewer launching.
+or cockpit, with chapter navigation, keyword search, and web-viewer launching.
 """
+
+from __future__ import annotations
 
 import webbrowser
 
@@ -15,118 +17,267 @@ from octoflow.themes import load_saved_theme
 
 MANUAL_SECTIONS: dict[str, dict[str, str]] = {
     "1": {
-        "title": "Biological Principles & Active Inference",
+        "title": "Quick Start (60 Seconds)",
         "content": """
-### Biological Cephalopod Architecture
-Unlike monolithic prompt pipelines, OctoFlow coordinates an 8-arm lateral ganglion ring under an executive supraesophageal ganglion.
+### 1. Launch the 3D WebGL Connectome Showcase
+```bash
+cd "showcase copy"
+npm install
+npm run dev
+```
+Open **`http://localhost:5174`** in your browser.
 
-**1. Active Inference & Predictive Coding:**
-Peripheral arm ganglia compute expected observations $\\hat{o}_{t+1}$. Sensory surprise is calculated as:
-$$\\Delta S_t = \\frac{1}{D} \\|o_t - \\hat{o}_t\\|_2^2$$
-Only when surprise exceeds the adaptive threshold $\\theta$ is an alert propagated up to the orchestrator. This reduces token calls by **>80%**.
+### 2. Free Autonomous Swarm Simulation (Zero API Key Needed)
+```bash
+source .venv/bin/activate
+octos run "Build a thread-safe sliding-window rate limiter with tests" --provider mock
+```
 
-**2. Ring-Topology Lateral Communication:**
-Adjacent arms exchange semantic tokens across an inter-brachial ring bus without routing through the central conductor, preventing orchestrator context window saturation.
+### 3. Local-First Autonomous Swarm (Ollama Open Weights)
+```bash
+ollama pull qwen2.5-coder:7b
+octos run "Build a rate limiter with unit tests" --model ollama
+```
 
-**3. Biophysical Connectomics:**
-Biological Dale's Principle enforces strict neurotransmitter identities: Acetylcholine (ACh) for excitation, GABA/Glutamate for inhibition, and Dopamine/Octopamine for neuromodulation.
+### 4. Interactive Terminal Flight Cockpit
+```bash
+octos
+```
 """,
     },
     "2": {
-        "title": "The 8 Specialized Neural Arm Ganglia",
+        "title": "Biological Principles & Active Inference",
         "content": """
-### Cephalopod Arm Specializations
-Each arm operates an egocentric sensory patch and specialized tool suite:
+### Biological Cephalopod Architecture
+Unlike monolithic prompt pipelines that route every trivial event through a central LLM, OctoFlow coordinates an 8-arm lateral ganglion ring under an executive supraesophageal ganglion.
 
-* **Arm 0 (System Architect):** High-level topology, schemas, AST design, and dependency DAGs.
-* **Arm 1 (Database & Schemas):** SQL migrations, ORM entities, validation contracts, Pydantic/Zod models.
-* **Arm 2 (Backend Core):** High-throughput microservice endpoints, business logic, asynchronous tasks.
-* **Arm 3 (Frontend & UX):** Responsive components, design token palettes, HTML/CSS layout, Three.js 3D.
-* **Arm 4 (State & Reactive Engine):** WebSocket telemetry, in-memory cache layers, state machines.
-* **Arm 5 (QA & Invariants):** Pytest/Jest suites, automated regression discovery, AST self-healing loop.
-* **Arm 6 (Security & Guard):** 14-rule zero-trust PII filtering, secret audits, credential hygiene.
-* **Arm 7 (DevOps & Ignition):** Docker builds, CI/CD pipelines, live dev server boots, and safe rollbacks.
+```text
+                                  +---------------------------+
+                                  | SUPRAESOPHAGEAL GANGLION  |
+                                  |      (Central Brain)      |
+                                  +-------------+-------------+
+                                                | Dynamic Coalition Binding
+                                                v
+         +-----------------------------------------------------------------------------+
+         |                    LATERAL INTER-BRACHIAL NERVE RING                        |
+         |  Arm 0 ----- Arm 1 ----- Arm 2 ----- Arm 3 ----- Arm 4 ----- Arm 5 ----- Arm 6 --- Arm 7 |
+         +-----------------------------------------------------------------------------+
+              ^            ^            ^            ^            ^            ^
+              |            |            |            |            |            |
+       [Reflex Loop] [Reflex Loop] [Reflex Loop] [Reflex Loop] [Reflex Loop] [Reflex Loop]
+```
+
+**1. Active Inference & Predictive Coding:**
+Peripheral arm ganglia compute expected observations. Sensory surprise is calculated as:
+$$\\Delta S_i = \\frac{1}{D} \\|o_i - \\hat{o}_i\\|_2^2$$
+Only when surprise exceeds the adaptive threshold $\\theta = 0.45$ does an arm escalate to the central conductor. Routine checks execute as **silent local reflexes**, saving 15-25% tokens on code generation.
+
+**2. Ring-Topology Lateral Communication:**
+Adjacent arms exchange semantic tokens across an inter-brachial ring bus without routing through the central conductor, preventing orchestrator context saturation.
+
+**3. Zero-Shot Limb Amputation & Recovery:**
+If an arm hits an unhandled error or is severed, the lateral nerve ring dynamically rebalances tasks across remaining arms with **0.00s downtime**.
 """,
     },
     "3": {
-        "title": "Master Command Directory",
+        "title": "3D WebGL Connectome Showcase (Port 5174)",
         "content": """
-### Complete Command Reference
+### Abyssal 3D Visualizer & Connectome Controls
 
-| Command | Action Description | Example |
-| :--- | :--- | :--- |
-| **`/audit`** | 100-Point system readiness & security audit | `./octo audit` |
-| **`/eject`** | Export standalone agent harness into any repository | `./octo eject --output ./harness` |
-| **`/install-claude`** | Register Claude Code plugin manifest & slash commands | `./octo install-claude` |
-| **`/federation`** | Zero-trust 14-rule PII filter & peer trust scoring | `./octo federation status` |
-| **`/heal`** | Autonomous test failure triage and self-healing | `./octo heal` |
-| **`/triage`** | Interactive AST-level patch inspector | `./octo triage` |
-| **`/theme`** | Interactive palette selector (8 developer themes) | `./octo theme catppuccin` |
-| **`/bench`** | Algorithmic benchmark challenge suite | `./octo bench --task lru_cache` |
-| **`/plan`** | Preview 8-arm task allocation blueprint | `./octo plan "build auth"` |
-| **`/ui`** | Open 3D WebGL Constellation in browser | `./octos ui` |
-| **`/runner`** | Launch 8-bit benthic dot-matrix runner | `./octo runner` |
-| **`/doctor`** | Comprehensive environment diagnostics | `./octo doctor` |
+The interactive showcase lives in `showcase copy/` and visualizes cephalopod coordination in real time.
+
+* **Development Port:** Runs on `http://localhost:5174` (`npm run dev`).
+* **Always-On Ambient Ocean Waves:** Web Audio API sound engine auto-starts on first user interaction and stays on continuously.
+* **Slides 19 to 26 (Individual Octopuses 1 through 8):**
+  * Click **`↯ Spark Octo`**: Triggers golden action potential pulses down all 8 arms and flashes the 8 status indicators.
+  * Click **`SoftDev` / `AI/ML`**: Toggles individual morphology between Software Architecture and AI/ML Research.
+* **Slide 27 (The 8-Octopus Living Swarm):**
+  * **Tiered Amphitheater:** All 8 octopuses positioned in an undulating biological depth formation with zero card occlusion.
+  * Click **`↯ Synaptic Pulse`**: Fires high-voltage action potentials across all 64 arms and 3D inter-octopus cables.
+  * Click **`Free Orbit`**: Unlocks 360-degree orbital camera rotation (click & drag).
+  * Click **`Executive Dossier →`**: Generates a 1-page printer-ready technical brief.
 """,
     },
     "4": {
-        "title": "Step-by-Step Developer Playbooks",
+        "title": "Autonomous Swarm Engine & Flight Cockpit",
         "content": """
-### Developer Playbooks
+### Master CLI Directory & Cockpit Commands
 
-**Playbook A: Building a Fullstack Feature from Scratch**
-1. Launch cockpit: `./octo`
-2. Preview allocation: `/plan Build user authentication with JWT and bcrypt`
-3. Execute mission: Enter prompt in cockpit; watch 8 arms coordinate in real time.
-4. Launch dev server: `/ignite`
+* `octos doctor` — Environment, model endpoints, and dependency diagnostics.
+* `octos run "<goal>"` — Deploy autonomous multi-agent swarm to execute an objective.
+* `octos` — Launch the full-screen terminal flight cockpit.
+* `octos receipt` — Display truthful token receipts and gate savings.
+* `octos guard` — AST syntax and 12-rule secret leak audit.
+* `octos undo` — Rollback changes to the pre-flight git checkpoint.
+* `octos manual [-c <chapter>]` — Open this interactive field manual.
 
-**Playbook B: Fixing Broken Unit Tests (`/heal`)**
-1. Run `./octo heal`
-2. Arm 5 runs test suites, catches errors, and pinpoints root-cause AST nodes.
-3. Arm 2 writes surgical code repairs.
-4. Arm 5 re-runs tests to verify convergence.
-
-**Playbook C: Ejecting Standalone Agent Toolkit**
-1. Run `./octo eject --output ./my-agent-kit`
-2. Commit the zero-dependency files into your project.
-3. Run directly: `python ./my-agent-kit/run.py "Deploy microservice"`
+### Cockpit Keyboard Shortcuts:
+* `F1` or `/manual` — Open interactive manual reader.
+* `/help` — Display command cheat table.
+* `k` / `j` — Next / previous theme palette (8 curated developer themes).
+* `q` or `/exit` — Clean exit.
 """,
     },
     "5": {
-        "title": "Zero-Trust Federation & 14-Rule PII Redaction",
+        "title": "Hands-On Demos: Building & Running Real Projects",
         "content": """
-### PII & Secret Redaction Pipeline
-All inter-arm, inter-octopus, and cross-machine transmissions are automatically scrubbed:
+### Demo 1: Autonomous Code Generation (Sliding-Window Rate Limiter)
 
-* **OpenAI / Anthropic Keys:** `sk-...` / `sk-ant-...` -> `[REDACTED_KEY]`
-* **GitHub Tokens:** `ghp_...` -> `[REDACTED_GITHUB_TOKEN]`
-* **AWS Keys:** `AKIA...` & `aws_secret_access_key` -> `[REDACTED_AWS_KEY]`
-* **Stripe & Google Tokens:** `sk_live_...` & `AIza...` -> `[REDACTED_TOKEN]`
-* **Private Keys:** `-----BEGIN PRIVATE KEY-----` -> `[REDACTED_KEY_BLOCK]`
-* **Credentials & Passwords:** `password=...` -> `[REDACTED_SECRET]`
-* **PII Identifiers:** Emails, IPv4 addresses, Credit card numbers -> `[REDACTED_PII]`
+1. Create a sandbox folder:
+   ```bash
+   source .venv/bin/activate
+   mkdir -p demo_sandbox && cd demo_sandbox
+   ```
+2. Run OctoFlow autonomous swarm:
+   ```bash
+   ../octos run "Build a thread-safe sliding-window rate limiter with tests" --provider mock
+   ```
+3. Execution lifecycle observed in terminal:
+   * **Arm 0 (Architect):** Generates `RateLimiter` interface & Pydantic contracts.
+   * **Arm 2 (Backend):** Implements `limiter.py` with threading locks & timestamp deque.
+   * **Arm 5 (QA):** Creates `test_limiter.py` & executes pytest.
+   * **Gate (Sensory Reflex):** Passing tests ($\\Delta S = 0.08 \\le \\theta$) silenced as 0-token local reflex.
+   * **Arm 6 (Security):** AST verification and secret scan passed.
+4. Verify generated artifacts:
+   ```bash
+   pytest test_limiter.py -v
+   ../octos receipt
+   ../octos undo
+   cd ..
+   ```
 
-Action modes available: `REDACT` (default), `BLOCK` (raises PermissionError), `HASH`, `PASS`.
+---
+
+### Demo 2: Running the Full Turnkey Web Application (AI Resume Analyzer)
+
+Located in `examples/resume-analyzer/` (built across 6 incremental OctoFlow missions):
+
+1. Navigate and install dependencies:
+   ```bash
+   cd examples/resume-analyzer
+   pip install -r requirements.txt
+   ```
+2. Generate synthetic non-PII test resumes:
+   ```bash
+   python scripts/generate_samples.py
+   ```
+3. Run the automated in-memory test suite (26 tests):
+   ```bash
+   pytest tests/ -v
+   ```
+4. Start the live FastAPI server:
+   ```bash
+   uvicorn app:app --reload --port 8000
+   ```
+5. Open **`http://localhost:8000`** in browser, drag-and-drop a sample PDF resume, and evaluate ATS gauntlet match scores live.
+6. Inspect the immutable provenance receipt:
+   ```bash
+   cat provenance/mission-6-receipt.json
+   ```
+   *(41,265 tokens / 22.4% avoided via sensory gating).*
 """,
     },
     "6": {
-        "title": "Keyboard Shortcuts Cheatsheet",
+        "title": "The 8 Specialized Neural Arm Ganglia Roster",
         "content": """
-### Interactive Controls
+### Cephalopod Arm Specializations & Responsibilities
 
-**In 3D WebGL Visualizer:**
-* **`?` or `m`:** Open / Close Master Developer Manual Drawer
-* **`1` - `8`:** Direct camera focus on Arm 0 through Arm 7
-* **`Space`:** Pause / Resume synaptic transmission animation
-* **`C`:** Reset camera to orbital constellation view
-* **`T`:** Start interactive guided architectural tour
-* **`V`:** Toggle voice synthesis audio
+| Arm ID | Title | Specialization & Capabilities | Primary Tools |
+| :---: | :--- | :--- | :--- |
+| **Arm 0** | **System Architect** | High-level topology, schemas, AST design, and dependency DAGs | `git_status`, `read_file`, `ast_plan` |
+| **Arm 1** | **Database & Schemas** | SQL migrations, ORM entities, validation contracts, Pydantic | `write_file`, `lint_check`, `sql_validate` |
+| **Arm 2** | **Backend Core** | High-throughput microservice endpoints, business logic | `write_file`, `run_tests`, `typecheck` |
+| **Arm 3** | **Frontend & UX** | Responsive components, design token palettes, WebGL Three.js | `write_file`, `vite_build`, `browser_eval` |
+| **Arm 4** | **State & Bus** | WebSocket telemetry, in-memory cache layers, state machines | `bus_publish`, `cache_invalidate` |
+| **Arm 5** | **QA & Invariants** | Pytest suites, automated regression discovery, self-healing | `run_pytest`, `ast_patch`, `self_heal` |
+| **Arm 6** | **Security & Guard** | 12-rule zero-trust PII filtering, secret audits, credential hygiene | `pii_sanitize`, `secret_scan`, `mtls_auth` |
+| **Arm 7** | **DevOps & Docs** | Docker builds, CI/CD pipelines, live dev server boots | `docker_build`, `gen_docs`, `telemetry_emit` |
+""",
+    },
+    "7": {
+        "title": "Truthful Token Receipts & Accounting",
+        "content": """
+### Cryptographic Accounting & Gate Metrics
 
-**In Terminal Cockpit:**
-* **`/manual`:** Open interactive manual reader
-* **`F1` / `/help`:** Display quick command help table
-* **`k` / `j`:** Previous / Next theme in palette picker
-* **`/exit` / `q`:** Exit cleanly
+Every live mission produces a verified receipt detailing tokens spent and tokens avoided:
+
+```text
+┌── Token Receipt: 1794049840-56720e ──────────────────────────────────────┐
+│ Spent:   22,637 tokens (measured)                                        │
+│ Avoided: 7,704 tokens (estimated avoided via sensory gate reflexes)      │
+│ Calls:   29 LLM completions | Gate: 29 evaluations (24 reflexes, 5 esc)  │
+│ Top arms: Arm 5 (QA): 8,215 · Arm 6 (Sec): 4,664 · Arm 1 (Model): 2,981 │
+│ Method:  octoflow receipt --method                                       │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+* **Measured Spent:** Extracted directly from provider response headers.
+* **Avoided:** Verified tokens saved when peripheral arm actions execute as silent local reflexes without central LLM calls.
+* **View receipts:** `octos receipt` or `octos receipt <run-id>`.
+""",
+    },
+    "8": {
+        "title": "IDE Integration, Automated Tests & Safety",
+        "content": """
+### 1. Claude Code CLI Integration (SPARC)
+```bash
+# Auto-configure CLAUDE.md blueprint in target repo:
+octos claude init
+
+# Run Claude Code CLI with pre-injected 8-Arm SPARC directives:
+octos claude run "Build a rate limiter with unit tests"
+```
+
+### 2. Model Context Protocol (MCP) Server
+```bash
+octoflow mcp-serve
+```
+
+### 3. Automated Test Suites
+```bash
+source .venv/bin/activate
+
+# Zero-Emoji Bio-Glyph Audit (9/9 pass):
+pytest tests/test_glyph_policy.py
+
+# Mathematical Sensory Gate Properties:
+pytest tests/test_gate_properties.py
+
+# Zero-Telemetry & Loopback Egress Quarantine:
+pytest tests/test_egress_guard.py
+
+# Fast Unit Tests:
+pytest tests/ -m "unit and not pty and not live" -q
+```
+""",
+    },
+    "9": {
+        "title": "Troubleshooting & Developer FAQ",
+        "content": """
+### Developer FAQ & Common Resolutions
+
+**1. Port 5174 Already in Use**
+* Resolution: Terminate stale Vite processes:
+  ```bash
+  lsof -ti:5174 | xargs kill -9
+  ```
+
+**2. Browser Ocean Audio Silent**
+* Resolution: Modern browsers require a user gesture (click, scroll, keypress) before activating Web Audio contexts. Click anywhere on the showcase to engage audio.
+
+**3. Local Ollama Memory Pressure**
+* Resolution: Use the optimized 7B parameter quantized model:
+  ```bash
+  ollama pull qwen2.5-coder:7b
+  ```
+  Or use the free simulation provider: `octos run "<goal>" --provider mock`.
+
+**4. Git Lock Conflicts During Ephemeral Runs**
+* Resolution: Remove stale lock files and verify diagnostics:
+  ```bash
+  rm -f .git/index.lock
+  octos doctor
+  ```
 """,
     },
 }
@@ -143,29 +294,43 @@ def display_manual(
         con.print(
             f"[{theme.rich_primary}]◈ Opening Cephalopod Manual in default browser...[/{theme.rich_primary}]"
         )
-        webbrowser.open("http://localhost:8088?manual=1")
+        webbrowser.open("http://localhost:5174")
         return
 
     con.print()
     con.print(
         Panel(
-            "[bold white]◈ OCTOFLOW CEPHALOPOD DEVELOPER MANUAL & FIELD GUIDE[/bold white]\n"
-            "[dim]Biological Active Inference • 8 Arm Ganglia • Master Commands • Playbooks • Zero-Trust PII[/dim]\n\n"
-            "[dim]Shortcut: Press [bold]? [/bold] in the 3D Web Visualizer or run [bold]./octo manual[/bold] anytime.[/dim]",
-            title="[bold cyan]Official Documentation[/bold cyan]",
+            "[bold white]◈ OCTOFLOW // CEPHALOPOD DEVELOPER MANUAL & FIELD GUIDE ◈[/bold white]\n"
+            "[dim]Active Inference • 8-Arm Ganglia • Hands-On Demos • Truthful Receipts • Zero-Emoji Policy[/dim]\n\n"
+            "[dim]Usage: Run [bold]octos manual -c <number>[/bold] to view any specific chapter directly.[/dim]",
+            title="[bold cyan]Official Developer Field Guide[/bold cyan]",
             border_style=theme.rich_border,
             padding=(1, 2),
         )
     )
 
-    # If specific chapter requested
+    # If specific chapter or keyword requested
     if chapter:
         ch_key = str(chapter).strip()
         matched_section = None
-        for k, v in MANUAL_SECTIONS.items():
-            if ch_key == k or ch_key.lower() in v["title"].lower():
-                matched_section = (k, v)
-                break
+
+        # 1. Exact chapter key match (e.g. "1", "5")
+        if ch_key in MANUAL_SECTIONS:
+            matched_section = (ch_key, MANUAL_SECTIONS[ch_key])
+
+        # 2. Title substring match (e.g. "demos", "rate limiter", "architecture")
+        if not matched_section:
+            for k, v in MANUAL_SECTIONS.items():
+                if ch_key.lower() in v["title"].lower():
+                    matched_section = (k, v)
+                    break
+
+        # 3. Content search fallback
+        if not matched_section:
+            for k, v in MANUAL_SECTIONS.items():
+                if ch_key.lower() in v["content"].lower():
+                    matched_section = (k, v)
+                    break
 
         if matched_section:
             k, sec = matched_section
@@ -177,10 +342,13 @@ def display_manual(
                     padding=(1, 2),
                 )
             )
+            con.print(
+                f"[dim]Run [bold]octos manual[/bold] to return to the full table of contents.[/dim]\n"
+            )
             return
         else:
             con.print(
-                f"[yellow]Chapter '{chapter}' not found. Displaying table of contents:[/yellow]\n"
+                f"[yellow]Topic or Chapter '{chapter}' not found. Displaying table of contents:[/yellow]\n"
             )
 
     # Table of Contents
@@ -188,16 +356,16 @@ def display_manual(
         title="Manual Chapters (Select with --chapter <number>)", border_style=theme.rich_border
     )
     toc_table.add_column("Ch #", style=theme.rich_primary, width=6)
-    toc_table.add_column("Chapter Title", style="bold white", width=46)
-    toc_table.add_column("Quick Command", style="dim", width=24)
+    toc_table.add_column("Chapter Title", style="bold white", width=50)
+    toc_table.add_column("Quick Command", style="dim", width=22)
 
     for k, sec in MANUAL_SECTIONS.items():
-        toc_table.add_row(f"Ch {k}", sec["title"], f"./octo manual -c {k}")
+        toc_table.add_row(f"Ch {k}", sec["title"], f"octos manual -c {k}")
 
     con.print(toc_table)
     con.print()
 
-    # Render all chapters in clean accordion sequence
+    # Render all chapters in clean sequence
     for k, sec in MANUAL_SECTIONS.items():
         con.print(
             Panel(

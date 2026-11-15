@@ -1,0 +1,11 @@
+                                                                                                    
+ Usage: octos ignite [OPTIONS]                                                                      
+                                                                                                    
+ Ignite and boot synthesized project runtime services (Phase 4 Live Ignition).                      
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace folder                                           │
+│ --open  -o             Automatically open the primary web URL in default browser                 │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

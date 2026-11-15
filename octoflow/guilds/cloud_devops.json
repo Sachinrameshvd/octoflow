@@ -1,0 +1,154 @@
+{
+  "name": "cloud_devops",
+  "description": "Cloud Infrastructure, Kubernetes & Site Reliability Guild (Terraform, Docker, K8s, CI/CD, Networking, SRE, Security, Runbooks)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "cloud_architect",
+      "focus": "Infrastructure as Code: Terraform modules, provider setup, state backend, and multi-cloud topology.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Cloud Architect). Specialize in declarative infrastructure as code, Terraform modules, environment isolation, and multi-cloud topology definitions.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "terraform/",
+        "infra/",
+        "opentofu/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "container_specialist",
+      "focus": "Containerization: Multi-stage Dockerfiles, buildx caching, distroless images, and minimal attack surface.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (Container Specialist). Specialize in optimized Dockerfiles, layer caching, non-root user execution, and distroless minimal container images.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "Dockerfile",
+        "docker-compose.yml",
+        ".dockerignore",
+        "deploy/"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "k8s_orchestrator",
+      "focus": "Kubernetes Orchestration: Deployments, StatefulSets, Helm charts, CRDs, and resource limits.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (Kubernetes Orchestrator). Specialize in production Kubernetes manifests, Helm chart templating, HPA autoscaling, and container resource limits.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "k8s/",
+        "helm/",
+        "manifests/"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "ci_cd_engineer",
+      "focus": "Continuous Integration & Delivery: GitHub Actions workflows, matrix builds, artifact caching, and release pipelines.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (CI/CD Engineer). Specialize in automated test and delivery pipelines, GitHub Actions workflows, security token confinement, and deployment gates.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        ".github/workflows/",
+        ".gitlab-ci.yml",
+        "pipelines/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "mesh_networking",
+      "focus": "Networking & Ingress: TLS termination, Ingress controllers, Envoy routing, and VPC peering.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Mesh Networking). Specialize in ingress routing, TLS certificates, service mesh policies, and network security policies.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "ingress/",
+        "networking/",
+        "cert-manager/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "observability_sre",
+      "focus": "Observability & SRE: Prometheus metrics, Grafana dashboards, OpenTelemetry tracing, and alert rules.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (Observability SRE). Specialize in metric collection, OpenTelemetry instrumentation, structured logging pipelines, and alerting thresholds.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "monitoring/",
+        "prometheus/",
+        "grafana/",
+        "otel/"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "security_compliance",
+      "focus": "DevSecOps & Compliance: Container image vulnerability scanning, least-privilege IAM, and audit policies.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Security & Compliance). Specialize in image scanning with Trivy, RBAC least-privilege audit, Pod Security Standards, and secret management.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "security/",
+        "policies/",
+        "rbac/"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "runbook_automation",
+      "focus": "Runbooks & Automation: Health probes, rollback scripts, automated backup routines, and DR documentation.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Runbook Automation). Specialize in operational runbooks, disaster recovery procedures, liveness/readiness probes, and post-mortem templates.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "runbooks/",
+        "scripts/",
+        "ops/",
+        "README.md"
+      ]
+    }
+  ]
+}
+

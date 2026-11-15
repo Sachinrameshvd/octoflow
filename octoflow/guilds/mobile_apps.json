@@ -1,0 +1,150 @@
+{
+  "name": "mobile_apps",
+  "description": "Mobile Engineering Guild (iOS, Android, React Native & Flutter: Architecture, Storage, Networking, UI, State, Device Testing, Keychain, Build/Fastlane)",
+  "arms": [
+    {
+      "id": 0,
+      "role": "mobile_architect",
+      "focus": "Mobile Architecture: Clean Architecture / MVI, modularization, cross-platform vs native abstraction, and offline topology.",
+      "color": "#00F0FF",
+      "system_prompt": "You are Arm 0 (Mobile Architect). Specialize in mobile application architecture, dependency injection, offline-first data synchronization, and platform abstractions.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "app/src/main/",
+        "ios/Sources/",
+        "architecture/"
+      ]
+    },
+    {
+      "id": 1,
+      "role": "local_storage",
+      "focus": "Local Embedded Storage: SQLite, Room database, CoreData / SwiftData, EncryptedSharedPreferences, and migrations.",
+      "color": "#A855F7",
+      "system_prompt": "You are Arm 1 (Local Storage). Specialize in mobile local persistence, SQLite/Room migrations, encrypted key-value stores, and database query performance.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "app/src/main/db/",
+        "ios/Storage/",
+        "database/"
+      ]
+    },
+    {
+      "id": 2,
+      "role": "api_client_sync",
+      "focus": "Mobile Networking & Sync: Ktor / Alamofire HTTP clients, background workers, offline queueing, and WebSocket feeds.",
+      "color": "#3B82F6",
+      "system_prompt": "You are Arm 2 (API Client & Sync). Specialize in robust mobile networking, background work managers, offline request queueing with exponential backoff, and JSON parsing.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "app/src/main/network/",
+        "ios/Network/",
+        "api/"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "ui_declarative",
+      "focus": "Declarative UI: SwiftUI and Jetpack Compose components, custom animations, design tokens, and dark mode theming.",
+      "color": "#EC4899",
+      "system_prompt": "You are Arm 3 (Declarative UI). Specialize in modern declarative UI (SwiftUI / Jetpack Compose), responsive layout, design token hierarchies, and dynamic theming.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "app/src/main/ui/",
+        "ios/Views/",
+        "components/"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "navigation_state",
+      "focus": "Navigation & Deep Linking: Navigation stacks, type-safe route arguments, universal links, and process death state restoration.",
+      "color": "#10B981",
+      "system_prompt": "You are Arm 4 (Navigation & State). Specialize in mobile navigation graphs, deep linking handlers, push notification routing, and view model state restoration.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "app/src/main/navigation/",
+        "ios/Navigation/"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "device_ui_test",
+      "focus": "Device & UI Testing: Maestro / Espresso UI flows, snapshot regression tests, accessibility audits, and orientation matrices.",
+      "color": "#EF4444",
+      "system_prompt": "You are Arm 5 (Device & UI Test). Specialize in automated mobile UI testing with Maestro/Espresso, snapshot visual diffs, and verifying touch targets.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        ".maestro/",
+        "app/src/androidTest/",
+        "ios/Tests/"
+      ]
+    },
+    {
+      "id": 6,
+      "role": "biometrics_keychain",
+      "focus": "Mobile Security & Biometrics: iOS Keychain, Android Keystore, FaceID/BiometricPrompt, and SSL pinning.",
+      "color": "#F59E0B",
+      "system_prompt": "You are Arm 6 (Biometrics & Keychain). Specialize in mobile hardware security, secure enclave token storage, biometric authentication gates, and certificate pinning.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "app/src/main/security/",
+        "ios/Security/"
+      ]
+    },
+    {
+      "id": 7,
+      "role": "build_distribution",
+      "focus": "Build & CI Distribution: Gradle build types, Xcode build configurations, Fastlane lanes, code signing, and Proguard/R8.",
+      "color": "#EAB308",
+      "system_prompt": "You are Arm 7 (Build & Distribution). Specialize in Gradle / Xcode build optimization, Fastlane deployment automation, code obfuscation with Proguard/R8, and release notes.",
+      "tools": [
+        "read_file",
+        "write_file",
+        "run_command",
+        "list_dir"
+      ],
+      "file_scope": [
+        "Fastfile",
+        "build.gradle.kts",
+        "project.pbxproj",
+        "README.md"
+      ]
+    }
+  ]
+}
+

@@ -487,6 +487,8 @@ class LLMResponse(BaseModel):
     estimated_cost_dollars: float = 0.0
     tool_calls: list[dict[str, Any]] = []
     estimated: bool = False
+    tokens_cached_read: int = 0
+    tokens_cached_create: int = 0
 
     @property
     def prompt_tokens(self) -> int:
@@ -864,7 +866,7 @@ class MockLLMProvider(BaseLLMProvider):
 
 
 class AnthropicProvider(BaseLLMProvider):
-    """Anthropic Claude API Provider (Claude 3.5 Sonnet / Opus)."""
+    """Anthropic Claude API Provider (Claude 3.5 Sonnet / Opus / Haiku) with Prompt Caching."""
 
     provider_name = "anthropic"
     supports_tools = True
@@ -878,6 +880,7 @@ class AnthropicProvider(BaseLLMProvider):
         asleep_fn: Callable[[float], Any] | None = None,
         redact_outbound: bool = True,
         transport: httpx.BaseTransport | None = None,
+        enable_prompt_caching: bool = True,
     ):
         self.api_key = api_key or resolve_api_key("anthropic")[0]
         if not self.api_key:
@@ -889,6 +892,144 @@ class AnthropicProvider(BaseLLMProvider):
         self.asleep_fn = asleep_fn
         self.redact_outbound = redact_outbound
         self.transport = transport
+        self.enable_prompt_caching = enable_prompt_caching
+
+    def _build_request_payload(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: float,
+        max_tokens: int,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> tuple[dict[str, str], dict[str, Any]]:
+        headers = {
+            "x-api-key": self.api_key or "",
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        if self.enable_prompt_caching:
+            headers["anthropic-beta"] = "prompt-caching-2024-07-31"
+
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+
+        if system_prompt:
+            if self.enable_prompt_caching:
+                payload["system"] = [
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ]
+            else:
+                payload["system"] = system_prompt
+
+        if tools:
+            anthropic_tools = []
+            for t in tools:
+                schema = (
+                    t.get("input_schema")
+                    or t.get("parameters")
+                    or {"type": "object", "properties": {}}
+                )
+                anthropic_tools.append(
+                    {
+                        "name": t.get("name", ""),
+                        "description": t.get("description", ""),
+                        "input_schema": schema,
+                    }
+                )
+            payload["tools"] = anthropic_tools
+
+        return headers, payload
+
+    def _parse_response_data(
+        self,
+        data: dict[str, Any],
+        prompt: str,
+    ) -> LLMResponse:
+        items = data.get("content", [])
+        text_pieces: list[str] = []
+        tool_calls: list[dict[str, Any]] = []
+
+        for item in items:
+            item_type = item.get("type")
+            if item_type == "text":
+                text_pieces.append(item.get("text", ""))
+            elif item_type == "tool_use":
+                tool_calls.append(
+                    {
+                        "id": item.get("id", ""),
+                        "name": item.get("name", ""),
+                        "arguments": item.get("input", {}),
+                    }
+                )
+
+        content = "".join(text_pieces)
+        usage = data.get("usage")
+
+        cache_read = 0
+        cache_create = 0
+
+        if (
+            usage
+            and usage.get("input_tokens") is not None
+            and usage.get("output_tokens") is not None
+        ):
+            in_toks = int(usage["input_tokens"])
+            out_toks = int(usage["output_tokens"])
+            cache_read = int(usage.get("cache_read_input_tokens", 0))
+            cache_create = int(usage.get("cache_creation_input_tokens", 0))
+            estimated = False
+        else:
+            in_toks = estimate_tokens_from_chars(prompt)
+            out_toks = estimate_tokens_from_chars(content)
+            estimated = True
+
+        # Model-aware Truthful Pricing Calculation
+        model_lower = self.model.lower()
+        if "haiku" in model_lower:
+            cost = (
+                (in_toks * 0.0000008)
+                + (cache_read * 0.00000008)
+                + (cache_create * 0.0000010)
+                + (out_toks * 0.000004)
+            )
+        elif "opus" in model_lower:
+            cost = (
+                (in_toks * 0.000015)
+                + (cache_read * 0.0000015)
+                + (cache_create * 0.00001875)
+                + (out_toks * 0.000075)
+            )
+        else:
+            # Claude 3.5 Sonnet / Default:
+            # $3/M base input, $0.30/M cache read (90% off!), $3.75/M cache creation, $15/M output
+            cost = (
+                (in_toks * 0.000003)
+                + (cache_read * 0.0000003)
+                + (cache_create * 0.00000375)
+                + (out_toks * 0.000015)
+            )
+
+        total_prompt = in_toks + cache_read
+
+        return LLMResponse(
+            content=content,
+            tokens_prompt=total_prompt,
+            tokens_completion=out_toks,
+            total_tokens=total_prompt + out_toks,
+            estimated_cost_dollars=round(cost, 6),
+            tool_calls=tool_calls,
+            estimated=estimated,
+            tokens_cached_read=cache_read,
+            tokens_cached_create=cache_create,
+        )
 
     def generate(
         self,
@@ -896,20 +1037,16 @@ class AnthropicProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
-        headers = {
-            "x-api-key": self.api_key or "",
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-        payload = {
-            "model": self.model,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": prompt}],
-        }
+        headers, payload = self._build_request_payload(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=tools,
+        )
         with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             http_resp = execute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
@@ -918,33 +1055,7 @@ class AnthropicProvider(BaseLLMProvider):
             )
             data = http_resp.json()
 
-        items = data.get("content", [])
-        content = items[0].get("text", "") if items else ""
-        usage = data.get("usage")
-        if (
-            usage
-            and usage.get("input_tokens") is not None
-            and usage.get("output_tokens") is not None
-        ):
-            in_toks = int(usage["input_tokens"])
-            out_toks = int(usage["output_tokens"])
-            estimated = False
-        else:
-            in_toks = estimate_tokens_from_chars(prompt)
-            out_toks = estimate_tokens_from_chars(content)
-            estimated = True
-
-        # Claude 3.5 Sonnet pricing: $3 / MTok in, $15 / MTok out
-        cost = (in_toks * 0.000003) + (out_toks * 0.000015)
-
-        llm_resp = LLMResponse(
-            content=content,
-            tokens_prompt=in_toks,
-            tokens_completion=out_toks,
-            total_tokens=in_toks + out_toks,
-            estimated_cost_dollars=cost,
-            estimated=estimated,
-        )
+        llm_resp = self._parse_response_data(data, prompt)
         self.record_usage(llm_resp)
         return llm_resp
 
@@ -954,20 +1065,16 @@ class AnthropicProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
-        headers = {
-            "x-api-key": self.api_key or "",
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-        payload = {
-            "model": self.model,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": prompt}],
-        }
+        headers, payload = self._build_request_payload(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=tools,
+        )
         async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport) as client:
             http_resp = await aexecute_with_retry(
                 lambda: client.post(self.base_url, headers=headers, json=payload),
@@ -976,31 +1083,7 @@ class AnthropicProvider(BaseLLMProvider):
             )
             data = http_resp.json()
 
-        items = data.get("content", [])
-        content = items[0].get("text", "") if items else ""
-        usage = data.get("usage")
-        if (
-            usage
-            and usage.get("input_tokens") is not None
-            and usage.get("output_tokens") is not None
-        ):
-            in_toks = int(usage["input_tokens"])
-            out_toks = int(usage["output_tokens"])
-            estimated = False
-        else:
-            in_toks = estimate_tokens_from_chars(prompt)
-            out_toks = estimate_tokens_from_chars(content)
-            estimated = True
-        cost = (in_toks * 0.000003) + (out_toks * 0.000015)
-
-        llm_resp = LLMResponse(
-            content=content,
-            tokens_prompt=in_toks,
-            tokens_completion=out_toks,
-            total_tokens=in_toks + out_toks,
-            estimated_cost_dollars=cost,
-            estimated=estimated,
-        )
+        llm_resp = self._parse_response_data(data, prompt)
         self.record_usage(llm_resp)
         return llm_resp
 

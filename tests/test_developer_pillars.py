@@ -45,6 +45,7 @@ def test_config_persistence_and_loading(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: fake_home)
 
     # Test auto-loading without environment variables
+    monkeypatch.delenv("OCTOFLOW_DIR", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 

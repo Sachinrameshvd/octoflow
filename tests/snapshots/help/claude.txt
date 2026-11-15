@@ -1,0 +1,15 @@
+                                                                                                    
+ Usage: octoflow claude [OPTIONS] COMMAND [ARGS]...                                                 
+                                                                                                    
+ Direct Claude Code CLI integration, 8-Arm SPARC prompt runner, and CLAUDE.md sync.                 
+                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────╮
+│ init    Generate or update CLAUDE.md and register OctoFlow MCP server for Claude Code.           │
+│ run     Run official Claude Code CLI with the compiled OctoFlow 8-Arm SPARC prompt.              │
+│ prompt  Generate and display the compiled OctoFlow 8-Arm SPARC prompt for Claude.                │
+│ status  Inspect the status and health of the Claude Code integration.                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

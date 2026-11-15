@@ -1,10 +1,11 @@
                                                                                                     
  Usage: octoflow init [OPTIONS]                                                                     
                                                                                                     
- Auto-configure Cursor (.cursorrules), Claude (MCP), VS Code (tasks), and Git (hooks).              
+ Auto-configure Cursor (.cursorrules), Claude (CLAUDE.md & MCP), VS Code (tasks), and Git (hooks).  
                                                                                                     
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
-│ --dir   -d      <str>  Project workspace directory to onboard [default: .]                       │
-│ --help                 Show this message and exit.                                               │
+│ --dir     -d      <str>  Project workspace directory to onboard [default: .]                     │
+│ --claude  -c             Configure Claude Code integration only (CLAUDE.md + MCP)                │
+│ --help                   Show this message and exit.                                             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 

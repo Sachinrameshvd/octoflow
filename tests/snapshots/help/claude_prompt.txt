@@ -1,0 +1,15 @@
+                                                                                                    
+ Usage: octoflow claude prompt [OPTIONS] {goal}                                                     
+                                                                                                    
+ Generate and display the compiled OctoFlow 8-Arm SPARC prompt for Claude.                          
+                                                                                                    
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────╮
+│ *    goal      <str>  Engineering goal to compile into an 8-Arm SPARC directive [required]       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dir   -d      <str>  Target project workspace folder [default: .]                              │
+│ --copy  -c             Copy the compiled prompt to system clipboard                              │
+│ --raw   -r             Print raw prompt without rich styling (ideal for unix pipes)              │
+│ --help                 Show this message and exit.                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+

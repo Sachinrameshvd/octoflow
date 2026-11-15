@@ -9,6 +9,7 @@ Rich terminal consoles and 3D WebGL visualizer synchronization.
 import json
 import sys
 import time
+import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -243,7 +244,7 @@ THEMES: dict[str, OctoTheme] = {
 }
 
 
-_CONFIG_DIR = Path.home() / ".octoflow"
+_CONFIG_DIR = Path(os.environ.get("OCTOFLOW_DIR", Path.home() / ".octoflow")).resolve()
 _THEME_FILE = _CONFIG_DIR / "theme.json"
 
 

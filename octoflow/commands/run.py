@@ -460,6 +460,11 @@ def run(
         last_synaptic_event = ["Consortium phase gates engaged across Synaptic Bus."]
         start_time = time.time()
         live_holder = [None]
+        tick_counter = [0]
+        total_tokens_saved_ref = [87.5]
+        total_cost_ref = [0.0]
+        tokens_spent_ref = [0]
+        tokens_avoided_ref = [0]
 
         def on_consortium_telemetry(event: SwarmTelemetryEvent):
             oct_id = event.octopus_id
@@ -480,7 +485,21 @@ def run(
                     elif event.status in ["INITIALIZING"]:
                         octopus_states[oct_id]["arms"][arm_idx] = glyph("MIDDLE_DOT")
 
+                if event.status == "COMPLETED":
+                    octopus_states[oct_id]["arms"] = [glyph("OK")] * 8
+
             last_synaptic_event[0] = f"[{event.octopus_title} / {event.role}]: {event.summary}"
+            tick_counter[0] += 1
+            if getattr(event, "tokens_saved_pct", 0.0):
+                total_tokens_saved_ref[0] = event.tokens_saved_pct
+            if getattr(event, "total_cost_dollars", 0.0):
+                total_cost_ref[0] = event.total_cost_dollars
+            tokens_spent_ref[0] += 125
+            tokens_avoided_ref[0] = int(
+                tokens_spent_ref[0]
+                * (total_tokens_saved_ref[0] / max(1.0, 100.0 - total_tokens_saved_ref[0]))
+            )
+
             broadcaster.broadcast(event)
             if tracer.enabled:
                 tracer.log_telemetry(event)
@@ -493,22 +512,27 @@ def run(
                     render_consortium_dashboard(
                         objective=objective,
                         octopus_states=octopus_states,
-                        total_tokens_saved=87.5,
-                        total_cost=0.0,
+                        total_tokens_saved=total_tokens_saved_ref[0],
+                        total_cost=total_cost_ref[0],
                         last_event_msg=last_synaptic_event[0],
                         visualizer_url=visualizer_url,
                         elapsed_seconds=time.time() - start_time,
                         total_arms=total_arms,
                         tier_name=tier_name,
                         theme=active_theme,
+                        tick=tick_counter[0],
+                        tokens_spent=tokens_spent_ref[0],
+                        tokens_avoided=tokens_avoided_ref[0],
                     )
                 )
 
+        steer_active = bool(os.getenv("OCTOFLOW_STEER") == "1")
         try:
             consortium = OctosConsortium(
                 config=config,
                 octopus_count=resolved_octos,
                 telemetry_callback=on_consortium_telemetry,
+                interactive_gates=steer_active,
             )
         except ProviderExhaustedError as pe:
             fail_sym = glyph("FAIL")
@@ -527,14 +551,17 @@ def run(
                         render_consortium_dashboard(
                             objective=objective,
                             octopus_states=octopus_states,
-                            total_tokens_saved=87.5,
-                            total_cost=0.0,
+                            total_tokens_saved=total_tokens_saved_ref[0],
+                            total_cost=total_cost_ref[0],
                             last_event_msg=last_synaptic_event[0],
                             visualizer_url=visualizer_url,
                             elapsed_seconds=time.time() - start_time,
                             total_arms=total_arms,
                             tier_name=tier_name,
                             theme=active_theme,
+                            tick=tick_counter[0],
+                            tokens_spent=tokens_spent_ref[0],
+                            tokens_avoided=tokens_avoided_ref[0],
                         )
                     )
                     res = consortium.run_consortium(

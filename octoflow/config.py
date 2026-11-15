@@ -302,8 +302,9 @@ class LLMConfigEntry(BaseModel):
 
 
 def get_octoflow_dir() -> Path:
-    """Return ~/.octoflow path, ensuring directory permissions are 0700."""
-    cfg_dir = Path.home() / ".octoflow"
+    """Return ~/.octoflow path (or $OCTOFLOW_DIR), ensuring directory permissions are 0700."""
+    env_dir = os.environ.get("OCTOFLOW_DIR")
+    cfg_dir = Path(env_dir).resolve() if env_dir else Path.home() / ".octoflow"
     if not cfg_dir.exists():
         cfg_dir.mkdir(parents=True, exist_ok=True)
         try:

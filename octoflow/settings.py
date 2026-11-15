@@ -59,9 +59,9 @@ class ConfigurationError(ConfigError):
 
 
 def get_default_config_dir() -> Path:
-    """Return default directory ~/.octoflow with 0700 permissions."""
-    home = Path.home()
-    cfg_dir = home / ".octoflow"
+    """Return default directory ~/.octoflow (or $OCTOFLOW_DIR) with 0700 permissions."""
+    env_dir = os.environ.get("OCTOFLOW_DIR")
+    cfg_dir = Path(env_dir).resolve() if env_dir else Path.home() / ".octoflow"
     cfg_dir.mkdir(parents=True, exist_ok=True)
     try:
         cur_mode = cfg_dir.stat().st_mode & 0o777

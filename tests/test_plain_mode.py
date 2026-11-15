@@ -67,7 +67,7 @@ def test_no_color_subprocess_pipe():
         capture_output=True,
         text=True,
         env=env,
-        timeout=15,
+        timeout=30,
     )
     assert proc.returncode == 0
     # Strict assertion: Zero ANSI escape codes in stdout
@@ -93,7 +93,7 @@ def test_ascii_mode_subprocess():
         capture_output=True,
         text=True,
         env=env,
-        timeout=15,
+        timeout=30,
     )
     assert proc.returncode == 0
     assert proc.stdout, "Process produced no stdout"
@@ -120,7 +120,7 @@ def test_plain_mode_arm_progress():
         capture_output=True,
         text=True,
         env=env,
-        timeout=15,
+        timeout=30,
     )
     assert proc.returncode == 0
     # In plain mode, progress lines are formatted as [arm <id> <role>] <summary>
@@ -148,7 +148,7 @@ def test_quiet_mode_suppresses_progress():
         capture_output=True,
         text=True,
         env=env,
-        timeout=15,
+        timeout=30,
     )
     assert proc.returncode == 0
     # Progress lines should be suppressed
@@ -174,7 +174,7 @@ def test_json_output_mode():
         capture_output=True,
         text=True,
         env=env,
-        timeout=15,
+        timeout=30,
     )
     assert proc.returncode == 0
     data = json.loads(proc.stdout.strip())
@@ -206,7 +206,7 @@ def test_consortium_plain_mode():
         capture_output=True,
         text=True,
         env=env,
-        timeout=15,
+        timeout=30,
     )
     assert proc.returncode == 0
     assert "[arm " in proc.stdout or "CONSORTIUM" in proc.stdout

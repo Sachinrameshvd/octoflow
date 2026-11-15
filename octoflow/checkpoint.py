@@ -27,7 +27,8 @@ def get_runs_dir() -> Path:
     if override:
         base = Path(override).resolve()
     else:
-        base = Path.home() / ".octoflow" / "runs"
+        from octoflow.config import get_octoflow_dir
+        base = get_octoflow_dir() / "runs"
     base.mkdir(parents=True, exist_ok=True)
     return base
 
