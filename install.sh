@@ -50,3 +50,4 @@ fi
 echo "✓ OctoFlow installed successfully!"
 echo "◈ Launch cockpit with: octos"
 echo "◈ Or run a simulation: octos run \"Build a rate limiter\" --provider mock"
+

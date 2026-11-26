@@ -585,6 +585,7 @@ class BaseLLMProvider(ABC):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
         """Synchronously generate an LLM completion."""
         pass
@@ -621,9 +622,28 @@ class MockLLMProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
         self.call_count += 1
         prompt_lower = prompt.lower()
+        if images:
+            img_names = ", ".join(getattr(im, "filename", "image") for im in images)
+            resp_text = (
+                f"[Mock Vision] Received {len(images)} image attachment(s): {img_names}. "
+                "Switch to Claude, OpenAI, Gemini, or a vision Ollama model (e.g. llava) for real image analysis."
+            )
+            tokens_in = estimate_tokens_from_chars(prompt)
+            tokens_out = estimate_tokens_from_chars(resp_text)
+            self.total_tokens_spent += tokens_in + tokens_out
+            resp = LLMResponse(
+                content=resp_text,
+                tokens_prompt=tokens_in,
+                tokens_completion=tokens_out,
+                total_tokens=tokens_in + tokens_out,
+                estimated_cost_dollars=0.0,
+            )
+            self.record_usage(resp)
+            return resp
 
         # Check explicit custom scripts
         for pattern, response in self.script_responses.items():
@@ -901,6 +921,7 @@ class AnthropicProvider(BaseLLMProvider):
         temperature: float,
         max_tokens: int,
         tools: list[dict[str, Any]] | None = None,
+        images: list[Any] | None = None,
     ) -> tuple[dict[str, str], dict[str, Any]]:
         headers = {
             "x-api-key": self.api_key or "",
@@ -910,11 +931,26 @@ class AnthropicProvider(BaseLLMProvider):
         if self.enable_prompt_caching:
             headers["anthropic-beta"] = "prompt-caching-2024-07-31"
 
+        if images:
+            user_content: Any = [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": getattr(img, "media_type", "image/png"),
+                        "data": getattr(img, "base64_data", ""),
+                    },
+                }
+                for img in images
+            ] + [{"type": "text", "text": prompt}]
+        else:
+            user_content = prompt
+
         payload: dict[str, Any] = {
             "model": self.model,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": user_content}],
         }
 
         if system_prompt:
@@ -1038,6 +1074,7 @@ class AnthropicProvider(BaseLLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 2048,
         tools: list[dict[str, Any]] | None = None,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
         prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
         headers, payload = self._build_request_payload(
@@ -1046,6 +1083,7 @@ class AnthropicProvider(BaseLLMProvider):
             temperature=temperature,
             max_tokens=max_tokens,
             tools=tools,
+            images=images,
         )
         with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             http_resp = execute_with_retry(
@@ -1126,16 +1164,29 @@ class OpenAIProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
         prompt, system_prompt = self.sanitize_outbound_prompt(prompt, system_prompt)
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        messages = []
+        messages: list[dict[str, Any]] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
+        if images:
+            user_content: Any = [{"type": "text", "text": prompt}] + [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{getattr(img, 'media_type', 'image/png')};base64,{getattr(img, 'base64_data', '')}"
+                    },
+                }
+                for img in images
+            ]
+            messages.append({"role": "user", "content": user_content})
+        else:
+            messages.append({"role": "user", "content": prompt})
 
         payload = {
             "model": self.model,
@@ -1327,14 +1378,17 @@ class OllamaProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 512,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
-        payload = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "prompt": prompt,
             "system": system_prompt,
             "stream": False,
             "options": {"temperature": temperature, "num_predict": max_tokens},
         }
+        if images:
+            payload["images"] = [getattr(img, "base64_data", "") for img in images]
         endpoint = f"{self.base_url}/api/generate"
         with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             http_resp = execute_with_retry(
@@ -1453,6 +1507,7 @@ class FailoverLLMProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
         chain = [self.primary] + self.fallbacks
         last_error = None
@@ -1467,12 +1522,15 @@ class FailoverLLMProvider(BaseLLMProvider):
             if not prov_tag or prov_tag == "base":
                 prov_tag = p_name
             try:
-                return provider.generate(
-                    prompt=prompt,
-                    system_prompt=system_prompt,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
+                gen_kw: dict[str, Any] = {
+                    "prompt": prompt,
+                    "system_prompt": system_prompt,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                }
+                if images:
+                    gen_kw["images"] = images
+                return provider.generate(**gen_kw)
             except Exception as e:
                 err = classify_http_error(
                     e, provider=prov_tag, model=getattr(provider, "model", None)
@@ -1842,6 +1900,7 @@ class CascadePoolLLMProvider(BaseLLMProvider):
         system_prompt: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        images: list[Any] | None = None,
     ) -> LLMResponse:
         if not self.providers:
             if self.dry_run:
@@ -1883,12 +1942,15 @@ class CascadePoolLLMProvider(BaseLLMProvider):
             self.active_index = idx
 
             try:
-                resp = provider.generate(
-                    prompt=prompt,
-                    system_prompt=system_prompt,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
+                gen_kw: dict[str, Any] = {
+                    "prompt": prompt,
+                    "system_prompt": system_prompt,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                }
+                if images:
+                    gen_kw["images"] = images
+                resp = provider.generate(**gen_kw)
                 t["tokens_used"] += resp.total_tokens
                 return resp
             except Exception as e:
@@ -1986,11 +2048,39 @@ class CascadePoolLLMProvider(BaseLLMProvider):
         return cnt
 
 
+_MODEL_PREFIX_TO_PROVIDER: tuple[tuple[str, str], ...] = (
+    ("claude", "anthropic"),
+    ("gpt", "openai"),
+    ("o1-", "openai"),
+    ("o3-", "openai"),
+    ("o4-", "openai"),
+    ("gemini", "gemini"),
+    ("grok", "grok"),
+    ("deepseek", "deepseek"),
+    ("qwen", "ollama"),
+    ("llama", "ollama"),
+    ("codellama", "ollama"),
+    ("mistral", "ollama"),
+)
+
+
+def resolve_provider_and_model(raw: str) -> tuple[str, str | None]:
+    """Normalize a provider or model identifier into (provider_name, model_name_or_None)."""
+    val = (raw or "").strip()
+    lower = val.lower()
+    for prefix, provider in _MODEL_PREFIX_TO_PROVIDER:
+        if lower.startswith(prefix):
+            return provider, val
+    return lower, None
+
+
 def _build_single_provider(
     provider_name: str, config: OctoFlowConfig, tier: str | None = None, dry_run: bool = False
 ) -> BaseLLMProvider:
     """Helper to instantiate an individual provider backend."""
-    p_name = provider_name.lower().strip()
+    p_name, inferred_model = resolve_provider_and_model(provider_name)
+    if inferred_model and not getattr(config, "model_name", None):
+        config.model_name = inferred_model
     is_dry = dry_run or getattr(config, "dry_run", False) or (os.getenv("OCTOFLOW_DRY_RUN") == "1")
     redact_flag = getattr(config, "privacy_redact_outbound", True)
 

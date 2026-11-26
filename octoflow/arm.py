@@ -811,7 +811,9 @@ class ArmAgent:
             cost_dollars=llm_resp.estimated_cost_dollars,
         )
 
-    def answer_query(self, query: str, context: str | None = None) -> str:
+    def answer_query(
+        self, query: str, context: str | None = None, images: list[Any] | None = None
+    ) -> str:
         """Answer a direct developer question or code review query using specialist domain grounding."""
         domain_str = ", ".join(self.role.workspace_domain) or "workspace root"
         recent_actions = ""
@@ -848,12 +850,15 @@ class ArmAgent:
         if self.budget_tracker is not None:
             self.budget_tracker.check_wall_time()
             self.budget_tracker.check_llm_call()
-        response = self.provider.generate(
-            prompt=user_content,
-            system_prompt=system_prompt,
-            temperature=0.3,
-            max_tokens=600,
-        )
+        gen_kwargs: dict[str, Any] = {
+            "prompt": user_content,
+            "system_prompt": system_prompt,
+            "temperature": 0.3,
+            "max_tokens": 600,
+        }
+        if images:
+            gen_kwargs["images"] = images
+        response = self.provider.generate(**gen_kwargs)
         if self.budget_tracker is not None:
             self.budget_tracker.record_tokens(response.total_tokens)
         return response.content.strip()

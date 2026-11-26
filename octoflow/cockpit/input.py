@@ -121,6 +121,8 @@ def get_live_cockpit_keys(
     grid_builder: Callable[[str, int, int, float, int, int], Any] | None = None,
     console: Console | None = None,
     commands: list[str] | None = None,
+    compact_prompt: bool = False,
+    clear_screen: bool = False,
 ) -> CockpitInput:
     """Non-blocking animated cockpit input loop.
 
@@ -137,7 +139,7 @@ def get_live_cockpit_keys(
         _sess = session
 
         def grid_builder(b, c, t, ox, oy, plc):
-            return build_cockpit_grid(_sess, b, c, t, ox, oy, plc)
+            return build_cockpit_grid(_sess, b, c, t, ox, oy, plc, compact=compact_prompt)
 
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         try:
@@ -164,7 +166,8 @@ def get_live_cockpit_keys(
     pasted_line_count = 1
     cmd_list = commands or []
 
-    console.clear()
+    if clear_screen:
+        console.clear()
 
     with raw_terminal_mode(fd):
         with Live(
@@ -276,7 +279,11 @@ def get_live_cockpit_keys(
                         grid_builder(buffer, cursor_pos, tick, octo_x, octo_y, pasted_line_count)
                     )
 
-    res = CockpitInput(buffer.strip())
+    cleaned_buf = buffer.strip()
+    if cleaned_buf:
+        console.print(f"[{session.theme.rich_primary}]octos ❯[/] [bold white]{cleaned_buf}[/bold white]")
+
+    res = CockpitInput(cleaned_buf)
     res.paste_line_count = (
         pasted_line_count
         if pasted_line_count > 1
@@ -373,28 +380,8 @@ def get_live_wizard_keys(
         f"[{theme.rich_primary}][7:Docs][/] ●\n"
     )
 
-    def build_wizard_grid(buf: str, cur_pos: int, tick: int, ox: float, oy: int) -> Table:
-        banner = get_banner_loop_frame(theme, tick=tick)
-        runner = render_runner_frame(
-            theme,
-            octo_x=int(ox),
-            octo_y=oy,
-            is_jumping=(oy > 0),
-            stride_alt=(int(ox // 3) % 2 == 1),
-            seabed_offset=int(ox),
-        )
-
-        grid = Table.grid(expand=True)
-        grid.add_row(banner)
-        grid.add_row(cockpit_panel)
-        grid.add_row(topology_text)
-        grid.add_row(runner)
-        if extra_panels:
-            for ep in extra_panels:
-                grid.add_row(ep)
-
+    def build_wizard_grid(buf: str, cur_pos: int, tick: int, ox: float, oy: int) -> Text:
         prompt_t = Text()
-        prompt_t.append("\n")
         prompt_t.append(prompt_label, style=f"bold {theme.rich_primary}")
         disp_buf = ("*" * len(buf)) if is_password else buf
         prompt_t.append(disp_buf[:cur_pos], style="bold white")
@@ -402,9 +389,7 @@ def get_live_wizard_keys(
         prompt_t.append(cur_char, style=f"bold {theme.rich_primary}")
         prompt_t.append(disp_buf[cur_pos:], style="bold white")
         prompt_t.append("\n")
-
-        grid.add_row(prompt_t)
-        return grid
+        return prompt_t
 
     buffer = default_value
     cursor_pos = len(buffer)
@@ -414,7 +399,11 @@ def get_live_wizard_keys(
     octo_y = 0
     jump_phase = 0.0
 
-    c.clear()
+    if extra_panels:
+        c.print()
+        for ep in extra_panels:
+            c.print(ep)
+        c.print()
 
     with raw_terminal_mode(fd):
         with Live(
@@ -498,7 +487,10 @@ def get_live_wizard_keys(
 
                 live.update(build_wizard_grid(buffer, cursor_pos, tick, octo_x, octo_y))
 
-    return buffer.strip() or default_value
+    final_val = buffer.strip() or default_value
+    shown_val = ("*" * len(final_val)) if is_password else final_val
+    c.print(f"[bold {theme.rich_primary}]{prompt_label}[/bold {theme.rich_primary}][bold white]{shown_val}[/bold white]")
+    return final_val
 
 
 # Backward-compatible alias for live wizard input

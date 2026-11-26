@@ -234,8 +234,17 @@ def _run_cockpit_impl(
             pass
 
     # Safe fallback if user has not configured any cloud keys
-    s.current_model = saved_cfg.get("default_model", "mock" if not has_any_key else "anthropic")
-    if not has_any_key and s.current_model not in ["mock", "ollama"]:
+    from octoflow.provider import resolve_provider_and_model
+
+    raw_default = saved_cfg.get("default_provider") or saved_cfg.get(
+        "default_model", "mock" if not has_any_key else "anthropic"
+    )
+    s.current_model, _ = resolve_provider_and_model(str(raw_default))
+    has_pool = bool(
+        isinstance(saved_cfg.get("llm_pool"), list)
+        and any(e.get("enabled", True) for e in saved_cfg["llm_pool"] if isinstance(e, dict))
+    )
+    if not has_any_key and not has_pool and s.current_model not in ["mock", "ollama"]:
         s.current_model = "mock"
     s.current_octos = "auto"
     s.current_guild = saved_cfg.get("default_guild", "software_dev")
@@ -311,12 +320,21 @@ def _run_cockpit_impl(
     except Exception:
         pass
 
+    from octoflow.cockpit.render import build_hud_panel, build_topology_text
+
+    print_welcome_banner(s, c, animate=False)
+    c.print(build_hud_panel(s))
+    c.print(build_topology_text(s.theme))
+    chat_history: list[dict[str, str]] = []
+
     while s.running:
         try:
             raw_input_obj = get_live_cockpit_keys(
                 session=s,
                 console=c,
                 commands=COMMANDS,
+                compact_prompt=True,
+                clear_screen=False,
             )
             paste_count = getattr(raw_input_obj, "paste_line_count", 1)
             route = route_classifier(
@@ -410,6 +428,8 @@ def _run_cockpit_impl(
 
             elif user_input in ["/clear", "clear", "cls"]:
                 print_welcome_banner(s, c, animate=False)
+                c.print(build_hud_panel(s))
+                c.print(build_topology_text(s.theme))
                 continue
 
             elif user_input in ["/screensaver", "screensaver"]:
@@ -643,12 +663,17 @@ def _run_cockpit_impl(
                 if cfg_file.exists():
                     try:
                         saved_cfg = load_secure_config(cfg_file)
-                        s.current_model = saved_cfg.get("default_model", s.current_model)
+                        raw_def = saved_cfg.get("default_provider") or saved_cfg.get(
+                            "default_model", s.current_model
+                        )
+                        s.current_model, _ = resolve_provider_and_model(str(raw_def))
                         s.current_budget = float(saved_cfg.get("default_budget", s.current_budget))
                     except Exception:
                         pass
                 s.theme = load_saved_theme()
                 print_welcome_banner(s, c, animate=False)
+                c.print(build_hud_panel(s))
+                c.print(build_topology_text(s.theme))
                 continue
 
             elif user_input.startswith("/llm"):
@@ -756,9 +781,14 @@ def _run_cockpit_impl(
                     }
                     pool.append(new_entry)
                     cfg_data["llm_pool"] = pool
+                    cfg_data["default_provider"] = "pool"
                     save_secure_config(cfg_data, cfg_file)
+                    s.current_model = "pool"
                     c.print(
-                        f"[bold green]Added {name} to cascade pool as Priority #{len(pool)}.[/bold green]\n"
+                        f"[bold green]✓ Added {name} to cascade pool as Priority #{len(pool)}.[/bold green]"
+                    )
+                    c.print(
+                        f"[{s.theme.rich_primary}]◈ Active LLM core switched to CASCADE POOL (#1 → #{len(pool)} failover).[/{s.theme.rich_primary}]\n"
                     )
 
                 elif subcmd in ["clear", "reset"]:
@@ -1116,15 +1146,78 @@ def _run_cockpit_impl(
                 continue
 
             elif user_input.startswith("/model"):
+                from octoflow.keyring_store import resolve_api_key
+
                 parts = user_input.split(maxsplit=1)
+                cur_cfg = load_secure_config(cfg_file) if cfg_file.exists() else {}
                 if len(parts) > 1:
-                    s.current_model = parts[1].strip().lower()
+                    chosen_provider, inferred_model = resolve_provider_and_model(parts[1])
+                    s.current_model = chosen_provider
                     c.print(
-                        f"[{s.theme.rich_success}]✔ LLM core updated to: [bold]{s.current_model.upper()}[/bold][/{s.theme.rich_success}]\n"
+                        f"[{s.theme.rich_success}]✓ LLM core updated to: [bold]{s.current_model.upper()}[/bold][/{s.theme.rich_success}]"
+                        + (f" [dim](model: {inferred_model})[/dim]" if inferred_model else "")
                     )
+                    if chosen_provider in ["anthropic", "openai", "gemini", "grok", "deepseek"]:
+                        key_val, _ = resolve_api_key(chosen_provider, cur_cfg)
+                        if not key_val:
+                            c.print(
+                                f"[{s.theme.rich_warning}]▲ No API key configured for {chosen_provider}. "
+                                f"Run [bold]/setup[/bold] to paste your key, or [bold]/model ollama[/bold] for free local AI.[/{s.theme.rich_warning}]\n"
+                            )
+                        else:
+                            c.print()
+                    else:
+                        c.print()
                 else:
+                    providers_table = Table(
+                        title="◈ Available LLM Providers & Local Engines",
+                        border_style=s.theme.rich_border,
+                    )
+                    providers_table.add_column("Command", style=s.theme.rich_primary, width=18)
+                    providers_table.add_column("Engine", style="bold white", width=22)
+                    providers_table.add_column("Status", width=26)
+                    providers_table.add_column("Notes", style="dim")
+
+                    for p_id, p_label, p_note in [
+                        ("anthropic", "Anthropic Claude", "API key (claude-3-5-sonnet)"),
+                        ("openai", "OpenAI GPT", "API key (gpt-4o / o3-mini)"),
+                        ("gemini", "Google Gemini", "API key (gemini-2.0-flash)"),
+                        ("grok", "xAI Grok", "API key (grok-2)"),
+                        ("deepseek", "DeepSeek", "API key (deepseek-chat)"),
+                        ("ollama", "Local Ollama", "100% Free, private & offline"),
+                        ("mock", "Mock Simulation", "Free offline test harness"),
+                    ]:
+                        if p_id in ["ollama", "mock"]:
+                            status = f"[{s.theme.rich_success}]✓ Ready (Free)[/{s.theme.rich_success}]"
+                        else:
+                            k_val, k_src = resolve_api_key(p_id, cur_cfg)
+                            status = (
+                                f"[{s.theme.rich_success}]✓ Key ({k_src})[/{s.theme.rich_success}]"
+                                if k_val
+                                else "[dim]○ No key (run /setup)[/dim]"
+                            )
+                        active_mark = " ●" if s.current_model == p_id else ""
+                        providers_table.add_row(f"/model {p_id}", f"{p_label}{active_mark}", status, p_note)
+
+                    pool_entries = cur_cfg.get("llm_pool", [])
+                    pool_count = len([e for e in pool_entries if isinstance(e, dict) and e.get("enabled", True)])
+                    pool_status = (
+                        f"[{s.theme.rich_success}]✓ {pool_count} in order[/{s.theme.rich_success}]"
+                        if pool_count > 0
+                        else "[dim]○ Empty (run /llm add)[/dim]"
+                    )
+                    pool_mark = " ●" if s.current_model in ["pool", "cascade", "cascade_pool"] else ""
+                    providers_table.add_row(
+                        "/model pool",
+                        f"Cascade Failover Pool{pool_mark}",
+                        pool_status,
+                        "Auto-shifts #1 → #2 → #3 on limit",
+                    )
+
+                    c.print()
+                    c.print(providers_table)
                     c.print(
-                        f"[yellow]Current model:[/yellow] {s.current_model}. Options: mock, anthropic, openai, ollama\n"
+                        "[dim]Run [bold]/model <name>[/bold] to switch, [bold]/setup[/bold] for 1 key, or [bold]/llm add[/bold] to stack multiple keys.[/dim]\n"
                     )
                 continue
 
@@ -2153,8 +2246,18 @@ def _run_cockpit_impl(
                 c.print(f"[{s.theme.rich_warning}]▲ {msg}[/{s.theme.rich_warning}]\n")
                 continue
 
-            # Intelligent Conversational Reflex: Check if user input is an Inquiry vs Action
+            # Intelligent Conversational Reflex: Extract any attached photos/PDFs/files & converse
+            from octoflow.attachments import extract_attachments_from_message
             from octoflow.conductor import SupraesophagealConductor
+
+            _, attached_images, attached_text_ctx, attach_badges = extract_attachments_from_message(
+                user_input, workspace=s.workspace
+            )
+            if attach_badges:
+                c.print(
+                    f"[{s.theme.rich_primary}]◈ Attached:[/{s.theme.rich_primary}] "
+                    + ", ".join(attach_badges)
+                )
 
             m_enum = (
                 SwarmMorphology.CUSTOM
@@ -2171,19 +2274,27 @@ def _run_cockpit_impl(
                     else None,
                 )
             )
-            dialogue_turn = active_conductor.converse(user_input)
+            dialogue_turn = active_conductor.converse(
+                user_input,
+                history=chat_history,
+                images=attached_images or None,
+                attachment_context=attached_text_ctx,
+            )
 
             if dialogue_turn["intent"] == "INQUIRY":
                 p_title = dialogue_turn["primary_arm_title"]
                 p_id = dialogue_turn["primary_arm_id"]
                 s_title = dialogue_turn["secondary_arm_title"]
                 resp_text = dialogue_turn["response"]
+                chat_history.append({"user": user_input, "assistant": resp_text})
+                if len(chat_history) > 10:
+                    chat_history = chat_history[-10:]
 
                 resp_panel = Panel(
                     Markdown(resp_text),
                     title=f"[{s.theme.rich_primary}]● {p_title} [Arm {p_id}][/{s.theme.rich_primary}] [dim](in consultation with {s_title})[/dim]",
                     border_style=s.theme.rich_border,
-                    subtitle="[dim]Ask follow-up questions, or provide an action directive to deploy the swarm.[/dim]",
+                    subtitle="[dim]Continue chatting naturally, or give a build directive (e.g. 'Build ...') to deploy the swarm.[/dim]",
                 )
                 c.print(resp_panel)
                 c.print()

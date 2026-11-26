@@ -445,7 +445,7 @@ class SupraesophagealConductor:
         intent = (
             "INQUIRY"
             if (is_question and not (has_action_verb and not lower.endswith("?")))
-            else ("ACTION" if has_action_verb else ("INQUIRY" if is_question else "ACTION"))
+            else ("ACTION" if has_action_verb else "INQUIRY")
         )
 
         scores = {arm_id: 0 for arm_id in range(len(self.arms))}
@@ -617,7 +617,13 @@ class SupraesophagealConductor:
             "secondary_arm_id": secondary_id,
         }
 
-    def converse(self, user_message: str) -> dict[str, Any]:
+    def converse(
+        self,
+        user_message: str,
+        history: list[dict[str, str]] | None = None,
+        images: list[Any] | None = None,
+        attachment_context: str = "",
+    ) -> dict[str, Any]:
         """Process natural 1-on-1 developer message: auto-answers questions or executes goals."""
         classification = self.classify_conversational_intent(user_message)
         primary_id = classification["primary_arm_id"]
@@ -625,21 +631,38 @@ class SupraesophagealConductor:
         arm = self.arms[primary_id]
         secondary_arm = self.arms[secondary_id]
 
-        if classification["intent"] == "INQUIRY":
-            rag_context = ""
+        if classification["intent"] == "INQUIRY" or images or attachment_context:
+            context_parts: list[str] = []
+            if attachment_context:
+                context_parts.append(attachment_context)
+            if history:
+                hist_lines = []
+                for turn in history[-8:]:
+                    u_msg = turn.get("user", "").strip()
+                    a_msg = turn.get("assistant", "").strip()
+                    if u_msg:
+                        hist_lines.append(f"Developer: {u_msg}")
+                    if a_msg:
+                        hist_lines.append(f"Assistant: {a_msg[:600]}")
+                if hist_lines:
+                    context_parts.append("Recent Conversation:\n" + "\n".join(hist_lines))
+
             try:
                 hits = self.memory.search_codebase(user_message, top_k=3)
                 if hits:
-                    rag_context = "\n".join(
-                        f"File {h['file_path']} (L{h['start_line']}-{h['end_line']}):\n{h['snippet']}"
-                        for h in hits
+                    context_parts.append(
+                        "\n".join(
+                            f"File {h['file_path']} (L{h['start_line']}-{h['end_line']}):\n{h['snippet']}"
+                            for h in hits
+                        )
                     )
             except Exception as e:
                 logger.debug(
                     "Codebase search for conversation context failed: %s", e
                 )  # best-effort: conversation works without RAG context
 
-            response_text = arm.answer_query(user_message, context=rag_context)
+            rag_context = "\n\n".join(context_parts)
+            response_text = arm.answer_query(user_message, context=rag_context, images=images)
             return {
                 "intent": "INQUIRY",
                 "primary_arm_id": arm.arm_id,

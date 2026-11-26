@@ -202,6 +202,7 @@ def build_cockpit_grid(
     octo_x: float,
     octo_y: int,
     pasted_line_count: int = 1,
+    compact: bool = False,
 ) -> Table:
     """Composite the full animated cockpit frame grid (Banner, HUD, Topology, Runner, Prompt)."""
     t0 = time.perf_counter() if os.getenv("OCTOFLOW_DEBUG_FRAMES") == "1" else 0.0
@@ -209,9 +210,9 @@ def build_cockpit_grid(
     theme = session.theme
     prompt_text = build_prompt_text(theme, buffer, cursor_pos, tick, pasted_line_count)
 
-    # Narrow terminal handling: below 60 cols or 15 rows, skip banner & runner, show 1-line HUD
+    # Compact HUD when requested or when terminal is too small for the ~34-line full grid
     cols, lines = shutil.get_terminal_size((80, 24))
-    if cols < 60 or lines < 15:
+    if compact or cols < 60 or lines < 36:
         grid = Table.grid(expand=True)
         grid.add_row(build_compact_hud_line(session))
         grid.add_row(prompt_text)

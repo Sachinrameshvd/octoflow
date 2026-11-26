@@ -276,6 +276,9 @@ def run_setup_wizard(launch_after: bool = False):
     )
     console.print(f"  • Provider: [bold]{chosen_provider.upper()}[/bold]")
     console.print(f"  • Theme: [bold]{new_theme_id}[/bold]")
+    console.print(
+        "[dim]Tip: Want multiple API keys with automatic order-wise failover? Run [bold]/llm add[/bold] inside octos.[/dim]"
+    )
     console.print("[dim]Transitioning into live cephalopod console...[/dim]\n")
 
     if launch_after:
