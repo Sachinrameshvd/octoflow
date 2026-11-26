@@ -15,6 +15,8 @@ export class SoundEngine {
   private masterGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
   private isInitialized = false;
+  public onAudioBlocked?: () => void;
+  public onAudioPlaying?: () => void;
 
   constructor() {
     this.setupWaveAudio();
@@ -29,6 +31,10 @@ export class SoundEngine {
       this.waveAudio.loop = true;
       this.waveAudio.preload = 'auto';
       this.waveAudio.volume = 0.90;
+
+      this.waveAudio.addEventListener('playing', () => {
+        this.onAudioPlaying?.();
+      });
 
       // Auto-restart if browser or system ever interrupts playback
       this.waveAudio.addEventListener('pause', () => {
@@ -84,12 +90,21 @@ export class SoundEngine {
     this.init();
     if (this.waveAudio) {
       this.waveAudio.volume = 0.90;
+      if (!this.waveAudio.paused) {
+        this.onAudioPlaying?.();
+        return;
+      }
       const playPromise = this.waveAudio.play();
       if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          // Awaiting initial user gesture (pointerdown/wheel/key) to unblock autoplay
-          console.log('Wave audio primed for first gesture:', err);
-        });
+        playPromise
+          .then(() => {
+            this.onAudioPlaying?.();
+          })
+          .catch((err) => {
+            // Awaiting initial user gesture (pointerdown/click/key) to unblock autoplay
+            console.log('Wave audio primed for first gesture:', err);
+            this.onAudioBlocked?.();
+          });
       }
     }
   }

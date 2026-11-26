@@ -710,15 +710,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6. Relaxing Ocean Waves Background Audio (Always On)
   // Continuous authentic beach ocean waves: auto-starts immediately and stays active across all interactions
+  const audioUnlockPill = document.createElement('button');
+  audioUnlockPill.id = 'audio-unlock-pill';
+  audioUnlockPill.className = 'hud-pill';
+  audioUnlockPill.innerHTML = '◈ Click anywhere for ocean audio';
+  audioUnlockPill.style.cssText =
+    'position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:950;' +
+    'padding:7px 16px;font-size:11px;letter-spacing:0.06em;color:#38bdf8;' +
+    'background:rgba(3,7,18,0.82);border:1px solid rgba(56,189,248,0.45);' +
+    'backdrop-filter:blur(16px);cursor:pointer;opacity:0;pointer-events:none;' +
+    'transition:opacity 0.35s ease;';
+  document.body.appendChild(audioUnlockPill);
+
+  soundEngine.onAudioBlocked = () => {
+    audioUnlockPill.style.opacity = '1';
+    audioUnlockPill.style.pointerEvents = 'auto';
+  };
+  soundEngine.onAudioPlaying = () => {
+    audioUnlockPill.style.opacity = '0';
+    audioUnlockPill.style.pointerEvents = 'none';
+  };
+
   soundEngine.ensureAudioStarted();
 
   const keepAudioPlaying = () => {
     soundEngine.ensureAudioStarted();
   };
-  window.addEventListener('pointerdown', keepAudioPlaying);
-  window.addEventListener('keydown', keepAudioPlaying);
+  window.addEventListener('pointerdown', keepAudioPlaying, { capture: true });
+  window.addEventListener('click', keepAudioPlaying, { capture: true });
+  window.addEventListener('keydown', keepAudioPlaying, { capture: true });
   window.addEventListener('wheel', keepAudioPlaying, { passive: true });
-  window.addEventListener('touchstart', keepAudioPlaying, { passive: true });
+  window.addEventListener('touchstart', keepAudioPlaying, { passive: true, capture: true });
   window.addEventListener('scroll', keepAudioPlaying, { passive: true });
 
   // 7. Auto-Tour (Choreographed Guided Flight)
